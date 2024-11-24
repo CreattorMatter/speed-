@@ -16,4 +16,8 @@ export interface Block {
     x: number;
     y: number;
   };
+  size?: {
+    width: number;
+    height: number;
+  };
 } 
