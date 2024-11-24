@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Block } from '../types/builder';
+import { Block, BlockType } from '../types/builder';
 import { Edit2, Upload, Image as ImageIcon } from 'lucide-react';
 
 interface RenderBlockContentProps {
@@ -33,13 +33,11 @@ export const renderBlockContent = ({
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validar tipo de archivo
       if (!file.type.startsWith('image/')) {
         alert('Por favor, selecciona un archivo de imagen válido');
         return;
       }
 
-      // Validar tamaño (máximo 5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('La imagen es demasiado grande. El tamaño máximo es 5MB');
         return;
@@ -49,7 +47,7 @@ export const renderBlockContent = ({
     }
   };
 
-  const renderImageUploader = (type: 'header' | 'footer' | 'image' | 'logo') => (
+  const renderImageUploader = (type: Extract<BlockType, 'header' | 'footer' | 'image' | 'logo'>) => (
     <div className="relative group w-full h-full min-h-[100px]">
       {block.content?.imageUrl ? (
         <div className="relative w-full h-full group">
@@ -97,8 +95,6 @@ export const renderBlockContent = ({
   switch (block.type) {
     case 'header':
     case 'footer':
-      return renderImageUploader(block.type);
-
     case 'image':
     case 'logo':
       return renderImageUploader(block.type);
@@ -144,7 +140,7 @@ export const renderBlockContent = ({
   }
 };
 
-function getDefaultText(blockType: string): string {
+function getDefaultText(blockType: BlockType): string {
   switch (blockType) {
     case 'sku':
       return 'SKU-12345';
