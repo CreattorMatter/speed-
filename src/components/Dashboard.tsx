@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ArrowLeft, Plus, LogOut, Sparkles, Clock, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import DashboardStats from './DashboardStats';
@@ -14,68 +14,107 @@ interface DashboardProps {
 export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail = 'admin@admin.com' }: DashboardProps) {
   const userName = userEmail.split('@')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].slice(1);
 
-  const hologramEffect = {
-    position: 'relative',
-    '&::before': {
-      content: '""',
-      position: 'absolute',
-      inset: '-2px',
-      background: 'linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.4) 50%, transparent 60%)',
-      filter: 'blur(8px)',
-      animation: 'hologram 3s linear infinite',
-      borderRadius: 'inherit',
-      zIndex: 0,
-    },
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, card: HTMLDivElement) => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    const rotateX = ((y - centerY) / centerY) * -10;
+    const rotateY = ((x - centerX) / centerX) * 10;
+
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+    card.style.transition = 'transform 0.1s';
   };
+
+  const handleMouseLeave = (card: HTMLDivElement) => {
+    card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+    card.style.transition = 'transform 0.5s';
+  };
+
+  useEffect(() => {
+    const cards = document.querySelectorAll('.hologram-card');
+    
+    cards.forEach(card => {
+      card.addEventListener('mousemove', (e) => handleMouseMove(e as MouseEvent, card as HTMLDivElement));
+      card.addEventListener('mouseleave', () => handleMouseLeave(card as HTMLDivElement));
+    });
+
+    return () => {
+      cards.forEach(card => {
+        card.removeEventListener('mousemove', (e) => handleMouseMove(e as MouseEvent, card as HTMLDivElement));
+        card.removeEventListener('mouseleave', () => handleMouseLeave(card as HTMLDivElement));
+      });
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <style jsx>{`
-        @keyframes hologram {
-          0% {
-            background-position: 200% 0;
+      <style>
+        {`
+          @keyframes hologram {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
           }
-          100% {
-            background-position: -200% 0;
+          
+          .hologram-card {
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            transform-style: preserve-3d;
+            will-change: transform;
           }
-        }
-        
-        .hologram-card {
-          position: relative;
-          overflow: hidden;
-          backdrop-filter: blur(10px);
-        }
-        
-        .hologram-card::before {
-          content: '';
-          position: absolute;
-          inset: -2px;
-          background: linear-gradient(
-            45deg,
-            transparent 40%,
-            rgba(255, 255, 255, 0.4) 50%,
-            transparent 60%
-          );
-          filter: blur(8px);
-          animation: hologram 3s linear infinite;
-          border-radius: inherit;
-          z-index: 0;
-        }
-        
-        .hologram-card::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: inherit;
-          border-radius: inherit;
-          z-index: 1;
-        }
-        
-        .hologram-content {
-          position: relative;
-          z-index: 2;
-        }
-      `}</style>
+          
+          .hologram-card::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(
+              45deg,
+              transparent 40%,
+              rgba(255, 255, 255, 0.4) 50%,
+              transparent 60%
+            );
+            filter: blur(8px);
+            animation: hologram 3s linear infinite;
+            border-radius: inherit;
+            z-index: 0;
+          }
+          
+          .hologram-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: inherit;
+            border-radius: inherit;
+            z-index: 1;
+          }
+          
+          .hologram-content {
+            position: relative;
+            z-index: 2;
+            transform: translateZ(20px);
+          }
+
+          .hologram-shine {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+              45deg,
+              transparent,
+              rgba(255, 255, 255, 0.1) 25%,
+              transparent 50%
+            );
+            z-index: 3;
+            pointer-events: none;
+          }
+        `}
+      </style>
 
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -146,6 +185,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
               <h3 className="text-2xl font-bold mb-2">Plantillas Activas</h3>
               <p className="text-4xl font-bold">12</p>
             </div>
+            <div className="hologram-shine" />
           </motion.div>
 
           <motion.div
@@ -159,6 +199,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
               <h3 className="text-2xl font-bold mb-2">Última Actividad</h3>
               <p className="text-lg">Hace 2 horas</p>
             </div>
+            <div className="hologram-shine" />
           </motion.div>
 
           <motion.div
@@ -172,6 +213,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
               <h3 className="text-2xl font-bold mb-2">Plantilla Destacada</h3>
               <p className="text-lg">Black Friday 2024</p>
             </div>
+            <div className="hologram-shine" />
           </motion.div>
         </div>
 

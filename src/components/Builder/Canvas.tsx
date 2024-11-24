@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Draggable from 'react-draggable';
 import { ResizableBox } from 'react-resizable';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Move } from 'lucide-react';
+import { X, Move, Edit2, Upload } from 'lucide-react';
 import { Block, BlockType } from '../../types/builder';
 import 'react-resizable/css/styles.css';
 
 export default function Canvas() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -46,6 +48,201 @@ export default function Canvas() {
   const handleDeleteBlock = (id: string) => {
     setBlocks(blocks.filter(block => block.id !== id));
     setSelectedBlock(null);
+  };
+
+  const handleTextEdit = (blockId: string, newText: string) => {
+    setBlocks(blocks.map(block => 
+      block.id === blockId 
+        ? { ...block, content: { ...block.content, text: newText } }
+        : block
+    ));
+  };
+
+  const handleImageUpload = (blockId: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setBlocks(blocks.map(block => 
+        block.id === blockId 
+          ? { ...block, content: { ...block.content, imageUrl: e.target?.result } }
+          : block
+      ));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const renderBlockContent = (block: Block) => {
+    const isEditing = editingText === block.id;
+
+    switch (block.type) {
+      case 'header':
+        return <div className="bg-gray-50 p-4 rounded">Header Content</div>;
+      case 'footer':
+        return <div className="bg-gray-50 p-4 rounded">Footer Content</div>;
+      case 'sku':
+        return (
+          <div className="relative group">
+            {isEditing ? (
+              <input
+                type="text"
+                value={block.content?.text || 'SKU-12345'}
+                onChange={(e) => handleTextEdit(block.id, e.target.value)}
+                onBlur={() => setEditingText(null)}
+                autoFocus
+                className="font-mono text-gray-600 w-full p-1 border rounded"
+              />
+            ) : (
+              <>
+                <span className="font-mono text-gray-600">{block.content?.text || 'SKU-12345'}</span>
+                <button
+                  onClick={() => setEditingText(block.id)}
+                  className="absolute -right-6 top-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Edit2 className="w-4 h-4 text-gray-400" />
+                </button>
+              </>
+            )}
+          </div>
+        );
+      case 'image':
+        return (
+          <div className="relative group">
+            {block.content?.imageUrl ? (
+              <img 
+                src={block.content.imageUrl} 
+                alt="Uploaded content"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div 
+                className="bg-gray-100 rounded flex flex-col items-center justify-center h-full min-h-[100px] cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                <span className="text-gray-400 text-sm">Click para subir imagen</span>
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleImageUpload(block.id, file);
+              }}
+            />
+          </div>
+        );
+      case 'price':
+        return (
+          <div className="relative group">
+            {isEditing ? (
+              <input
+                type="text"
+                value={block.content?.text || '$99.99'}
+                onChange={(e) => handleTextEdit(block.id, e.target.value)}
+                onBlur={() => setEditingText(null)}
+                autoFocus
+                className="text-2xl font-bold text-gray-800 w-full p-1 border rounded"
+              />
+            ) : (
+              <>
+                <span className="text-2xl font-bold text-gray-800">{block.content?.text || '$99.99'}</span>
+                <button
+                  onClick={() => setEditingText(block.id)}
+                  className="absolute -right-6 top-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Edit2 className="w-4 h-4 text-gray-400" />
+                </button>
+              </>
+            )}
+          </div>
+        );
+      case 'discount':
+        return (
+          <div className="relative group">
+            {isEditing ? (
+              <input
+                type="text"
+                value={block.content?.text || '-20%'}
+                onChange={(e) => handleTextEdit(block.id, e.target.value)}
+                onBlur={() => setEditingText(null)}
+                autoFocus
+                className="text-red-500 font-semibold w-full p-1 border rounded"
+              />
+            ) : (
+              <>
+                <span className="text-red-500 font-semibold">{block.content?.text || '-20%'}</span>
+                <button
+                  onClick={() => setEditingText(block.id)}
+                  className="absolute -right-6 top-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Edit2 className="w-4 h-4 text-gray-400" />
+                </button>
+              </>
+            )}
+          </div>
+        );
+      case 'promotion':
+        return (
+          <div className="relative group">
+            {isEditing ? (
+              <input
+                type="text"
+                value={block.content?.text || '¡Oferta especial!'}
+                onChange={(e) => handleTextEdit(block.id, e.target.value)}
+                onBlur={() => setEditingText(null)}
+                autoFocus
+                className="bg-yellow-50 text-yellow-800 p-2 rounded w-full border"
+              />
+            ) : (
+              <>
+                <div className="bg-yellow-50 text-yellow-800 p-2 rounded">
+                  {block.content?.text || '¡Oferta especial!'}
+                </div>
+                <button
+                  onClick={() => setEditingText(block.id)}
+                  className="absolute -right-6 top-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Edit2 className="w-4 h-4 text-gray-400" />
+                </button>
+              </>
+            )}
+          </div>
+        );
+      case 'logo':
+        return (
+          <div className="relative group">
+            {block.content?.imageUrl ? (
+              <img 
+                src={block.content.imageUrl} 
+                alt="Company logo"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div 
+                className="bg-gray-100 rounded p-4 flex flex-col items-center justify-center cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                <span className="text-gray-400 text-sm">Subir logo</span>
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleImageUpload(block.id, file);
+              }}
+            />
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -142,35 +339,4 @@ export default function Canvas() {
       )}
     </div>
   );
-}
-
-function renderBlockContent(block: Block) {
-  switch (block.type) {
-    case 'header':
-      return <div className="bg-gray-50 p-4 rounded">Header Content</div>;
-    case 'footer':
-      return <div className="bg-gray-50 p-4 rounded">Footer Content</div>;
-    case 'sku':
-      return <div className="font-mono text-gray-600">SKU-12345</div>;
-    case 'image':
-      return (
-        <div className="bg-gray-100 rounded flex items-center justify-center h-full">
-          <span className="text-gray-400">Image Placeholder</span>
-        </div>
-      );
-    case 'price':
-      return <div className="text-2xl font-bold text-gray-800">$99.99</div>;
-    case 'discount':
-      return <div className="text-red-500 font-semibold">-20%</div>;
-    case 'promotion':
-      return <div className="bg-yellow-50 text-yellow-800 p-2 rounded">¡Oferta especial!</div>;
-    case 'logo':
-      return (
-        <div className="bg-gray-100 rounded p-4 flex items-center justify-center">
-          <span className="text-gray-400">Logo</span>
-        </div>
-      );
-    default:
-      return null;
-  }
 }
