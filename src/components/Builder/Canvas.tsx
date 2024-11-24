@@ -30,7 +30,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     const blockType = e.dataTransfer.getData('blockType') as BlockType;
     const canvasRect = e.currentTarget.getBoundingClientRect();
     
-    // Calcular la posición relativa al canvas
+    // Calcular la posición exacta donde se suelta el bloque
     const x = e.clientX - canvasRect.left;
     const y = e.clientY - canvasRect.top;
 
@@ -46,11 +46,19 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   };
 
   const handleBlockDrag = (blockId: string, data: { x: number; y: number }) => {
-    setBlocks(blocks.map(block => 
+    // Actualizar la posición del bloque cuando se arrastra
+    const updatedBlocks = blocks.map(block => 
       block.id === blockId 
-        ? { ...block, position: { x: data.x, y: data.y } }
+        ? { 
+            ...block, 
+            position: { 
+              x: Math.max(0, data.x), // Evitar posiciones negativas
+              y: Math.max(0, data.y)
+            } 
+          }
         : block
-    ));
+    );
+    setBlocks(updatedBlocks);
   };
 
   const handleDeleteBlock = (id: string) => {
@@ -283,19 +291,32 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   return (
     <div
       className="flex-1 bg-white m-4 rounded-lg shadow-xl p-4 relative"
-      onDragOver={handleDragOver}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      }}
       onDrop={handleDrop}
-      style={{ minHeight: '600px', position: 'relative' }}
+      style={{ 
+        minHeight: '600px', 
+        position: 'relative',
+        overflow: 'hidden' // Evitar que los bloques se salgan del canvas
+      }}
     >
       <AnimatePresence>
         {blocks.map((block) => (
           <Draggable
             key={block.id}
-            defaultPosition={block.position}
-            position={undefined}
+            position={{ x: block.position.x, y: block.position.y }} // Usar posición controlada
             bounds="parent"
             handle=".handle"
-            onStop={(e, data) => handleBlockDrag(block.id, data)}
+            onDrag={(e, data) => {
+              // Actualizar la posición mientras se arrastra
+              handleBlockDrag(block.id, data);
+            }}
+            onStop={(e, data) => {
+              // Asegurar que la posición final sea exacta
+              handleBlockDrag(block.id, data);
+            }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
@@ -310,6 +331,8 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
               style={{ 
                 position: 'absolute',
                 zIndex: selectedBlock === block.id ? 10 : 1,
+                width: block.size?.width,
+                height: block.size?.height,
               }}
             >
               <ResizableBox

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, Reorder } from 'framer-motion';
 import { Layers, Eye, EyeOff, Lock, Unlock } from 'lucide-react';
 import { Block } from '../../types/builder';
@@ -10,24 +10,49 @@ interface LayersPanelProps {
   setSelectedBlock: (id: string | null) => void;
 }
 
+interface Layer extends Block {
+  isVisible: boolean;
+  isLocked: boolean;
+  zIndex: number;
+}
+
 export default function LayersPanel({ blocks, setBlocks, selectedBlock, setSelectedBlock }: LayersPanelProps) {
-  const [hiddenLayers, setHiddenLayers] = React.useState<string[]>([]);
-  const [lockedLayers, setLockedLayers] = React.useState<string[]>([]);
+  const [layers, setLayers] = useState<Layer[]>(
+    blocks.map((block, index) => ({
+      ...block,
+      isVisible: true,
+      isLocked: false,
+      zIndex: blocks.length - index
+    }))
+  );
 
   const toggleVisibility = (blockId: string) => {
-    setHiddenLayers(prev =>
-      prev.includes(blockId)
-        ? prev.filter(id => id !== blockId)
-        : [...prev, blockId]
+    setLayers(prev =>
+      prev.map(layer =>
+        layer.id === blockId
+          ? { ...layer, isVisible: !layer.isVisible }
+          : layer
+      )
     );
   };
 
   const toggleLock = (blockId: string) => {
-    setLockedLayers(prev =>
-      prev.includes(blockId)
-        ? prev.filter(id => id !== blockId)
-        : [...prev, blockId]
+    setLayers(prev =>
+      prev.map(layer =>
+        layer.id === blockId
+          ? { ...layer, isLocked: !layer.isLocked }
+          : layer
+      )
     );
+  };
+
+  const handleReorder = (reorderedLayers: Layer[]) => {
+    const updatedLayers = reorderedLayers.map((layer, index) => ({
+      ...layer,
+      zIndex: reorderedLayers.length - index
+    }));
+    setLayers(updatedLayers);
+    setBlocks(updatedLayers);
   };
 
   return (
@@ -37,14 +62,14 @@ export default function LayersPanel({ blocks, setBlocks, selectedBlock, setSelec
         <h2 className="font-medium text-gray-900">Capas</h2>
       </div>
 
-      <Reorder.Group axis="y" values={blocks} onReorder={setBlocks}>
-        {blocks.map((block) => (
-          <Reorder.Item key={block.id} value={block}>
+      <Reorder.Group axis="y" values={layers} onReorder={handleReorder}>
+        {layers.map((layer) => (
+          <Reorder.Item key={layer.id} value={layer}>
             <motion.div
               className={`p-2 rounded-lg mb-2 cursor-pointer flex items-center justify-between ${
-                selectedBlock === block.id ? 'bg-indigo-50' : 'hover:bg-gray-50'
+                selectedBlock === layer.id ? 'bg-indigo-50' : 'hover:bg-gray-50'
               }`}
-              onClick={() => setSelectedBlock(block.id)}
+              onClick={() => setSelectedBlock(layer.id)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -52,26 +77,26 @@ export default function LayersPanel({ blocks, setBlocks, selectedBlock, setSelec
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleVisibility(block.id);
+                    toggleVisibility(layer.id);
                   }}
                   className="p-1 rounded-full hover:bg-gray-100"
                 >
-                  {hiddenLayers.includes(block.id) ? (
-                    <EyeOff className="w-4 h-4 text-gray-400" />
-                  ) : (
+                  {layer.isVisible ? (
                     <Eye className="w-4 h-4 text-gray-600" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-gray-400" />
                   )}
                 </button>
-                <span className="text-sm text-gray-700">{block.type}</span>
+                <span className="text-sm text-gray-700">{layer.type}</span>
               </div>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  toggleLock(block.id);
+                  toggleLock(layer.id);
                 }}
                 className="p-1 rounded-full hover:bg-gray-100"
               >
-                {lockedLayers.includes(block.id) ? (
+                {layer.isLocked ? (
                   <Lock className="w-4 h-4 text-gray-600" />
                 ) : (
                   <Unlock className="w-4 h-4 text-gray-400" />
