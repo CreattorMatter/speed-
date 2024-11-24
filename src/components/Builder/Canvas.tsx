@@ -1,6 +1,8 @@
 import React from 'react';
 import { X, Move } from 'lucide-react';
 import { Block } from '../../types/builder';
+import { ResizableBox } from 'react-resizable';
+import 'react-resizable/css/styles.css';
 
 interface CanvasProps {
   blocks: Block[];
@@ -47,37 +49,54 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  const handleResize = (blockId: string, size: { width: number; height: number }) => {
+    setBlocks(prevBlocks => prevBlocks.map(block => 
+      block.id === blockId 
+        ? { ...block, size }
+        : block
+    ));
+  };
+
   return (
     <div className="flex-1 bg-white m-4 rounded-lg shadow-lg p-4 relative min-h-[600px]">
       <div className="relative w-full h-full">
         {blocks.map((block) => (
           <div
             key={block.id}
-            className="absolute bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+            className="absolute"
             style={{
               left: block.position.x,
               top: block.position.y,
-              width: block.size.width,
-              height: block.size.height,
             }}
           >
-            <div 
-              className="h-8 bg-gray-50 rounded-t-lg border-b border-gray-200 px-2 
-                        flex items-center justify-between cursor-move"
-              onMouseDown={(e) => handleMouseDown(e, block.id)}
+            <ResizableBox
+              width={block.size.width}
+              height={block.size.height}
+              onResize={(e, { size }) => handleResize(block.id, size)}
+              minConstraints={[100, 50]}
+              maxConstraints={[800, 600]}
+              resizeHandles={['se', 'sw', 'ne', 'nw', 'n', 's', 'e', 'w']}
             >
-              <Move className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-600">{block.type}</span>
-              <button
-                onClick={(e) => handleDelete(block.id, e)}
-                className="p-1 hover:bg-red-50 rounded-full"
-              >
-                <X className="w-4 h-4 text-gray-400" />
-              </button>
-            </div>
-            <div className="p-4">
-              {block.content.text || `Bloque ${block.type}`}
-            </div>
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow w-full h-full">
+                <div 
+                  className="h-8 bg-gray-50 rounded-t-lg border-b border-gray-200 px-2 
+                            flex items-center justify-between cursor-move"
+                  onMouseDown={(e) => handleMouseDown(e, block.id)}
+                >
+                  <Move className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">{block.type}</span>
+                  <button
+                    onClick={(e) => handleDelete(block.id, e)}
+                    className="p-1 hover:bg-red-50 rounded-full"
+                  >
+                    <X className="w-4 h-4 text-gray-400" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  {block.content.text || `Bloque ${block.type}`}
+                </div>
+              </div>
+            </ResizableBox>
           </div>
         ))}
 
