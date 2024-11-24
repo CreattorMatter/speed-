@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Draggable from 'react-draggable';
-import { motion, AnimatePresence } from 'framer-motion';
 import { X, Move } from 'lucide-react';
 import { Block, BlockType } from '../../types/builder';
 import { renderBlockContent } from '../../utils/blockRenderer';
 import { PAPER_SIZES, MM_TO_PX } from '../../utils/paperSizes';
 import Rulers from './Rulers';
-import 'react-resizable/css/styles.css';
 
 interface CanvasProps {
   blocks: Block[];
@@ -25,7 +23,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   useEffect(() => {
     if (canvasRef.current) {
       setCanvasSize({
-        width: canvasRef.current.clientWidth - 40, // -40 por el padding
+        width: canvasRef.current.clientWidth - 40,
         height: canvasRef.current.clientHeight - 40
       });
     }
@@ -48,7 +46,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     const canvasRect = canvasRef.current?.getBoundingClientRect();
     if (!canvasRect) return;
 
-    const x = e.clientX - canvasRect.left - 20; // -20 por el padding y la regla
+    const x = e.clientX - canvasRect.left - 20;
     const y = e.clientY - canvasRect.top - 20;
 
     const newBlock: Block = {
@@ -59,15 +57,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
       size: { width: 200, height: 100 }
     };
 
-    setBlocks(prevBlocks => [...prevBlocks, newBlock]);
-  };
-
-  const handleDragStop = (blockId: string, data: { x: number; y: number }) => {
-    setBlocks(blocks.map(block =>
-      block.id === blockId
-        ? { ...block, position: { x: data.x, y: data.y } }
-        : block
-    ));
+    setBlocks([...blocks, newBlock]);
   };
 
   const handleDeleteBlock = (id: string) => {
@@ -153,45 +143,47 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
           </div>
         </div>
 
-        <AnimatePresence>
-          {blocks.map((block) => (
-            <Draggable
-              key={block.id}
-              defaultPosition={block.position}
-              onStop={(e, data) => handleDragStop(block.id, data)}
-              bounds="parent"
-              handle=".handle"
-              position={undefined}
+        {blocks.map((block) => (
+          <Draggable
+            key={block.id}
+            defaultPosition={block.position}
+            bounds="parent"
+            handle=".handle"
+          >
+            <div 
+              className={`absolute ${selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''}`}
+              onClick={() => setSelectedBlock(block.id)}
             >
-              <div className={`absolute ${selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''}`}>
-                <div className="bg-white rounded-lg shadow-lg border border-gray-200">
-                  <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move 
-                                flex items-center justify-between px-2">
-                    <Move className="w-4 h-4 text-gray-400" />
-                    <span className="text-xs font-medium text-gray-600">{block.type}</span>
-                    <button
-                      onClick={() => handleDeleteBlock(block.id)}
-                      className="p-1 hover:bg-red-50 rounded-full"
-                    >
-                      <X className="w-4 h-4 text-gray-400" />
-                    </button>
-                  </div>
-                  <div className="mt-6 p-4" style={{ width: block.size?.width, height: block.size?.height }}>
-                    {renderBlockContent({
-                      block,
-                      isEditing: editingText === block.id,
-                      onEdit: handleTextEdit,
-                      onStartEdit: (id) => setEditingText(id),
-                      onStopEdit: () => setEditingText(null),
-                      onImageUpload: handleImageUpload,
-                      fileInputRef: { current: fileInputRefs.current.get(block.id) || null }
-                    })}
-                  </div>
+              <div className="bg-white rounded-lg shadow-lg border border-gray-200">
+                <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move 
+                              flex items-center justify-between px-2">
+                  <Move className="w-4 h-4 text-gray-400" />
+                  <span className="text-xs font-medium text-gray-600">{block.type}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteBlock(block.id);
+                    }}
+                    className="p-1 hover:bg-red-50 rounded-full"
+                  >
+                    <X className="w-4 h-4 text-gray-400" />
+                  </button>
+                </div>
+                <div className="mt-6 p-4" style={{ width: block.size?.width, height: block.size?.height }}>
+                  {renderBlockContent({
+                    block,
+                    isEditing: editingText === block.id,
+                    onEdit: handleTextEdit,
+                    onStartEdit: (id) => setEditingText(id),
+                    onStopEdit: () => setEditingText(null),
+                    onImageUpload: handleImageUpload,
+                    fileInputRef: { current: fileInputRefs.current.get(block.id) || null }
+                  })}
                 </div>
               </div>
-            </Draggable>
-          ))}
-        </AnimatePresence>
+            </div>
+          </Draggable>
+        ))}
 
         {blocks.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center text-gray-400">
