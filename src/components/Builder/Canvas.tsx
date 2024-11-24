@@ -8,7 +8,7 @@ import 'react-resizable/css/styles.css';
 
 interface CanvasProps {
   blocks: Block[];
-  setBlocks: (blocks: Block[]) => void;
+  setBlocks: React.Dispatch<React.SetStateAction<Block[]>>;
 }
 
 export default function Canvas({ blocks, setBlocks }: CanvasProps) {
@@ -20,7 +20,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   const handleDragStop = (blockId: string, data: { x: number; y: number }) => {
     const snapToGrid = (value: number) => Math.round(value / gridSize) * gridSize;
     
-    setBlocks(prevBlocks => prevBlocks.map(block =>
+    setBlocks((prevBlocks: Block[]) => prevBlocks.map((block: Block) =>
       block.id === blockId
         ? {
             ...block,
@@ -36,7 +36,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   const handleResize = (blockId: string, size: { width: number; height: number }) => {
     const snapToGrid = (value: number) => Math.round(value / gridSize) * gridSize;
     
-    setBlocks(prevBlocks => prevBlocks.map(block =>
+    setBlocks((prevBlocks: Block[]) => prevBlocks.map((block: Block) =>
       block.id === blockId
         ? {
             ...block,
@@ -47,6 +47,32 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
           }
         : block
     ));
+  };
+
+  const handleDeleteBlock = (blockId: string) => {
+    setBlocks((prevBlocks: Block[]) => prevBlocks.filter((b: Block) => b.id !== blockId));
+  };
+
+  const handleTextEdit = (blockId: string, text: string) => {
+    setBlocks((prevBlocks: Block[]) => prevBlocks.map((b: Block) =>
+      b.id === blockId
+        ? { ...b, content: { ...b.content, text } }
+        : b
+    ));
+  };
+
+  const handleImageUpload = (blockId: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      if (e.target?.result) {
+        setBlocks((prevBlocks: Block[]) => prevBlocks.map((b: Block) =>
+          b.id === blockId
+            ? { ...b, content: { ...b.content, imageUrl: e.target?.result as string } }
+            : b
+        ));
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -95,7 +121,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setBlocks(prevBlocks => prevBlocks.filter(b => b.id !== block.id));
+                        handleDeleteBlock(block.id);
                         setSelectedBlock(null);
                       }}
                       className="p-1 hover:bg-red-50 rounded-full"
@@ -107,28 +133,10 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                     {renderBlockContent({
                       block,
                       isEditing: editingText === block.id,
-                      onEdit: (id, text) => {
-                        setBlocks(prevBlocks => prevBlocks.map(b =>
-                          b.id === id
-                            ? { ...b, content: { ...b.content, text } }
-                            : b
-                        ));
-                      },
+                      onEdit: handleTextEdit,
                       onStartEdit: (id) => setEditingText(id),
                       onStopEdit: () => setEditingText(null),
-                      onImageUpload: (id, file) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                          if (e.target?.result) {
-                            setBlocks(prevBlocks => prevBlocks.map(b =>
-                              b.id === id
-                                ? { ...b, content: { ...b.content, imageUrl: e.target.result as string } }
-                                : b
-                            ));
-                          }
-                        };
-                        reader.readAsDataURL(file);
-                      },
+                      onImageUpload: handleImageUpload,
                       fileInputRef: { current: fileInputRefs.current.get(block.id) || null }
                     })}
                   </div>
