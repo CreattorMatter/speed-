@@ -1,6 +1,8 @@
 import React from 'react';
 import { X, Move } from 'lucide-react';
 import { Block } from '../../types/builder';
+import { Resizable } from 'react-resizable';
+import 'react-resizable/css/styles.css';
 
 interface CanvasProps {
   blocks: Block[];
@@ -43,38 +45,62 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  const handleResize = (blockId: string, size: { width: number; height: number }) => {
+    setBlocks(prevBlocks => prevBlocks.map(block => {
+      if (block.id === blockId) {
+        return {
+          ...block,
+          size: {
+            width: Math.max(50, size.width),
+            height: Math.max(50, size.height)
+          }
+        };
+      }
+      return block;
+    }));
+  };
+
   return (
     <div className="flex-1 bg-white m-4 rounded-lg shadow-lg p-4 relative min-h-[600px]">
       <div className="relative w-full h-full">
         {blocks.map((block) => (
-          <div
+          <Resizable
             key={block.id}
-            className="absolute bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-            style={{
-              left: block.position.x,
-              top: block.position.y,
-              width: block.size.width,
-              height: block.size.height,
-            }}
+            width={block.size.width}
+            height={block.size.height}
+            onResize={(e, { size }) => handleResize(block.id, size)}
+            minConstraints={[50, 50]}
+            maxConstraints={[800, 600]}
+            resizeHandles={['se', 'sw', 'ne', 'nw', 'n', 's', 'e', 'w']}
           >
-            <div 
-              className="h-8 bg-gray-50 rounded-t-lg border-b border-gray-200 px-2 
-                        flex items-center justify-between cursor-move"
-              onMouseDown={(e) => handleMouseDown(e, block.id)}
+            <div
+              className="absolute bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+              style={{
+                left: block.position.x,
+                top: block.position.y,
+                width: block.size.width,
+                height: block.size.height,
+              }}
             >
-              <Move className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-600">{block.type}</span>
-              <button
-                onClick={() => handleDelete(block.id)}
-                className="p-1 hover:bg-red-50 rounded-full"
+              <div 
+                className="h-8 bg-gray-50 rounded-t-lg border-b border-gray-200 px-2 
+                          flex items-center justify-between cursor-move"
+                onMouseDown={(e) => handleMouseDown(e, block.id)}
               >
-                <X className="w-4 h-4 text-gray-400" />
-              </button>
+                <Move className="w-4 h-4 text-gray-400" />
+                <span className="text-sm text-gray-600">{block.type}</span>
+                <button
+                  onClick={() => handleDelete(block.id)}
+                  className="p-1 hover:bg-red-50 rounded-full"
+                >
+                  <X className="w-4 h-4 text-gray-400" />
+                </button>
+              </div>
+              <div className="p-4 overflow-hidden">
+                {block.content.text || `Bloque ${block.type}`}
+              </div>
             </div>
-            <div className="p-4">
-              {block.content.text || `Bloque ${block.type}`}
-            </div>
-          </div>
+          </Resizable>
         ))}
 
         {blocks.length === 0 && (
