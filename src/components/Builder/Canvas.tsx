@@ -1,4 +1,5 @@
 import React from 'react';
+import Draggable from 'react-draggable';
 import { X, Move } from 'lucide-react';
 import { Block } from '../../types/builder';
 
@@ -12,35 +13,49 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     setBlocks(prevBlocks => prevBlocks.filter(block => block.id !== id));
   };
 
+  const handleDrag = (id: string, data: { x: number; y: number }) => {
+    setBlocks(prevBlocks => prevBlocks.map(block => 
+      block.id === id 
+        ? { ...block, position: { x: data.x, y: data.y } }
+        : block
+    ));
+  };
+
   return (
     <div className="flex-1 bg-white m-4 rounded-lg shadow-lg p-4 relative min-h-[600px]">
       <div className="relative w-full h-full">
         {blocks.map((block) => (
-          <div
+          <Draggable
             key={block.id}
-            className="absolute bg-white rounded-lg border border-gray-200 shadow-sm"
-            style={{
-              left: block.position.x,
-              top: block.position.y,
-              width: block.size.width,
-              height: block.size.height,
-            }}
+            defaultPosition={block.position}
+            onStop={(_, data) => handleDrag(block.id, data)}
+            bounds="parent"
+            handle=".handle"
+            position={undefined}
           >
-            <div className="h-8 bg-gray-50 rounded-t-lg border-b border-gray-200 px-2 
-                          flex items-center justify-between">
-              <Move className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-600">{block.type}</span>
-              <button
-                onClick={() => handleDelete(block.id)}
-                className="p-1 hover:bg-red-50 rounded-full"
-              >
-                <X className="w-4 h-4 text-gray-400" />
-              </button>
+            <div
+              className="absolute bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+              style={{
+                width: block.size.width,
+                height: block.size.height,
+              }}
+            >
+              <div className="handle h-8 bg-gray-50 rounded-t-lg border-b border-gray-200 px-2 
+                          flex items-center justify-between cursor-move">
+                <Move className="w-4 h-4 text-gray-400" />
+                <span className="text-sm text-gray-600">{block.type}</span>
+                <button
+                  onClick={() => handleDelete(block.id)}
+                  className="p-1 hover:bg-red-50 rounded-full"
+                >
+                  <X className="w-4 h-4 text-gray-400" />
+                </button>
+              </div>
+              <div className="p-4">
+                {block.content.text || `Bloque ${block.type}`}
+              </div>
             </div>
-            <div className="p-4">
-              {block.content.text || `Bloque ${block.type}`}
-            </div>
-          </div>
+          </Draggable>
         ))}
 
         {blocks.length === 0 && (
