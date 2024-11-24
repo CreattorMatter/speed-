@@ -19,12 +19,12 @@ export default function Builder({ onBack }: BuilderProps) {
   const [showPreview, setShowPreview] = useState(false);
   const [templateId] = useState(() => generateTemplateId());
 
-  const handleAddBlock = (type: BlockType, initialPosition: { x: number; y: number }) => {
+  const handleAddBlock = (type: BlockType) => {
     const newBlock: Block = {
       id: `${type}-${Date.now()}`,
       type,
-      content: {},
-      position: initialPosition,
+      content: { text: `Nuevo bloque ${type}` },
+      position: { x: 50, y: 50 },
       size: { width: 200, height: 100 }
     };
     setBlocks(prevBlocks => [...prevBlocks, newBlock]);
