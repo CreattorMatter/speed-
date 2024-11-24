@@ -21,10 +21,15 @@ const BLOCKS: { type: BlockType; icon: React.ReactNode; label: string }[] = [
 
 export default function ToolPanel({ activeTab, setActiveTab }: ToolPanelProps) {
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, blockType: BlockType) => {
-    if (e.dataTransfer) {
-      e.dataTransfer.setData('text/plain', blockType);
-      e.dataTransfer.effectAllowed = 'copy';
-    }
+    e.dataTransfer.setData('text/plain', blockType);
+    e.dataTransfer.effectAllowed = 'copy';
+    
+    const ghost = document.createElement('div');
+    ghost.classList.add('w-20', 'h-20', 'bg-indigo-100', 'rounded-lg', 'flex', 'items-center', 'justify-center');
+    ghost.innerHTML = blockType;
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, 40, 40);
+    setTimeout(() => document.body.removeChild(ghost), 0);
   };
 
   const renderTabContent = () => {

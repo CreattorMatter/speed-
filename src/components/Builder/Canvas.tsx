@@ -7,6 +7,7 @@ import { Block, BlockType } from '../../types/builder';
 import { renderBlockContent } from '../../utils/blockRenderer';
 import 'react-resizable/css/styles.css';
 import Rulers from './Rulers';
+import { PAPER_SIZES, MM_TO_PX, getPaperSizeInPixels } from '../../utils/paperSizes';
 
 interface CanvasProps {
   blocks: Block[];
@@ -20,6 +21,8 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const gridSize = 20; // Tamaño de la cuadrícula
+  const [selectedPaperSize, setSelectedPaperSize] = useState<keyof typeof PAPER_SIZES>('A4');
+  const paperSize = getPaperSizeInPixels(selectedPaperSize);
 
   // Actualizar tamaño del canvas cuando cambie el tamaño de la ventana
   useEffect(() => {
@@ -42,18 +45,18 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = 'copy';
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const blockType = e.dataTransfer.getData('text/plain') as BlockType;
     
-    if (!blockType) return; // Validar que tenemos un tipo de bloque
+    if (!blockType) return;
 
     const canvasRect = e.currentTarget.getBoundingClientRect();
-    const x = snapToGrid(e.clientX - canvasRect.left);
-    const y = snapToGrid(e.clientY - canvasRect.top);
+    const x = snapToGrid(e.clientX - canvasRect.left - 20); // -20 por el padding de las reglas
+    const y = snapToGrid(e.clientY - canvasRect.top - 20);
 
     const newBlock: Block = {
       id: `${blockType}-${Date.now()}`,
@@ -119,18 +122,34 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
       className="flex-1 bg-white m-4 rounded-lg shadow-xl relative"
       style={{ 
         minHeight: '600px',
-        paddingTop: '20px',   // Espacio para la regla horizontal
-        paddingLeft: '20px',  // Espacio para la regla vertical
+        paddingTop: '20px',
+        paddingLeft: '20px',
       }}
     >
-      {/* Reglas */}
+      {/* Selector de tamaño de papel */}
+      <div className="absolute top-4 left-24 flex items-center space-x-2">
+        {Object.keys(PAPER_SIZES).map((size) => (
+          <button
+            key={size}
+            onClick={() => setSelectedPaperSize(size as keyof typeof PAPER_SIZES)}
+            className={`px-3 py-1 text-sm rounded ${
+              selectedPaperSize === size
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {PAPER_SIZES[size as keyof typeof PAPER_SIZES].name}
+          </button>
+        ))}
+      </div>
+
       <Rulers 
         width={canvasSize.width - 20} 
         height={canvasSize.height - 20}
         gridSize={gridSize}
       />
 
-      {/* Área de trabajo con cuadrícula */}
+      {/* Área de trabajo con cuadrícula y guías de papel */}
       <div
         className="relative w-full h-full"
         onDragOver={handleDragOver}
@@ -144,12 +163,28 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
           overflow: 'hidden',
         }}
       >
+        {/* Guía de tamaño de papel */}
+        <div
+          className="absolute border-2 border-dashed border-indigo-300 pointer-events-none"
+          style={{
+            width: paperSize.width,
+            height: paperSize.height,
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-indigo-100 px-2 py-1 rounded text-sm text-indigo-600">
+            {paperSize.name}
+          </div>
+        </div>
+
+        {/* Bloques */}
         <AnimatePresence>
           {blocks.map((block) => (
             <Draggable
               key={block.id}
               defaultPosition={block.position}
-              position={null}
               onStop={(e, data) => handleDragStop(block.id, data)}
               bounds="parent"
               handle=".handle"
@@ -199,7 +234,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
         </AnimatePresence>
 
         {blocks.length === 0 && (
-          <div className="h-full flex items-center justify-center text-gray-400">
+          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
             Arrastra elementos aquí para construir tu plantilla
           </div>
         )}
