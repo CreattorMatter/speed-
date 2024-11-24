@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
 import Draggable from 'react-draggable';
+import { ResizableBox } from 'react-resizable';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Move, Edit2, Upload } from 'lucide-react';
+import { X, Move } from 'lucide-react';
 import { Block, BlockType } from '../../types/builder';
 import { renderBlockContent } from '../../utils/blockRenderer';
+import 'react-resizable/css/styles.css';
 
 interface CanvasProps {
   blocks: Block[];
@@ -40,12 +42,19 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   };
 
   const handleDragStop = (blockId: string, data: { x: number; y: number }) => {
-    const updatedBlocks = blocks.map(block =>
+    setBlocks(blocks.map(block =>
       block.id === blockId
         ? { ...block, position: { x: data.x, y: data.y } }
         : block
-    );
-    setBlocks(updatedBlocks);
+    ));
+  };
+
+  const handleResize = (blockId: string, size: { width: number; height: number }) => {
+    setBlocks(blocks.map(block =>
+      block.id === blockId
+        ? { ...block, size }
+        : block
+    ));
   };
 
   const handleDeleteBlock = (id: string) => {
@@ -89,52 +98,51 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
           <Draggable
             key={block.id}
             defaultPosition={block.position}
+            position={null}
             onStop={(e, data) => handleDragStop(block.id, data)}
             bounds="parent"
             handle=".handle"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className={`absolute ${selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''}`}
-              onClick={() => setSelectedBlock(block.id)}
-              style={{ 
-                position: 'absolute',
-                zIndex: selectedBlock === block.id ? 10 : 1,
-                width: block.size?.width,
-                height: block.size?.height,
-              }}
-            >
-              <div className="relative bg-white rounded-lg shadow-lg border border-gray-200 w-full h-full">
-                <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move 
-                              flex items-center justify-between px-2">
-                  <Move className="w-4 h-4 text-gray-400" />
-                  <span className="text-xs font-medium text-gray-600">{block.type}</span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteBlock(block.id);
-                    }}
-                    className="p-1 hover:bg-red-50 rounded-full group"
-                  >
-                    <X className="w-4 h-4 text-gray-400 group-hover:text-red-500" />
-                  </button>
+            <div className="absolute">
+              <ResizableBox
+                width={block.size?.width || 200}
+                height={block.size?.height || 100}
+                onResize={(e, { size }) => handleResize(block.id, size)}
+                minConstraints={[100, 50]}
+                maxConstraints={[800, 600]}
+                resizeHandles={['se', 'sw', 'ne', 'nw', 'n', 's', 'e', 'w']}
+                className={`${selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''}`}
+                onClick={() => setSelectedBlock(block.id)}
+              >
+                <div className="relative bg-white rounded-lg shadow-lg border border-gray-200 w-full h-full">
+                  <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move 
+                                flex items-center justify-between px-2">
+                    <Move className="w-4 h-4 text-gray-400" />
+                    <span className="text-xs font-medium text-gray-600">{block.type}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteBlock(block.id);
+                      }}
+                      className="p-1 hover:bg-red-50 rounded-full group"
+                    >
+                      <X className="w-4 h-4 text-gray-400 group-hover:text-red-500" />
+                    </button>
+                  </div>
+                  <div className="mt-6 p-4 overflow-auto">
+                    {renderBlockContent({
+                      block,
+                      isEditing: editingText === block.id,
+                      onEdit: handleTextEdit,
+                      onStartEdit: (id) => setEditingText(id),
+                      onStopEdit: () => setEditingText(null),
+                      onImageUpload: handleImageUpload,
+                      fileInputRef: fileInputRefs.current.get(block.id)
+                    })}
+                  </div>
                 </div>
-                <div className="mt-6 p-4 overflow-auto">
-                  {renderBlockContent({
-                    block,
-                    isEditing: editingText === block.id,
-                    onEdit: handleTextEdit,
-                    onStartEdit: (id) => setEditingText(id),
-                    onStopEdit: () => setEditingText(null),
-                    onImageUpload: handleImageUpload,
-                    fileInputRef: fileInputRefs.current.get(block.id)
-                  })}
-                </div>
-              </div>
-            </motion.div>
+              </ResizableBox>
+            </div>
           </Draggable>
         ))}
       </AnimatePresence>
