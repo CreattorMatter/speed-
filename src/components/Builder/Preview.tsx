@@ -2,7 +2,8 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ZoomIn, ZoomOut, Download, Move } from 'lucide-react';
 import { Block } from '../../types/builder';
-import html2canvas from 'html2canvas';
+// Importación dinámica de html2canvas
+const html2canvas = import('html2canvas').then(module => module.default);
 
 interface PreviewProps {
   blocks: Block[];
@@ -22,11 +23,16 @@ export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
   const handleExport = async () => {
     if (!previewRef.current) return;
     
-    const canvas = await html2canvas(previewRef.current);
-    const link = document.createElement('a');
-    link.download = 'template.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    try {
+      const h2c = await html2canvas;
+      const canvas = await h2c(previewRef.current);
+      const link = document.createElement('a');
+      link.download = 'template.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (error) {
+      console.error('Error al exportar la plantilla:', error);
+    }
   };
 
   if (!isOpen) return null;

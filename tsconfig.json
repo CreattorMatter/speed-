@@ -16,7 +16,8 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "allowJs": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "types": ["react", "react-dom", "html2canvas"]
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
