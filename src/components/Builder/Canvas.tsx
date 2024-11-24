@@ -3,6 +3,7 @@ import Draggable from 'react-draggable';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Move, Edit2, Upload } from 'lucide-react';
 import { Block, BlockType } from '../../types/builder';
+import { renderBlockContent } from '../../utils/blockRenderer';
 
 interface CanvasProps {
   blocks: Block[];
@@ -122,7 +123,15 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                   </button>
                 </div>
                 <div className="mt-6 p-4 overflow-auto">
-                  {renderBlockContent(block)}
+                  {renderBlockContent({
+                    block,
+                    isEditing: editingText === block.id,
+                    onEdit: handleTextEdit,
+                    onStartEdit: (id) => setEditingText(id),
+                    onStopEdit: () => setEditingText(null),
+                    onImageUpload: handleImageUpload,
+                    fileInputRef: fileInputRefs.current.get(block.id)
+                  })}
                 </div>
               </div>
             </motion.div>

@@ -4,21 +4,21 @@ import { Edit2, Upload } from 'lucide-react';
 
 interface RenderBlockContentProps {
   block: Block;
-  isEditing: boolean;
-  onEdit: (blockId: string, text: string) => void;
-  onStartEdit: (blockId: string) => void;
-  onStopEdit: () => void;
-  onImageUpload: (blockId: string, file: File) => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  isEditing?: boolean;
+  onEdit?: (blockId: string, text: string) => void;
+  onStartEdit?: (blockId: string) => void;
+  onStopEdit?: () => void;
+  onImageUpload?: (blockId: string, file: File) => void;
+  fileInputRef?: React.RefObject<HTMLInputElement>;
 }
 
 export const renderBlockContent = ({
   block,
-  isEditing,
-  onEdit,
-  onStartEdit,
-  onStopEdit,
-  onImageUpload,
+  isEditing = false,
+  onEdit = () => {},
+  onStartEdit = () => {},
+  onStopEdit = () => {},
+  onImageUpload = () => {},
   fileInputRef
 }: RenderBlockContentProps) => {
   switch (block.type) {

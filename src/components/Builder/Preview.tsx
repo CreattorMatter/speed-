@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ZoomIn, ZoomOut, Download, Move } from 'lucide-react';
 import { Block } from '../../types/builder';
-import { renderBlockContent } from '../utils/blockRenderer';
+import { renderBlockContent } from '../../utils/blockRenderer';
 
 interface PreviewProps {
   blocks: Block[];
