@@ -22,34 +22,40 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   }>({ vertical: [], horizontal: [] });
   const collisionState = useCollisionDetection(blocks, selectedBlock);
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const blockType = e.dataTransfer.getData('blockType') as BlockType;
-    const canvasRect = e.currentTarget.getBoundingClientRect();
     
-    let x = e.clientX - canvasRect.left;
-    let y = e.clientY - canvasRect.top;
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      const blockType = data.type as BlockType;
+      
+      const canvasRect = e.currentTarget.getBoundingClientRect();
+      let x = e.clientX - canvasRect.left;
+      let y = e.clientY - canvasRect.top;
 
-    // Ajustar a la cuadrícula
-    x = Math.round(x / 20) * 20;
-    y = Math.round(y / 20) * 20;
+      // Ajustar a la cuadrícula
+      x = Math.round(x / 20) * 20;
+      y = Math.round(y / 20) * 20;
 
-    const newBlock: Block = {
-      id: `${blockType}-${Date.now()}`,
-      type: blockType,
-      content: {},
-      position: { x, y },
-      size: { width: 200, height: 100 }
-    };
+      const newBlock: Block = {
+        id: `${blockType}-${Date.now()}`,
+        type: blockType,
+        content: {},
+        position: { x, y },
+        size: { width: 200, height: 100 }
+      };
 
-    // Verificar colisión antes de agregar
-    if (!checkCollision(newBlock, x, y)) {
-      setBlocks([...blocks, newBlock]);
+      // Verificar colisión antes de agregar
+      if (!checkCollision(newBlock, blocks)) {
+        setBlocks([...blocks, newBlock]);
+      }
+    } catch (error) {
+      console.error('Error al procesar el bloque:', error);
     }
   };
 
@@ -309,10 +315,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   return (
     <div
       className="flex-1 bg-white m-4 rounded-lg shadow-xl p-4 relative"
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-      }}
+      onDragOver={handleDragOver}
       onDrop={handleDrop}
       style={{ 
         minHeight: '600px', 
