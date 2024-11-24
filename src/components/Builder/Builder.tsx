@@ -5,7 +5,7 @@ import Toolbar from './Toolbar';
 import Canvas from './Canvas';
 import ToolPanel from './ToolPanel';
 import Preview from './Preview';
-import { Block } from '../../types/builder';
+import { Block, BlockType } from '../../types/builder';
 
 type Tab = 'elements' | 'product' | 'history';
 
@@ -18,6 +18,17 @@ export default function Builder({ onBack }: BuilderProps) {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [templateId] = useState(() => generateTemplateId());
+
+  const handleAddBlock = (type: BlockType) => {
+    const newBlock: Block = {
+      id: `${type}-${Date.now()}`,
+      type,
+      content: {},
+      position: { x: 100, y: 100 },
+      size: { width: 200, height: 100 }
+    };
+    setBlocks([...blocks, newBlock]);
+  };
 
   const handleSave = () => {
     console.log('Guardando plantilla:', { id: templateId, blocks });
@@ -54,7 +65,11 @@ export default function Builder({ onBack }: BuilderProps) {
       
       <div className="flex flex-1 overflow-hidden">
         <Canvas blocks={blocks} setBlocks={setBlocks} />
-        <ToolPanel activeTab={activeTab} setActiveTab={setActiveTab} />
+        <ToolPanel 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab}
+          onAddBlock={handleAddBlock}
+        />
       </div>
 
       <Preview 

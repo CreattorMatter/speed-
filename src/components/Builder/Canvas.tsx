@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import Draggable from 'react-draggable';
 import { X, Move } from 'lucide-react';
-import { Block, BlockType } from '../../types/builder';
+import { Block } from '../../types/builder';
 import { renderBlockContent } from '../../utils/blockRenderer';
 
 interface CanvasProps {
@@ -13,33 +13,6 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [editingText, setEditingText] = useState<string | null>(null);
   const fileInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
-  const canvasRef = useRef<HTMLDivElement>(null);
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const blockType = e.dataTransfer.getData('blockType') as BlockType;
-    if (!blockType) return;
-
-    const canvasRect = canvasRef.current?.getBoundingClientRect();
-    if (!canvasRect) return;
-
-    const x = e.clientX - canvasRect.left;
-    const y = e.clientY - canvasRect.top;
-
-    const newBlock: Block = {
-      id: `${blockType}-${Date.now()}`,
-      type: blockType,
-      content: {},
-      position: { x, y },
-      size: { width: 200, height: 100 }
-    };
-
-    setBlocks(prevBlocks => [...prevBlocks, newBlock]);
-  };
 
   const handleDeleteBlock = (id: string) => {
     setBlocks(blocks.filter(block => block.id !== id));
@@ -67,23 +40,15 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   };
 
   const handleDragStop = (blockId: string, data: { x: number; y: number }) => {
-    setBlocks(prevBlocks => 
-      prevBlocks.map(block => 
-        block.id === blockId 
-          ? { ...block, position: { x: data.x, y: data.y } }
-          : block
-      )
-    );
+    setBlocks(blocks.map(block => 
+      block.id === blockId 
+        ? { ...block, position: { x: data.x, y: data.y } }
+        : block
+    ));
   };
 
   return (
-    <div
-      ref={canvasRef}
-      className="flex-1 bg-white m-4 rounded-lg shadow-xl p-4 relative"
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      style={{ minHeight: '600px' }}
-    >
+    <div className="flex-1 bg-white m-4 rounded-lg shadow-xl p-4 relative min-h-[600px]">
       {blocks.map((block) => (
         <Draggable
           key={block.id}
@@ -129,7 +94,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
 
       {blocks.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-          Arrastra elementos aquí para construir tu plantilla
+          Haz clic en los elementos para agregarlos a la plantilla
         </div>
       )}
     </div>
