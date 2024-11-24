@@ -18,61 +18,92 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   const gridSize = 20;
 
   const handleDragStop = (blockId: string, data: { x: number; y: number }) => {
-    const snapToGrid = (value: number) => Math.round(value / gridSize) * gridSize;
-    
-    setBlocks((prevBlocks: Block[]) => prevBlocks.map((block: Block) =>
-      block.id === blockId
-        ? {
-            ...block,
-            position: {
-              x: snapToGrid(data.x),
-              y: snapToGrid(data.y)
+    try {
+      const snapToGrid = (value: number) => Math.round(value / gridSize) * gridSize;
+      
+      setBlocks(prevBlocks => prevBlocks.map(block =>
+        block.id === blockId
+          ? {
+              ...block,
+              position: {
+                x: snapToGrid(data.x),
+                y: snapToGrid(data.y)
+              }
             }
-          }
-        : block
-    ));
+          : block
+      ));
+    } catch (error) {
+      console.error('Error en handleDragStop:', error);
+    }
   };
 
   const handleResize = (blockId: string, size: { width: number; height: number }) => {
-    const snapToGrid = (value: number) => Math.round(value / gridSize) * gridSize;
-    
-    setBlocks((prevBlocks: Block[]) => prevBlocks.map((block: Block) =>
-      block.id === blockId
-        ? {
-            ...block,
-            size: {
-              width: snapToGrid(size.width),
-              height: snapToGrid(size.height)
+    try {
+      const snapToGrid = (value: number) => Math.round(value / gridSize) * gridSize;
+      
+      setBlocks(prevBlocks => prevBlocks.map(block =>
+        block.id === blockId
+          ? {
+              ...block,
+              size: {
+                width: snapToGrid(size.width),
+                height: snapToGrid(size.height)
+              }
             }
-          }
-        : block
-    ));
+          : block
+      ));
+    } catch (error) {
+      console.error('Error en handleResize:', error);
+    }
   };
 
-  const handleDeleteBlock = (blockId: string) => {
-    setBlocks((prevBlocks: Block[]) => prevBlocks.filter((b: Block) => b.id !== blockId));
+  const handleDeleteBlock = (blockId: string, e: React.MouseEvent) => {
+    try {
+      e.stopPropagation(); // Prevenir la propagación del evento
+      setBlocks(prevBlocks => prevBlocks.filter(block => block.id !== blockId));
+      setSelectedBlock(null);
+    } catch (error) {
+      console.error('Error en handleDeleteBlock:', error);
+    }
   };
 
   const handleTextEdit = (blockId: string, text: string) => {
-    setBlocks((prevBlocks: Block[]) => prevBlocks.map((b: Block) =>
-      b.id === blockId
-        ? { ...b, content: { ...b.content, text } }
-        : b
-    ));
+    try {
+      setBlocks(prevBlocks => prevBlocks.map(block =>
+        block.id === blockId
+          ? { ...block, content: { ...block.content, text } }
+          : block
+      ));
+    } catch (error) {
+      console.error('Error en handleTextEdit:', error);
+    }
   };
 
   const handleImageUpload = (blockId: string, file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e: ProgressEvent<FileReader>) => {
-      if (e.target?.result) {
-        setBlocks((prevBlocks: Block[]) => prevBlocks.map((b: Block) =>
-          b.id === blockId
-            ? { ...b, content: { ...b.content, imageUrl: e.target?.result as string } }
-            : b
-        ));
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setBlocks(prevBlocks => prevBlocks.map(block =>
+            block.id === blockId
+              ? { ...block, content: { ...block.content, imageUrl: e.target?.result as string } }
+              : block
+          ));
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error en handleImageUpload:', error);
+    }
+  };
+
+  const handleBlockClick = (blockId: string, e: React.MouseEvent) => {
+    try {
+      e.stopPropagation();
+      setSelectedBlock(blockId);
+    } catch (error) {
+      console.error('Error en handleBlockClick:', error);
+    }
   };
 
   return (
@@ -102,7 +133,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                   ? 'ring-2 ring-indigo-500 shadow-lg' 
                   : 'hover:ring-2 hover:ring-indigo-300'
               }`}
-              onClick={() => setSelectedBlock(block.id)}
+              onClick={(e) => handleBlockClick(block.id, e)}
             >
               <ResizableBox
                 width={block.size.width}
@@ -119,11 +150,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                     <Move className="w-4 h-4 text-gray-400" />
                     <span className="text-xs font-medium text-gray-600">{block.type}</span>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteBlock(block.id);
-                        setSelectedBlock(null);
-                      }}
+                      onClick={(e) => handleDeleteBlock(block.id, e)}
                       className="p-1 hover:bg-red-50 rounded-full"
                     >
                       <X className="w-4 h-4 text-gray-400" />

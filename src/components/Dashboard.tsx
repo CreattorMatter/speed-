@@ -56,7 +56,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[radial-gradient(at_right_top,_var(--tw-gradient-stops))] from-indigo-900 via-slate-900 to-stone-900">
       <style>
         {`
           @keyframes hologram {
@@ -121,7 +121,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
         `}
       </style>
 
-      <div className="bg-white shadow-sm border-b border-gray-200">
+      <div className="bg-white/10 backdrop-blur-md border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -129,7 +129,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onBack}
-                className="text-gray-600 hover:text-gray-900 flex items-center gap-2"
+                className="text-white/80 hover:text-white flex items-center gap-2"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="font-medium">Volver</span>
@@ -139,7 +139,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10"
             >
               <LogOut className="w-5 h-5" />
               <span>Cerrar Sesión</span>
@@ -154,7 +154,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-3xl font-bold text-gray-900"
+              className="text-3xl font-bold text-white"
             >
               ¡Bienvenido de nuevo, {userName}! 👋
             </motion.h1>
@@ -162,7 +162,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-gray-600"
+              className="text-white/60"
             >
               Gestiona tus plantillas y crea nuevos diseños
             </motion.p>
@@ -171,7 +171,9 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onNewTemplate}
-            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 
+                     text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 shadow-lg 
+                     hover:shadow-indigo-500/25 transition-all duration-200"
           >
             <Plus className="w-5 h-5" />
             <span>Nueva Plantilla</span>
@@ -183,7 +185,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="hologram-card bg-gradient-to-br from-indigo-500/90 to-purple-600/90 p-6 rounded-xl text-white shadow-lg"
+            className="hologram-card bg-gradient-to-br from-indigo-500/20 to-purple-600/20 p-6 rounded-xl text-white shadow-lg border border-white/10"
           >
             <div className="hologram-content">
               <Sparkles className="w-8 h-8 mb-4" />
@@ -197,7 +199,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="hologram-card bg-gradient-to-br from-pink-500/90 to-rose-600/90 p-6 rounded-xl text-white shadow-lg"
+            className="hologram-card bg-gradient-to-br from-pink-500/20 to-rose-600/20 p-6 rounded-xl text-white shadow-lg border border-white/10"
           >
             <div className="hologram-content">
               <Clock className="w-8 h-8 mb-4" />
@@ -211,7 +213,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="hologram-card bg-gradient-to-br from-amber-500/90 to-orange-600/90 p-6 rounded-xl text-white shadow-lg"
+            className="hologram-card bg-gradient-to-br from-amber-500/20 to-orange-600/20 p-6 rounded-xl text-white shadow-lg border border-white/10"
           >
             <div className="hologram-content">
               <Star className="w-8 h-8 mb-4" />
@@ -222,8 +224,15 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
           </motion.div>
         </div>
 
-        <DashboardStats />
-        <RecentTemplates />
+        <div className="space-y-6">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            <DashboardStats />
+          </div>
+          
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            <RecentTemplates />
+          </div>
+        </div>
       </main>
     </div>
   );
