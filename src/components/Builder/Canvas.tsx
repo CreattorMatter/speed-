@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Move, Edit2, Upload } from 'lucide-react';
 import { Block, BlockType } from '../../types/builder';
 import 'react-resizable/css/styles.css';
+import { useCollisionDetection } from '../hooks/useCollisionDetection';
 
 interface CanvasProps {
   blocks: Block[];
@@ -19,6 +20,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     vertical: number[];
     horizontal: number[];
   }>({ vertical: [], horizontal: [] });
+  const collisionState = useCollisionDetection(blocks, selectedBlock);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -30,9 +32,12 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     const blockType = e.dataTransfer.getData('blockType') as BlockType;
     const canvasRect = e.currentTarget.getBoundingClientRect();
     
-    // Calcular la posición exacta donde se suelta el bloque
-    const x = e.clientX - canvasRect.left;
-    const y = e.clientY - canvasRect.top;
+    let x = e.clientX - canvasRect.left;
+    let y = e.clientY - canvasRect.top;
+
+    // Ajustar a la cuadrícula
+    x = Math.round(x / 20) * 20;
+    y = Math.round(y / 20) * 20;
 
     const newBlock: Block = {
       id: `${blockType}-${Date.now()}`,
@@ -42,19 +47,32 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
       size: { width: 200, height: 100 }
     };
 
-    setBlocks([...blocks, newBlock]);
+    // Verificar colisión antes de agregar
+    if (!checkCollision(newBlock, x, y)) {
+      setBlocks([...blocks, newBlock]);
+    }
   };
 
   const handleBlockDrag = (blockId: string, data: { x: number; y: number }) => {
-    // Actualizar la posición del bloque cuando se arrastra
+    const activeBlock = blocks.find(b => b.id === blockId);
+    if (!activeBlock) return;
+
+    // Ajustar posición con la fuerza de repulsión
+    let newX = Math.round(data.x / 20) * 20 + collisionState.repulsionForce.x;
+    let newY = Math.round(data.y / 20) * 20 + collisionState.repulsionForce.y;
+
+    // Verificar límites del canvas
+    const maxX = window.innerWidth - (activeBlock.size?.width || 200) - 100;
+    const maxY = window.innerHeight - (activeBlock.size?.height || 100) - 100;
+    
+    newX = Math.max(0, Math.min(newX, maxX));
+    newY = Math.max(0, Math.min(newY, maxY));
+
     const updatedBlocks = blocks.map(block => 
       block.id === blockId 
         ? { 
             ...block, 
-            position: { 
-              x: Math.max(0, data.x), // Evitar posiciones negativas
-              y: Math.max(0, data.y)
-            } 
+            position: { x: newX, y: newY }
           }
         : block
     );
@@ -299,31 +317,52 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
       style={{ 
         minHeight: '600px', 
         position: 'relative',
-        overflow: 'hidden' // Evitar que los bloques se salgan del canvas
+        overflow: 'hidden',
+        backgroundImage: 'radial-gradient(circle at 1px 1px, #f0f0f0 1px, transparent 0)',
+        backgroundSize: '20px 20px'
       }}
     >
       <AnimatePresence>
         {blocks.map((block) => (
           <Draggable
             key={block.id}
-            position={{ x: block.position.x, y: block.position.y }} // Usar posición controlada
+            position={{ x: block.position.x, y: block.position.y }}
+            grid={[20, 20]}
             bounds="parent"
             handle=".handle"
             onDrag={(e, data) => {
-              // Actualizar la posición mientras se arrastra
-              handleBlockDrag(block.id, data);
-            }}
-            onStop={(e, data) => {
-              // Asegurar que la posición final sea exacta
+              e.preventDefault();
               handleBlockDrag(block.id, data);
             }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className={`absolute ${selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''}`}
+              animate={{ 
+                opacity: 1, 
+                scale: 1,
+                x: collisionState.isColliding && selectedBlock === block.id ? [-5, 5, 0] : 0
+              }}
+              transition={{ 
+                duration: 0.3, 
+                ease: "easeInOut",
+                x: { type: "spring", stiffness: 300, damping: 10 }
+              }}
+              className={`absolute ${
+                selectedBlock === block.id 
+                  ? 'ring-2 ring-indigo-500' 
+                  : ''
+              } ${
+                collisionState.collidingWith.includes(block.id)
+                  ? 'ring-2 ring-red-500'
+                  : ''
+              }`}
+              style={{ 
+                position: 'absolute',
+                zIndex: selectedBlock === block.id ? 10 : 1,
+                boxShadow: collisionState.isColliding && selectedBlock === block.id 
+                  ? '0 0 15px rgba(239, 68, 68, 0.5)'
+                  : 'none'
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedBlock(block.id);
@@ -371,6 +410,25 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                   </div>
                 </motion.div>
               </ResizableBox>
+              
+              {/* Indicador de zona de repulsión */}
+              {selectedBlock === block.id && (
+                <motion.div
+                  className="absolute inset-0 -m-4 rounded-lg pointer-events-none"
+                  initial={{ opacity: 0 }}
+                  animate={{ 
+                    opacity: [0.2, 0.1, 0.2],
+                    scale: [1, 1.05, 1]
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity
+                  }}
+                  style={{
+                    background: 'radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%)'
+                  }}
+                />
+              )}
             </motion.div>
           </Draggable>
         ))}
