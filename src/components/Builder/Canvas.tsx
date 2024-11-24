@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Draggable from 'react-draggable';
+import { ResizableBox } from 'react-resizable';
 import { X, Move } from 'lucide-react';
 import { Block, BlockType } from '../../types/builder';
 import { renderBlockContent } from '../../utils/blockRenderer';
 import Rulers from './Rulers';
+import 'react-resizable/css/styles.css';
 
 interface CanvasProps {
   blocks: Block[];
@@ -35,6 +37,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -45,7 +48,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     const canvasRect = canvasRef.current?.getBoundingClientRect();
     if (!canvasRect) return;
 
-    const x = e.clientX - canvasRect.left - 20; // Ajuste por el padding y la regla
+    const x = e.clientX - canvasRect.left - 20;
     const y = e.clientY - canvasRect.top - 20;
 
     const newBlock: Block = {
@@ -59,45 +62,20 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     setBlocks(prevBlocks => [...prevBlocks, newBlock]);
   };
 
-  const handleDeleteBlock = (id: string) => {
-    setBlocks(blocks.filter(block => block.id !== id));
-    setSelectedBlock(null);
-  };
-
-  const handleTextEdit = (blockId: string, newText: string) => {
-    setBlocks(blocks.map(block => 
-      block.id === blockId 
-        ? { ...block, content: { ...block.content, text: newText } }
+  const handleResize = (blockId: string, size: { width: number; height: number }) => {
+    setBlocks(blocks.map(block =>
+      block.id === blockId
+        ? { ...block, size }
         : block
     ));
   };
 
-  const handleImageUpload = (blockId: string, file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        const imageUrl = typeof e.target.result === 'string' 
-          ? e.target.result 
-          : URL.createObjectURL(file);
-
-        setBlocks(blocks.map(block => 
-          block.id === blockId 
-            ? { ...block, content: { ...block.content, imageUrl } }
-            : block
-        ));
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleDragStop = (blockId: string, e: any, data: { x: number; y: number }) => {
-    setBlocks(prevBlocks => 
-      prevBlocks.map(block => 
-        block.id === blockId 
-          ? { ...block, position: { x: data.x, y: data.y } }
-          : block
-      )
-    );
+  const handleDragStop = (blockId: string, data: { x: number; y: number }) => {
+    setBlocks(blocks.map(block =>
+      block.id === blockId
+        ? { ...block, position: { x: data.x, y: data.y } }
+        : block
+    ));
   };
 
   return (
@@ -109,19 +87,17 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
         paddingTop: '20px',
         paddingLeft: '20px',
       }}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
-      {/* Reglas */}
       <Rulers 
         width={canvasSize.width} 
         height={canvasSize.height}
         gridSize={gridSize}
       />
 
-      {/* Área de trabajo */}
       <div
         className="relative w-full h-full"
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
         style={{
           backgroundImage: `
             linear-gradient(to right, rgba(99, 102, 241, 0.1) 1px, transparent 1px),
@@ -134,52 +110,75 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
           <Draggable
             key={block.id}
             defaultPosition={block.position}
-            onStop={(e, data) => handleDragStop(block.id, e, data)}
+            onStop={(e, data) => handleDragStop(block.id, data)}
             grid={[gridSize, gridSize]}
             bounds="parent"
             handle=".handle"
-            position={undefined}
           >
             <div 
               className={`absolute ${selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''}`}
               onClick={() => setSelectedBlock(block.id)}
             >
-              <div className="bg-white rounded-lg shadow-lg border border-gray-200">
-                <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move 
-                              flex items-center justify-between px-2">
-                  <Move className="w-4 h-4 text-gray-400" />
-                  <span className="text-xs font-medium text-gray-600">{block.type}</span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteBlock(block.id);
-                    }}
-                    className="p-1 hover:bg-red-50 rounded-full"
-                  >
-                    <X className="w-4 h-4 text-gray-400" />
-                  </button>
+              <ResizableBox
+                width={block.size.width}
+                height={block.size.height}
+                onResize={(e, { size }) => handleResize(block.id, size)}
+                minConstraints={[100, 50]}
+                maxConstraints={[canvasSize.width, canvasSize.height]}
+                resizeHandles={['se', 'sw', 'ne', 'nw', 'n', 's', 'e', 'w']}
+                grid={[gridSize, gridSize]}
+              >
+                <div className="bg-white rounded-lg shadow-lg border border-gray-200 w-full h-full">
+                  <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move 
+                                flex items-center justify-between px-2">
+                    <Move className="w-4 h-4 text-gray-400" />
+                    <span className="text-xs font-medium text-gray-600">{block.type}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const updatedBlocks = blocks.filter(b => b.id !== block.id);
+                        setBlocks(updatedBlocks);
+                        setSelectedBlock(null);
+                      }}
+                      className="p-1 hover:bg-red-50 rounded-full"
+                    >
+                      <X className="w-4 h-4 text-gray-400" />
+                    </button>
+                  </div>
+                  <div className="mt-6 p-4">
+                    {renderBlockContent({
+                      block,
+                      isEditing: editingText === block.id,
+                      onEdit: (id, text) => {
+                        setBlocks(blocks.map(b =>
+                          b.id === id
+                            ? { ...b, content: { ...b.content, text } }
+                            : b
+                        ));
+                      },
+                      onStartEdit: (id) => setEditingText(id),
+                      onStopEdit: () => setEditingText(null),
+                      onImageUpload: (id, file) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          if (e.target?.result) {
+                            setBlocks(blocks.map(b =>
+                              b.id === id
+                                ? { ...b, content: { ...b.content, imageUrl: e.target.result as string } }
+                                : b
+                            ));
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      },
+                      fileInputRef: { current: fileInputRefs.current.get(block.id) || null }
+                    })}
+                  </div>
                 </div>
-                <div className="mt-6 p-4" style={{ width: block.size?.width, height: block.size?.height }}>
-                  {renderBlockContent({
-                    block,
-                    isEditing: editingText === block.id,
-                    onEdit: handleTextEdit,
-                    onStartEdit: (id) => setEditingText(id),
-                    onStopEdit: () => setEditingText(null),
-                    onImageUpload: handleImageUpload,
-                    fileInputRef: { current: fileInputRefs.current.get(block.id) || null }
-                  })}
-                </div>
-              </div>
+              </ResizableBox>
             </div>
           </Draggable>
         ))}
-
-        {blocks.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-            Arrastra elementos aquí para construir tu plantilla
-          </div>
-        )}
       </div>
     </div>
   );
