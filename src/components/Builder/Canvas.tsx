@@ -6,11 +6,19 @@ import { X, Move, Edit2, Upload } from 'lucide-react';
 import { Block, BlockType } from '../../types/builder';
 import 'react-resizable/css/styles.css';
 
-export default function Canvas() {
-  const [blocks, setBlocks] = useState<Block[]>([]);
+interface CanvasProps {
+  blocks: Block[];
+  setBlocks: (blocks: Block[]) => void;
+}
+
+export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [editingText, setEditingText] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [guides, setGuides] = useState<{
+    vertical: number[];
+    horizontal: number[];
+  }>({ vertical: [], horizontal: [] });
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -68,6 +76,33 @@ export default function Canvas() {
       ));
     };
     reader.readAsDataURL(file);
+  };
+
+  const updateGuides = (activeBlock: Block) => {
+    const verticalGuides: number[] = [];
+    const horizontalGuides: number[] = [];
+
+    blocks.forEach(block => {
+      if (block.id === activeBlock.id) return;
+
+      // Guías verticales
+      const blockCenterX = block.position.x + (block.size?.width || 0) / 2;
+      const activeCenterX = activeBlock.position.x + (activeBlock.size?.width || 0) / 2;
+      
+      if (Math.abs(blockCenterX - activeCenterX) < 10) {
+        verticalGuides.push(blockCenterX);
+      }
+
+      // Guías horizontales
+      const blockCenterY = block.position.y + (block.size?.height || 0) / 2;
+      const activeCenterY = activeBlock.position.y + (activeBlock.size?.height || 0) / 2;
+      
+      if (Math.abs(blockCenterY - activeCenterY) < 10) {
+        horizontalGuides.push(blockCenterY);
+      }
+    });
+
+    setGuides({ vertical: verticalGuides, horizontal: horizontalGuides });
   };
 
   const renderBlockContent = (block: Block) => {
@@ -247,7 +282,7 @@ export default function Canvas() {
 
   return (
     <div
-      className="flex-1 bg-white m-4 rounded-lg shadow-sm p-4 relative"
+      className="flex-1 bg-white m-4 rounded-lg shadow-xl p-4 relative"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       style={{ minHeight: '600px', position: 'relative' }}
@@ -266,6 +301,7 @@ export default function Canvas() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
               className={`absolute ${selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''}`}
               onClick={(e) => {
                 e.stopPropagation();
@@ -274,30 +310,26 @@ export default function Canvas() {
               style={{ 
                 position: 'absolute',
                 zIndex: selectedBlock === block.id ? 10 : 1,
-                left: block.position.x,
-                top: block.position.y
               }}
             >
               <ResizableBox
                 width={block.size?.width || 200}
                 height={block.size?.height || 100}
                 minConstraints={[100, 50]}
-                maxConstraints={[500, 300]}
+                maxConstraints={[window.innerWidth - 100, window.innerHeight - 100]}
                 onResize={(e, { size }) => {
                   const updatedBlocks = blocks.map(b =>
                     b.id === block.id ? { ...b, size } : b
                   );
                   setBlocks(updatedBlocks);
                 }}
-                resizeHandles={['se']}
-                handle={
-                  <div 
-                    className="w-4 h-4 bg-indigo-500 absolute bottom-0 right-0 rounded-bl cursor-se-resize"
-                    style={{ zIndex: 2 }}
-                  />
-                }
+                resizeHandles={['se', 'sw', 'ne', 'nw', 'n', 's', 'e', 'w']}
+                handle={<ResizeHandle />}
               >
-                <div className="relative bg-white rounded-lg shadow-lg border border-gray-200 p-4 h-full">
+                <motion.div 
+                  className="relative bg-white rounded-lg shadow-lg border border-gray-200 p-4 h-full overflow-hidden"
+                  whileHover={{ boxShadow: "0 8px 30px rgba(0,0,0,0.12)" }}
+                >
                   <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move flex items-center justify-between px-2">
                     <Move className="w-4 h-4 text-gray-400" />
                     <span className="text-xs font-medium text-gray-600">{block.type}</span>
@@ -311,10 +343,10 @@ export default function Canvas() {
                       <X className="w-4 h-4 text-gray-400 group-hover:text-red-500" />
                     </button>
                   </div>
-                  <div className="mt-6">
+                  <div className="mt-6 overflow-auto">
                     {renderBlockContent(block)}
                   </div>
-                </div>
+                </motion.div>
               </ResizableBox>
             </motion.div>
           </Draggable>
@@ -337,6 +369,28 @@ export default function Canvas() {
           </div>
         </motion.div>
       )}
+
+      {/* Guías verticales */}
+      {guides.vertical.map((position, index) => (
+        <div
+          key={`v-${index}`}
+          className="absolute top-0 bottom-0 w-px bg-indigo-500/50"
+          style={{ left: position }}
+        />
+      ))}
+
+      {/* Guías horizontales */}
+      {guides.horizontal.map((position, index) => (
+        <div
+          key={`h-${index}`}
+          className="absolute left-0 right-0 h-px bg-indigo-500/50"
+          style={{ top: position }}
+        />
+      ))}
     </div>
   );
 }
+
+const ResizeHandle = () => (
+  <div className="absolute bottom-0 right-0 w-4 h-4 bg-indigo-500 rounded-bl cursor-se-resize" />
+);
