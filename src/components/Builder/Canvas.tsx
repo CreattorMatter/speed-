@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Move } from 'lucide-react';
 import { Block } from '../../types/builder';
 import { Resizable } from 'react-resizable';
+import { renderBlockContent } from '../../utils/blockRenderer';
 import 'react-resizable/css/styles.css';
 
 interface CanvasProps {
@@ -60,6 +61,27 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     }));
   };
 
+  const handleImageUpload = (blockId: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setBlocks(prevBlocks => prevBlocks.map(block => {
+          if (block.id === blockId) {
+            return {
+              ...block,
+              content: {
+                ...block.content,
+                imageUrl: e.target?.result as string
+              }
+            };
+          }
+          return block;
+        }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="flex-1 bg-white m-4 rounded-lg shadow-lg p-4 relative min-h-[600px]">
       <div className="relative w-full h-full">
@@ -97,7 +119,11 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                 </button>
               </div>
               <div className="p-4 overflow-hidden">
-                {block.content.text || `Bloque ${block.type}`}
+                {renderBlockContent({
+                  block,
+                  onImageUpload: handleImageUpload,
+                  fileInputRef: { current: null }
+                })}
               </div>
             </div>
           </Resizable>
