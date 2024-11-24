@@ -6,6 +6,7 @@ import Builder from './components/Builder/Builder';
 interface DashboardProps {
   onLogout: () => void;
   onNewTemplate: () => void;
+  onBack: () => void;
 }
 
 function App() {
@@ -41,12 +42,28 @@ function App() {
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value);
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value);
 
+  const handleBack = () => {
+    if (showBuilder) {
+      setShowBuilder(false);
+    } else if (isAuthenticated) {
+      if (window.confirm('¿Deseas cerrar sesión?')) {
+        handleLogout();
+      }
+    }
+  };
+
   if (isAuthenticated && showBuilder) {
-    return <Builder />;
+    return <Builder onBack={handleBack} />;
   }
 
   if (isAuthenticated) {
-    return <Dashboard onLogout={handleLogout} onNewTemplate={() => setShowBuilder(true)} />;
+    return (
+      <Dashboard 
+        onLogout={handleLogout} 
+        onNewTemplate={() => setShowBuilder(true)} 
+        onBack={handleBack}
+      />
+    );
   }
 
   return (

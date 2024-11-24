@@ -1,19 +1,35 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { ArrowLeft } from 'lucide-react';
 import Toolbar from './Toolbar';
 import Canvas from './Canvas';
 import ToolPanel from './ToolPanel';
 
 type Tab = 'elements' | 'product' | 'history';
 
-export default function Builder() {
+interface BuilderProps {
+  onBack: () => void;
+}
+
+export default function Builder({ onBack }: BuilderProps) {
   const [activeTab, setActiveTab] = useState<Tab>('elements');
 
   return (
-    <div className="h-screen flex flex-col">
-      <Toolbar />
-      <div className="flex-1 flex overflow-hidden">
-        <Canvas />
-        <ToolPanel activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="min-h-screen bg-gray-100">
+      <div className="p-4 bg-white shadow-sm">
+        <button
+          onClick={onBack}
+          className="flex items-center text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Volver al inicio
+        </button>
+      </div>
+      <div className="h-screen flex flex-col">
+        <Toolbar />
+        <div className="flex-1 flex overflow-hidden">
+          <Canvas />
+          <ToolPanel activeTab={activeTab} setActiveTab={setActiveTab} />
+        </div>
       </div>
     </div>
   );

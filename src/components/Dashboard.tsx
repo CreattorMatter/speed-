@@ -1,38 +1,40 @@
 import React from 'react';
-import { Layout, LogOut, Plus, Settings } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import DashboardStats from './DashboardStats';
 import RecentTemplates from './RecentTemplates';
 
 interface DashboardProps {
   onLogout: () => void;
   onNewTemplate: () => void;
+  onBack: () => void;
 }
 
-export default function Dashboard({ onLogout, onNewTemplate }: DashboardProps) {
+export default function Dashboard({ onLogout, onNewTemplate, onBack }: DashboardProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Layout className="h-8 w-8 text-indigo-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">Speed+</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button className="btn-primary" onClick={onNewTemplate}>
-                <Plus className="h-5 w-5 mr-2" />
-                New Template
-              </button>
-              <button className="btn-icon">
-                <Settings className="h-5 w-5 text-gray-500" />
-              </button>
-              <button onClick={onLogout} className="btn-icon">
-                <LogOut className="h-5 w-5 text-gray-500" />
-              </button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-100">
+      <div className="p-4 bg-white shadow-sm flex justify-between items-center">
+        <button
+          onClick={onBack}
+          className="flex items-center text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Volver al inicio
+        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={onNewTemplate}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+            Nueva Plantilla
+          </button>
+          <button
+            onClick={onLogout}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+          >
+            Cerrar Sesión
+          </button>
         </div>
-      </nav>
+      </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
