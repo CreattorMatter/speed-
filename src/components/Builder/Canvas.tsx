@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Draggable from 'react-draggable';
-import { ResizableBox } from 'react-resizable';
+import { ResizableBox, ResizeCallbackData } from 'react-resizable';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Move, Edit2, Upload } from 'lucide-react';
 import { Block, BlockType } from '../../types/builder';
@@ -11,6 +11,17 @@ interface CanvasProps {
   blocks: Block[];
   setBlocks: (blocks: Block[]) => void;
 }
+
+interface ResizeIndicatorProps {
+  width: number;
+  height: number;
+}
+
+const ResizeIndicator = ({ width, height }: ResizeIndicatorProps) => (
+  <div className="absolute -bottom-6 right-0 bg-indigo-600 text-white text-xs px-2 py-1 rounded-md opacity-80">
+    {Math.round(width)} x {Math.round(height)}
+  </div>
+);
 
 export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
@@ -23,6 +34,8 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     horizontal: number[];
   }>({ vertical: [], horizontal: [] });
   const collisionState = useCollisionDetection(blocks, selectedBlock);
+  const [isResizing, setIsResizing] = useState(false);
+  const gridSize = 20; // Tamaño de la cuadrícula para snap
 
   useEffect(() => {
     const updateCanvasSize = () => {
@@ -316,6 +329,51 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     }
   };
 
+  const getAspectRatio = (blockType: BlockType): number | null => {
+    switch (blockType) {
+      case 'image':
+      case 'logo':
+        return 16 / 9; // Aspecto 16:9 para imágenes
+      case 'header':
+        return 4 / 1; // Aspecto 4:1 para headers
+      case 'footer':
+        return 4 / 1; // Aspecto 4:1 para footers
+      default:
+        return null; // Sin restricción de aspecto
+    }
+  };
+
+  const snapToGrid = (value: number): number => {
+    return Math.round(value / gridSize) * gridSize;
+  };
+
+  const handleResize = (blockId: string, e: React.SyntheticEvent, data: ResizeCallbackData) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (!block) return;
+
+    const aspectRatio = getAspectRatio(block.type);
+    let newWidth = snapToGrid(data.size.width);
+    let newHeight = snapToGrid(data.size.height);
+
+    // Mantener ratio de aspecto si es necesario
+    if (aspectRatio) {
+      newHeight = newWidth / aspectRatio;
+    }
+
+    const updatedBlocks = blocks.map(b =>
+      b.id === blockId
+        ? {
+            ...b,
+            size: {
+              width: newWidth,
+              height: newHeight
+            }
+          }
+        : b
+    );
+    setBlocks(updatedBlocks);
+  };
+
   return (
     <div
       ref={canvasRef}
@@ -334,76 +392,54 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
         {blocks.map((block) => (
           <Draggable
             key={block.id}
-            position={{ x: block.position.x, y: block.position.y }}
-            grid={[20, 20]}
+            defaultPosition={block.position}
+            onStop={(e, data) => {
+              const updatedBlocks = blocks.map(b =>
+                b.id === block.id
+                  ? { ...b, position: { x: data.x, y: data.y } }
+                  : b
+              );
+              setBlocks(updatedBlocks);
+            }}
             bounds="parent"
             handle=".handle"
-            onDrag={(e, data) => {
-              e.preventDefault();
-              handleBlockDrag(block.id, data);
-            }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ 
                 opacity: 1, 
                 scale: 1,
-                x: collisionState.isColliding && selectedBlock === block.id ? [-5, 5, 0] : 0
-              }}
-              transition={{ 
-                duration: 0.3, 
-                ease: "easeInOut",
-                x: { type: "spring", stiffness: 300, damping: 10 }
+                transition: {
+                  type: "spring",
+                  stiffness: 200,
+                  damping: 20
+                }
               }}
               className={`absolute ${
                 selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''
               }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedBlock(block.id);
-              }}
-              style={{ 
-                position: 'absolute',
-                zIndex: selectedBlock === block.id ? 10 : 1,
-                width: block.size?.width,
-                height: block.size?.height,
-              }}
             >
               <ResizableBox
                 width={block.size?.width || 200}
                 height={block.size?.height || 100}
-                minConstraints={[50, 50]}
-                maxConstraints={[
-                  canvasSize.width - 40,
-                  canvasSize.height - 40
-                ]}
-                onResize={(e, { size }) => {
-                  const updatedBlocks = blocks.map(b =>
-                    b.id === block.id ? { ...b, size } : b
-                  );
-                  setBlocks(updatedBlocks);
-                }}
+                onResize={(e, data) => handleResize(block.id, e, data)}
+                onResizeStart={() => setIsResizing(true)}
+                onResizeStop={() => setIsResizing(false)}
+                minConstraints={[100, 50]}
+                maxConstraints={[800, 600]}
                 resizeHandles={['se', 'sw', 'ne', 'nw', 'n', 's', 'e', 'w']}
-                handle={(handleAxis: string) => (
-                  <div
-                    className={`absolute w-4 h-4 bg-indigo-500 rounded-full border-2 border-white 
-                      ${handleAxis === 'n' ? 'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-n-resize' : ''}
-                      ${handleAxis === 's' ? 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 cursor-s-resize' : ''}
-                      ${handleAxis === 'e' ? 'right-0 top-1/2 translate-x-1/2 -translate-y-1/2 cursor-e-resize' : ''}
-                      ${handleAxis === 'w' ? 'left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-w-resize' : ''}
-                      ${handleAxis === 'nw' ? 'top-0 left-0 -translate-x-1/2 -translate-y-1/2 cursor-nw-resize' : ''}
-                      ${handleAxis === 'ne' ? 'top-0 right-0 translate-x-1/2 -translate-y-1/2 cursor-ne-resize' : ''}
-                      ${handleAxis === 'sw' ? 'bottom-0 left-0 -translate-x-1/2 translate-y-1/2 cursor-sw-resize' : ''}
-                      ${handleAxis === 'se' ? 'bottom-0 right-0 translate-x-1/2 translate-y-1/2 cursor-se-resize' : ''}
-                    `}
-                  />
-                )}
+                draggableOpts={{ grid: [gridSize, gridSize] }}
+                className="group"
               >
-                <motion.div 
-                  className="relative bg-white rounded-lg shadow-lg border border-gray-200 p-4 h-full overflow-hidden"
-                  whileHover={{ boxShadow: "0 8px 30px rgba(0,0,0,0.12)" }}
+                <motion.div
+                  className="relative bg-white rounded-lg shadow-lg border border-gray-200 w-full h-full"
+                  layout
+                  transition={{
+                    layout: { duration: 0.2, ease: "easeInOut" }
+                  }}
                 >
-                  <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move flex items-center justify-between px-2">
+                  <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move 
+                                flex items-center justify-between px-2">
                     <Move className="w-4 h-4 text-gray-400" />
                     <span className="text-xs font-medium text-gray-600">{block.type}</span>
                     <button
@@ -416,7 +452,22 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                       <X className="w-4 h-4 text-gray-400 group-hover:text-red-500" />
                     </button>
                   </div>
-                  <div className="mt-6 overflow-auto">
+
+                  {(isResizing || selectedBlock === block.id) && (
+                    <ResizeIndicator
+                      width={block.size?.width || 200}
+                      height={block.size?.height || 100}
+                    />
+                  )}
+
+                  <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-full h-full" style={{
+                      backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.1) 1px, transparent 0)',
+                      backgroundSize: `${gridSize}px ${gridSize}px`
+                    }} />
+                  </div>
+
+                  <div className="mt-6 p-4 overflow-auto">
                     {renderBlockContent(block)}
                   </div>
                 </motion.div>
@@ -425,22 +476,11 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
           </Draggable>
         ))}
       </AnimatePresence>
-      
+
       {blocks.length === 0 && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="h-full flex items-center justify-center"
-        >
-          <div className="text-center space-y-4">
-            <div className="bg-indigo-50 rounded-full p-4 mx-auto w-fit">
-              <Move className="w-8 h-8 text-indigo-600" />
-            </div>
-            <p className="text-gray-500">
-              Arrastra elementos aquí para construir tu plantilla
-            </p>
-          </div>
-        </motion.div>
+        <div className="h-full flex items-center justify-center text-gray-400">
+          Arrastra elementos aquí para construir tu plantilla
+        </div>
       )}
 
       {/* Guías verticales */}
