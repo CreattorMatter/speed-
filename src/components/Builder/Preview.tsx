@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ZoomIn, ZoomOut, Download, Move } from 'lucide-react';
+import { X, ZoomIn, ZoomOut, Download } from 'lucide-react';
 import { Block } from '../../types/builder';
 import { renderBlockContent } from '../../utils/blockRenderer';
 
@@ -10,10 +10,14 @@ interface PreviewProps {
   onClose: () => void;
 }
 
+// Dimensiones de una página A4 en horizontal (en mm)
+const A4_WIDTH_MM = 297;
+const A4_HEIGHT_MM = 210;
+// Factor de conversión de mm a píxeles (96 DPI)
+const MM_TO_PX = 3.7795275591;
+
 export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
   const [scale, setScale] = useState(1);
-  const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const previewRef = useRef<HTMLDivElement>(null);
 
   const handleZoomIn = () => setScale(prev => Math.min(prev + 0.1, 2));
@@ -49,16 +53,16 @@ export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-lg shadow-2xl m-4 p-8 relative max-w-4xl w-full max-h-[90vh] overflow-hidden"
+          className="bg-gray-100 rounded-lg shadow-2xl p-8 relative max-h-[90vh] overflow-auto"
           onClick={e => e.stopPropagation()}
         >
           {/* Toolbar */}
-          <div className="absolute top-4 right-4 flex items-center space-x-2">
+          <div className="absolute top-4 right-4 flex items-center space-x-2 bg-white rounded-lg shadow-sm p-1">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={handleZoomIn}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <ZoomIn className="w-5 h-5" />
             </motion.button>
@@ -66,7 +70,7 @@ export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={handleZoomOut}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <ZoomOut className="w-5 h-5" />
             </motion.button>
@@ -74,7 +78,7 @@ export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={handleExport}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <Download className="w-5 h-5" />
             </motion.button>
@@ -82,46 +86,58 @@ export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <X className="w-5 h-5" />
             </motion.button>
           </div>
 
-          {/* Preview Area */}
-          <motion.div
-            ref={previewRef}
+          {/* A4 Page Preview */}
+          <div 
+            className="mt-16 bg-white shadow-xl mx-auto"
             style={{
-              scale,
-              x: position.x,
-              y: position.y,
+              width: `${A4_WIDTH_MM * MM_TO_PX * scale}px`,
+              height: `${A4_HEIGHT_MM * MM_TO_PX * scale}px`,
+              transform: `scale(${scale})`,
+              transformOrigin: 'top center',
+              position: 'relative'
             }}
-            drag
-            dragMomentum={false}
-            onDragStart={() => setIsDragging(true)}
-            onDragEnd={() => setIsDragging(false)}
-            className="relative bg-white shadow-lg rounded-lg mt-12 transform-gpu"
           >
-            {blocks.map((block) => (
-              <motion.div
-                key={block.id}
-                className="absolute transition-all duration-300 ease-in-out"
-                style={{
-                  left: block.position.x,
-                  top: block.position.y,
-                  width: block.size?.width,
-                  height: block.size?.height,
-                }}
-              >
-                <div className="w-full h-full overflow-hidden">
-                  {renderBlockContent(block)}
+            <div
+              ref={previewRef}
+              className="absolute inset-0"
+              style={{
+                width: `${A4_WIDTH_MM * MM_TO_PX}px`,
+                height: `${A4_HEIGHT_MM * MM_TO_PX}px`,
+              }}
+            >
+              {blocks.map((block) => (
+                <div
+                  key={block.id}
+                  className="absolute transition-all duration-300 ease-in-out"
+                  style={{
+                    left: block.position.x,
+                    top: block.position.y,
+                    width: block.size?.width,
+                    height: block.size?.height,
+                  }}
+                >
+                  {renderBlockContent({
+                    block,
+                    isEditing: false,
+                    onEdit: () => {},
+                    onStartEdit: () => {},
+                    onStopEdit: () => {},
+                    onImageUpload: () => {},
+                    fileInputRef: { current: null }
+                  })}
                 </div>
-              </motion.div>
-            ))}
-          </motion.div>
+              ))}
+            </div>
+          </div>
 
           {/* Zoom indicator */}
-          <div className="absolute bottom-4 left-4 bg-white/90 px-3 py-1 rounded-full text-sm text-gray-600">
+          <div className="absolute bottom-4 left-4 bg-white px-3 py-1 rounded-lg shadow-sm text-sm text-gray-600">
             {Math.round(scale * 100)}%
           </div>
         </motion.div>
