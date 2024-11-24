@@ -1,5 +1,5 @@
 import React from 'react';
-import Draggable from 'react-draggable';
+import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 import { X, Move } from 'lucide-react';
 import { Block } from '../../types/builder';
 
@@ -9,11 +9,17 @@ interface CanvasProps {
 }
 
 export default function Canvas({ blocks, setBlocks }: CanvasProps) {
-  const handleDragStop = (_e: any, data: { x: number; y: number }, blockId: string) => {
+  const handleDrag = (blockId: string, e: DraggableEvent, data: DraggableData) => {
     setBlocks(prevBlocks => 
       prevBlocks.map(block => 
         block.id === blockId 
-          ? { ...block, position: { x: data.x, y: data.y } }
+          ? { 
+              ...block, 
+              position: { 
+                x: data.x, 
+                y: data.y 
+              } 
+            }
           : block
       )
     );
@@ -29,13 +35,13 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
         {blocks.map((block) => (
           <Draggable
             key={block.id}
-            defaultPosition={block.position}
-            onStop={(e, data) => handleDragStop(e, data, block.id)}
+            position={block.position}
+            onDrag={(e, data) => handleDrag(block.id, e, data)}
             bounds="parent"
             handle=".handle"
           >
             <div 
-              className="absolute bg-white rounded-lg border border-gray-200 shadow-sm"
+              className="absolute bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
               style={{
                 width: block.size.width,
                 height: block.size.height,
