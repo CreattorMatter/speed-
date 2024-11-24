@@ -6,6 +6,8 @@ import { X, Move, Edit2, Upload } from 'lucide-react';
 import { Block, BlockType } from '../../types/builder';
 import 'react-resizable/css/styles.css';
 import { useCollisionDetection, checkCollision } from '../../hooks/useCollisionDetection';
+import { useResizeShortcuts } from '../../hooks/useResizeShortcuts';
+import { useBlockHistory } from '../../hooks/useBlockHistory';
 
 interface CanvasProps {
   blocks: Block[];
@@ -36,6 +38,19 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   const collisionState = useCollisionDetection(blocks, selectedBlock);
   const [isResizing, setIsResizing] = useState(false);
   const gridSize = 20; // Tamaño de la cuadrícula para snap
+  const [mirrorMode, setMirrorMode] = useState(false);
+  const [resizeHistory, setResizeHistory] = useState<{
+    blockId: string;
+    previousSize: { width: number; height: number };
+    newSize: { width: number; height: number };
+    timestamp: number;
+  }[]>([]);
+  const history = useBlockHistory(blocks);
+  const [lockAspectRatio, setLockAspectRatio] = useState(false);
+  const [gridSize, setGridSize] = useState(20);
+  const [copiedSize, setCopiedSize] = useState<{ width: number; height: number } | null>(null);
+
+  useResizeShortcuts(blocks, setBlocks, selectedBlock);
 
   useEffect(() => {
     const updateCanvasSize = () => {
@@ -74,6 +89,15 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     };
 
     setBlocks(prevBlocks => [...prevBlocks, newBlock]);
+  };
+
+  const handleDragStop = (blockId: string, data: { x: number; y: number }) => {
+    const updatedBlocks = blocks.map(block =>
+      block.id === blockId
+        ? { ...block, position: { x: data.x, y: data.y } }
+        : block
+    );
+    setBlocks(updatedBlocks);
   };
 
   const handleBlockDrag = (blockId: string, data: { x: number; y: number }) => {
@@ -351,93 +375,143 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     const block = blocks.find(b => b.id === blockId);
     if (!block) return;
 
-    const aspectRatio = getAspectRatio(block.type);
-    let newWidth = snapToGrid(data.size.width);
-    let newHeight = snapToGrid(data.size.height);
+    const newSize = {
+      width: snapToGrid(data.size.width),
+      height: snapToGrid(data.size.height)
+    };
 
-    // Mantener ratio de aspecto si es necesario
-    if (aspectRatio) {
-      newHeight = newWidth / aspectRatio;
+    // Guardar en el historial
+    setResizeHistory(prev => [...prev, {
+      blockId,
+      previousSize: block.size || { width: 200, height: 100 },
+      newSize,
+      timestamp: Date.now()
+    }]);
+
+    // Aplicar modo espejo si está activo
+    if (mirrorMode) {
+      const centerX = window.innerWidth / 2;
+      const distanceFromCenter = block.position.x - centerX;
+      
+      const mirroredBlocks = blocks.map(b => {
+        if (b.id === blockId) {
+          return { ...b, size: newSize };
+        }
+        if (b.position.x === centerX - distanceFromCenter) {
+          return { ...b, size: newSize };
+        }
+        return b;
+      });
+      
+      setBlocks(mirroredBlocks);
+    } else {
+      const updatedBlocks = blocks.map(b =>
+        b.id === blockId ? { ...b, size: newSize } : b
+      );
+      setBlocks(updatedBlocks);
     }
+  };
 
-    const updatedBlocks = blocks.map(b =>
-      b.id === blockId
-        ? {
-            ...b,
-            size: {
-              width: newWidth,
-              height: newHeight
-            }
-          }
-        : b
+  // Función para copiar el tamaño de un bloque
+  const copyBlockSize = (blockId: string) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (block?.size) {
+      setCopiedSize(block.size);
+    }
+  };
+
+  // Función para aplicar el tamaño copiado
+  const applyBlockSize = (blockId: string) => {
+    if (!copiedSize) return;
+    
+    const updatedBlocks = blocks.map(block =>
+      block.id === blockId
+        ? { ...block, size: copiedSize }
+        : block
     );
     setBlocks(updatedBlocks);
+    history.addToHistory(updatedBlocks, `Aplicado tamaño copiado a ${blockId}`);
+  };
+
+  // Función para cambiar el tamaño de la rejilla
+  const handleGridSizeChange = (newSize: number) => {
+    setGridSize(newSize);
+    // Ajustar todos los bloques a la nueva rejilla
+    const updatedBlocks = blocks.map(block => ({
+      ...block,
+      position: {
+        x: Math.round(block.position.x / newSize) * newSize,
+        y: Math.round(block.position.y / newSize) * newSize
+      }
+    }));
+    setBlocks(updatedBlocks);
+    history.addToHistory(updatedBlocks, `Cambiado tamaño de rejilla a ${newSize}px`);
   };
 
   return (
-    <div
-      ref={canvasRef}
-      className="flex-1 bg-white m-4 rounded-lg shadow-xl p-4 relative"
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      style={{ 
-        minHeight: '600px', 
-        position: 'relative',
-        overflow: 'hidden',
-        backgroundImage: 'radial-gradient(circle at 1px 1px, #f0f0f0 1px, transparent 0)',
-        backgroundSize: '20px 20px'
-      }}
-    >
-      <AnimatePresence>
-        {blocks.map((block) => (
-          <Draggable
-            key={block.id}
-            defaultPosition={block.position}
-            onStop={(e, data) => {
-              const updatedBlocks = blocks.map(b =>
-                b.id === block.id
-                  ? { ...b, position: { x: data.x, y: data.y } }
-                  : b
-              );
-              setBlocks(updatedBlocks);
-            }}
-            bounds="parent"
-            handle=".handle"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ 
-                opacity: 1, 
-                scale: 1,
-                transition: {
-                  type: "spring",
-                  stiffness: 200,
-                  damping: 20
-                }
-              }}
-              className={`absolute ${
-                selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''
-              }`}
+    <div className="relative flex-1">
+      {/* Controles de rejilla */}
+      <div className="absolute top-4 right-4 flex items-center gap-4 bg-white p-2 rounded-lg shadow-sm">
+        <label className="text-sm text-gray-600">Tamaño de rejilla:</label>
+        <select
+          value={gridSize}
+          onChange={(e) => handleGridSizeChange(Number(e.target.value))}
+          className="px-2 py-1 border rounded"
+        >
+          <option value="10">10px</option>
+          <option value="20">20px</option>
+          <option value="50">50px</option>
+        </select>
+        <button
+          onClick={() => setLockAspectRatio(!lockAspectRatio)}
+          className={`p-2 rounded ${
+            lockAspectRatio ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100'
+          }`}
+        >
+          Bloquear proporción
+        </button>
+      </div>
+
+      <div
+        ref={canvasRef}
+        className="flex-1 bg-white m-4 rounded-lg shadow-xl p-4 relative"
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        }}
+        onDrop={handleDrop}
+        style={{ 
+          minHeight: '600px', 
+          position: 'relative',
+          overflow: 'hidden',
+          backgroundImage: 'radial-gradient(circle at 1px 1px, #f0f0f0 1px, transparent 0)',
+          backgroundSize: '20px 20px'
+        }}
+      >
+        <AnimatePresence>
+          {blocks.map((block) => (
+            <Draggable
+              key={block.id}
+              defaultPosition={block.position}
+              onStop={(e, data) => handleDragStop(block.id, data)}
+              bounds="parent"
+              handle=".handle"
             >
-              <ResizableBox
-                width={block.size?.width || 200}
-                height={block.size?.height || 100}
-                onResize={(e, data) => handleResize(block.id, e, data)}
-                onResizeStart={() => setIsResizing(true)}
-                onResizeStop={() => setIsResizing(false)}
-                minConstraints={[100, 50]}
-                maxConstraints={[800, 600]}
-                resizeHandles={['se', 'sw', 'ne', 'nw', 'n', 's', 'e', 'w']}
-                draggableOpts={{ grid: [gridSize, gridSize] }}
-                className="group"
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className={`absolute ${selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''}`}
+                onClick={() => setSelectedBlock(block.id)}
+                style={{ 
+                  position: 'absolute',
+                  zIndex: selectedBlock === block.id ? 10 : 1,
+                  width: block.size?.width,
+                  height: block.size?.height,
+                }}
               >
-                <motion.div
-                  className="relative bg-white rounded-lg shadow-lg border border-gray-200 w-full h-full"
-                  layout
-                  transition={{
-                    layout: { duration: 0.2, ease: "easeInOut" }
-                  }}
-                >
+                <div className="relative bg-white rounded-lg shadow-lg border border-gray-200 w-full h-full">
                   <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move 
                                 flex items-center justify-between px-2">
                     <Move className="w-4 h-4 text-gray-400" />
@@ -452,54 +526,89 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                       <X className="w-4 h-4 text-gray-400 group-hover:text-red-500" />
                     </button>
                   </div>
-
-                  {(isResizing || selectedBlock === block.id) && (
-                    <ResizeIndicator
-                      width={block.size?.width || 200}
-                      height={block.size?.height || 100}
-                    />
-                  )}
-
-                  <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="w-full h-full" style={{
-                      backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.1) 1px, transparent 0)',
-                      backgroundSize: `${gridSize}px ${gridSize}px`
-                    }} />
-                  </div>
-
                   <div className="mt-6 p-4 overflow-auto">
                     {renderBlockContent(block)}
                   </div>
-                </motion.div>
-              </ResizableBox>
-            </motion.div>
-          </Draggable>
-        ))}
-      </AnimatePresence>
+                </div>
+              </motion.div>
+            </Draggable>
+          ))}
+        </AnimatePresence>
 
-      {blocks.length === 0 && (
-        <div className="h-full flex items-center justify-center text-gray-400">
-          Arrastra elementos aquí para construir tu plantilla
+        {blocks.length === 0 && (
+          <div className="h-full flex items-center justify-center text-gray-400">
+            Arrastra elementos aquí para construir tu plantilla
+          </div>
+        )}
+
+        {/* Guías verticales */}
+        {guides.vertical.map((position, index) => (
+          <div
+            key={`v-${index}`}
+            className="absolute top-0 bottom-0 w-px bg-indigo-500/50"
+            style={{ left: position }}
+          />
+        ))}
+
+        {/* Guías horizontales */}
+        {guides.horizontal.map((position, index) => (
+          <div
+            key={`h-${index}`}
+            className="absolute left-0 right-0 h-px bg-indigo-500/50"
+            style={{ top: position }}
+          />
+        ))}
+
+        {/* Controles adicionales */}
+        <div className="absolute bottom-4 right-4 flex space-x-2">
+          <button
+            onClick={() => setMirrorMode(!mirrorMode)}
+            className={`p-2 rounded-lg ${
+              mirrorMode ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'
+            }`}
+          >
+            Modo Espejo
+          </button>
+          
+          <button
+            onClick={() => {
+              const lastResize = resizeHistory[resizeHistory.length - 1];
+              if (lastResize) {
+                setBlocks(blocks.map(b =>
+                  b.id === lastResize.blockId
+                    ? { ...b, size: lastResize.previousSize }
+                    : b
+                ));
+                setResizeHistory(prev => prev.slice(0, -1));
+              }
+            }}
+            className="p-2 rounded-lg bg-gray-100 text-gray-700"
+            disabled={resizeHistory.length === 0}
+          >
+            Deshacer Último Cambio
+          </button>
+        </div>
+      </div>
+
+      {/* Menú contextual para bloques */}
+      {selectedBlock && (
+        <div className="absolute right-4 bottom-4 bg-white p-2 rounded-lg shadow-sm space-y-2">
+          <button
+            onClick={() => copyBlockSize(selectedBlock)}
+            className="w-full px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded"
+          >
+            Copiar tamaño
+          </button>
+          {copiedSize && (
+            <button
+              onClick={() => applyBlockSize(selectedBlock)}
+              className="w-full px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded"
+            >
+              Aplicar tamaño copiado
+            </button>
+          )}
         </div>
       )}
-
-      {/* Guías verticales */}
-      {guides.vertical.map((position, index) => (
-        <div
-          key={`v-${index}`}
-          className="absolute top-0 bottom-0 w-px bg-indigo-500/50"
-          style={{ left: position }}
-        />
-      ))}
-
-      {/* Guías horizontales */}
-      {guides.horizontal.map((position, index) => (
-        <div
-          key={`h-${index}`}
-          className="absolute left-0 right-0 h-px bg-indigo-500/50"
-          style={{ top: position }}
-        />
-      ))}
     </div>
   );
 }
