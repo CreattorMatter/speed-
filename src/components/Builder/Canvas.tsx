@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 import { X, Move } from 'lucide-react';
 import { Block } from '../../types/builder';
+import Rulers from './Rulers';
 
 interface CanvasProps {
   blocks: Block[];
@@ -9,20 +10,88 @@ interface CanvasProps {
 }
 
 export default function Canvas({ blocks, setBlocks }: CanvasProps) {
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const [guides, setGuides] = useState<{ x: number[], y: number[] }>({ x: [], y: [] });
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const gridSize = 20;
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      setCanvasSize({
+        width: canvasRef.current.clientWidth,
+        height: canvasRef.current.clientHeight
+      });
+    }
+  }, []);
+
+  const snapToGrid = (value: number) => Math.round(value / gridSize) * gridSize;
+
+  const updateGuides = (activeBlock: Block) => {
+    const activeCenter = {
+      x: activeBlock.position.x + activeBlock.size.width / 2,
+      y: activeBlock.position.y + activeBlock.size.height / 2
+    };
+
+    const newGuides = { x: [] as number[], y: [] as number[] };
+
+    blocks.forEach(block => {
+      if (block.id !== activeBlock.id) {
+        // Centro
+        const blockCenter = {
+          x: block.position.x + block.size.width / 2,
+          y: block.position.y + block.size.height / 2
+        };
+
+        // Bordes
+        const blockEdges = {
+          left: block.position.x,
+          right: block.position.x + block.size.width,
+          top: block.position.y,
+          bottom: block.position.y + block.size.height
+        };
+
+        const activeEdges = {
+          left: activeBlock.position.x,
+          right: activeBlock.position.x + activeBlock.size.width,
+          top: activeBlock.position.y,
+          bottom: activeBlock.position.y + activeBlock.size.height
+        };
+
+        // Alineación vertical
+        if (Math.abs(blockCenter.x - activeCenter.x) < 5) newGuides.x.push(blockCenter.x);
+        if (Math.abs(blockEdges.left - activeEdges.left) < 5) newGuides.x.push(blockEdges.left);
+        if (Math.abs(blockEdges.right - activeEdges.right) < 5) newGuides.x.push(blockEdges.right);
+
+        // Alineación horizontal
+        if (Math.abs(blockCenter.y - activeCenter.y) < 5) newGuides.y.push(blockCenter.y);
+        if (Math.abs(blockEdges.top - activeEdges.top) < 5) newGuides.y.push(blockEdges.top);
+        if (Math.abs(blockEdges.bottom - activeEdges.bottom) < 5) newGuides.y.push(blockEdges.bottom);
+      }
+    });
+
+    setGuides(newGuides);
+  };
+
   const handleDrag = (blockId: string, e: DraggableEvent, data: DraggableData) => {
-    setBlocks(prevBlocks => 
-      prevBlocks.map(block => 
-        block.id === blockId 
-          ? { 
-              ...block, 
-              position: { 
-                x: data.x, 
-                y: data.y 
-              } 
-            }
-          : block
-      )
-    );
+    const updatedBlocks = blocks.map(block => {
+      if (block.id === blockId) {
+        const newBlock = {
+          ...block,
+          position: {
+            x: snapToGrid(data.x),
+            y: snapToGrid(data.y)
+          }
+        };
+        updateGuides(newBlock);
+        return newBlock;
+      }
+      return block;
+    });
+    setBlocks(updatedBlocks);
+  };
+
+  const handleDragStop = () => {
+    setGuides({ x: [], y: [] });
   };
 
   const handleDelete = (blockId: string) => {
@@ -30,13 +99,49 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   };
 
   return (
-    <div className="flex-1 bg-white m-4 rounded-lg shadow-lg p-4 relative min-h-[600px]">
-      <div className="relative w-full h-full">
+    <div 
+      ref={canvasRef}
+      className="flex-1 bg-white m-4 rounded-lg shadow-lg relative min-h-[600px]"
+      style={{ 
+        paddingTop: '20px',
+        paddingLeft: '20px'
+      }}
+    >
+      <Rulers width={canvasSize.width - 20} height={canvasSize.height - 20} gridSize={gridSize} />
+
+      <div 
+        className="relative w-full h-full"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(99, 102, 241, 0.1) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(99, 102, 241, 0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: `${gridSize}px ${gridSize}px`,
+        }}
+      >
+        {/* Guías de alineación */}
+        {guides.x.map((x, i) => (
+          <div
+            key={`guide-x-${i}`}
+            className="absolute h-full w-px bg-indigo-500"
+            style={{ left: x }}
+          />
+        ))}
+        {guides.y.map((y, i) => (
+          <div
+            key={`guide-y-${i}`}
+            className="absolute w-full h-px bg-indigo-500"
+            style={{ top: y }}
+          />
+        ))}
+
         {blocks.map((block) => (
           <Draggable
             key={block.id}
-            position={block.position}
+            defaultPosition={block.position}
+            grid={[gridSize, gridSize]}
             onDrag={(e, data) => handleDrag(block.id, e, data)}
+            onStop={handleDragStop}
             bounds="parent"
             handle=".handle"
           >
