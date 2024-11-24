@@ -17,9 +17,10 @@ export default function Builder({ onBack }: BuilderProps) {
   const [activeTab, setActiveTab] = useState<Tab>('elements');
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [templateId] = useState(() => generateTemplateId());
 
   const handleSave = () => {
-    console.log('Guardando bloques:', blocks);
+    console.log('Guardando plantilla:', { id: templateId, blocks });
     // Implementar lógica de guardado
   };
 
@@ -48,6 +49,7 @@ export default function Builder({ onBack }: BuilderProps) {
       <Toolbar 
         onSave={handleSave} 
         onPreview={handlePreview}
+        templateId={templateId}
       />
       
       <div className="flex flex-1 overflow-hidden">
@@ -62,4 +64,10 @@ export default function Builder({ onBack }: BuilderProps) {
       />
     </div>
   );
+}
+
+function generateTemplateId(): string {
+  const timestamp = Date.now().toString(36);
+  const randomStr = Math.random().toString(36).substring(2, 8);
+  return `TPL-${timestamp}-${randomStr}`.toUpperCase();
 }

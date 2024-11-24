@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Block } from '../types/builder';
-import { Edit2, Upload } from 'lucide-react';
+import { Edit2, Upload, Image as ImageIcon } from 'lucide-react';
 
 interface RenderBlockContentProps {
   block: Block;
@@ -21,38 +21,87 @@ export const renderBlockContent = ({
   onImageUpload = () => {},
   fileInputRef
 }: RenderBlockContentProps) => {
+  const localFileInputRef = useRef<HTMLInputElement>(null);
+  const actualFileInputRef = fileInputRef || localFileInputRef;
+
+  const handleImageClick = () => {
+    if (actualFileInputRef.current) {
+      actualFileInputRef.current.click();
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor, selecciona un archivo de imagen válido');
+        return;
+      }
+
+      // Validar tamaño (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen es demasiado grande. El tamaño máximo es 5MB');
+        return;
+      }
+
+      onImageUpload(block.id, file);
+    }
+  };
+
+  const renderImageUploader = (type: 'header' | 'footer' | 'image' | 'logo') => (
+    <div className="relative group w-full h-full min-h-[100px]">
+      {block.content?.imageUrl ? (
+        <div className="relative w-full h-full group">
+          <img 
+            src={block.content.imageUrl} 
+            alt={type}
+            className="w-full h-full object-contain rounded"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <button
+              onClick={handleImageClick}
+              className="bg-white text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              Cambiar imagen
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div 
+          onClick={handleImageClick}
+          className="w-full h-full bg-gray-100 rounded flex flex-col items-center justify-center cursor-pointer
+                     hover:bg-gray-200 transition-colors"
+        >
+          <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
+          <span className="text-gray-500 text-sm font-medium">
+            {type === 'header' ? 'Subir encabezado' :
+             type === 'footer' ? 'Subir pie de página' :
+             type === 'logo' ? 'Subir logo' : 'Subir imagen'}
+          </span>
+          <span className="text-gray-400 text-xs mt-1">
+            Click para seleccionar
+          </span>
+        </div>
+      )}
+      <input
+        ref={actualFileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageChange}
+      />
+    </div>
+  );
+
   switch (block.type) {
     case 'header':
     case 'footer':
-      return (
-        <div className="relative group">
-          {block.content?.imageUrl ? (
-            <img 
-              src={block.content.imageUrl} 
-              alt={block.type}
-              className="w-full h-full object-cover rounded"
-            />
-          ) : (
-            <div 
-              className="bg-gray-100 rounded flex flex-col items-center justify-center h-full min-h-[100px] cursor-pointer"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="w-8 h-8 text-gray-400 mb-2" />
-              <span className="text-gray-400 text-sm">Click para subir imagen</span>
-            </div>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onImageUpload(block.id, file);
-            }}
-          />
-        </div>
-      );
+      return renderImageUploader(block.type);
+
+    case 'image':
+    case 'logo':
+      return renderImageUploader(block.type);
 
     case 'sku':
     case 'price':
@@ -87,40 +136,6 @@ export const renderBlockContent = ({
               </button>
             </>
           )}
-        </div>
-      );
-
-    case 'image':
-    case 'logo':
-      return (
-        <div className="relative group">
-          {block.content?.imageUrl ? (
-            <img 
-              src={block.content.imageUrl} 
-              alt="Content"
-              className="w-full h-full object-contain rounded"
-            />
-          ) : (
-            <div 
-              className="bg-gray-100 rounded flex flex-col items-center justify-center h-full min-h-[100px] cursor-pointer"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="w-8 h-8 text-gray-400 mb-2" />
-              <span className="text-gray-400 text-sm">
-                {block.type === 'logo' ? 'Subir logo' : 'Subir imagen'}
-              </span>
-            </div>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onImageUpload(block.id, file);
-            }}
-          />
         </div>
       );
 
