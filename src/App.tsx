@@ -69,120 +69,74 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      {/* Rest of the login form code remains the same */}
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sky-400 via-rose-400 to-lime-400 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-600 text-white mb-4">
-            <LogIn className="w-8 h-8" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 backdrop-blur-lg text-white mb-4 shadow-xl border border-white/30">
+            <LogIn className="w-10 h-10" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Speed+</h1>
-          <p className="mt-2 text-gray-600">Sign in to your account</p>
+          <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">Speed+</h1>
+          <p className="text-white/80 text-lg">Inicia sesión en tu cuenta</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-xl p-8">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
+              <div className="flex items-center gap-2 text-red-400 bg-red-500/10 p-3 rounded-lg backdrop-blur-sm border border-red-500/20">
                 <AlertCircle className="w-5 h-5" />
                 <span className="text-sm">{error}</span>
               </div>
             )}
 
             <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-white/90">
                 Email
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
+                  <User className="h-5 w-5 text-white/40" />
                 </div>
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={handleEmailChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-                  placeholder="you@company.com"
+                  className="block w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg 
+                           focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white"
+                  placeholder="tu@email.com"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+              <label htmlFor="password" className="block text-sm font-medium text-white/90">
+                Contraseña
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-5 w-5 text-white/40" />
                 </div>
                 <input
                   id="password"
                   type="password"
                   value={password}
                   onChange={handlePasswordChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
+                  className="block w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg 
+                           focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white"
                   placeholder="••••••••"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-600 border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                  Remember me
-                </label>
-              </div>
-              <a href="#" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                Forgot password?
-              </a>
-            </div>
-
             <button
               type="submit"
-              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
+              className="w-full py-3 px-4 bg-white/20 hover:bg-white/30 text-white rounded-lg 
+                       transition-all duration-200 font-medium shadow-lg hover:shadow-xl
+                       backdrop-blur-lg border border-white/20"
             >
-              Sign in
+              Iniciar Sesión
             </button>
           </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">New to Speed+?</span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <a
-                href="#"
-                className="w-full flex justify-center py-2.5 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
-              >
-                Register a new account
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600">
-            By signing in, you agree to our{' '}
-            <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Terms of Service
-            </a>{' '}
-            and{' '}
-            <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Privacy Policy
-            </a>
-          </p>
         </div>
       </div>
     </div>

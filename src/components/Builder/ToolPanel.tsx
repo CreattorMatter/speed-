@@ -5,7 +5,7 @@ import { BlockType } from '../../types/builder';
 interface ToolPanelProps {
   activeTab: 'elements' | 'product' | 'history';
   setActiveTab: (tab: 'elements' | 'product' | 'history') => void;
-  onAddBlock: (type: BlockType) => void;
+  onAddBlock: (type: BlockType, initialPosition: { x: number; y: number }) => void;
 }
 
 const BLOCKS: { type: BlockType; icon: React.ReactNode; label: string }[] = [
@@ -20,6 +20,11 @@ const BLOCKS: { type: BlockType; icon: React.ReactNode; label: string }[] = [
 ];
 
 export default function ToolPanel({ activeTab, setActiveTab, onAddBlock }: ToolPanelProps) {
+  const handleAddBlock = (type: BlockType) => {
+    // Posición inicial centrada en el canvas
+    onAddBlock(type, { x: 100, y: 100 });
+  };
+
   return (
     <div className="w-64 bg-white border-l border-gray-200 flex flex-col shadow-lg">
       <div className="space-y-2 p-4 border-b border-gray-200">
@@ -42,7 +47,7 @@ export default function ToolPanel({ activeTab, setActiveTab, onAddBlock }: ToolP
           {BLOCKS.map((block) => (
             <button
               key={block.type}
-              onClick={() => onAddBlock(block.type)}
+              onClick={() => handleAddBlock(block.type)}
               className="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 
                        hover:border-indigo-500 hover:shadow-lg transition-colors"
             >
