@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import Toolbar from './Toolbar';
 import Canvas from './Canvas';
 import ToolPanel from './ToolPanel';
+import { Block } from '../../types/builder';
 
 type Tab = 'elements' | 'product' | 'history';
 
@@ -12,6 +13,17 @@ interface BuilderProps {
 
 export default function Builder({ onBack }: BuilderProps) {
   const [activeTab, setActiveTab] = useState<Tab>('elements');
+  const [blocks, setBlocks] = useState<Block[]>([]);
+
+  const handleSave = () => {
+    console.log('Guardando bloques:', blocks);
+    // Aquí implementarías la lógica para guardar los bloques
+  };
+
+  const handlePreview = () => {
+    console.log('Previsualizando bloques:', blocks);
+    // Aquí implementarías la lógica para previsualizar
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -25,7 +37,7 @@ export default function Builder({ onBack }: BuilderProps) {
         </button>
       </div>
       
-      <Toolbar />
+      <Toolbar onSave={handleSave} onPreview={handlePreview} />
       
       <div className="flex flex-1 overflow-hidden">
         <Canvas />
