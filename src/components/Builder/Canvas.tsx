@@ -1,10 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import Draggable from 'react-draggable';
 import { ResizableBox } from 'react-resizable';
 import { X, Move } from 'lucide-react';
-import { Block, BlockType } from '../../types/builder';
+import { Block } from '../../types/builder';
 import { renderBlockContent } from '../../utils/blockRenderer';
-import Rulers from './Rulers';
 import 'react-resizable/css/styles.css';
 
 interface CanvasProps {
@@ -15,51 +14,15 @@ interface CanvasProps {
 export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [editingText, setEditingText] = useState<string | null>(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
-  const canvasRef = useRef<HTMLDivElement>(null);
   const fileInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const gridSize = 20;
 
-  useEffect(() => {
-    const updateCanvasSize = () => {
-      if (canvasRef.current) {
-        setCanvasSize({
-          width: canvasRef.current.clientWidth - 40,
-          height: canvasRef.current.clientHeight - 40
-        });
-      }
-    };
-
-    updateCanvasSize();
-    window.addEventListener('resize', updateCanvasSize);
-    return () => window.removeEventListener('resize', updateCanvasSize);
-  }, []);
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const blockType = e.dataTransfer.getData('blockType') as BlockType;
-    if (!blockType) return;
-
-    const canvasRect = canvasRef.current?.getBoundingClientRect();
-    if (!canvasRect) return;
-
-    const x = e.clientX - canvasRect.left - 20;
-    const y = e.clientY - canvasRect.top - 20;
-
-    const newBlock: Block = {
-      id: `${blockType}-${Date.now()}`,
-      type: blockType,
-      content: {},
-      position: { x, y },
-      size: { width: 200, height: 100 }
-    };
-
-    setBlocks(prevBlocks => [...prevBlocks, newBlock]);
+  const handleDragStop = (blockId: string, data: { x: number; y: number }) => {
+    setBlocks(blocks.map(block =>
+      block.id === blockId
+        ? { ...block, position: { x: data.x, y: data.y } }
+        : block
+    ));
   };
 
   const handleResize = (blockId: string, size: { width: number; height: number }) => {
@@ -70,32 +33,8 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     ));
   };
 
-  const handleDragStop = (blockId: string, data: { x: number; y: number }) => {
-    setBlocks(blocks.map(block =>
-      block.id === blockId
-        ? { ...block, position: { x: data.x, y: data.y } }
-        : block
-    ));
-  };
-
   return (
-    <div
-      ref={canvasRef}
-      className="flex-1 bg-white m-4 rounded-lg shadow-xl relative"
-      style={{ 
-        minHeight: '600px',
-        paddingTop: '20px',
-        paddingLeft: '20px',
-      }}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-    >
-      <Rulers 
-        width={canvasSize.width} 
-        height={canvasSize.height}
-        gridSize={gridSize}
-      />
-
+    <div className="flex-1 bg-white m-4 rounded-lg shadow-xl p-4 relative min-h-[600px]">
       <div
         className="relative w-full h-full"
         style={{
@@ -124,9 +63,8 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                 height={block.size.height}
                 onResize={(e, { size }) => handleResize(block.id, size)}
                 minConstraints={[100, 50]}
-                maxConstraints={[canvasSize.width, canvasSize.height]}
+                maxConstraints={[800, 600]}
                 resizeHandles={['se', 'sw', 'ne', 'nw', 'n', 's', 'e', 'w']}
-                grid={[gridSize, gridSize]}
               >
                 <div className="bg-white rounded-lg shadow-lg border border-gray-200 w-full h-full">
                   <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move 
@@ -136,8 +74,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        const updatedBlocks = blocks.filter(b => b.id !== block.id);
-                        setBlocks(updatedBlocks);
+                        setBlocks(blocks.filter(b => b.id !== block.id));
                         setSelectedBlock(null);
                       }}
                       className="p-1 hover:bg-red-50 rounded-full"

@@ -5,6 +5,7 @@ import { BlockType } from '../../types/builder';
 interface ToolPanelProps {
   activeTab: 'elements' | 'product' | 'history';
   setActiveTab: (tab: 'elements' | 'product' | 'history') => void;
+  onAddBlock: (type: BlockType) => void;
 }
 
 const BLOCKS: { type: BlockType; icon: React.ReactNode; label: string }[] = [
@@ -18,20 +19,7 @@ const BLOCKS: { type: BlockType; icon: React.ReactNode; label: string }[] = [
   { type: 'logo', icon: <ImageIcon className="w-5 h-5" />, label: 'Logo' },
 ];
 
-export default function ToolPanel({ activeTab, setActiveTab }: ToolPanelProps) {
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, blockType: BlockType) => {
-    e.dataTransfer.setData('blockType', blockType);
-    e.dataTransfer.effectAllowed = 'copy';
-
-    // Crear una imagen fantasma para el arrastre
-    const dragPreview = document.createElement('div');
-    dragPreview.className = 'bg-white p-2 rounded shadow-lg border border-indigo-500';
-    dragPreview.textContent = blockType;
-    document.body.appendChild(dragPreview);
-    e.dataTransfer.setDragImage(dragPreview, 0, 0);
-    setTimeout(() => document.body.removeChild(dragPreview), 0);
-  };
-
+export default function ToolPanel({ activeTab, setActiveTab, onAddBlock }: ToolPanelProps) {
   return (
     <div className="w-64 bg-white border-l border-gray-200 flex flex-col shadow-lg">
       <div className="space-y-2 p-4 border-b border-gray-200">
@@ -52,18 +40,17 @@ export default function ToolPanel({ activeTab, setActiveTab }: ToolPanelProps) {
       {activeTab === 'elements' && (
         <div className="p-4 grid grid-cols-2 gap-2">
           {BLOCKS.map((block) => (
-            <div
+            <button
               key={block.type}
-              draggable
-              onDragStart={(e) => handleDragStart(e, block.type)}
+              onClick={() => onAddBlock(block.type)}
               className="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 
-                       cursor-move hover:border-indigo-500 hover:shadow-lg transition-colors"
+                       hover:border-indigo-500 hover:shadow-lg transition-colors"
             >
               <div className="p-2 bg-indigo-100 rounded-lg">
                 {block.icon}
               </div>
               <span className="mt-2 text-sm font-medium text-gray-600">{block.label}</span>
-            </div>
+            </button>
           ))}
         </div>
       )}
