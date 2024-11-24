@@ -35,17 +35,22 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
   };
 
   useEffect(() => {
-    const cards = document.querySelectorAll('.hologram-card');
+    const cards = document.querySelectorAll<HTMLDivElement>('.hologram-card');
     
+    const handleMouseMoveEvent = (e: MouseEvent) => {
+      const card = e.currentTarget as HTMLDivElement;
+      handleMouseMove(e as unknown as React.MouseEvent<HTMLDivElement>, card);
+    };
+
     cards.forEach(card => {
-      card.addEventListener('mousemove', (e) => handleMouseMove(e as MouseEvent, card as HTMLDivElement));
-      card.addEventListener('mouseleave', () => handleMouseLeave(card as HTMLDivElement));
+      card.addEventListener('mousemove', handleMouseMoveEvent);
+      card.addEventListener('mouseleave', () => handleMouseLeave(card));
     });
 
     return () => {
       cards.forEach(card => {
-        card.removeEventListener('mousemove', (e) => handleMouseMove(e as MouseEvent, card as HTMLDivElement));
-        card.removeEventListener('mouseleave', () => handleMouseLeave(card as HTMLDivElement));
+        card.removeEventListener('mousemove', handleMouseMoveEvent);
+        card.removeEventListener('mouseleave', () => handleMouseLeave(card));
       });
     };
   }, []);

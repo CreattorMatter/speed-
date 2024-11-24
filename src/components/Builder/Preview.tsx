@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ZoomIn, ZoomOut, Download, Move } from 'lucide-react';
 import { Block } from '../../types/builder';
+import { renderBlockContent } from '../utils/blockRenderer';
 
 interface PreviewProps {
   blocks: Block[];
@@ -113,7 +114,7 @@ export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
                 }}
               >
                 <div className="w-full h-full overflow-hidden">
-                  {renderPreviewContent(block)}
+                  {renderBlockContent(block)}
                 </div>
               </motion.div>
             ))}
@@ -127,59 +128,4 @@ export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
       </motion.div>
     </AnimatePresence>
   );
-}
-
-function renderPreviewContent(block: Block) {
-  switch (block.type) {
-    case 'header':
-    case 'footer':
-      return block.content?.imageUrl ? (
-        <img 
-          src={block.content.imageUrl} 
-          alt={block.type}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-          <span className="text-gray-400">Sin imagen</span>
-        </div>
-      );
-    case 'image':
-    case 'logo':
-      return block.content?.imageUrl ? (
-        <img 
-          src={block.content.imageUrl} 
-          alt="Content"
-          className="w-full h-full object-contain"
-        />
-      ) : null;
-    case 'sku':
-      return (
-        <div className="w-full h-full flex items-center justify-center">
-          <span className="font-mono text-gray-600">{block.content?.text}</span>
-        </div>
-      );
-    case 'price':
-      return (
-        <div className="w-full h-full flex items-center justify-center">
-          <span className="text-2xl font-bold text-gray-800">{block.content?.text}</span>
-        </div>
-      );
-    case 'discount':
-      return (
-        <div className="w-full h-full flex items-center justify-center">
-          <span className="text-red-500 font-semibold">{block.content?.text}</span>
-        </div>
-      );
-    case 'promotion':
-      return (
-        <div className="w-full h-full flex items-center justify-center">
-          <div className="bg-yellow-50 text-yellow-800 p-2 rounded">
-            {block.content?.text}
-          </div>
-        </div>
-      );
-    default:
-      return null;
-  }
 } 
