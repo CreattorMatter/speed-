@@ -27,21 +27,12 @@ export default function Builder({ onBack }: BuilderProps) {
       position: { x: 100, y: 100 },
       size: { width: 200, height: 100 }
     };
-    setBlocks([...blocks, newBlock]);
-  };
-
-  const handleSave = () => {
-    console.log('Guardando plantilla:', { id: templateId, blocks });
-    // Implementar lógica de guardado
-  };
-
-  const handlePreview = () => {
-    setShowPreview(true);
+    setBlocks(prevBlocks => [...prevBlocks, newBlock]);
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      <div className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
+      <div className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <motion.button
@@ -58,8 +49,8 @@ export default function Builder({ onBack }: BuilderProps) {
       </div>
       
       <Toolbar 
-        onSave={handleSave} 
-        onPreview={handlePreview}
+        onSave={() => console.log('Guardando...', blocks)} 
+        onPreview={() => setShowPreview(true)}
         templateId={templateId}
       />
       

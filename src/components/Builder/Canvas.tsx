@@ -18,25 +18,41 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   const gridSize = 20;
 
   const handleDragStop = (blockId: string, data: { x: number; y: number }) => {
-    setBlocks(blocks.map(block =>
+    const snapToGrid = (value: number) => Math.round(value / gridSize) * gridSize;
+    
+    setBlocks(prevBlocks => prevBlocks.map(block =>
       block.id === blockId
-        ? { ...block, position: { x: data.x, y: data.y } }
+        ? {
+            ...block,
+            position: {
+              x: snapToGrid(data.x),
+              y: snapToGrid(data.y)
+            }
+          }
         : block
     ));
   };
 
   const handleResize = (blockId: string, size: { width: number; height: number }) => {
-    setBlocks(blocks.map(block =>
+    const snapToGrid = (value: number) => Math.round(value / gridSize) * gridSize;
+    
+    setBlocks(prevBlocks => prevBlocks.map(block =>
       block.id === blockId
-        ? { ...block, size }
+        ? {
+            ...block,
+            size: {
+              width: snapToGrid(size.width),
+              height: snapToGrid(size.height)
+            }
+          }
         : block
     ));
   };
 
   return (
-    <div className="flex-1 bg-white m-4 rounded-lg shadow-xl p-4 relative min-h-[600px]">
+    <div className="flex-1 bg-gradient-to-br from-white to-gray-50 m-4 rounded-xl shadow-xl p-4 relative min-h-[600px]">
       <div
-        className="relative w-full h-full"
+        className="relative w-full h-full rounded-lg"
         style={{
           backgroundImage: `
             linear-gradient(to right, rgba(99, 102, 241, 0.1) 1px, transparent 1px),
@@ -55,7 +71,11 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
             handle=".handle"
           >
             <div 
-              className={`absolute ${selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''}`}
+              className={`absolute ${
+                selectedBlock === block.id 
+                  ? 'ring-2 ring-indigo-500 shadow-lg' 
+                  : 'hover:ring-2 hover:ring-indigo-300'
+              }`}
               onClick={() => setSelectedBlock(block.id)}
             >
               <ResizableBox
@@ -65,8 +85,9 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                 minConstraints={[100, 50]}
                 maxConstraints={[800, 600]}
                 resizeHandles={['se', 'sw', 'ne', 'nw', 'n', 's', 'e', 'w']}
+                draggableOpts={{ grid: [gridSize, gridSize] }}
               >
-                <div className="bg-white rounded-lg shadow-lg border border-gray-200 w-full h-full">
+                <div className="bg-white rounded-lg shadow-lg border border-gray-200 w-full h-full transition-shadow hover:shadow-xl">
                   <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move 
                                 flex items-center justify-between px-2">
                     <Move className="w-4 h-4 text-gray-400" />
@@ -74,7 +95,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setBlocks(blocks.filter(b => b.id !== block.id));
+                        setBlocks(prevBlocks => prevBlocks.filter(b => b.id !== block.id));
                         setSelectedBlock(null);
                       }}
                       className="p-1 hover:bg-red-50 rounded-full"
@@ -87,7 +108,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                       block,
                       isEditing: editingText === block.id,
                       onEdit: (id, text) => {
-                        setBlocks(blocks.map(b =>
+                        setBlocks(prevBlocks => prevBlocks.map(b =>
                           b.id === id
                             ? { ...b, content: { ...b.content, text } }
                             : b
@@ -99,7 +120,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                         const reader = new FileReader();
                         reader.onload = (e) => {
                           if (e.target?.result) {
-                            setBlocks(blocks.map(b =>
+                            setBlocks(prevBlocks => prevBlocks.map(b =>
                               b.id === id
                                 ? { ...b, content: { ...b.content, imageUrl: e.target.result as string } }
                                 : b
