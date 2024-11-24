@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Draggable from 'react-draggable';
 import { X, Move } from 'lucide-react';
-import { Block } from '../../types/builder';
+import { Block, BlockType } from '../../types/builder';
 import { renderBlockContent } from '../../utils/blockRenderer';
 import Rulers from './Rulers';
 
@@ -22,7 +22,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     const updateCanvasSize = () => {
       if (canvasRef.current) {
         setCanvasSize({
-          width: canvasRef.current.clientWidth - 40, // -40 por el padding
+          width: canvasRef.current.clientWidth - 40,
           height: canvasRef.current.clientHeight - 40
         });
       }
@@ -33,8 +33,30 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     return () => window.removeEventListener('resize', updateCanvasSize);
   }, []);
 
-  const snapToGrid = (value: number): number => {
-    return Math.round(value / gridSize) * gridSize;
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const blockType = e.dataTransfer.getData('blockType') as BlockType;
+    if (!blockType) return;
+
+    const canvasRect = canvasRef.current?.getBoundingClientRect();
+    if (!canvasRect) return;
+
+    const x = e.clientX - canvasRect.left - 20; // Ajuste por el padding y la regla
+    const y = e.clientY - canvasRect.top - 20;
+
+    const newBlock: Block = {
+      id: `${blockType}-${Date.now()}`,
+      type: blockType,
+      content: {},
+      position: { x, y },
+      size: { width: 200, height: 100 }
+    };
+
+    setBlocks(prevBlocks => [...prevBlocks, newBlock]);
   };
 
   const handleDeleteBlock = (id: string) => {
@@ -68,15 +90,14 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     reader.readAsDataURL(file);
   };
 
-  const handleDragStop = (blockId: string, data: { x: number; y: number }) => {
-    const snappedX = snapToGrid(data.x);
-    const snappedY = snapToGrid(data.y);
-
-    setBlocks(blocks.map(block => 
-      block.id === blockId 
-        ? { ...block, position: { x: snappedX, y: snappedY } }
-        : block
-    ));
+  const handleDragStop = (blockId: string, e: any, data: { x: number; y: number }) => {
+    setBlocks(prevBlocks => 
+      prevBlocks.map(block => 
+        block.id === blockId 
+          ? { ...block, position: { x: data.x, y: data.y } }
+          : block
+      )
+    );
   };
 
   return (
@@ -96,9 +117,11 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
         gridSize={gridSize}
       />
 
-      {/* Área de trabajo con cuadrícula */}
+      {/* Área de trabajo */}
       <div
         className="relative w-full h-full"
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
         style={{
           backgroundImage: `
             linear-gradient(to right, rgba(99, 102, 241, 0.1) 1px, transparent 1px),
@@ -111,10 +134,11 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
           <Draggable
             key={block.id}
             defaultPosition={block.position}
-            onStop={(e, data) => handleDragStop(block.id, data)}
+            onStop={(e, data) => handleDragStop(block.id, e, data)}
             grid={[gridSize, gridSize]}
             bounds="parent"
             handle=".handle"
+            position={undefined}
           >
             <div 
               className={`absolute ${selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''}`}
@@ -153,7 +177,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
 
         {blocks.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-            Haz clic en los elementos para agregarlos a la plantilla
+            Arrastra elementos aquí para construir tu plantilla
           </div>
         )}
       </div>
