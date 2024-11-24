@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Draggable from 'react-draggable';
 import { ResizableBox } from 'react-resizable';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,11 +16,28 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
   const [editingText, setEditingText] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [guides, setGuides] = useState<{
     vertical: number[];
     horizontal: number[];
   }>({ vertical: [], horizontal: [] });
   const collisionState = useCollisionDetection(blocks, selectedBlock);
+
+  useEffect(() => {
+    const updateCanvasSize = () => {
+      if (canvasRef.current) {
+        setCanvasSize({
+          width: canvasRef.current.clientWidth,
+          height: canvasRef.current.clientHeight
+        });
+      }
+    };
+
+    updateCanvasSize();
+    window.addEventListener('resize', updateCanvasSize);
+    return () => window.removeEventListener('resize', updateCanvasSize);
+  }, []);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -301,6 +318,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
 
   return (
     <div
+      ref={canvasRef}
       className="flex-1 bg-white m-4 rounded-lg shadow-xl p-4 relative"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
@@ -338,21 +356,8 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                 x: { type: "spring", stiffness: 300, damping: 10 }
               }}
               className={`absolute ${
-                selectedBlock === block.id 
-                  ? 'ring-2 ring-indigo-500' 
-                  : ''
-              } ${
-                collisionState.collidingWith.includes(block.id)
-                  ? 'ring-2 ring-red-500'
-                  : ''
+                selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''
               }`}
-              style={{ 
-                position: 'absolute',
-                zIndex: selectedBlock === block.id ? 10 : 1,
-                boxShadow: collisionState.isColliding && selectedBlock === block.id 
-                  ? '0 0 15px rgba(239, 68, 68, 0.5)'
-                  : 'none'
-              }}
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedBlock(block.id);
@@ -367,8 +372,11 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
               <ResizableBox
                 width={block.size?.width || 200}
                 height={block.size?.height || 100}
-                minConstraints={[100, 50]}
-                maxConstraints={[window.innerWidth - 100, window.innerHeight - 100]}
+                minConstraints={[50, 50]}
+                maxConstraints={[
+                  canvasSize.width - 40,
+                  canvasSize.height - 40
+                ]}
                 onResize={(e, { size }) => {
                   const updatedBlocks = blocks.map(b =>
                     b.id === block.id ? { ...b, size } : b
@@ -376,7 +384,20 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                   setBlocks(updatedBlocks);
                 }}
                 resizeHandles={['se', 'sw', 'ne', 'nw', 'n', 's', 'e', 'w']}
-                handle={<ResizeHandle />}
+                handle={(handleAxis: string) => (
+                  <div
+                    className={`absolute w-4 h-4 bg-indigo-500 rounded-full border-2 border-white 
+                      ${handleAxis === 'n' ? 'top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-n-resize' : ''}
+                      ${handleAxis === 's' ? 'bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 cursor-s-resize' : ''}
+                      ${handleAxis === 'e' ? 'right-0 top-1/2 translate-x-1/2 -translate-y-1/2 cursor-e-resize' : ''}
+                      ${handleAxis === 'w' ? 'left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-w-resize' : ''}
+                      ${handleAxis === 'nw' ? 'top-0 left-0 -translate-x-1/2 -translate-y-1/2 cursor-nw-resize' : ''}
+                      ${handleAxis === 'ne' ? 'top-0 right-0 translate-x-1/2 -translate-y-1/2 cursor-ne-resize' : ''}
+                      ${handleAxis === 'sw' ? 'bottom-0 left-0 -translate-x-1/2 translate-y-1/2 cursor-sw-resize' : ''}
+                      ${handleAxis === 'se' ? 'bottom-0 right-0 translate-x-1/2 translate-y-1/2 cursor-se-resize' : ''}
+                    `}
+                  />
+                )}
               >
                 <motion.div 
                   className="relative bg-white rounded-lg shadow-lg border border-gray-200 p-4 h-full overflow-hidden"
@@ -400,25 +421,6 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                   </div>
                 </motion.div>
               </ResizableBox>
-              
-              {/* Indicador de zona de repulsión */}
-              {selectedBlock === block.id && (
-                <motion.div
-                  className="absolute inset-0 -m-4 rounded-lg pointer-events-none"
-                  initial={{ opacity: 0 }}
-                  animate={{ 
-                    opacity: [0.2, 0.1, 0.2],
-                    scale: [1, 1.05, 1]
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity
-                  }}
-                  style={{
-                    background: 'radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%)'
-                  }}
-                />
-              )}
             </motion.div>
           </Draggable>
         ))}
@@ -461,7 +463,3 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     </div>
   );
 }
-
-const ResizeHandle = () => (
-  <div className="absolute bottom-0 right-0 w-4 h-4 bg-indigo-500 rounded-bl cursor-se-resize" />
-);
