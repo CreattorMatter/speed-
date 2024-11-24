@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import Toolbar from './Toolbar';
 import Canvas from './Canvas';
@@ -14,7 +14,7 @@ export default function Builder({ onBack }: BuilderProps) {
   const [activeTab, setActiveTab] = useState<Tab>('elements');
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 flex flex-col">
       <div className="p-4 bg-white shadow-sm">
         <button
           onClick={onBack}
@@ -24,12 +24,12 @@ export default function Builder({ onBack }: BuilderProps) {
           Volver al inicio
         </button>
       </div>
-      <div className="h-screen flex flex-col">
-        <Toolbar />
-        <div className="flex-1 flex overflow-hidden">
-          <Canvas />
-          <ToolPanel activeTab={activeTab} setActiveTab={setActiveTab} />
-        </div>
+      
+      <Toolbar />
+      
+      <div className="flex flex-1 overflow-hidden">
+        <Canvas />
+        <ToolPanel activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
     </div>
   );
