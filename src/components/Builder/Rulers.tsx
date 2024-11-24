@@ -3,16 +3,21 @@ import React from 'react';
 interface RulersProps {
   width: number;
   height: number;
+  gridSize: number;
 }
 
-export default function Rulers({ width, height }: RulersProps) {
-  const interval = 50; // Intervalo en píxeles entre marcas
+export default function Rulers({ width, height, gridSize }: RulersProps) {
+  const rulerSize = 20; // Ancho/alto de las reglas
+  const interval = gridSize; // Usar el mismo tamaño que la cuadrícula
   const fontSize = 10;
 
   return (
     <>
       {/* Regla horizontal */}
-      <div className="absolute top-0 left-6 right-0 h-6 bg-gray-50 border-b border-gray-200 flex">
+      <div 
+        className="absolute top-0 left-0 right-0 bg-white border-b border-gray-200"
+        style={{ height: rulerSize }}
+      >
         {Array.from({ length: Math.ceil(width / interval) }).map((_, i) => (
           <div
             key={`h-${i}`}
@@ -30,6 +35,7 @@ export default function Rulers({ width, height }: RulersProps) {
                   fontSize,
                   top: '4px',
                   left: '4px',
+                  transform: 'translateX(-50%)',
                 }}
               >
                 {i * interval}
@@ -40,7 +46,10 @@ export default function Rulers({ width, height }: RulersProps) {
       </div>
 
       {/* Regla vertical */}
-      <div className="absolute top-6 left-0 w-6 bottom-0 bg-gray-50 border-r border-gray-200">
+      <div 
+        className="absolute top-0 left-0 bottom-0 bg-white border-r border-gray-200"
+        style={{ width: rulerSize }}
+      >
         {Array.from({ length: Math.ceil(height / interval) }).map((_, i) => (
           <div
             key={`v-${i}`}
@@ -53,11 +62,11 @@ export default function Rulers({ width, height }: RulersProps) {
           >
             {i % 2 === 0 && (
               <span
-                className="absolute text-gray-500 transform -rotate-90"
+                className="absolute text-gray-500"
                 style={{
                   fontSize,
                   left: '4px',
-                  top: '4px',
+                  top: '-7px',
                 }}
               >
                 {i * interval}
@@ -66,6 +75,12 @@ export default function Rulers({ width, height }: RulersProps) {
           </div>
         ))}
       </div>
+
+      {/* Intersección de reglas */}
+      <div 
+        className="absolute top-0 left-0 bg-white border-r border-b border-gray-200"
+        style={{ width: rulerSize, height: rulerSize }}
+      />
     </>
   );
 } 
