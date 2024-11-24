@@ -42,6 +42,7 @@ export default function Canvas() {
       className="flex-1 bg-white m-4 rounded-lg shadow-sm p-4 relative overflow-hidden"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
+      style={{ minHeight: '600px' }}
     >
       <AnimatePresence>
         {blocks.map((block) => (
@@ -50,13 +51,24 @@ export default function Canvas() {
             defaultPosition={block.position}
             bounds="parent"
             handle=".handle"
+            position={undefined}
+            onStop={(e, data) => {
+              const updatedBlocks = blocks.map(b =>
+                b.id === block.id ? { ...b, position: { x: data.x, y: data.y } } : b
+              );
+              setBlocks(updatedBlocks);
+            }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               className={`absolute ${selectedBlock === block.id ? 'ring-2 ring-indigo-500' : ''}`}
-              onClick={() => setSelectedBlock(block.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedBlock(block.id);
+              }}
+              style={{ position: 'absolute', zIndex: selectedBlock === block.id ? 10 : 1 }}
             >
               <ResizableBox
                 width={block.size?.width || 200}
@@ -69,20 +81,24 @@ export default function Canvas() {
                   );
                   setBlocks(updatedBlocks);
                 }}
+                resizeHandles={['se']}
+                handle={<div className="w-4 h-4 bg-indigo-500 absolute bottom-0 right-0 rounded-bl cursor-se-resize" />}
               >
                 <div className="relative bg-white rounded-lg shadow-lg border border-gray-200 p-4 h-full">
                   <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move flex items-center justify-between px-2">
                     <Move className="w-4 h-4 text-gray-400" />
                     <span className="text-xs font-medium text-gray-600">{block.type}</span>
                     <button
-                      onClick={() => handleDeleteBlock(block.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteBlock(block.id);
+                      }}
                       className="p-1 hover:bg-red-50 rounded-full group"
                     >
                       <X className="w-4 h-4 text-gray-400 group-hover:text-red-500" />
                     </button>
                   </div>
                   <div className="mt-6">
-                    {/* Contenido específico según el tipo de bloque */}
                     {renderBlockContent(block)}
                   </div>
                 </div>
