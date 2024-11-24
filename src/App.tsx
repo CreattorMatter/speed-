@@ -3,6 +3,11 @@ import { LogIn, Lock, User, AlertCircle } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Builder from './components/Builder/Builder';
 
+interface DashboardProps {
+  onLogout: () => void;
+  onNewTemplate: () => void;
+}
+
 function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -10,7 +15,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please fill in all fields');
@@ -32,6 +37,9 @@ function App() {
     setError('');
     setShowBuilder(false);
   };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value);
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value);
 
   if (isAuthenticated && showBuilder) {
     return <Builder />;
@@ -74,7 +82,7 @@ function App() {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={handleEmailChange}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
                   placeholder="you@company.com"
                 />
@@ -93,7 +101,7 @@ function App() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
                   placeholder="••••••••"
                 />
