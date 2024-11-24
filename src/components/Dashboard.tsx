@@ -8,11 +8,75 @@ interface DashboardProps {
   onLogout: () => void;
   onNewTemplate: () => void;
   onBack: () => void;
+  userEmail?: string;
 }
 
-export default function Dashboard({ onLogout, onNewTemplate, onBack }: DashboardProps) {
+export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail = 'admin@admin.com' }: DashboardProps) {
+  const userName = userEmail.split('@')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].slice(1);
+
+  const hologramEffect = {
+    position: 'relative',
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      inset: '-2px',
+      background: 'linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.4) 50%, transparent 60%)',
+      filter: 'blur(8px)',
+      animation: 'hologram 3s linear infinite',
+      borderRadius: 'inherit',
+      zIndex: 0,
+    },
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <style jsx>{`
+        @keyframes hologram {
+          0% {
+            background-position: 200% 0;
+          }
+          100% {
+            background-position: -200% 0;
+          }
+        }
+        
+        .hologram-card {
+          position: relative;
+          overflow: hidden;
+          backdrop-filter: blur(10px);
+        }
+        
+        .hologram-card::before {
+          content: '';
+          position: absolute;
+          inset: -2px;
+          background: linear-gradient(
+            45deg,
+            transparent 40%,
+            rgba(255, 255, 255, 0.4) 50%,
+            transparent 60%
+          );
+          filter: blur(8px);
+          animation: hologram 3s linear infinite;
+          border-radius: inherit;
+          z-index: 0;
+        }
+        
+        .hologram-card::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: inherit;
+          border-radius: inherit;
+          z-index: 1;
+        }
+        
+        .hologram-content {
+          position: relative;
+          z-index: 2;
+        }
+      `}</style>
+
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -48,7 +112,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack }: Dashboard
               animate={{ opacity: 1, y: 0 }}
               className="text-3xl font-bold text-gray-900"
             >
-              ¡Bienvenido de nuevo! 👋
+              ¡Bienvenido de nuevo, {userName}! 👋
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -75,33 +139,39 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack }: Dashboard
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-xl text-white shadow-lg"
+            className="hologram-card bg-gradient-to-br from-indigo-500/90 to-purple-600/90 p-6 rounded-xl text-white shadow-lg"
           >
-            <Sparkles className="w-8 h-8 mb-4" />
-            <h3 className="text-2xl font-bold mb-2">Plantillas Activas</h3>
-            <p className="text-4xl font-bold">12</p>
+            <div className="hologram-content">
+              <Sparkles className="w-8 h-8 mb-4" />
+              <h3 className="text-2xl font-bold mb-2">Plantillas Activas</h3>
+              <p className="text-4xl font-bold">12</p>
+            </div>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-gradient-to-br from-pink-500 to-rose-600 p-6 rounded-xl text-white shadow-lg"
+            className="hologram-card bg-gradient-to-br from-pink-500/90 to-rose-600/90 p-6 rounded-xl text-white shadow-lg"
           >
-            <Clock className="w-8 h-8 mb-4" />
-            <h3 className="text-2xl font-bold mb-2">Última Actividad</h3>
-            <p className="text-lg">Hace 2 horas</p>
+            <div className="hologram-content">
+              <Clock className="w-8 h-8 mb-4" />
+              <h3 className="text-2xl font-bold mb-2">Última Actividad</h3>
+              <p className="text-lg">Hace 2 horas</p>
+            </div>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-gradient-to-br from-amber-500 to-orange-600 p-6 rounded-xl text-white shadow-lg"
+            className="hologram-card bg-gradient-to-br from-amber-500/90 to-orange-600/90 p-6 rounded-xl text-white shadow-lg"
           >
-            <Star className="w-8 h-8 mb-4" />
-            <h3 className="text-2xl font-bold mb-2">Plantilla Destacada</h3>
-            <p className="text-lg">Black Friday 2024</p>
+            <div className="hologram-content">
+              <Star className="w-8 h-8 mb-4" />
+              <h3 className="text-2xl font-bold mb-2">Plantilla Destacada</h3>
+              <p className="text-lg">Black Friday 2024</p>
+            </div>
           </motion.div>
         </div>
 

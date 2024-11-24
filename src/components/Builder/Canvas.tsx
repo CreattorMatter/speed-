@@ -12,14 +12,17 @@ export default function Canvas() {
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const blockType = e.dataTransfer.getData('blockType') as BlockType;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const canvasRect = e.currentTarget.getBoundingClientRect();
+    
+    // Calcular la posición relativa al canvas
+    const x = e.clientX - canvasRect.left;
+    const y = e.clientY - canvasRect.top;
 
     const newBlock: Block = {
       id: `${blockType}-${Date.now()}`,
@@ -32,6 +35,14 @@ export default function Canvas() {
     setBlocks([...blocks, newBlock]);
   };
 
+  const handleBlockDrag = (blockId: string, data: { x: number; y: number }) => {
+    setBlocks(blocks.map(block => 
+      block.id === blockId 
+        ? { ...block, position: { x: data.x, y: data.y } }
+        : block
+    ));
+  };
+
   const handleDeleteBlock = (id: string) => {
     setBlocks(blocks.filter(block => block.id !== id));
     setSelectedBlock(null);
@@ -39,25 +50,20 @@ export default function Canvas() {
 
   return (
     <div
-      className="flex-1 bg-white m-4 rounded-lg shadow-sm p-4 relative overflow-hidden"
+      className="flex-1 bg-white m-4 rounded-lg shadow-sm p-4 relative"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      style={{ minHeight: '600px' }}
+      style={{ minHeight: '600px', position: 'relative' }}
     >
       <AnimatePresence>
         {blocks.map((block) => (
           <Draggable
             key={block.id}
             defaultPosition={block.position}
+            position={undefined}
             bounds="parent"
             handle=".handle"
-            position={undefined}
-            onStop={(e, data) => {
-              const updatedBlocks = blocks.map(b =>
-                b.id === block.id ? { ...b, position: { x: data.x, y: data.y } } : b
-              );
-              setBlocks(updatedBlocks);
-            }}
+            onStop={(e, data) => handleBlockDrag(block.id, data)}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
@@ -68,7 +74,12 @@ export default function Canvas() {
                 e.stopPropagation();
                 setSelectedBlock(block.id);
               }}
-              style={{ position: 'absolute', zIndex: selectedBlock === block.id ? 10 : 1 }}
+              style={{ 
+                position: 'absolute',
+                zIndex: selectedBlock === block.id ? 10 : 1,
+                left: block.position.x,
+                top: block.position.y
+              }}
             >
               <ResizableBox
                 width={block.size?.width || 200}
@@ -82,7 +93,12 @@ export default function Canvas() {
                   setBlocks(updatedBlocks);
                 }}
                 resizeHandles={['se']}
-                handle={<div className="w-4 h-4 bg-indigo-500 absolute bottom-0 right-0 rounded-bl cursor-se-resize" />}
+                handle={
+                  <div 
+                    className="w-4 h-4 bg-indigo-500 absolute bottom-0 right-0 rounded-bl cursor-se-resize"
+                    style={{ zIndex: 2 }}
+                  />
+                }
               >
                 <div className="relative bg-white rounded-lg shadow-lg border border-gray-200 p-4 h-full">
                   <div className="handle absolute top-0 left-0 w-full h-6 bg-gray-50 rounded-t-lg cursor-move flex items-center justify-between px-2">

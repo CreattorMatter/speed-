@@ -7,6 +7,7 @@ interface DashboardProps {
   onLogout: () => void;
   onNewTemplate: () => void;
   onBack: () => void;
+  userEmail?: string;
 }
 
 function App() {
@@ -62,6 +63,7 @@ function App() {
         onLogout={handleLogout} 
         onNewTemplate={() => setShowBuilder(true)} 
         onBack={handleBack}
+        userEmail={email}
       />
     );
   }
