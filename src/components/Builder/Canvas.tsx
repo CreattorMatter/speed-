@@ -47,8 +47,10 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const blockType = e.dataTransfer.getData('blockType') as BlockType;
+    const blockType = e.dataTransfer.getData('text/plain') as BlockType;
     
+    if (!blockType) return; // Validar que tenemos un tipo de bloque
+
     const canvasRect = e.currentTarget.getBoundingClientRect();
     const x = snapToGrid(e.clientX - canvasRect.left);
     const y = snapToGrid(e.clientY - canvasRect.top);
@@ -61,7 +63,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
       size: { width: snapToGrid(200), height: snapToGrid(100) }
     };
 
-    setBlocks([...blocks, newBlock]);
+    setBlocks(prevBlocks => [...prevBlocks, newBlock]);
   };
 
   const handleDragStop = (blockId: string, data: { x: number; y: number }) => {

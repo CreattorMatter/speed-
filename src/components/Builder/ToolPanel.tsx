@@ -21,8 +21,10 @@ const BLOCKS: { type: BlockType; icon: React.ReactNode; label: string }[] = [
 
 export default function ToolPanel({ activeTab, setActiveTab }: ToolPanelProps) {
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, blockType: BlockType) => {
-    e.dataTransfer.setData('blockType', blockType);
-    e.dataTransfer.effectAllowed = 'move';
+    if (e.dataTransfer) {
+      e.dataTransfer.setData('text/plain', blockType);
+      e.dataTransfer.effectAllowed = 'copy';
+    }
   };
 
   const renderTabContent = () => {
@@ -35,21 +37,19 @@ export default function ToolPanel({ activeTab, setActiveTab }: ToolPanelProps) {
             className="p-4 grid grid-cols-2 gap-2"
           >
             {BLOCKS.map((block) => (
-              <motion.div
+              <div
                 key={block.type}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                draggable
+                draggable="true"
                 onDragStart={(e) => handleDragStart(e, block.type)}
                 className="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 
-                           cursor-move hover:border-indigo-500 hover:shadow-lg transition-all duration-200
-                           hover:bg-indigo-50"
+                         cursor-move hover:border-indigo-500 hover:shadow-lg transition-all duration-200
+                         hover:bg-indigo-50"
               >
                 <div className="p-2 bg-indigo-100 rounded-lg">
                   {block.icon}
                 </div>
                 <span className="mt-2 text-sm font-medium text-gray-600">{block.label}</span>
-              </motion.div>
+              </div>
             ))}
           </motion.div>
         );
