@@ -29,34 +29,21 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    const blockType = e.dataTransfer.getData('blockType') as BlockType;
     
-    try {
-      const data = JSON.parse(e.dataTransfer.getData('application/json'));
-      const blockType = data.type as BlockType;
-      
-      const canvasRect = e.currentTarget.getBoundingClientRect();
-      let x = e.clientX - canvasRect.left;
-      let y = e.clientY - canvasRect.top;
+    const canvasRect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - canvasRect.left;
+    const y = e.clientY - canvasRect.top;
 
-      // Ajustar a la cuadrícula
-      x = Math.round(x / 20) * 20;
-      y = Math.round(y / 20) * 20;
+    const newBlock: Block = {
+      id: `${blockType}-${Date.now()}`,
+      type: blockType,
+      content: {},
+      position: { x, y },
+      size: { width: 200, height: 100 }
+    };
 
-      const newBlock: Block = {
-        id: `${blockType}-${Date.now()}`,
-        type: blockType,
-        content: {},
-        position: { x, y },
-        size: { width: 200, height: 100 }
-      };
-
-      // Verificar colisión antes de agregar
-      if (!checkCollision(newBlock, blocks)) {
-        setBlocks([...blocks, newBlock]);
-      }
-    } catch (error) {
-      console.error('Error al procesar el bloque:', error);
-    }
+    setBlocks(prevBlocks => [...prevBlocks, newBlock]);
   };
 
   const handleBlockDrag = (blockId: string, data: { x: number; y: number }) => {

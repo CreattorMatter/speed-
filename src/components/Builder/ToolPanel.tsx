@@ -21,8 +21,8 @@ const BLOCKS: { type: BlockType; icon: React.ReactNode; label: string }[] = [
 
 export default function ToolPanel({ activeTab, setActiveTab }: ToolPanelProps) {
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, blockType: BlockType) => {
+    e.dataTransfer.setData('blockType', blockType);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('application/json', JSON.stringify({ type: blockType }));
   };
 
   const renderTabContent = () => {
@@ -39,7 +39,7 @@ export default function ToolPanel({ activeTab, setActiveTab }: ToolPanelProps) {
                 key={block.type}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                draggable="true"
+                draggable
                 onDragStart={(e) => handleDragStart(e, block.type)}
                 className="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 
                            cursor-move hover:border-indigo-500 hover:shadow-lg transition-all duration-200
