@@ -75,7 +75,7 @@ export function useCollisionDetection(blocks: Block[], activeBlockId: string | n
   return collisionState;
 }
 
-function checkCollision(block1: Block, block2: Block): boolean {
+export function checkCollision(block1: Block, block2: Block): boolean {
   const rect1 = {
     left: block1.position.x,
     right: block1.position.x + (block1.size?.width || 200),

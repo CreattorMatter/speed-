@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Move, Edit2, Upload } from 'lucide-react';
 import { Block, BlockType } from '../../types/builder';
 import 'react-resizable/css/styles.css';
-import { useCollisionDetection } from '../hooks/useCollisionDetection';
+import { useCollisionDetection, checkCollision } from '../../hooks/useCollisionDetection';
 
 interface CanvasProps {
   blocks: Block[];
