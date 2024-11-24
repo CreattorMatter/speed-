@@ -21,71 +21,44 @@ const BLOCKS: { type: BlockType; icon: React.ReactNode; label: string }[] = [
 
 export default function ToolPanel({ activeTab, setActiveTab }: ToolPanelProps) {
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, blockType: BlockType) => {
-    e.dataTransfer.setData('text/plain', blockType);
-    e.dataTransfer.effectAllowed = 'copy';
-    
-    const ghost = document.createElement('div');
-    ghost.classList.add('w-20', 'h-20', 'bg-indigo-100', 'rounded-lg', 'flex', 'items-center', 'justify-center');
-    ghost.innerHTML = blockType;
-    document.body.appendChild(ghost);
-    e.dataTransfer.setDragImage(ghost, 40, 40);
-    setTimeout(() => document.body.removeChild(ghost), 0);
-  };
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'elements':
-        return (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="p-4 grid grid-cols-2 gap-2"
-          >
-            {BLOCKS.map((block) => (
-              <div
-                key={block.type}
-                draggable="true"
-                onDragStart={(e) => handleDragStart(e, block.type)}
-                className="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 
-                         cursor-move hover:border-indigo-500 hover:shadow-lg transition-all duration-200
-                         hover:bg-indigo-50"
-              >
-                <div className="p-2 bg-indigo-100 rounded-lg">
-                  {block.icon}
-                </div>
-                <span className="mt-2 text-sm font-medium text-gray-600">{block.label}</span>
-              </div>
-            ))}
-          </motion.div>
-        );
-      case 'product':
-        return <div className="p-4">Información del producto...</div>;
-      case 'history':
-        return <div className="p-4">Historial de cambios...</div>;
-      default:
-        return null;
-    }
+    e.dataTransfer.setData('blockType', blockType);
   };
 
   return (
     <div className="w-64 bg-white border-l border-gray-200 flex flex-col shadow-lg">
       <div className="space-y-2 p-4 border-b border-gray-200">
         {['elements', 'product', 'history'].map((tab) => (
-          <motion.button
+          <button
             key={tab}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
             onClick={() => setActiveTab(tab as any)}
-            className={`w-full px-4 py-2 text-left rounded-lg transition-all duration-200
+            className={`w-full px-4 py-2 text-left rounded-lg transition-colors
                        ${activeTab === tab 
                          ? 'bg-indigo-50 text-indigo-600 shadow-sm' 
                          : 'text-gray-600 hover:bg-gray-50'}`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </motion.button>
+          </button>
         ))}
       </div>
-      {renderTabContent()}
+
+      {activeTab === 'elements' && (
+        <div className="p-4 grid grid-cols-2 gap-2">
+          {BLOCKS.map((block) => (
+            <div
+              key={block.type}
+              draggable
+              onDragStart={(e) => handleDragStart(e, block.type)}
+              className="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200 
+                       cursor-move hover:border-indigo-500 hover:shadow-lg transition-colors"
+            >
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                {block.icon}
+              </div>
+              <span className="mt-2 text-sm font-medium text-gray-600">{block.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
