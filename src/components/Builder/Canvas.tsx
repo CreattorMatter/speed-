@@ -4,6 +4,7 @@ import { Block } from '../../types/builder';
 import { ResizableBox } from 'react-resizable';
 import { PAPER_SIZES, MM_TO_PX } from '../../utils/paperSizes';
 import 'react-resizable/css/styles.css';
+import { renderBlockContent } from '../../utils/blockRenderer';
 
 interface CanvasProps {
   blocks: Block[];
@@ -92,6 +93,20 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
       width: Math.round(size.width * MM_TO_PX),
       height: Math.round(size.height * MM_TO_PX)
     };
+  };
+
+  const handleImageUpload = (blockId: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setBlocks(prevBlocks => prevBlocks.map(block => 
+          block.id === blockId 
+            ? { ...block, content: { ...block.content, imageUrl: e.target.result as string } }
+            : block
+        ));
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -192,7 +207,10 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
                   </button>
                 </div>
                 <div className="p-4">
-                  {block.content.text || `Bloque ${block.type}`}
+                  {renderBlockContent({
+                    block,
+                    onImageUpload: handleImageUpload
+                  })}
                 </div>
               </div>
             </ResizableBox>
