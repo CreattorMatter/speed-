@@ -57,7 +57,16 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
 
   return (
     <div className="flex-1 bg-white m-4 rounded-lg shadow-lg p-4 relative min-h-[600px]">
-      <div className="relative w-full h-full">
+      <div 
+        className="relative w-full h-full"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(99, 102, 241, 0.1) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(99, 102, 241, 0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: `20px 20px`,
+        }}
+      >
         {blocks.map((block) => (
           <div
             key={block.id}
