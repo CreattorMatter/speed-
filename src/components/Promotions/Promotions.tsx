@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Calendar, Tag, Filter, Search, X } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, Tag, Filter, Search, X, CheckSquare, Square, FileText, Trash2 } from 'lucide-react';
 import { Promotion } from '../../types/promotion';
 
 interface PromotionsProps {
@@ -67,7 +67,9 @@ export default function Promotions({ onBack }: PromotionsProps) {
   const [promotions, setPromotions] = useState<Promotion[]>(currentPromotions);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedPromotions, setSelectedPromotions] = useState<Set<string>>(new Set());
 
   const categories = ['Todas', 'Bancaria', 'Producto', 'Categoría', 'Especial'];
 
@@ -103,6 +105,65 @@ export default function Promotions({ onBack }: PromotionsProps) {
 
     return matchesSearch && matchesCategory;
   });
+
+  // Función para manejar la selección de promociones
+  const handleSelect = (promotionId: string) => {
+    setSelectedPromotions(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(promotionId)) {
+        newSelection.delete(promotionId);
+      } else {
+        newSelection.add(promotionId);
+      }
+      return newSelection;
+    });
+  };
+
+  // Función para eliminar promociones seleccionadas
+  const handleDeleteSelected = () => {
+    if (window.confirm(`¿Estás seguro de que deseas eliminar ${selectedPromotions.size} promociones?`)) {
+      setPromotions(prev => 
+        prev.filter(promotion => !selectedPromotions.has(promotion.id))
+      );
+      setSelectedPromotions(new Set());
+    }
+  };
+
+  // Función para exportar promociones seleccionadas a CSV
+  const handleExportCSV = () => {
+    const selectedPromotionsData = filteredPromotions.filter(p => selectedPromotions.has(p.id));
+    const csv = [
+      // Encabezados
+      ['ID', 'Título', 'Descripción', 'Descuento', 'Fecha Inicio', 'Fecha Fin', 'Categoría', 'Estado', 'Banco', 'Tipo Tarjeta', 'Condiciones'].join(','),
+      // Datos
+      ...selectedPromotionsData.map(p => [
+        p.id,
+        `"${p.title}"`,
+        `"${p.description}"`,
+        p.discount,
+        p.startDate,
+        p.endDate,
+        p.category,
+        p.isActive ? 'Activa' : 'Inactiva',
+        p.bank || '',
+        p.cardType || '',
+        `"${p.conditions.join('; ')}"`
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `promociones_${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-rose-900 to-slate-900">
@@ -158,16 +219,50 @@ export default function Promotions({ onBack }: PromotionsProps) {
           </div>
 
           <div className="flex gap-4">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white 
-                       focus:outline-none focus:ring-2 focus:ring-rose-500/50"
-            >
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowCategoryFilter(!showCategoryFilter)}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-lg 
+                         hover:bg-white/20 transition-colors duration-200"
+              >
+                <Filter className="w-5 h-5" />
+                <span className="hidden sm:inline">
+                  {selectedCategory || 'Filtrar por Categoría'}
+                </span>
+              </motion.button>
+
+              {/* Dropdown de categorías */}
+              {showCategoryFilter && (
+                <div className="absolute right-0 mt-2 w-64 bg-white/10 backdrop-blur-lg border 
+                              border-white/20 rounded-lg shadow-xl z-50">
+                  <div className="p-2">
+                    <button
+                      onClick={() => {
+                        setSelectedCategory('');
+                        setShowCategoryFilter(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-white hover:bg-white/10 rounded-lg"
+                    >
+                      Todas las categorías
+                    </button>
+                    {categories.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => {
+                          setSelectedCategory(category);
+                          setShowCategoryFilter(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-white hover:bg-white/10 rounded-lg"
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -183,6 +278,57 @@ export default function Promotions({ onBack }: PromotionsProps) {
           </div>
         </div>
 
+        {/* Contador de resultados y filtro activo */}
+        <div className="flex items-center gap-4 mb-6 text-white/60">
+          <span>
+            {filteredPromotions.length === promotions.length
+              ? `${promotions.length} promociones`
+              : `${filteredPromotions.length} de ${promotions.length} promociones`}
+          </span>
+          {selectedCategory && selectedCategory !== 'Todas' && (
+            <div className="flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full">
+              <span>{selectedCategory}</span>
+              <button
+                onClick={() => setSelectedCategory('')}
+                className="hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Acciones de selección múltiple */}
+        {selectedPromotions.size > 0 && (
+          <div className="flex items-center gap-4 mb-6">
+            <span className="text-white/60">
+              {selectedPromotions.size} promociones seleccionadas
+            </span>
+            <div className="flex gap-2">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleExportCSV}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 
+                         rounded-lg hover:bg-emerald-500/20"
+              >
+                <FileText className="w-5 h-5" />
+                <span className="hidden sm:inline">Exportar CSV</span>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleDeleteSelected}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 
+                         rounded-lg hover:bg-red-500/20"
+              >
+                <Trash2 className="w-5 h-5" />
+                <span className="hidden sm:inline">Eliminar</span>
+              </motion.button>
+            </div>
+          </div>
+        )}
+
         {/* Promotions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPromotions.map((promotion) => (
@@ -191,8 +337,26 @@ export default function Promotions({ onBack }: PromotionsProps) {
               layout
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 overflow-hidden"
+              className={`bg-white/10 backdrop-blur-md rounded-lg border 
+                        overflow-hidden group relative
+                        ${selectedPromotions.has(promotion.id) 
+                          ? 'border-rose-500' 
+                          : 'border-white/20'}`}
             >
+              {/* Checkbox de selección */}
+              <div className="absolute top-2 right-2 z-10 flex gap-2">
+                <button
+                  onClick={() => handleSelect(promotion.id)}
+                  className="p-1 bg-black/50 rounded-lg backdrop-blur-sm"
+                >
+                  {selectedPromotions.has(promotion.id) ? (
+                    <CheckSquare className="w-5 h-5 text-rose-400" />
+                  ) : (
+                    <Square className="w-5 h-5 text-white/60" />
+                  )}
+                </button>
+              </div>
+
               <div className="aspect-video relative overflow-hidden">
                 <img
                   src={promotion.imageUrl}
