@@ -4,13 +4,10 @@ import { Upload, Image as ImageIcon } from 'lucide-react';
 
 interface RenderBlockContentProps {
   block: Block;
-  onImageUpload?: (blockId: string, file: File) => void;
+  onImageUpload: (file: File) => void;
 }
 
-export const renderBlockContent = ({
-  block,
-  onImageUpload = () => {}
-}: RenderBlockContentProps) => {
+export function renderBlockContent({ block, onImageUpload }: RenderBlockContentProps): React.ReactNode {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageClick = () => {
@@ -31,7 +28,7 @@ export const renderBlockContent = ({
       return;
     }
 
-    onImageUpload(block.id, file);
+    onImageUpload(file);
   };
 
   // Renderizar bloques que permiten imágenes
@@ -44,10 +41,15 @@ export const renderBlockContent = ({
             <img 
               src={block.content.imageUrl} 
               alt={block.type}
-              className="w-full h-full object-contain rounded"
+              className="w-full h-full object-contain hover:object-cover transition-all duration-300"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: block.type === 'logo' ? 'contain' : 'cover'
+              }}
             />
             <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 
-                          transition-opacity flex items-center justify-center">
+                          transition-opacity flex items-center justify-center gap-2">
               <button
                 onClick={handleImageClick}
                 className="bg-white text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-100 
@@ -56,6 +58,30 @@ export const renderBlockContent = ({
                 <Upload className="w-4 h-4" />
                 Cambiar imagen
               </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const img = document.querySelector(`[data-block-id="${block.id}"] img`) as HTMLImageElement;
+                    if (img) {
+                      img.style.objectFit = 'contain';
+                    }
+                  }}
+                  className="bg-white text-gray-800 px-3 py-1 rounded-lg hover:bg-gray-100 text-sm"
+                >
+                  Ajustar
+                </button>
+                <button
+                  onClick={() => {
+                    const img = document.querySelector(`[data-block-id="${block.id}"] img`) as HTMLImageElement;
+                    if (img) {
+                      img.style.objectFit = 'cover';
+                    }
+                  }}
+                  className="bg-white text-gray-800 px-3 py-1 rounded-lg hover:bg-gray-100 text-sm"
+                >
+                  Llenar
+                </button>
+              </div>
             </div>
           </div>
         ) : (
@@ -96,4 +122,4 @@ export const renderBlockContent = ({
       {block.content.text || `Bloque ${block.type}`}
     </div>
   );
-}; 
+} 

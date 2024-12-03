@@ -123,18 +123,21 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
 
       <div className="bg-white/10 backdrop-blur-md border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onBack}
-                className="text-white/80 hover:text-white flex items-center gap-2"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="font-medium">Volver</span>
-              </motion.button>
-            </div>
+          <div className="flex justify-between items-center h-16 relative">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onBack}
+              className="text-white/80 hover:text-white flex items-center gap-2"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Volver</span>
+            </motion.button>
+            
+            <span className="absolute left-1/2 -translate-x-1/2 text-white font-light text-2xl tracking-tight">
+              Speed<span className="font-medium">+</span>
+            </span>
+
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -171,12 +174,12 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onNewTemplate}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 
-                     text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 shadow-lg 
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500
+                     text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 shadow-lg
                      hover:shadow-indigo-500/25 transition-all duration-200"
           >
             <Plus className="w-5 h-5" />
-            <span>Nueva Plantilla</span>
+            <span>Builder</span>
           </motion.button>
         </div>
 

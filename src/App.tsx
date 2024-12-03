@@ -19,17 +19,8 @@ function App() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError('Please fill in all fields');
-      return;
-    }
-    
-    if (email === 'admin@admin.com' && password === 'admin') {
-      setIsAuthenticated(true);
-      setError('');
-    } else {
-      setError('Invalid email or password');
-    }
+    setIsAuthenticated(true);
+    setError('');
   };
 
   const handleLogout = () => {

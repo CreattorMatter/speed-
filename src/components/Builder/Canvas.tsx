@@ -1,133 +1,95 @@
-import React from 'react';
-import { X, Move } from 'lucide-react';
-import { Block } from '../../types/builder';
-import { ResizableBox } from 'react-resizable';
-import { renderBlockContent } from '../../utils/blockRenderer';
-import 'react-resizable/css/styles.css';
+import React, { useState, useCallback } from 'react';
+import { Block } from './Block';
+import { ZoomControls } from './ZoomControls';
+import Rulers from './Rulers';
+import { Block as BlockType } from '../../types/builder';
 
 interface CanvasProps {
-  blocks: Block[];
-  setBlocks: React.Dispatch<React.SetStateAction<Block[]>>;
+  blocks: BlockType[];
+  setBlocks: React.Dispatch<React.SetStateAction<BlockType[]>>;
 }
 
 export default function Canvas({ blocks, setBlocks }: CanvasProps) {
-  const handleDelete = (blockId: string) => {
-    setBlocks(prevBlocks => prevBlocks.filter(block => block.id !== blockId));
-  };
+  const GRID_SIZE = 20;
+  const [scale, setScale] = useState(1);
 
-  const handleMouseDown = (e: React.MouseEvent, blockId: string) => {
-    const block = blocks.find(b => b.id === blockId);
+  const handleDelete = useCallback((id: string) => {
+    setBlocks(prev => prev.filter(block => block.id !== id));
+  }, [setBlocks]);
+
+  const handleResize = useCallback((id: string, size: { width: number; height: number }) => {
+    setBlocks(prev => prev.map(block => 
+      block.id === id ? { ...block, size } : block
+    ));
+  }, [setBlocks]);
+
+  const handleMove = useCallback((e: React.MouseEvent, id: string) => {
+    const block = blocks.find(b => b.id === id);
     if (!block) return;
 
     const startX = e.clientX - block.position.x;
     const startY = e.clientY - block.position.y;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const newX = e.clientX - startX;
-      const newY = e.clientY - startY;
-
-      setBlocks(prevBlocks => prevBlocks.map(b => 
-        b.id === blockId 
-          ? { ...b, position: { x: newX, y: newY } }
+      setBlocks(prev => prev.map(b => 
+        b.id === id 
+          ? { ...b, position: { x: e.clientX - startX, y: e.clientY - startY } }
           : b
       ));
     };
 
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
     document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
+    document.addEventListener('mouseup', () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+    }, { once: true });
+  }, [blocks, setBlocks]);
 
-  const handleResize = (blockId: string, size: { width: number; height: number }) => {
-    setBlocks(prevBlocks => 
-      prevBlocks.map(block => 
-        block.id === blockId 
-          ? { ...block, size }
-          : block
-      )
-    );
-  };
-
-  const handleImageUpload = (blockId: string, file: File) => {
+  const handleImageUpload = useCallback((id: string, file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      if (e.target?.result) {
-        setBlocks(prevBlocks => 
-          prevBlocks.map(block => 
-            block.id === blockId 
-              ? { ...block, content: { ...block.content, imageUrl: e.target.result as string } }
-              : block
-          )
-        );
+      const result = e.target?.result;
+      if (typeof result === 'string') {
+        setBlocks(prev => prev.map(block => 
+          block.id === id 
+            ? { ...block, content: { ...block.content, imageUrl: result } }
+            : block
+        ));
       }
     };
     reader.readAsDataURL(file);
-  };
+  }, [setBlocks]);
 
   return (
-    <div className="flex-1 bg-white m-4 rounded-lg shadow-lg p-4 relative min-h-[600px]">
+    <div className="flex-1 bg-white rounded-lg shadow-lg p-4 relative min-h-[800px] overflow-hidden">
+      <ZoomControls
+        scale={scale}
+        onZoomIn={() => setScale(s => Math.min(s + 0.1, 2))}
+        onZoomOut={() => setScale(s => Math.max(s - 0.1, 0.5))}
+      />
+      <Rulers gridSize={GRID_SIZE * scale} />
       <div 
-        className="relative w-full h-full"
+        className="relative w-[calc(100%-20px)] h-[calc(100%-20px)] ml-[20px] mt-[20px]"
         style={{
-          backgroundImage: `
-            linear-gradient(to right, rgba(99, 102, 241, 0.1) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(99, 102, 241, 0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: `20px 20px`,
+          transform: `scale(${scale})`,
+          transformOrigin: '0 0',
+          backgroundImage: `linear-gradient(to right, rgba(99, 102, 241, 0.1) 1px, transparent 1px),
+                           linear-gradient(to bottom, rgba(99, 102, 241, 0.1) 1px, transparent 1px)`,
+          backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
+          backgroundColor: 'white',
+          width: '3000px',
+          height: '2000px'
         }}
       >
-        {blocks.map((block) => (
-          <div
+        {blocks.map(block => (
+          <Block
             key={block.id}
-            className="absolute"
-            style={{
-              left: block.position.x,
-              top: block.position.y,
-            }}
-          >
-            <ResizableBox
-              width={block.size.width}
-              height={block.size.height}
-              onResize={(e, { size }) => handleResize(block.id, size)}
-              minConstraints={[100, 50]}
-              maxConstraints={[800, 600]}
-              resizeHandles={['se', 'sw', 'ne', 'nw', 'n', 's', 'e', 'w']}
-            >
-              <div className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow w-full h-full">
-                <div 
-                  className="h-8 bg-gray-50 rounded-t-lg border-b border-gray-200 px-2 
-                            flex items-center justify-between cursor-move"
-                  onMouseDown={(e) => handleMouseDown(e, block.id)}
-                >
-                  <Move className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">{block.type}</span>
-                  <button
-                    onClick={() => handleDelete(block.id)}
-                    className="p-1 hover:bg-red-50 rounded-full"
-                  >
-                    <X className="w-4 h-4 text-gray-400" />
-                  </button>
-                </div>
-                <div className="p-4">
-                  {renderBlockContent({
-                    block,
-                    onImageUpload: handleImageUpload
-                  })}
-                </div>
-              </div>
-            </ResizableBox>
-          </div>
+            block={block}
+            onDelete={handleDelete}
+            onResize={handleResize}
+            onMove={handleMove}
+            onImageUpload={handleImageUpload}
+          />
         ))}
-
-        {blocks.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-            Haz clic en los elementos del panel para agregarlos
-          </div>
-        )}
       </div>
     </div>
   );
