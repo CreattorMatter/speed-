@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Calendar, Tag, Filter, Search, X, CheckSquare, Square, FileText, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, Tag, Filter, Search, X, CheckSquare, Square, FileText, Trash2, Edit, Power } from 'lucide-react';
 import { Promotion } from '../../types/promotion';
+import { AddPromotionModal } from './AddPromotionModal';
 
 interface PromotionsProps {
   onBack: () => void;
 }
 
-// Datos de ejemplo basados en Jumbo
+// Datos de ejemplo basados en Disco
 const currentPromotions: Promotion[] = [
   {
     id: '1',
@@ -25,7 +26,7 @@ const currentPromotions: Promotion[] = [
   },
   {
     id: '2',
-    title: 'Hasta 40% OFF - Especial de la semana',
+    title: 'Hasta 40% OFF en Especiales de la semana',
     description: 'Descuentos especiales en productos seleccionados',
     discount: 'Hasta 40%',
     startDate: '2024-01-01',
@@ -60,6 +61,83 @@ const currentPromotions: Promotion[] = [
     category: 'Categoría',
     conditions: ['En la segunda unidad', 'Productos seleccionados'],
     isActive: true
+  },
+  // Nuevas promociones de Disco
+  {
+    id: '5',
+    title: 'Hasta 35% y Hasta 12 CSI',
+    description: 'Descuentos especiales en productos seleccionados con cuotas sin interés',
+    discount: '35%',
+    startDate: '2024-01-01',
+    endDate: '2024-01-31',
+    imageUrl: 'https://images.unsplash.com/photo-1556742044-3c52d6e88c62?w=500&auto=format&fit=crop&q=60',
+    category: 'Especial',
+    conditions: ['Hasta 12 cuotas sin interés', 'En productos seleccionados'],
+    isActive: true
+  },
+  {
+    id: '6',
+    title: 'Santander 30% OFF',
+    description: 'Descuento exclusivo para clientes Santander',
+    discount: '30%',
+    startDate: '2024-01-01',
+    endDate: '2024-12-31',
+    imageUrl: 'https://images.unsplash.com/photo-1601597111158-2fceff292cdc?w=500&auto=format&fit=crop&q=60',
+    category: 'Bancaria',
+    conditions: ['Tope de reintegro $3000', 'Válido todos los días'],
+    isActive: true,
+    bank: 'Santander',
+    cardType: 'Todas las tarjetas'
+  },
+  {
+    id: '7',
+    title: 'Hasta 40% OFF en Dove',
+    description: 'Descuentos especiales en toda la línea Dove',
+    discount: '40%',
+    startDate: '2024-12-02',
+    endDate: '2024-12-08',
+    imageUrl: 'https://images.unsplash.com/photo-1619451334792-150fd785ee74?w=500&auto=format&fit=crop&q=60',
+    category: 'Producto',
+    conditions: ['Válido hasta agotar stock', 'En productos seleccionados de la marca'],
+    isActive: true
+  },
+  {
+    id: '8',
+    title: 'Especial Gaseosas',
+    description: 'Descuentos en toda la línea de gaseosas',
+    discount: '30%',
+    startDate: '2024-12-03',
+    endDate: '2024-12-05',
+    imageUrl: 'https://images.unsplash.com/photo-1527960471264-932f39eb5846?w=500&auto=format&fit=crop&q=60',
+    category: 'Producto',
+    conditions: ['Válido para todas las marcas participantes', 'Máximo 6 unidades por compra'],
+    isActive: true
+  },
+  {
+    id: '9',
+    title: 'Cajas Navideñas',
+    description: 'Ofertas especiales en cajas navideñas',
+    discount: '25%',
+    startDate: '2024-12-01',
+    endDate: '2024-12-24',
+    imageUrl: 'https://images.unsplash.com/photo-1543934638-bd2e138430c4?w=500&auto=format&fit=crop&q=60',
+    category: 'Especial',
+    conditions: ['Stock limitado', 'No acumulable con otras promociones'],
+    isActive: true
+  },
+  {
+    id: '10',
+    title: 'Cuota Simple - 12 y 9 Cuotas',
+    description: 'Comprá con 12 y 9 cuotas con interés en productos seleccionados',
+    discount: 'Cuotas',
+    startDate: '2024-01-01',
+    endDate: '2024-12-31',
+    imageUrl: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=500&auto=format&fit=crop&q=60',
+    category: 'Bancaria',
+    conditions: ['En productos seleccionados', 'Sujeto a aprobación crediticia'],
+    isActive: true,
+    bank: 'Varios',
+    cardType: 'Tarjetas participantes'
   }
 ];
 
@@ -70,6 +148,7 @@ export default function Promotions({ onBack }: PromotionsProps) {
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedPromotions, setSelectedPromotions] = useState<Set<string>>(new Set());
+  const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
 
   const categories = ['Todas', 'Bancaria', 'Producto', 'Categoría', 'Especial'];
 
@@ -163,6 +242,23 @@ export default function Promotions({ onBack }: PromotionsProps) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  // Función para activar/desactivar promociones
+  const handleToggleActive = (promotionId: string) => {
+    setPromotions(prev => prev.map(promo => 
+      promo.id === promotionId 
+        ? { ...promo, isActive: !promo.isActive }
+        : promo
+    ));
+  };
+
+  // Función para actualizar una promoción
+  const handleUpdatePromotion = (updatedPromotion: Promotion) => {
+    setPromotions(prev => prev.map(promo => 
+      promo.id === updatedPromotion.id ? updatedPromotion : promo
+    ));
+    setEditingPromotion(null);
   };
 
   return (
@@ -355,6 +451,24 @@ export default function Promotions({ onBack }: PromotionsProps) {
                     <Square className="w-5 h-5 text-white/60" />
                   )}
                 </button>
+                <button
+                  onClick={() => handleToggleActive(promotion.id)}
+                  className={`p-1 rounded-lg backdrop-blur-sm ${
+                    promotion.isActive 
+                      ? 'bg-emerald-500/50 hover:bg-emerald-500/70' 
+                      : 'bg-red-500/50 hover:bg-red-500/70'
+                  }`}
+                  title={promotion.isActive ? 'Desactivar promoción' : 'Activar promoción'}
+                >
+                  <Power className="w-5 h-5 text-white" />
+                </button>
+                <button
+                  onClick={() => setEditingPromotion(promotion)}
+                  className="p-1 bg-black/50 rounded-lg backdrop-blur-sm hover:bg-white/10"
+                  title="Editar promoción"
+                >
+                  <Edit className="w-5 h-5 text-white/60 hover:text-white" />
+                </button>
               </div>
 
               <div className="aspect-video relative overflow-hidden">
@@ -412,6 +526,23 @@ export default function Promotions({ onBack }: PromotionsProps) {
           ))}
         </div>
       </div>
+
+      {/* Modal de nueva promoción */}
+      <AddPromotionModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdd={(newPromotion) => {
+          setPromotions(prev => [...prev, newPromotion]);
+          setShowAddModal(false);
+        }}
+      />
+
+      <AddPromotionModal
+        isOpen={!!editingPromotion}
+        onClose={() => setEditingPromotion(null)}
+        onAdd={handleUpdatePromotion}
+        editingPromotion={editingPromotion}
+      />
     </div>
   );
 } 
