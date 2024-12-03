@@ -13,6 +13,11 @@ interface PosterPreviewProps {
   product: Product;
   promotion?: {
     discount: string;
+    bank?: string;
+    cardType?: string;
+    conditions?: string[];
+    startDate?: string;
+    endDate?: string;
   };
   pricePerUnit?: string;
   points?: string;
@@ -51,26 +56,72 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
           {product.name.toLowerCase()}
         </div>
 
-        {/* Precios */}
-        <div className="space-y-2">
+        <div className="flex justify-between items-start">
+          {/* Precios */}
+          <div className="flex-1 space-y-2">
+            {promotion && (
+              <div className="flex items-center justify-center gap-4">
+                <div className="text-3xl text-gray-500 line-through font-bold">
+                  ${product.price.toLocaleString('es-AR')}
+                </div>
+                <div className="bg-red-600 text-white px-4 py-1 rounded-full text-2xl font-bold">
+                  {promotion.discount}
+                </div>
+              </div>
+            )}
+            
+            {/* Precio Final */}
+            <div className="flex items-baseline justify-center">
+              <span className="text-5xl font-bold">$</span>
+              <span className="text-[120px] leading-none font-bold tracking-tighter">
+                {Math.round(finalPrice).toLocaleString('es-AR')}
+              </span>
+            </div>
+          </div>
+
+          {/* Información de la promoción */}
           {promotion && (
-            <div className="flex items-center justify-center gap-4">
-              <div className="text-3xl text-gray-500 line-through font-bold">
-                ${product.price.toLocaleString('es-AR')}
-              </div>
-              <div className="bg-red-600 text-white px-4 py-1 rounded-full text-2xl font-bold">
-                {promotion.discount}
-              </div>
+            <div className="w-48 text-left space-y-3">
+              {/* Banco */}
+              {promotion.bank && (
+                <div>
+                  <h3 className="text-xs font-medium text-gray-500 uppercase">
+                    {promotion.bank}
+                  </h3>
+                  {promotion.cardType && (
+                    <p className="text-xs text-gray-600">
+                      {promotion.cardType}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Condiciones */}
+              {promotion.conditions && promotion.conditions.length > 0 && (
+                <div>
+                  <ul className="space-y-0.5">
+                    {promotion.conditions.map((condition, index) => (
+                      <li 
+                        key={index}
+                        className="flex items-start gap-1 text-xs text-gray-600"
+                      >
+                        <span className="w-1 h-1 rounded-full bg-gray-400 mt-1 flex-shrink-0" />
+                        {condition}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Vigencia */}
+              {promotion.startDate && promotion.endDate && (
+                <div className="text-xs text-gray-600">
+                  <p>Válido del {new Date(promotion.startDate).toLocaleDateString()}</p>
+                  <p>al {new Date(promotion.endDate).toLocaleDateString()}</p>
+                </div>
+              )}
             </div>
           )}
-          
-          {/* Precio Final */}
-          <div className="flex items-baseline justify-center">
-            <span className="text-5xl font-bold">$</span>
-            <span className="text-[120px] leading-none font-bold tracking-tighter">
-              {Math.round(finalPrice).toLocaleString('es-AR')}
-            </span>
-          </div>
         </div>
 
         {/* Información adicional */}
