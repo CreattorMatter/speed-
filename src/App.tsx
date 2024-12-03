@@ -8,6 +8,7 @@ import Promotions from './components/Promotions/Promotions';
 interface DashboardProps {
   onLogout: () => void;
   onNewTemplate: () => void;
+  onNewPoster: () => void;
   onProducts: () => void;
   onPromotions: () => void;
   onBack: () => void;
@@ -56,6 +57,10 @@ function App() {
     }
   };
 
+  const handleNewPoster = () => {
+    // Lógica para ir a la sección de cartelería
+  };
+
   if (isAuthenticated && showBuilder) {
     return <Builder onBack={handleBack} />;
   }
@@ -73,6 +78,7 @@ function App() {
       <Dashboard 
         onLogout={handleLogout} 
         onNewTemplate={() => setShowBuilder(true)} 
+        onNewPoster={handleNewPoster}
         onProducts={() => setShowProducts(true)} 
         onPromotions={() => setShowPromotions(true)} 
         onBack={handleBack}

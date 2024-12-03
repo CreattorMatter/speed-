@@ -6,6 +6,7 @@ import { useTheme } from '../hooks/useTheme';
 interface DashboardProps {
   onLogout: () => void;
   onNewTemplate: () => void;
+  onNewPoster: () => void;
   onProducts: () => void;
   onPromotions: () => void;
   onBack: () => void;
@@ -67,6 +68,7 @@ const recentTemplates: RecentTemplate[] = [
 const Dashboard: React.FC<DashboardProps> = ({ 
   onLogout, 
   onNewTemplate,
+  onNewPoster,
   onProducts,
   onPromotions
 }) => {
@@ -167,9 +169,10 @@ const Dashboard: React.FC<DashboardProps> = ({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={onProducts}
-              className={`px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-lg text-sm font-medium
-                       text-indigo-300 border border-indigo-500/20
-                       ${isDark ? '' : ''}`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                ${isDark 
+                  ? 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20'
+                  : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-100'}`}
             >
               <Package2 className="w-4 h-4 inline mr-2" />
               Productos
@@ -178,12 +181,25 @@ const Dashboard: React.FC<DashboardProps> = ({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={onPromotions}
-              className={`px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg text-sm font-medium
-                       text-purple-300 border border-purple-500/20
-                       ${isDark ? '' : ''}`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                ${isDark 
+                  ? 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/20'
+                  : 'bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-100'}`}
             >
               <Tags className="w-4 h-4 inline mr-2" />
               Promociones
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onNewPoster}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                ${isDark 
+                  ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/20'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-100'}`}
+            >
+              <Plus className="w-4 h-4 inline mr-2" />
+              Cartel
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.02 }}
