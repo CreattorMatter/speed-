@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Upload, Download, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Upload, Download, AlertCircle, CheckCircle } from 'lucide-react';
 import { Product } from '../../types/product';
 import Papa, { ParseResult, ParseError } from 'papaparse';
 
@@ -10,11 +10,11 @@ interface BulkUploadProps {
 }
 
 interface CSVRow {
-  sku: string;
-  name: string;
-  price: string;
-  category: string;
-  imageUrl: string;
+  SKU: string;
+  Nombre: string;
+  Precio: string;
+  Categoria: string;
+  'URL de Imagen': string;
 }
 
 const sampleData = [
@@ -38,6 +38,7 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({ onSubmit, onBack }) => {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string>('');
   const [preview, setPreview] = useState<CSVRow[]>([]);
+  const [success, setSuccess] = useState<string>('');
 
   const downloadSampleCSV = () => {
     const csv = Papa.unparse(sampleData);
@@ -83,29 +84,63 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({ onSubmit, onBack }) => {
 
     try {
       const results = await new Promise<CSVRow[]>((resolve, reject) => {
-        Papa.parse<CSVRow>(file, {
+        Papa.parse(file, {
           header: true,
-          complete: (results: ParseResult<CSVRow>) => {
+          skipEmptyLines: true,
+          transformHeader: (header: string) => {
+            const headerMap: { [key: string]: string } = {
+              'SKU': 'SKU',
+              'Nombre': 'Nombre',
+              'Precio': 'Precio',
+              'Categoria': 'Categoria',
+              'URL de Imagen': 'URL de Imagen'
+            };
+            return headerMap[header] || header;
+          },
+          complete: (results: Papa.ParseResult<CSVRow>) => {
             if (results.errors.length > 0) {
               reject('El archivo contiene errores de formato');
               return;
             }
-            resolve(results.data);
+            
+            const validData = results.data.filter(row => 
+              row.SKU && 
+              row.Nombre && 
+              row.Precio && 
+              row.Categoria && 
+              row['URL de Imagen']
+            );
+
+            if (validData.length === 0) {
+              reject('No se encontraron datos válidos en el archivo');
+              return;
+            }
+
+            resolve(validData);
           },
-          error: (error: ParseError) => reject(error.message)
+          error: (error: Papa.ParseError) => reject(error.message)
         });
       });
 
       const products: Product[] = results.map((row, index) => ({
         id: Date.now().toString() + index,
-        sku: row.sku,
-        name: row.name,
-        price: parseFloat(row.price),
-        category: row.category,
-        imageUrl: row.imageUrl
+        sku: row.SKU.trim(),
+        name: row.Nombre.trim(),
+        price: parseFloat(row.Precio.replace(/[^\d.-]/g, '')),
+        category: row.Categoria.trim(),
+        imageUrl: row['URL de Imagen'].trim()
       }));
 
-      onSubmit(products);
+      if (products.length > 0) {
+        setSuccess(`Se procesaron ${products.length} productos`);
+        onSubmit(products);
+        setTimeout(() => {
+          setSuccess('');
+          onBack();
+        }, 3000);
+      } else {
+        setError('No se pudieron procesar los productos del archivo');
+      }
     } catch (error) {
       setError(error as string);
     }
@@ -162,6 +197,13 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({ onSubmit, onBack }) => {
             </div>
           )}
 
+          {success && (
+            <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 p-4 rounded-lg">
+              <CheckCircle className="w-5 h-5" />
+              <span>{success}</span>
+            </div>
+          )}
+
           {preview.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-sm font-medium text-white/80">Vista previa:</h4>
@@ -213,6 +255,17 @@ export const BulkUpload: React.FC<BulkUploadProps> = ({ onSubmit, onBack }) => {
             Importar Productos
           </motion.button>
         </div>
+      </div>
+
+      <div className="text-sm text-white/60 space-y-2">
+        <p>El archivo CSV debe contener las siguientes columnas:</p>
+        <ul className="list-disc list-inside space-y-1">
+          <li>SKU</li>
+          <li>Nombre</li>
+          <li>Precio</li>
+          <li>Categoria</li>
+          <li>URL de Imagen</li>
+        </ul>
       </div>
     </div>
   );

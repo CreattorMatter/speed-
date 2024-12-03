@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { ArrowLeft, Plus, LogOut, Sparkles, Clock, Star, Package, Construction } from 'lucide-react';
+import { ArrowLeft, Plus, LogOut, Sparkles, Clock, Star, Package, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import DashboardStats from './DashboardStats';
 import RecentTemplates from './RecentTemplates';
@@ -8,11 +8,12 @@ interface DashboardProps {
   onLogout: () => void;
   onNewTemplate: () => void;
   onProducts: () => void;
+  onPromotions: () => void;
   onBack: () => void;
   userEmail?: string;
 }
 
-export default function Dashboard({ onLogout, onNewTemplate, onProducts, onBack, userEmail = 'admin@admin.com' }: DashboardProps) {
+export default function Dashboard({ onLogout, onNewTemplate, onProducts, onPromotions, onBack, userEmail = 'admin@admin.com' }: DashboardProps) {
   const userName = userEmail.split('@')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].slice(1);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, card: HTMLDivElement) => {
@@ -181,7 +182,7 @@ export default function Dashboard({ onLogout, onNewTemplate, onProducts, onBack,
                        text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 shadow-lg
                        hover:shadow-indigo-500/25 transition-all duration-200"
             >
-              <Construction className="w-5 h-5" />
+              <Plus className="w-5 h-5" />
               <span>Builder</span>
             </motion.button>
 
@@ -195,6 +196,18 @@ export default function Dashboard({ onLogout, onNewTemplate, onProducts, onBack,
             >
               <Package className="w-5 h-5" />
               <span>Productos</span>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onPromotions}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-500
+                       text-white rounded-lg hover:from-rose-600 hover:to-pink-600 shadow-lg
+                       hover:shadow-rose-500/25 transition-all duration-200"
+            >
+              <Tag className="w-5 h-5" />
+              <span>Promociones</span>
             </motion.button>
           </div>
         </div>

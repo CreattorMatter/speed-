@@ -58,7 +58,7 @@ export function ManualForm({ onSubmit, onBack }: ManualFormProps) {
       id: Date.now().toString(),
       sku: formData.sku,
       name: formData.name,
-      price: parseFloat(formData.price),
+      price: parseFloat(formData.price.toString()),
       category: formData.category === 'new' ? formData.newCategory : formData.category,
       imageUrl: finalImageUrl
     };

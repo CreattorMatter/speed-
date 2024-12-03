@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, Filter, Plus, X, CheckSquare, Square, Trash2, FileText } from 'lucide-react';
+import { ArrowLeft, Search, Filter, Plus, X, CheckSquare, Square, Trash2, FileText, CheckCircle } from 'lucide-react';
 import { products } from '../../data/products';
 import AddProductModal from './AddProductModal';
 import { Product } from '../../types/product';
@@ -10,6 +10,14 @@ interface ProductsProps {
   onBack: () => void;
 }
 
+// Función para normalizar texto (eliminar tildes y caracteres especiales)
+const normalizeText = (text: string): string => {
+  return text.normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Eliminar tildes
+    .replace(/[^a-zA-Z0-9\s-_.,]/g, "") // Solo permitir alfanuméricos, espacios y algunos símbolos
+    .trim();
+};
+
 export default function Products({ onBack }: ProductsProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -17,16 +25,18 @@ export default function Products({ onBack }: ProductsProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [localProducts, setLocalProducts] = useState<Product[]>(products);
+  const [recentlyAdded, setRecentlyAdded] = useState<Set<string>>(new Set());
 
   // Obtener categorías únicas
   const categories = useMemo(() => {
-    const uniqueCategories = new Set(products.map(product => product.category));
+    const uniqueCategories = new Set(localProducts.map(product => product.category));
     return Array.from(uniqueCategories).sort();
-  }, []);
+  }, [localProducts]);
 
   // Función de filtrado combinada
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
+    return localProducts.filter(product => {
       const matchesSearch = searchTerm === '' || 
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -36,19 +46,69 @@ export default function Products({ onBack }: ProductsProps) {
 
       return matchesSearch && matchesCategory;
     });
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory, localProducts]);
 
   const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
   }, []);
 
+  // Función para verificar duplicados
+  const checkDuplicates = (newProducts: Product | Product[]) => {
+    const productsToCheck = Array.isArray(newProducts) ? newProducts : [newProducts];
+    const duplicates = productsToCheck.filter(newProduct => 
+      localProducts.some(existingProduct => 
+        existingProduct.sku === newProduct.sku ||
+        (existingProduct.name.toLowerCase() === newProduct.name.toLowerCase() &&
+         existingProduct.category.toLowerCase() === newProduct.category.toLowerCase())
+      )
+    );
+
+    return duplicates;
+  };
+
+  // Función actualizada para agregar productos
   const handleAddProduct = (product: Product | Product[]) => {
-    if (Array.isArray(product)) {
-      // Manejar múltiples productos
-      console.log('Productos agregados:', product);
+    const duplicates = checkDuplicates(product);
+    
+    if (duplicates.length > 0) {
+      const isMultiple = Array.isArray(product);
+      const totalProducts = isMultiple ? (product as Product[]).length : 1;
+      const duplicateCount = duplicates.length;
+      
+      if (isMultiple && duplicateCount < totalProducts) {
+        // Algunos productos son duplicados
+        const confirmMessage = `Se encontraron ${duplicateCount} productos duplicados de ${totalProducts}.\n\n` +
+          `Productos duplicados:\n${duplicates.map(p => `- ${p.name} (${p.sku})`).join('\n')}\n\n` +
+          '¿Deseas importar solo los productos no duplicados?';
+        
+        if (window.confirm(confirmMessage)) {
+          const uniqueProducts = (product as Product[]).filter(p => 
+            !duplicates.some(d => d.sku === p.sku)
+          );
+          const newIds = uniqueProducts.map(p => p.id);
+          setLocalProducts(prev => [...prev, ...uniqueProducts]);
+          setRecentlyAdded(new Set(newIds));
+          setTimeout(() => setRecentlyAdded(new Set()), 5000);
+        }
+      } else {
+        // Todos los productos son duplicados o es un solo producto duplicado
+        const message = isMultiple 
+          ? 'Todos los productos ya existen en el catálogo.'
+          : `El producto "${duplicates[0].name}" ya existe en el catálogo.`;
+        alert(message);
+      }
     } else {
-      // Manejar un solo producto
-      console.log('Producto agregado:', product);
+      // No hay duplicados, proceder normalmente
+      if (Array.isArray(product)) {
+        const newIds = product.map(p => p.id);
+        setLocalProducts(prev => [...prev, ...product]);
+        setRecentlyAdded(new Set(newIds));
+        setTimeout(() => setRecentlyAdded(new Set()), 5000);
+      } else {
+        setLocalProducts(prev => [...prev, product]);
+        setRecentlyAdded(new Set([product.id]));
+        setTimeout(() => setRecentlyAdded(new Set()), 5000);
+      }
     }
     setIsAddModalOpen(false);
   };
@@ -78,36 +138,62 @@ export default function Products({ onBack }: ProductsProps) {
   // Función para eliminar productos seleccionados
   const handleDeleteSelected = () => {
     if (window.confirm(`¿Estás seguro de que deseas eliminar ${selectedProducts.size} productos?`)) {
-      console.log('Productos eliminados:', Array.from(selectedProducts));
+      setLocalProducts(prev => 
+        prev.filter(product => !selectedProducts.has(product.id))
+      );
       setSelectedProducts(new Set());
     }
+  };
+
+  // Función para eliminar un producto individual desde el modal de detalles
+  const handleDeleteProduct = (id: string) => {
+    setLocalProducts(prev => prev.filter(product => product.id !== id));
+    setSelectedProduct(null);
+  };
+
+  // Función para actualizar un producto
+  const handleUpdateProduct = (updatedProduct: Product) => {
+    setLocalProducts(prev => 
+      prev.map(product => 
+        product.id === updatedProduct.id ? updatedProduct : product
+      )
+    );
+    setSelectedProduct(null);
   };
 
   // Función para exportar productos seleccionados a CSV
   const handleExportCSV = () => {
     const selectedProductsData = filteredProducts.filter(p => selectedProducts.has(p.id));
     const csv = [
-      // Encabezados
-      ['SKU', 'Nombre', 'Precio', 'Categoría', 'URL de Imagen'].join(','),
-      // Datos
+      // Encabezados normalizados
+      ['SKU', 'Nombre', 'Precio', 'Categoria', 'URL de Imagen'].join(','),
+      // Datos normalizados
       ...selectedProductsData.map(p => [
-        p.sku,
-        `"${p.name}"`, // Envolvemos en comillas para manejar comas en el nombre
+        normalizeText(p.sku),
+        `"${normalizeText(p.name)}"`, // Envolvemos en comillas para manejar comas en el nombre
         p.price,
-        p.category,
+        normalizeText(p.category),
         p.imageUrl
       ].join(','))
     ].join('\n');
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    // Agregar BOM para que Excel reconozca correctamente los caracteres
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csv], { 
+      type: 'text/csv;charset=utf-8;' 
+    });
+    
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    
     link.setAttribute('href', url);
-    link.setAttribute('download', 'productos_seleccionados.csv');
+    link.setAttribute('download', `productos_${timestamp}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url); // Liberar memoria
   };
 
   return (
@@ -279,9 +365,9 @@ export default function Products({ onBack }: ProductsProps) {
         {/* Contador de resultados y filtro activo */}
         <div className="flex items-center gap-4 mb-6 text-white/60">
           <span>
-            {filteredProducts.length === products.length
-              ? `${products.length} productos`
-              : `${filteredProducts.length} de ${products.length} productos`}
+            {filteredProducts.length === localProducts.length
+              ? `${localProducts.length} productos`
+              : `${filteredProducts.length} de ${localProducts.length} productos`}
           </span>
           {selectedCategory && (
             <div className="flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full">
@@ -311,8 +397,21 @@ export default function Products({ onBack }: ProductsProps) {
                            overflow-hidden group relative
                            ${selectedProducts.has(product.id) 
                              ? 'border-purple-500' 
+                             : recentlyAdded.has(product.id)
+                             ? 'border-emerald-500'
                              : 'border-white/20'}`}
                 >
+                  {/* Indicador de producto recién agregado */}
+                  {recentlyAdded.has(product.id) && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="absolute top-2 left-2 z-10 bg-emerald-500/20 p-1 rounded-full"
+                    >
+                      <CheckCircle className="w-5 h-5 text-emerald-400" />
+                    </motion.div>
+                  )}
+
                   {/* Checkbox de selección */}
                   <div className="absolute top-2 right-2 z-10 flex gap-2">
                     <button
@@ -388,16 +487,8 @@ export default function Products({ onBack }: ProductsProps) {
             product={selectedProduct}
             isOpen={!!selectedProduct}
             onClose={() => setSelectedProduct(null)}
-            onUpdate={(updatedProduct) => {
-              // Aquí implementarías la lógica para actualizar el producto
-              console.log('Producto actualizado:', updatedProduct);
-              setSelectedProduct(null);
-            }}
-            onDelete={(id) => {
-              // Aquí implementarías la lógica para eliminar el producto
-              console.log('Producto eliminado:', id);
-              setSelectedProduct(null);
-            }}
+            onUpdate={handleUpdateProduct}
+            onDelete={handleDeleteProduct}
             categories={categories}
           />
         )}

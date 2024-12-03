@@ -337,5 +337,184 @@ export const products = [
     price: 4999.99,
     imageUrl: 'https://images.unsplash.com/photo-1563453392212-326f5e854473?w=500&auto=format&fit=crop&q=60',
     category: 'Limpieza'
+  },
+  // Almacén - Aceites y Vinagres
+  {
+    id: '41',
+    sku: 'ALM-001',
+    name: 'Aceite de Oliva Extra Virgen Cuisine & Co 500ml',
+    price: 2499.99,
+    imageUrl: 'https://images.unsplash.com/photo-1619813938421-6b0f40e70766?w=500&auto=format&fit=crop&q=60',
+    category: 'Aceites y Vinagres'
+  },
+  {
+    id: '42',
+    sku: 'ALM-002',
+    name: 'Aceite de Girasol Natura 1.5L',
+    price: 1299.99,
+    imageUrl: 'https://images.unsplash.com/photo-1597403491447-3ab08f8e44dc?w=500&auto=format&fit=crop&q=60',
+    category: 'Aceites y Vinagres'
+  },
+
+  // Almacén - Aderezos
+  {
+    id: '43',
+    sku: 'ADE-001',
+    name: 'Mayonesa Hellmanns 500g',
+    price: 799.99,
+    imageUrl: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=500&auto=format&fit=crop&q=60',
+    category: 'Aderezos'
+  },
+  {
+    id: '44',
+    sku: 'ADE-002',
+    name: 'Mostaza Savora 250g',
+    price: 499.99,
+    imageUrl: 'https://images.unsplash.com/photo-1528750717929-32abb73d3bd9?w=500&auto=format&fit=crop&q=60',
+    category: 'Aderezos'
+  },
+
+  // Almacén - Arroz y Legumbres
+  {
+    id: '45',
+    sku: 'ARR-001',
+    name: 'Arroz Largo Fino Gallo 1kg',
+    price: 899.99,
+    imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=500&auto=format&fit=crop&q=60',
+    category: 'Arroz y Legumbres'
+  },
+  {
+    id: '46',
+    sku: 'ARR-002',
+    name: 'Lentejas Cuisine & Co 400g',
+    price: 599.99,
+    imageUrl: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=500&auto=format&fit=crop&q=60',
+    category: 'Arroz y Legumbres'
+  },
+
+  // Desayuno y Merienda
+  {
+    id: '47',
+    sku: 'DES-001',
+    name: 'Galletitas Oreo 354g',
+    price: 899.99,
+    imageUrl: 'https://images.unsplash.com/photo-1584361853901-dd1904bb7987?w=500&auto=format&fit=crop&q=60',
+    category: 'Desayuno y Merienda'
+  },
+  {
+    id: '48',
+    sku: 'DES-002',
+    name: 'Mermelada BC La Campagnola 454g',
+    price: 699.99,
+    imageUrl: 'https://images.unsplash.com/photo-1590683885822-a7cc6c657821?w=500&auto=format&fit=crop&q=60',
+    category: 'Desayuno y Merienda'
+  },
+
+  // Golosinas y Chocolates
+  {
+    id: '49',
+    sku: 'GOL-001',
+    name: 'Chocolate Milka Leche 100g',
+    price: 799.99,
+    imageUrl: 'https://images.unsplash.com/photo-1548907040-4d42bfc0c273?w=500&auto=format&fit=crop&q=60',
+    category: 'Golosinas y Chocolates'
+  },
+  {
+    id: '50',
+    sku: 'GOL-002',
+    name: 'Alfajor Milka Mousse 55g',
+    price: 299.99,
+    imageUrl: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=500&auto=format&fit=crop&q=60',
+    category: 'Golosinas y Chocolates'
+  },
+
+  // Harinas
+  {
+    id: '51',
+    sku: 'HAR-001',
+    name: 'Harina 0000 Blancaflor 1kg',
+    price: 499.99,
+    imageUrl: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=500&auto=format&fit=crop&q=60',
+    category: 'Harinas'
+  },
+  {
+    id: '52',
+    sku: 'HAR-002',
+    name: 'Harina Leudante Pureza 1kg',
+    price: 599.99,
+    imageUrl: 'https://images.unsplash.com/photo-1603566541830-65be84e479f9?w=500&auto=format&fit=crop&q=60',
+    category: 'Harinas'
+  },
+
+  // Conservas
+  {
+    id: '53',
+    sku: 'CON-001',
+    name: 'Atún al Natural La Campagnola 170g',
+    price: 899.99,
+    imageUrl: 'https://images.unsplash.com/photo-1597691424841-c70c8449c75d?w=500&auto=format&fit=crop&q=60',
+    category: 'Conservas'
+  },
+  {
+    id: '54',
+    sku: 'CON-002',
+    name: 'Arvejas Arcor 350g',
+    price: 399.99,
+    imageUrl: 'https://images.unsplash.com/photo-1596097635121-14b63b7a0c23?w=500&auto=format&fit=crop&q=60',
+    category: 'Conservas'
+  },
+
+  // Snacks
+  {
+    id: '55',
+    sku: 'SNK-001',
+    name: 'Papas Fritas Lays Clásicas 145g',
+    price: 899.99,
+    imageUrl: 'https://images.unsplash.com/photo-1613919113640-25732ec5e61f?w=500&auto=format&fit=crop&q=60',
+    category: 'Snacks'
+  },
+  {
+    id: '56',
+    sku: 'SNK-002',
+    name: 'Doritos Queso 145g',
+    price: 899.99,
+    imageUrl: 'https://images.unsplash.com/photo-1600952841320-db92ec4047ca?w=500&auto=format&fit=crop&q=60',
+    category: 'Snacks'
+  },
+
+  // Bebidas
+  {
+    id: '57',
+    sku: 'BEB-001',
+    name: 'Coca Cola 2.25L',
+    price: 899.99,
+    imageUrl: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=500&auto=format&fit=crop&q=60',
+    category: 'Bebidas'
+  },
+  {
+    id: '58',
+    sku: 'BEB-002',
+    name: 'Sprite 2.25L',
+    price: 899.99,
+    imageUrl: 'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?w=500&auto=format&fit=crop&q=60',
+    category: 'Bebidas'
+  },
+
+  // Lácteos
+  {
+    id: '59',
+    sku: 'LAC-001',
+    name: 'Leche La Serenísima 1L',
+    price: 599.99,
+    imageUrl: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&auto=format&fit=crop&q=60',
+    category: 'Lácteos'
+  },
+  {
+    id: '60',
+    sku: 'LAC-002',
+    name: 'Yogur Ser Frutilla 190g',
+    price: 299.99,
+    imageUrl: 'https://images.unsplash.com/photo-1571212515416-fca988684e08?w=500&auto=format&fit=crop&q=60',
+    category: 'Lácteos'
   }
 ]; 
