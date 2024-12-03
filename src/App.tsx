@@ -3,10 +3,10 @@ import { LogIn, Lock, User, AlertCircle } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Builder from './components/Builder/Builder';
 import Products from './components/Products/Products';
-import Promotions from './components/Promotions/Promotions';
+import Promotions from './components/Promotions';
 import { PosterEditor } from './components/Posters/PosterEditor';
 
-interface DashboardProps {
+export interface DashboardProps {
   onLogout: () => void;
   onNewTemplate: () => void;
   onNewPoster: () => void;

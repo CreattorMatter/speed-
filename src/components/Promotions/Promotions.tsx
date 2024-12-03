@@ -1,15 +1,37 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, Calendar, Tag, Filter, Search, X, CheckSquare, Square, FileText, Trash2, Edit, Power } from 'lucide-react';
-import { Promotion } from '../../types/promotion';
 import { AddPromotionModal } from './AddPromotionModal';
 
 interface PromotionsProps {
   onBack: () => void;
 }
 
+interface CardOptions {
+  debit: boolean;
+  credit: boolean;
+  cardBrands: string[];
+}
+
+interface PromotionType {
+  id: string;
+  title: string;
+  description: string;
+  discount: string;
+  imageUrl: string;
+  category: 'Bancaria' | 'Especial' | 'Categoría' | 'Producto';
+  conditions: string[];
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  bank?: string;
+  cardType?: string;
+  selectedBanks: string[];
+  cardOptions: CardOptions;
+}
+
 // Datos de ejemplo basados en Disco
-const currentPromotions: Promotion[] = [
+const currentPromotions: PromotionType[] = [
   {
     id: '1',
     title: 'American Express 25% OFF',
@@ -22,7 +44,13 @@ const currentPromotions: Promotion[] = [
     conditions: ['Tope de reintegro $2000', 'Válido solo los jueves'],
     isActive: true,
     bank: 'American Express',
-    cardType: 'Todas las tarjetas'
+    cardType: 'Todas las tarjetas',
+    selectedBanks: ['American Express'],
+    cardOptions: {
+      debit: true,
+      credit: true,
+      cardBrands: ['Todas las tarjetas']
+    }
   },
   {
     id: '2',
@@ -34,7 +62,13 @@ const currentPromotions: Promotion[] = [
     imageUrl: 'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=500&auto=format&fit=crop&q=60',
     category: 'Especial',
     conditions: ['Válido hasta agotar stock', 'En productos seleccionados'],
-    isActive: true
+    isActive: true,
+    selectedBanks: [],
+    cardOptions: {
+      debit: false,
+      credit: false,
+      cardBrands: []
+    }
   },
   {
     id: '3',
@@ -48,7 +82,13 @@ const currentPromotions: Promotion[] = [
     conditions: ['Tope de reintegro $1500', 'Válido solo los miércoles'],
     isActive: true,
     bank: 'Cencosud',
-    cardType: 'Tarjeta Cencosud'
+    cardType: 'Tarjeta Cencosud',
+    selectedBanks: ['Cencosud'],
+    cardOptions: {
+      debit: true,
+      credit: true,
+      cardBrands: ['Tarjeta Cencosud']
+    }
   },
   {
     id: '4',
@@ -60,7 +100,13 @@ const currentPromotions: Promotion[] = [
     imageUrl: 'https://images.unsplash.com/photo-1579113800032-c38bd7635818?w=500&auto=format&fit=crop&q=60',
     category: 'Categoría',
     conditions: ['En la segunda unidad', 'Productos seleccionados'],
-    isActive: true
+    isActive: true,
+    selectedBanks: [],
+    cardOptions: {
+      debit: false,
+      credit: false,
+      cardBrands: []
+    }
   },
   // Nuevas promociones de Disco
   {
@@ -73,7 +119,13 @@ const currentPromotions: Promotion[] = [
     imageUrl: 'https://images.unsplash.com/photo-1556742044-3c52d6e88c62?w=500&auto=format&fit=crop&q=60',
     category: 'Especial',
     conditions: ['Hasta 12 cuotas sin interés', 'En productos seleccionados'],
-    isActive: true
+    isActive: true,
+    selectedBanks: [],
+    cardOptions: {
+      debit: false,
+      credit: false,
+      cardBrands: []
+    }
   },
   {
     id: '6',
@@ -87,7 +139,13 @@ const currentPromotions: Promotion[] = [
     conditions: ['Tope de reintegro $3000', 'Válido todos los días'],
     isActive: true,
     bank: 'Santander',
-    cardType: 'Todas las tarjetas'
+    cardType: 'Todas las tarjetas',
+    selectedBanks: ['Santander'],
+    cardOptions: {
+      debit: true,
+      credit: true,
+      cardBrands: ['Todas las tarjetas']
+    }
   },
   {
     id: '7',
@@ -99,7 +157,13 @@ const currentPromotions: Promotion[] = [
     imageUrl: 'https://images.unsplash.com/photo-1619451334792-150fd785ee74?w=500&auto=format&fit=crop&q=60',
     category: 'Producto',
     conditions: ['Válido hasta agotar stock', 'En productos seleccionados de la marca'],
-    isActive: true
+    isActive: true,
+    selectedBanks: [],
+    cardOptions: {
+      debit: false,
+      credit: false,
+      cardBrands: []
+    }
   },
   {
     id: '8',
@@ -111,7 +175,13 @@ const currentPromotions: Promotion[] = [
     imageUrl: 'https://images.unsplash.com/photo-1527960471264-932f39eb5846?w=500&auto=format&fit=crop&q=60',
     category: 'Producto',
     conditions: ['Válido para todas las marcas participantes', 'Máximo 6 unidades por compra'],
-    isActive: true
+    isActive: true,
+    selectedBanks: [],
+    cardOptions: {
+      debit: false,
+      credit: false,
+      cardBrands: []
+    }
   },
   {
     id: '9',
@@ -123,7 +193,13 @@ const currentPromotions: Promotion[] = [
     imageUrl: 'https://images.unsplash.com/photo-1543934638-bd2e138430c4?w=500&auto=format&fit=crop&q=60',
     category: 'Especial',
     conditions: ['Stock limitado', 'No acumulable con otras promociones'],
-    isActive: true
+    isActive: true,
+    selectedBanks: [],
+    cardOptions: {
+      debit: false,
+      credit: false,
+      cardBrands: []
+    }
   },
   {
     id: '10',
@@ -137,18 +213,24 @@ const currentPromotions: Promotion[] = [
     conditions: ['En productos seleccionados', 'Sujeto a aprobación crediticia'],
     isActive: true,
     bank: 'Varios',
-    cardType: 'Tarjetas participantes'
+    cardType: 'Tarjetas participantes',
+    selectedBanks: ['Varios'],
+    cardOptions: {
+      debit: true,
+      credit: true,
+      cardBrands: ['Tarjetas participantes']
+    }
   }
 ];
 
 export default function Promotions({ onBack }: PromotionsProps) {
-  const [promotions, setPromotions] = useState<Promotion[]>(currentPromotions);
+  const [promotions, setPromotions] = useState<PromotionType[]>(currentPromotions);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedPromotions, setSelectedPromotions] = useState<Set<string>>(new Set());
-  const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
+  const [editingPromotion, setEditingPromotion] = useState<PromotionType | null>(null);
 
   const categories = ['Todas', 'Bancaria', 'Producto', 'Categoría', 'Especial'];
 
@@ -254,7 +336,7 @@ export default function Promotions({ onBack }: PromotionsProps) {
   };
 
   // Función para actualizar una promoción
-  const handleUpdatePromotion = (updatedPromotion: Promotion) => {
+  const handleUpdatePromotion = (updatedPromotion: PromotionType) => {
     setPromotions(prev => prev.map(promo => 
       promo.id === updatedPromotion.id ? updatedPromotion : promo
     ));
