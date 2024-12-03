@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard';
 import Builder from './components/Builder/Builder';
 import Products from './components/Products/Products';
 import Promotions from './components/Promotions/Promotions';
+import { PosterEditor } from './components/Posters/PosterEditor';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -23,6 +24,7 @@ function App() {
   const [showBuilder, setShowBuilder] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
   const [showPromotions, setShowPromotions] = useState(false);
+  const [showPosterEditor, setShowPosterEditor] = useState(false);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,6 +40,7 @@ function App() {
     setShowBuilder(false);
     setShowProducts(false);
     setShowPromotions(false);
+    setShowPosterEditor(false);
   };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value);
@@ -50,6 +53,8 @@ function App() {
       setShowProducts(false);
     } else if (showPromotions) {
       setShowPromotions(false);
+    } else if (showPosterEditor) {
+      setShowPosterEditor(false);
     } else if (isAuthenticated) {
       if (window.confirm('¿Deseas cerrar sesión?')) {
         handleLogout();
@@ -58,7 +63,7 @@ function App() {
   };
 
   const handleNewPoster = () => {
-    // Lógica para ir a la sección de cartelería
+    setShowPosterEditor(true);
   };
 
   if (isAuthenticated && showBuilder) {
@@ -71,6 +76,10 @@ function App() {
 
   if (isAuthenticated && showPromotions) {
     return <Promotions onBack={handleBack} />;
+  }
+
+  if (isAuthenticated && showPosterEditor) {
+    return <PosterEditor onBack={() => setShowPosterEditor(false)} />;
   }
 
   if (isAuthenticated) {
