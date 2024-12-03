@@ -5,6 +5,8 @@ import { RegionSelect } from './RegionSelect';
 import { LocationSelect } from './LocationSelect';
 import { PromotionSelect } from './PromotionSelect';
 import { ProductSelect } from './ProductSelect';
+import { CategorySelect } from './CategorySelect';
+import { PromoTypeSelect, PromoType } from './PromoTypeSelect';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -344,12 +346,17 @@ const PRODUCTS = [
   }
 ];
 
+// Extraer categorías únicas de los productos
+const CATEGORIES = Array.from(new Set(PRODUCTS.map(p => p.category)));
+
 export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
   const [company, setCompany] = useState('');
   const [region, setRegion] = useState('');
   const [cc, setCC] = useState('');
   const [promotion, setPromotion] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [promoType, setPromoType] = useState<PromoType | ''>('');
 
   // Filtrar CC basado en la región seleccionada
   const filteredLocations = region 
@@ -416,6 +423,18 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
                 onChange={setCC}
                 locations={filteredLocations}
                 disabled={!region}
+              />
+            </div>
+          </div>
+
+          <div className="border-t pt-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tipo de Promoción:
+              </label>
+              <PromoTypeSelect
+                value={promoType}
+                onChange={setPromoType}
               />
             </div>
           </div>
@@ -497,15 +516,30 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
           </div>
 
           <div className="border-t pt-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Productos:
-              </label>
-              <ProductSelect
-                value={selectedProducts}
-                onChange={setSelectedProducts}
-                products={PRODUCTS}
-              />
+            <div className="grid grid-cols-4 gap-4">
+              <div className="col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Categoría:
+                </label>
+                <CategorySelect
+                  value={selectedCategory}
+                  onChange={setSelectedCategory}
+                  categories={CATEGORIES}
+                />
+              </div>
+              <div className="col-span-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Productos:
+                </label>
+                <ProductSelect
+                  value={selectedProducts}
+                  onChange={setSelectedProducts}
+                  products={selectedCategory 
+                    ? PRODUCTS.filter(p => p.category === selectedCategory)
+                    : PRODUCTS
+                  }
+                />
+              </div>
             </div>
           </div>
         </div>

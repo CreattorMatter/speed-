@@ -54,26 +54,41 @@ export const ProductSelect: React.FC<ProductSelectProps> = ({ value, onChange, p
         className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-left flex items-center justify-between
                  focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       >
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col w-full gap-2">
           {selectedProducts.length > 0 ? (
-            selectedProducts.map(product => (
-              <div 
-                key={product.id}
-                className="flex items-center gap-2 bg-gray-100 px-2 py-1 rounded-md"
-              >
-                <img 
-                  src={product.imageUrl} 
-                  alt={product.name}
-                  className="w-6 h-6 object-cover rounded"
-                />
-                <span className="text-sm">{product.name}</span>
-              </div>
-            ))
+            <div className="space-y-2">
+              {selectedProducts.map(product => (
+                <div 
+                  key={product.id}
+                  className="flex flex-col bg-gray-50 p-2 rounded-md"
+                >
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src={product.imageUrl} 
+                      alt={product.name}
+                      className="w-6 h-6 object-cover rounded"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">{product.name}</span>
+                          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-200 text-gray-600">
+                            {product.category}
+                          </span>
+                        </div>
+                        <span className="text-sm text-gray-500">${product.price}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">{product.description}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <span className="text-gray-500">Seleccionar productos...</span>
           )}
         </div>
-        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform flex-shrink-0 ml-2 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
@@ -85,7 +100,7 @@ export const ProductSelect: React.FC<ProductSelectProps> = ({ value, onChange, p
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar productos..."
+                placeholder="Buscar por nombre o categoría..."
                 className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -106,7 +121,12 @@ export const ProductSelect: React.FC<ProductSelectProps> = ({ value, onChange, p
                   />
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">{product.name}</span>
+                      <div>
+                        <span className="font-medium">{product.name}</span>
+                        <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                          {product.category}
+                        </span>
+                      </div>
                       <span className="text-sm text-gray-500">${product.price}</span>
                     </div>
                     <p className="text-sm text-gray-500">{product.description}</p>
