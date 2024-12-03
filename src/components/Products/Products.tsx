@@ -1,16 +1,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, Filter, Plus, X } from 'lucide-react';
+import { ArrowLeft, Search, Filter, Plus, X, CheckSquare, Square, Trash2, FileText } from 'lucide-react';
 import { products } from '../../data/products';
-
-interface Product {
-  id: string;
-  sku: string;
-  name: string;
-  price: number;
-  imageUrl: string;
-  category: string;
-}
+import AddProductModal from './AddProductModal';
+import { Product } from '../../types/product';
+import { ProductDetails } from './ProductDetails';
 
 interface ProductsProps {
   onBack: () => void;
@@ -20,6 +14,9 @@ export default function Products({ onBack }: ProductsProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
 
   // Obtener categorías únicas
   const categories = useMemo(() => {
@@ -44,6 +41,74 @@ export default function Products({ onBack }: ProductsProps) {
   const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
   }, []);
+
+  const handleAddProduct = (product: Product | Product[]) => {
+    if (Array.isArray(product)) {
+      // Manejar múltiples productos
+      console.log('Productos agregados:', product);
+    } else {
+      // Manejar un solo producto
+      console.log('Producto agregado:', product);
+    }
+    setIsAddModalOpen(false);
+  };
+
+  // Función para manejar la selección de productos
+  const handleSelect = (productId: string) => {
+    setSelectedProducts(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(productId)) {
+        newSelection.delete(productId);
+      } else {
+        newSelection.add(productId);
+      }
+      return newSelection;
+    });
+  };
+
+  // Función para seleccionar/deseleccionar todos
+  const handleSelectAll = () => {
+    if (selectedProducts.size === filteredProducts.length) {
+      setSelectedProducts(new Set());
+    } else {
+      setSelectedProducts(new Set(filteredProducts.map(p => p.id)));
+    }
+  };
+
+  // Función para eliminar productos seleccionados
+  const handleDeleteSelected = () => {
+    if (window.confirm(`¿Estás seguro de que deseas eliminar ${selectedProducts.size} productos?`)) {
+      console.log('Productos eliminados:', Array.from(selectedProducts));
+      setSelectedProducts(new Set());
+    }
+  };
+
+  // Función para exportar productos seleccionados a CSV
+  const handleExportCSV = () => {
+    const selectedProductsData = filteredProducts.filter(p => selectedProducts.has(p.id));
+    const csv = [
+      // Encabezados
+      ['SKU', 'Nombre', 'Precio', 'Categoría', 'URL de Imagen'].join(','),
+      // Datos
+      ...selectedProductsData.map(p => [
+        p.sku,
+        `"${p.name}"`, // Envolvemos en comillas para manejar comas en el nombre
+        p.price,
+        p.category,
+        p.imageUrl
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'productos_seleccionados.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900">
@@ -144,6 +209,7 @@ export default function Products({ onBack }: ProductsProps) {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => setIsAddModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 
                        to-indigo-500 text-white rounded-lg hover:from-purple-600 
                        hover:to-indigo-600 transition-all duration-200"
@@ -151,6 +217,62 @@ export default function Products({ onBack }: ProductsProps) {
               <Plus className="w-5 h-5" />
               <span className="hidden sm:inline">Nuevo Producto</span>
             </motion.button>
+          </div>
+        </div>
+
+        {/* Toolbar con selección */}
+        <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleSelectAll}
+              className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-lg 
+                       hover:bg-white/20 transition-colors"
+            >
+              {selectedProducts.size === filteredProducts.length ? (
+                <CheckSquare className="w-5 h-5" />
+              ) : (
+                <Square className="w-5 h-5" />
+              )}
+              <span className="hidden sm:inline">
+                {selectedProducts.size === 0
+                  ? 'Seleccionar Todos'
+                  : selectedProducts.size === filteredProducts.length
+                  ? 'Deseleccionar Todos'
+                  : `${selectedProducts.size} seleccionados`}
+              </span>
+            </motion.button>
+
+            {selectedProducts.size > 0 && (
+              <div className="flex items-center gap-4 mb-6">
+                <span className="text-white/60">
+                  {selectedProducts.size} productos seleccionados
+                </span>
+                <div className="flex gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleExportCSV}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 
+                             rounded-lg hover:bg-emerald-500/20"
+                  >
+                    <FileText className="w-5 h-5" />
+                    <span className="hidden sm:inline">Exportar CSV</span>
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleDeleteSelected}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 
+                             rounded-lg hover:bg-red-500/20"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    <span className="hidden sm:inline">Eliminar</span>
+                  </motion.button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -185,9 +307,26 @@ export default function Products({ onBack }: ProductsProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
-                  className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 
-                           overflow-hidden group"
+                  className={`bg-white/10 backdrop-blur-md rounded-lg border 
+                           overflow-hidden group relative
+                           ${selectedProducts.has(product.id) 
+                             ? 'border-purple-500' 
+                             : 'border-white/20'}`}
                 >
+                  {/* Checkbox de selección */}
+                  <div className="absolute top-2 right-2 z-10 flex gap-2">
+                    <button
+                      onClick={() => handleSelect(product.id)}
+                      className="p-1 bg-black/50 rounded-lg backdrop-blur-sm"
+                    >
+                      {selectedProducts.has(product.id) ? (
+                        <CheckSquare className="w-5 h-5 text-purple-400" />
+                      ) : (
+                        <Square className="w-5 h-5 text-white/60" />
+                      )}
+                    </button>
+                  </div>
+
                   <div className="aspect-square relative overflow-hidden">
                     <img
                       src={product.imageUrl}
@@ -215,6 +354,7 @@ export default function Products({ onBack }: ProductsProps) {
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
+                        onClick={() => setSelectedProduct(product)}
                         className="text-white/60 hover:text-white text-sm"
                       >
                         Ver detalles
@@ -242,7 +382,32 @@ export default function Products({ onBack }: ProductsProps) {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {selectedProduct && (
+          <ProductDetails
+            product={selectedProduct}
+            isOpen={!!selectedProduct}
+            onClose={() => setSelectedProduct(null)}
+            onUpdate={(updatedProduct) => {
+              // Aquí implementarías la lógica para actualizar el producto
+              console.log('Producto actualizado:', updatedProduct);
+              setSelectedProduct(null);
+            }}
+            onDelete={(id) => {
+              // Aquí implementarías la lógica para eliminar el producto
+              console.log('Producto eliminado:', id);
+              setSelectedProduct(null);
+            }}
+            categories={categories}
+          />
+        )}
       </div>
+
+      <AddProductModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAddProduct={handleAddProduct}
+      />
     </div>
   );
 } 
