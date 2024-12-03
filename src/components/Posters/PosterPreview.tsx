@@ -46,9 +46,9 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   return (
     <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto font-sans">
       <div className="space-y-6 text-center">
-        {/* Nombre del producto y presentación */}
+        {/* Solo el nombre del producto */}
         <div className="text-4xl font-bold text-black tracking-tight leading-tight">
-          {product.name.toLowerCase()} {product.description.toLowerCase()}
+          {product.name.toLowerCase()}
         </div>
 
         {/* Precios */}
@@ -67,7 +67,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
           {/* Precio Final */}
           <div className="flex items-baseline justify-center">
             <span className="text-5xl font-bold">$</span>
-            <span className="text-[120px] leading-none font-black tracking-tighter">
+            <span className="text-[120px] leading-none font-bold tracking-tighter">
               {Math.round(finalPrice).toLocaleString('es-AR')}
             </span>
           </div>

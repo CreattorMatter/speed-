@@ -8,6 +8,7 @@ import { ProductSelect } from './ProductSelect';
 import { CategorySelect } from './CategorySelect';
 import { PromoTypeSelect, PromoType } from './PromoTypeSelect';
 import { PosterPreview } from './PosterPreview';
+import { CategoryPosterPreview } from './CategoryPosterPreview';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -25,6 +26,15 @@ interface Promotion {
   endDate: string;
   bank?: string;
   cardType?: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  category: string;
 }
 
 const COMPANIES = [
@@ -366,9 +376,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
 
   const selectedPromotion = PROMOTIONS.find(p => p.id === promotion);
 
-  const selectedProduct = selectedProducts.length > 0 
-    ? PRODUCTS.find(p => p.id === selectedProducts[0])
-    : null;
+  // Renombrar a mappedProducts para evitar la redeclaración
+  const mappedProducts = selectedProducts.map(productId => 
+    PRODUCTS.find(p => p.id === productId)
+  ).filter((p): p is Product => p !== undefined);
 
   return (
     <div className={`min-h-screen bg-gray-100`}>
@@ -549,21 +560,36 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
           </div>
         </div>
 
-        {/* Vista previa del cartel */}
-        {selectedProduct && (
+        {/* Vista previa de los carteles */}
+        {(selectedCategory || mappedProducts.length > 0) && (
           <div className="border-t pt-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-4">
-                Vista previa del cartel:
+                Vista previa de carteles:
               </label>
-              <PosterPreview
-                product={selectedProduct}
-                promotion={selectedPromotion}
-                pricePerUnit={`${selectedProduct.price * 2}`}
-                points="49"
-                origin="ARGENTINA"
-                barcode="7790895000782"
-              />
+              <div className="space-y-8">
+                {selectedCategory && mappedProducts.length === 0 ? (
+                  <CategoryPosterPreview
+                    category={selectedCategory}
+                    promotion={selectedPromotion}
+                    points="49"
+                    origin="ARGENTINA"
+                    barcode="7790895000782"
+                  />
+                ) : (
+                  mappedProducts.map(product => (
+                    <PosterPreview
+                      key={product.id}
+                      product={product}
+                      promotion={selectedPromotion}
+                      pricePerUnit={`${product.price * 2}`}
+                      points="49"
+                      origin="ARGENTINA"
+                      barcode="7790895000782"
+                    />
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}
