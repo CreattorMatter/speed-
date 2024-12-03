@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { ArrowLeft, Plus, LogOut, Sparkles, Clock, Star } from 'lucide-react';
+import { ArrowLeft, Plus, LogOut, Sparkles, Clock, Star, Package, Construction } from 'lucide-react';
 import { motion } from 'framer-motion';
 import DashboardStats from './DashboardStats';
 import RecentTemplates from './RecentTemplates';
@@ -7,11 +7,12 @@ import RecentTemplates from './RecentTemplates';
 interface DashboardProps {
   onLogout: () => void;
   onNewTemplate: () => void;
+  onProducts: () => void;
   onBack: () => void;
   userEmail?: string;
 }
 
-export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail = 'admin@admin.com' }: DashboardProps) {
+export default function Dashboard({ onLogout, onNewTemplate, onProducts, onBack, userEmail = 'admin@admin.com' }: DashboardProps) {
   const userName = userEmail.split('@')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].slice(1);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, card: HTMLDivElement) => {
@@ -170,17 +171,32 @@ export default function Dashboard({ onLogout, onNewTemplate, onBack, userEmail =
               Gestiona tus plantillas y crea nuevos diseños
             </motion.p>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onNewTemplate}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500
-                     text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 shadow-lg
-                     hover:shadow-indigo-500/25 transition-all duration-200"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Builder</span>
-          </motion.button>
+
+          <div className="flex gap-4">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onNewTemplate}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500
+                       text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 shadow-lg
+                       hover:shadow-indigo-500/25 transition-all duration-200"
+            >
+              <Construction className="w-5 h-5" />
+              <span>Builder</span>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onProducts}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500
+                       text-white rounded-lg hover:from-emerald-600 hover:to-teal-600 shadow-lg
+                       hover:shadow-emerald-500/25 transition-all duration-200"
+            >
+              <Package className="w-5 h-5" />
+              <span>Productos</span>
+            </motion.button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

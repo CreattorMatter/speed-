@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { LogIn, Lock, User, AlertCircle } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Builder from './components/Builder/Builder';
+import Products from './components/Products/Products';
 
 interface DashboardProps {
   onLogout: () => void;
   onNewTemplate: () => void;
+  onProducts: () => void;
   onBack: () => void;
   userEmail?: string;
 }
@@ -16,6 +18,7 @@ function App() {
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
+  const [showProducts, setShowProducts] = useState(false);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,6 +32,7 @@ function App() {
     setPassword('');
     setError('');
     setShowBuilder(false);
+    setShowProducts(false);
   };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value);
@@ -37,6 +41,8 @@ function App() {
   const handleBack = () => {
     if (showBuilder) {
       setShowBuilder(false);
+    } else if (showProducts) {
+      setShowProducts(false);
     } else if (isAuthenticated) {
       if (window.confirm('¿Deseas cerrar sesión?')) {
         handleLogout();
@@ -48,11 +54,16 @@ function App() {
     return <Builder onBack={handleBack} />;
   }
 
+  if (isAuthenticated && showProducts) {
+    return <Products onBack={handleBack} />;
+  }
+
   if (isAuthenticated) {
     return (
       <Dashboard 
         onLogout={handleLogout} 
         onNewTemplate={() => setShowBuilder(true)} 
+        onProducts={() => setShowProducts(true)} 
         onBack={handleBack}
         userEmail={email}
       />
