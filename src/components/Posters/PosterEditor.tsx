@@ -7,6 +7,7 @@ import { PromotionSelect } from './PromotionSelect';
 import { ProductSelect } from './ProductSelect';
 import { CategorySelect } from './CategorySelect';
 import { PromoTypeSelect, PromoType } from './PromoTypeSelect';
+import { PosterPreview } from './PosterPreview';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -365,6 +366,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
 
   const selectedPromotion = PROMOTIONS.find(p => p.id === promotion);
 
+  const selectedProduct = selectedProducts.length > 0 
+    ? PRODUCTS.find(p => p.id === selectedProducts[0])
+    : null;
+
   return (
     <div className={`min-h-screen bg-gray-100`}>
       <header className="fixed top-0 left-0 right-0 bg-[#0A0F1C]/80 backdrop-blur-xl border-b border-white/5 z-50">
@@ -534,15 +539,34 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
                 <ProductSelect
                   value={selectedProducts}
                   onChange={setSelectedProducts}
-                  products={selectedCategory 
-                    ? PRODUCTS.filter(p => p.category === selectedCategory)
-                    : PRODUCTS
+                  products={selectedCategory === 'Todos' || !selectedCategory 
+                    ? PRODUCTS
+                    : PRODUCTS.filter(p => p.category === selectedCategory)
                   }
                 />
               </div>
             </div>
           </div>
         </div>
+
+        {/* Vista previa del cartel */}
+        {selectedProduct && (
+          <div className="border-t pt-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-4">
+                Vista previa del cartel:
+              </label>
+              <PosterPreview
+                product={selectedProduct}
+                promotion={selectedPromotion}
+                pricePerUnit={`${selectedProduct.price * 2}`}
+                points="49"
+                origin="ARGENTINA"
+                barcode="7790895000782"
+              />
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

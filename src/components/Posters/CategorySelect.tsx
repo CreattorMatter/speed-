@@ -11,6 +11,8 @@ export const CategorySelect: React.FC<CategorySelectProps> = ({ value, onChange,
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  const allCategories = ['Todos', ...categories];
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) {
@@ -39,7 +41,7 @@ export const CategorySelect: React.FC<CategorySelectProps> = ({ value, onChange,
       {isOpen && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
           <ul className="py-1 max-h-60 overflow-auto">
-            {categories.map(category => (
+            {allCategories.map(category => (
               <li key={category}>
                 <button
                   type="button"
