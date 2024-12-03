@@ -261,6 +261,15 @@ export default function Promotions({ onBack }: PromotionsProps) {
     setEditingPromotion(null);
   };
 
+  // Función para seleccionar/deseleccionar todas las promociones
+  const handleSelectAll = () => {
+    if (selectedPromotions.size === filteredPromotions.length) {
+      setSelectedPromotions(new Set());
+    } else {
+      setSelectedPromotions(new Set(filteredPromotions.map(p => p.id)));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-rose-900 to-slate-900">
       {/* Header */}
@@ -395,11 +404,29 @@ export default function Promotions({ onBack }: PromotionsProps) {
         </div>
 
         {/* Acciones de selección múltiple */}
-        {selectedPromotions.size > 0 && (
-          <div className="flex items-center gap-4 mb-6">
-            <span className="text-white/60">
-              {selectedPromotions.size} promociones seleccionadas
+        <div className="flex items-center gap-4 mb-6">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleSelectAll}
+            className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-lg 
+                     hover:bg-white/20 transition-colors"
+          >
+            {selectedPromotions.size === filteredPromotions.length ? (
+              <CheckSquare className="w-5 h-5" />
+            ) : (
+              <Square className="w-5 h-5" />
+            )}
+            <span className="hidden sm:inline">
+              {selectedPromotions.size === 0
+                ? 'Seleccionar Todas'
+                : selectedPromotions.size === filteredPromotions.length
+                ? 'Deseleccionar Todas'
+                : `${selectedPromotions.size} seleccionadas`}
             </span>
+          </motion.button>
+
+          {selectedPromotions.size > 0 && (
             <div className="flex gap-2">
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -422,8 +449,8 @@ export default function Promotions({ onBack }: PromotionsProps) {
                 <span className="hidden sm:inline">Eliminar</span>
               </motion.button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Promotions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
