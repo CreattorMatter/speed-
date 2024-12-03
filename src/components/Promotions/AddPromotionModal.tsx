@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Calendar, Upload, Link as LinkIcon, Edit, Power } from 'lucide-react';
+import { X, Plus, Calendar, Upload, Link as LinkIcon, Edit, Power, Check } from 'lucide-react';
 import { Promotion } from '../../types/promotion';
 import { BankSelector } from './BankSelector';
+import { CardBrandIcon } from './CardBrandIcon';
 
 interface AddPromotionModalProps {
   isOpen: boolean;
@@ -26,6 +27,11 @@ interface FormData {
   cardType?: string;
   isActive: boolean;
   selectedBanks: string[];
+  cardOptions: {
+    debit: boolean;
+    credit: boolean;
+    cardBrands: string[];
+  };
 }
 
 export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({ 
@@ -46,7 +52,12 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
     imageFile: null,
     imageSource: 'url',
     isActive: true,
-    selectedBanks: []
+    selectedBanks: [],
+    cardOptions: {
+      debit: false,
+      credit: false,
+      cardBrands: []
+    }
   });
 
   useEffect(() => {
@@ -65,59 +76,141 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
         bank: editingPromotion.bank,
         cardType: editingPromotion.cardType,
         isActive: editingPromotion.isActive,
-        selectedBanks: editingPromotion.selectedBanks
+        selectedBanks: editingPromotion.selectedBanks,
+        cardOptions: editingPromotion.cardOptions
       });
     }
   }, [editingPromotion]);
 
   const categories = ['Bancaria', 'Producto', 'Categoría', 'Especial'];
 
+  const handleFormChange = (changes: Partial<FormData>) => {
+    setFormData(prev => ({
+      ...prev,
+      ...changes
+    }));
+  };
+
+  const handleBankSelect = (bankId: string) => {
+    handleFormChange({
+      selectedBanks: formData.selectedBanks.includes(bankId)
+        ? formData.selectedBanks.filter(id => id !== bankId)
+        : [...formData.selectedBanks, bankId]
+    });
+  };
+
+  const handleCardOptionChange = (option: 'debit' | 'credit') => {
+    handleFormChange({
+      cardOptions: {
+        ...formData.cardOptions,
+        [option]: !formData.cardOptions[option]
+      }
+    });
+  };
+
+  const handleCardBrandSelect = (brand: string) => {
+    handleFormChange({
+      cardOptions: {
+        ...formData.cardOptions,
+        cardBrands: formData.cardOptions.cardBrands.includes(brand)
+          ? formData.cardOptions.cardBrands.filter(b => b !== brand)
+          : [...formData.cardOptions.cardBrands, brand]
+      }
+    });
+  };
+
+  const renderCardTypeButtons = () => (
+    <div className="flex gap-4">
+      <motion.button
+        type="button"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => handleCardOptionChange('debit')}
+        className={`flex-1 p-4 rounded-lg border ${
+          formData.cardOptions.debit
+            ? 'border-rose-500 bg-rose-500/10'
+            : 'border-white/10 bg-white/5'
+        } transition-colors`}
+      >
+        <span className="text-sm text-white">Débito</span>
+      </motion.button>
+      <motion.button
+        type="button"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => handleCardOptionChange('credit')}
+        className={`flex-1 p-4 rounded-lg border ${
+          formData.cardOptions.credit
+            ? 'border-rose-500 bg-rose-500/10'
+            : 'border-white/10 bg-white/5'
+        } transition-colors`}
+      >
+        <span className="text-sm text-white">Crédito</span>
+      </motion.button>
+    </div>
+  );
+
+  const renderCardBrandButtons = () => (
+    <div className="flex gap-4">
+      {['VISA', 'MASTERCARD', 'AMEX'].map(brand => (
+        <motion.button
+          key={brand}
+          type="button"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={(e) => {
+            e.preventDefault();
+            handleCardBrandSelect(brand);
+          }}
+          className={`p-4 rounded-lg border ${
+            formData.cardOptions.cardBrands.includes(brand)
+              ? 'border-rose-500 bg-rose-500/10'
+              : 'border-white/10 bg-white/5'
+          } transition-colors flex flex-col items-center gap-2`}
+        >
+          <CardBrandIcon 
+            brand={brand} 
+            selected={formData.cardOptions.cardBrands.includes(brand)} 
+          />
+          <span className="text-sm text-white">{brand}</span>
+        </motion.button>
+      ))}
+    </div>
+  );
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    handleFormChange({ [name]: value });
   };
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData(prev => ({ 
-        ...prev, 
+      handleFormChange({ 
         imageFile: file,
         imageUrl: URL.createObjectURL(file)
-      }));
+      });
     }
   };
 
   const handleAddCondition = () => {
-    setFormData(prev => ({
-      ...prev,
-      conditions: [...prev.conditions, '']
-    }));
+    handleFormChange({
+      conditions: [...formData.conditions, '']
+    });
   };
 
   const handleConditionChange = (index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      conditions: prev.conditions.map((condition, i) => 
+    handleFormChange({
+      conditions: formData.conditions.map((condition, i) => 
         i === index ? value : condition
       )
-    }));
+    });
   };
 
   const handleRemoveCondition = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      conditions: prev.conditions.filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleBankSelect = (bankId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      selectedBanks: prev.selectedBanks.includes(bankId)
-        ? prev.selectedBanks.filter(id => id !== bankId)
-        : [...prev.selectedBanks, bankId]
-    }));
+    handleFormChange({
+      conditions: formData.conditions.filter((_, i) => i !== index)
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -136,7 +229,8 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
       isActive: formData.isActive,
       bank: formData.bank,
       cardType: formData.cardType,
-      selectedBanks: formData.selectedBanks
+      selectedBanks: formData.selectedBanks,
+      cardOptions: formData.cardOptions
     };
 
     onAdd(newPromotion);
@@ -281,18 +375,15 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
                       selectedBanks={formData.selectedBanks}
                       onBankSelect={handleBankSelect}
                     />
-                    <div>
-                      <label className="block text-sm font-medium text-white/80 mb-2">Tipo de Tarjeta</label>
-                      <input
-                        type="text"
-                        name="cardType"
-                        value={formData.cardType || ''}
-                        onChange={handleInputChange}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 
-                                 text-white placeholder-white/30 focus:outline-none focus:ring-2 
-                                 focus:ring-rose-500/50 focus:border-transparent"
-                        placeholder="Ej: Todas las tarjetas"
-                      />
+                    <div className="space-y-4">
+                      <label className="block text-sm font-medium text-white/80">Tipo de Tarjeta</label>
+                      {renderCardTypeButtons()}
+                      {(formData.cardOptions.debit || formData.cardOptions.credit) && (
+                        <>
+                          <label className="block text-sm font-medium text-white/80 mt-4">Marcas de Tarjeta</label>
+                          {renderCardBrandButtons()}
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -341,7 +432,7 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
                   <div className="flex gap-4">
                     <button
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, imageSource: 'url' }))}
+                      onClick={() => handleFormChange({ imageSource: 'url' })}
                       className={`flex-1 p-4 rounded-lg border ${
                         formData.imageSource === 'url'
                           ? 'border-rose-500 bg-rose-500/10'
@@ -353,7 +444,7 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, imageSource: 'file' }))}
+                      onClick={() => handleFormChange({ imageSource: 'file' })}
                       className={`flex-1 p-4 rounded-lg border ${
                         formData.imageSource === 'file'
                           ? 'border-rose-500 bg-rose-500/10'
@@ -402,7 +493,7 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
                     type="checkbox"
                     name="isActive"
                     checked={formData.isActive}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                    onChange={(e) => handleFormChange({ isActive: e.target.checked })}
                     className="w-4 h-4 rounded border-white/10 bg-white/5 text-rose-500 
                              focus:ring-rose-500/50"
                   />

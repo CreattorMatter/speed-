@@ -11,4 +11,10 @@ export interface Promotion {
   isActive: boolean;
   bank?: string;
   cardType?: string;
+  selectedBanks: string[];
+  cardOptions: {
+    debit: boolean;
+    credit: boolean;
+    cardBrands: string[];
+  };
 } 

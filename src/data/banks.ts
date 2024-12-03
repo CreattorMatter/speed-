@@ -8,7 +8,7 @@ export const banks: Bank[] = [
   {
     id: 'santander',
     name: 'Santander',
-    logoUrl: 'https://logodownload.org/wp-content/uploads/2019/06/santander-logo-0.png'
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Banco_Santander_Logotipo.svg/2560px-Banco_Santander_Logotipo.svg.png'
   },
   {
     id: 'galicia',
@@ -18,7 +18,7 @@ export const banks: Bank[] = [
   {
     id: 'bbva',
     name: 'BBVA',
-    logoUrl: 'https://logodownload.org/wp-content/uploads/2018/12/bbva-logo-1.png'
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/BBVA_2019.svg/2560px-BBVA_2019.svg.png'
   },
   {
     id: 'macro',
@@ -28,7 +28,7 @@ export const banks: Bank[] = [
   {
     id: 'hsbc',
     name: 'HSBC',
-    logoUrl: 'https://logodownload.org/wp-content/uploads/2018/09/hsbc-logo-1.png'
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/HSBC_logo_%282018%29.svg/2560px-HSBC_logo_%282018%29.svg.png'
   },
   {
     id: 'icbc',
