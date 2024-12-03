@@ -402,7 +402,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
                 value={region}
                 onChange={(value) => {
                   setRegion(value);
-                  setCC(''); // Resetear CC cuando cambia la región
+                  setCC('');
                 }}
                 regions={REGIONS}
               />
@@ -419,8 +419,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
               />
             </div>
           </div>
-          
-          <div className="border-t pt-6 space-y-6">
+
+          <div className="border-t pt-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Promoción:
@@ -494,18 +494,18 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
                 </div>
               </div>
             )}
+          </div>
 
-            <div className="border-t pt-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Productos:
-                </label>
-                <ProductSelect
-                  value={selectedProducts}
-                  onChange={setSelectedProducts}
-                  products={PRODUCTS}
-                />
-              </div>
+          <div className="border-t pt-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Productos:
+              </label>
+              <ProductSelect
+                value={selectedProducts}
+                onChange={setSelectedProducts}
+                products={PRODUCTS}
+              />
             </div>
           </div>
         </div>
