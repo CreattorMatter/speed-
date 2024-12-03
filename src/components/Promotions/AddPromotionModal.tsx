@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Calendar, Upload, Link as LinkIcon, Edit, Power } from 'lucide-react';
 import { Promotion } from '../../types/promotion';
+import { BankSelector } from './BankSelector';
 
 interface AddPromotionModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ interface FormData {
   bank?: string;
   cardType?: string;
   isActive: boolean;
+  selectedBanks: string[];
 }
 
 export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({ 
@@ -43,7 +45,8 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
     imageUrl: '',
     imageFile: null,
     imageSource: 'url',
-    isActive: true
+    isActive: true,
+    selectedBanks: []
   });
 
   useEffect(() => {
@@ -61,7 +64,8 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
         imageSource: 'url',
         bank: editingPromotion.bank,
         cardType: editingPromotion.cardType,
-        isActive: editingPromotion.isActive
+        isActive: editingPromotion.isActive,
+        selectedBanks: editingPromotion.selectedBanks
       });
     }
   }, [editingPromotion]);
@@ -107,6 +111,15 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
     }));
   };
 
+  const handleBankSelect = (bankId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedBanks: prev.selectedBanks.includes(bankId)
+        ? prev.selectedBanks.filter(id => id !== bankId)
+        : [...prev.selectedBanks, bankId]
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -122,7 +135,8 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
       imageUrl: formData.imageUrl,
       isActive: formData.isActive,
       bank: formData.bank,
-      cardType: formData.cardType
+      cardType: formData.cardType,
+      selectedBanks: formData.selectedBanks
     };
 
     onAdd(newPromotion);
@@ -145,10 +159,10 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             className="relative bg-slate-900 rounded-2xl shadow-xl w-full max-w-4xl 
-                     border border-white/10 overflow-hidden"
+                     border border-white/10 overflow-hidden max-h-[90vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-white/10 flex justify-between items-center">
+            <div className="p-6 border-b border-white/10 flex justify-between items-center shrink-0">
               <h2 className="text-xl font-medium text-white">
                 {editingPromotion ? 'Editar Promoción' : 'Nueva Promoción'}
               </h2>
@@ -160,8 +174,8 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
               </button>
             </div>
 
-            <div className="p-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="flex-1 overflow-y-auto p-6">
+              <form id="promotionForm" onSubmit={handleSubmit} className="space-y-6">
                 {/* Título y Descuento */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -261,20 +275,12 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
 
                 {/* Campos adicionales para promociones bancarias */}
                 {formData.category === 'Bancaria' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-white/80 mb-2">Banco</label>
-                      <input
-                        type="text"
-                        name="bank"
-                        value={formData.bank || ''}
-                        onChange={handleInputChange}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 
-                                 text-white placeholder-white/30 focus:outline-none focus:ring-2 
-                                 focus:ring-rose-500/50 focus:border-transparent"
-                        placeholder="Nombre del banco"
-                      />
-                    </div>
+                  <div className="space-y-4">
+                    <label className="block text-sm font-medium text-white/80">Bancos Participantes</label>
+                    <BankSelector
+                      selectedBanks={formData.selectedBanks}
+                      onBankSelect={handleBankSelect}
+                    />
                     <div>
                       <label className="block text-sm font-medium text-white/80 mb-2">Tipo de Tarjeta</label>
                       <input
@@ -402,28 +408,28 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
                   />
                   <label className="text-sm text-white/80">Promoción activa</label>
                 </div>
-
-                {/* Botones */}
-                <div className="flex justify-end gap-4">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="px-4 py-2 text-white/60 hover:text-white"
-                  >
-                    Cancelar
-                  </button>
-                  <motion.button
-                    type="submit"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="px-6 py-2 bg-gradient-to-r from-rose-500 to-pink-500 
-                             text-white rounded-lg hover:from-rose-600 hover:to-pink-600 
-                             focus:outline-none focus:ring-2 focus:ring-rose-500/50"
-                  >
-                    {editingPromotion ? 'Guardar Cambios' : 'Crear Promoción'}
-                  </motion.button>
-                </div>
               </form>
+            </div>
+
+            <div className="p-6 border-t border-white/10 flex justify-end gap-4 shrink-0 bg-slate-900/50 backdrop-blur-sm">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-white/60 hover:text-white"
+              >
+                Cancelar
+              </button>
+              <motion.button
+                type="submit"
+                form="promotionForm"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="px-6 py-2 bg-gradient-to-r from-rose-500 to-pink-500 
+                         text-white rounded-lg hover:from-rose-600 hover:to-pink-600 
+                         focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+              >
+                {editingPromotion ? 'Guardar Cambios' : 'Crear Promoción'}
+              </motion.button>
             </div>
           </motion.div>
         </div>
