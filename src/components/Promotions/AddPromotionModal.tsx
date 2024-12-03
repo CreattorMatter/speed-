@@ -4,6 +4,7 @@ import { X, Plus, Calendar, Upload, Link as LinkIcon, Edit, Power, Check } from 
 import { Promotion } from '../../types/promotion';
 import { BankSelector } from './BankSelector';
 import { CardBrandIcon } from './CardBrandIcon';
+import { CardTypeIcon } from './CardTypeIcon';
 
 interface AddPromotionModalProps {
   isOpen: boolean;
@@ -120,32 +121,30 @@ export const AddPromotionModal: React.FC<AddPromotionModalProps> = ({
   };
 
   const renderCardTypeButtons = () => (
-    <div className="flex gap-4">
+    <div className="flex gap-6 justify-center">
       <motion.button
         type="button"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={() => handleCardOptionChange('debit')}
-        className={`flex-1 p-4 rounded-lg border ${
-          formData.cardOptions.debit
-            ? 'border-rose-500 bg-rose-500/10'
-            : 'border-white/10 bg-white/5'
-        } transition-colors`}
+        className="focus:outline-none"
       >
-        <span className="text-sm text-white">Débito</span>
+        <CardTypeIcon 
+          type="debit" 
+          selected={formData.cardOptions.debit} 
+        />
       </motion.button>
       <motion.button
         type="button"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={() => handleCardOptionChange('credit')}
-        className={`flex-1 p-4 rounded-lg border ${
-          formData.cardOptions.credit
-            ? 'border-rose-500 bg-rose-500/10'
-            : 'border-white/10 bg-white/5'
-        } transition-colors`}
+        className="focus:outline-none"
       >
-        <span className="text-sm text-white">Crédito</span>
+        <CardTypeIcon 
+          type="credit" 
+          selected={formData.cardOptions.credit} 
+        />
       </motion.button>
     </div>
   );

@@ -13,7 +13,7 @@ export const banks: Bank[] = [
   {
     id: 'galicia',
     name: 'Banco Galicia',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Banco_Galicia_logo.svg/2560px-Banco_Galicia_logo.svg.png'
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Logo_Banco_Galicia.svg/2560px-Logo_Banco_Galicia.svg.png'
   },
   {
     id: 'bbva',
