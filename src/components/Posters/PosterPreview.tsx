@@ -18,11 +18,18 @@ interface PosterPreviewProps {
     conditions?: string[];
     startDate?: string;
     endDate?: string;
+    type?: 'percentage' | '2x1' | '3x2' | 'second-70';
+    title?: string;
+    description?: string;
   };
   pricePerUnit?: string;
   points?: string;
   origin?: string;
   barcode?: string;
+  size?: {
+    id: string;
+    name: string;
+  };
 }
 
 export const PosterPreview: React.FC<PosterPreviewProps> = ({ 
@@ -31,67 +38,159 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   pricePerUnit = '',
   points = '',
   origin = 'ARGENTINA',
-  barcode = '7790895000782'
+  barcode = '7790895000782',
+  size
 }) => {
+  const isCenefa = size?.id.includes('cenefa');
+  const isFleje = size?.id === 'fleje';
+
   // Calcular el precio con descuento
-  const getDiscountedPrice = () => {
-    if (!promotion) return product.price;
-    
-    const discountMatch = promotion.discount.match(/(\d+)/);
-    if (!discountMatch) return product.price;
-    
-    const discountPercent = parseInt(discountMatch[0]);
-    return product.price * (1 - discountPercent / 100);
+  const calculatePrice = () => {
+    if (!promotion) return {
+      finalPrice: product.price,
+      unitPrice: product.price,
+      totalUnits: 1,
+      savedAmount: 0,
+      secondUnitPrice: 0
+    };
+
+    switch (promotion.type) {
+      case 'second-70':
+        const secondUnitPrice = product.price * 0.3; // 70% de descuento en la segunda unidad
+        return {
+          finalPrice: product.price + secondUnitPrice,
+          unitPrice: (product.price + secondUnitPrice) / 2,
+          totalUnits: 2,
+          savedAmount: product.price * 0.7,
+          secondUnitPrice
+        };
+      case '2x1':
+        return {
+          finalPrice: product.price,
+          unitPrice: product.price / 2,
+          totalUnits: 2,
+          savedAmount: product.price
+        };
+      case '3x2':
+        return {
+          finalPrice: product.price * 2,
+          unitPrice: (product.price * 2) / 3,
+          totalUnits: 3,
+          savedAmount: product.price
+        };
+      default:
+        // Descuento porcentual normal
+        const discountMatch = promotion.discount.match(/(\d+)/);
+        if (!discountMatch) return {
+          finalPrice: product.price,
+          unitPrice: product.price,
+          totalUnits: 1,
+          savedAmount: 0
+        };
+        
+        const discountPercent = parseInt(discountMatch[0]);
+        const finalPrice = product.price * (1 - discountPercent / 100);
+        return {
+          finalPrice,
+          unitPrice: finalPrice,
+          totalUnits: 1,
+          savedAmount: product.price - finalPrice
+        };
+    }
   };
 
-  const finalPrice = getDiscountedPrice();
+  const priceInfo = calculatePrice();
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://speed-plus.com/product/${product.id}`;
 
   return (
-    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto font-sans">
+    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-xl mx-auto" style={{ fontFamily: 'VAG Rounded Std, Arial Rounded MT Bold, Arial, sans-serif' }}>
       <div className="space-y-6 text-center">
-        {/* Solo el nombre del producto */}
-        <div className="text-4xl font-bold text-black tracking-tight leading-tight">
-          {product.name.toLowerCase()}
+        {/* Nombre y descripción del producto */}
+        <div className="space-y-2">
+          <div className="text-4xl font-black text-black tracking-tight leading-tight uppercase">
+            {product.name.toLowerCase()}
+          </div>
+          <div className="text-xl font-medium text-gray-600">
+            {product.description.toLowerCase()}
+          </div>
         </div>
+
+        {/* Banner de promoción */}
+        {promotion?.type === 'second-70' && (
+          <div className="bg-red-600 text-white py-2 px-4 rounded-lg">
+            <div className="text-2xl font-black">
+              2da UNIDAD
+            </div>
+            <div className="text-4xl font-black">
+              70% OFF
+            </div>
+            <div className="text-sm mt-1 font-medium">
+              En la compra de 2 unidades iguales
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-between items-start">
           {/* Precios */}
           <div className="flex-1 space-y-2">
             {promotion && (
               <div className="flex items-center justify-center gap-4">
-                <div className="text-3xl text-gray-500 line-through font-bold">
-                  ${product.price.toLocaleString('es-AR')}
-                </div>
-                <div className="bg-red-600 text-white px-4 py-1 rounded-full text-2xl font-bold">
-                  {promotion.discount}
-                </div>
+                {promotion.type === 'second-70' ? (
+                  <div className="flex flex-col items-center">
+                    <div className="text-3xl text-gray-500 line-through font-black">
+                      ${(product.price * 2).toLocaleString('es-AR')}
+                    </div>
+                    <div className="flex flex-col gap-1 text-lg">
+                      <div>1ra unidad ${product.price.toLocaleString('es-AR')}</div>
+                      <div className="text-red-600 font-bold">
+                        2da unidad ${priceInfo.secondUnitPrice?.toLocaleString('es-AR')}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        *Válido en la compra de dos unidades iguales
+                      </div>
+                    </div>
+                    <div className="text-xl font-bold mt-2">
+                      Precio por unidad: ${priceInfo.unitPrice.toLocaleString('es-AR')}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl text-gray-500 line-through font-black">
+                      ${product.price.toLocaleString('es-AR')}
+                    </div>
+                    <div className="bg-red-600 text-white px-4 py-1 rounded-full text-xl font-black">
+                      {promotion.discount}
+                    </div>
+                  </>
+                )}
               </div>
             )}
             
             {/* Precio Final */}
             <div className="flex items-baseline justify-center">
-              <span className="text-5xl font-bold">$</span>
-              <span className="text-[120px] leading-none font-bold tracking-tighter">
-                {Math.round(finalPrice).toLocaleString('es-AR')}
+              <span className="text-5xl font-black">$</span>
+              <span className="text-[100px] leading-none font-black tracking-tighter" style={{ letterSpacing: '-0.05em' }}>
+                {Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
               </span>
             </div>
+
+            {promotion?.type === 'second-70' && (
+              <div className="text-2xl font-bold text-green-600">
+                ¡Ahorrás ${priceInfo.savedAmount.toLocaleString('es-AR')}!
+              </div>
+            )}
           </div>
 
           {/* Información de la promoción */}
           {promotion && (
-            <div className="w-48 text-left space-y-3">
-              {/* Banco */}
+            <div className="w-48 text-left space-y-2 text-xs text-gray-600">
+              {/* Banco y tarjeta */}
               {promotion.bank && (
                 <div>
-                  <h3 className="text-xs font-medium text-gray-500 uppercase">
-                    {promotion.bank}
-                  </h3>
+                  <p className="font-medium">{promotion.bank}</p>
                   {promotion.cardType && (
-                    <p className="text-xs text-gray-600">
-                      {promotion.cardType}
-                    </p>
+                    <p>{promotion.cardType}</p>
                   )}
                 </div>
               )}
@@ -99,13 +198,11 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
               {/* Condiciones */}
               {promotion.conditions && promotion.conditions.length > 0 && (
                 <div>
+                  <p className="font-medium">Condiciones:</p>
                   <ul className="space-y-0.5">
                     {promotion.conditions.map((condition, index) => (
-                      <li 
-                        key={index}
-                        className="flex items-start gap-1 text-xs text-gray-600"
-                      >
-                        <span className="w-1 h-1 rounded-full bg-gray-400 mt-1 flex-shrink-0" />
+                      <li key={index} className="flex items-start gap-1">
+                        <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />
                         {condition}
                       </li>
                     ))}
@@ -115,8 +212,9 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
               {/* Vigencia */}
               {promotion.startDate && promotion.endDate && (
-                <div className="text-xs text-gray-600">
-                  <p>Válido del {new Date(promotion.startDate).toLocaleDateString()}</p>
+                <div>
+                  <p className="font-medium">Vigencia:</p>
+                  <p>Del {new Date(promotion.startDate).toLocaleDateString()}</p>
                   <p>al {new Date(promotion.endDate).toLocaleDateString()}</p>
                 </div>
               )}

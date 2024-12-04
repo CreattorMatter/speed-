@@ -9,6 +9,7 @@ import { CategorySelect } from './CategorySelect';
 import { PromoTypeSelect, PromoType } from './PromoTypeSelect';
 import { PosterPreview } from './PosterPreview';
 import { CategoryPosterPreview } from './CategoryPosterPreview';
+import { useNavigate } from 'react-router-dom';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -26,6 +27,7 @@ interface Promotion {
   endDate: string;
   bank?: string;
   cardType?: string;
+  type?: string;
 }
 
 interface Product {
@@ -133,7 +135,7 @@ const PROMOTIONS: Promotion[] = [
     discount: '70% OFF',
     imageUrl: 'https://images.unsplash.com/photo-1579113800032-c38bd7635818?w=500&auto=format&fit=crop&q=60',
     category: 'Especial',
-    conditions: ['Válido solo los jueves'],
+    conditions: ['Valido solo comprando dos productos iguales el segundo al 70%'],
     startDate: '2024-01-01',
     endDate: '2024-12-31'
   },
@@ -199,14 +201,39 @@ const PROMOTIONS: Promotion[] = [
   },
   {
     id: '10',
-    title: '3x2 en Lácteos',
-    description: 'Llevá 3 y pagá 2 en lácteos seleccionados',
+    title: '2da Unidad 70% OFF',
+    description: 'En la segunda unidad de productos seleccionados',
+    discount: '70% OFF',
+    imageUrl: 'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=500&auto=format&fit=crop&q=60',
+    category: 'Especial',
+    conditions: ['Válido en la compra de dos unidades iguales', 'Productos seleccionados'],
+    startDate: '2024-01-01',
+    endDate: '2024-12-31',
+    type: 'second-70'
+  },
+  {
+    id: '11',
+    title: '2x1 en Productos Seleccionados',
+    description: 'Llevá 2 y pagá 1 en productos seleccionados',
+    discount: '2x1',
+    imageUrl: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&auto=format&fit=crop&q=60',
+    category: 'Especial',
+    conditions: ['Válido en productos seleccionados', 'Llevando dos unidades iguales'],
+    startDate: '2024-01-01',
+    endDate: '2024-12-31',
+    type: '2x1'
+  },
+  {
+    id: '12',
+    title: '3x2 en Productos Seleccionados',
+    description: 'Llevá 3 y pagá 2 en productos seleccionados',
     discount: '3x2',
     imageUrl: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&auto=format&fit=crop&q=60',
     category: 'Especial',
-    conditions: ['Válido solo los jueves'],
+    conditions: ['Válido en productos seleccionados', 'Llevando tres unidades iguales'],
     startDate: '2024-01-01',
-    endDate: '2024-12-31'
+    endDate: '2024-12-31',
+    type: '3x2'
   }
 ];
 
@@ -368,6 +395,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [promoType, setPromoType] = useState<PromoType | ''>('');
+  const navigate = useNavigate();
 
   // Filtrar CC basado en la región seleccionada
   const filteredLocations = region 
@@ -380,6 +408,14 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
   const mappedProducts = selectedProducts.map(productId => 
     PRODUCTS.find(p => p.id === productId)
   ).filter((p): p is Product => p !== undefined);
+
+  const handlePrint = () => {
+    const printData = {
+      products: mappedProducts,
+      promotion: selectedPromotion
+    };
+    navigate('/print-view', { state: printData });
+  };
 
   return (
     <div className={`min-h-screen bg-gray-100`}>
@@ -563,23 +599,33 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
         {/* Vista previa de los carteles */}
         {(selectedCategory || mappedProducts.length > 0) && (
           <div className="border-t pt-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4">
+            <div className="flex justify-between items-center mb-4">
+              <label className="text-sm font-medium text-gray-700">
                 Vista previa de carteles:
               </label>
-              <div className="space-y-8">
-                {selectedCategory && mappedProducts.length === 0 ? (
-                  <CategoryPosterPreview
-                    category={selectedCategory}
-                    promotion={selectedPromotion}
-                    points="49"
-                    origin="ARGENTINA"
-                    barcode="7790895000782"
-                  />
-                ) : (
-                  mappedProducts.map(product => (
+              
+              <button
+                onClick={handlePrint}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg 
+                         hover:bg-indigo-700 transition-colors"
+              >
+                <span>Vista de impresión</span>
+              </button>
+            </div>
+
+            <div className="space-y-8">
+              {selectedCategory && mappedProducts.length === 0 ? (
+                <CategoryPosterPreview
+                  category={selectedCategory}
+                  promotion={selectedPromotion}
+                  points="49"
+                  origin="ARGENTINA"
+                  barcode="7790895000782"
+                />
+              ) : (
+                mappedProducts.map(product => (
+                  <div key={product.id}>
                     <PosterPreview
-                      key={product.id}
                       product={product}
                       promotion={selectedPromotion}
                       pricePerUnit={`${product.price * 2}`}
@@ -587,9 +633,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
                       origin="ARGENTINA"
                       barcode="7790895000782"
                     />
-                  ))
-                )}
-              </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}

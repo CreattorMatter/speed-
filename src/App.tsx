@@ -5,6 +5,8 @@ import Builder from './components/Builder/Builder';
 import Products from './components/Products/Products';
 import Promotions from './components/Promotions';
 import { PosterEditor } from './components/Posters/PosterEditor';
+import { PrintView } from './components/Posters/PrintView';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 
 export interface DashboardProps {
   onLogout: () => void;
@@ -16,7 +18,7 @@ export interface DashboardProps {
   userEmail?: string;
 }
 
-function App() {
+function AppContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -25,6 +27,8 @@ function App() {
   const [showProducts, setShowProducts] = useState(false);
   const [showPromotions, setShowPromotions] = useState(false);
   const [showPosterEditor, setShowPosterEditor] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -80,6 +84,14 @@ function App() {
 
   if (isAuthenticated && showPosterEditor) {
     return <PosterEditor onBack={() => setShowPosterEditor(false)} />;
+  }
+
+  if (location.pathname === '/print-view') {
+    return <PrintView 
+      products={location.state?.products || []}
+      promotion={location.state?.promotion}
+      onBack={() => navigate(-1)}
+    />;
   }
 
   if (isAuthenticated) {
@@ -168,6 +180,16 @@ function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="*" element={<AppContent />} />
+      </Routes>
+    </Router>
   );
 }
 
