@@ -6,13 +6,15 @@ import { LocationSelect } from './LocationSelect';
 import { PromotionSelect } from './PromotionSelect';
 import { ProductSelect } from './ProductSelect';
 import { CategorySelect } from './CategorySelect';
-import { PromoTypeSelect, PromoType } from './PromoTypeSelect';
+import { PromoType } from './PromoTypeSelect';
 import { PosterPreview } from './PosterPreview';
 import { CategoryPosterPreview } from './CategoryPosterPreview';
 import { useNavigate } from 'react-router-dom';
 
 interface PosterEditorProps {
   onBack: () => void;
+  initialProducts?: string[];
+  initialPromotion?: Promotion;
 }
 
 interface Promotion {
@@ -27,7 +29,7 @@ interface Promotion {
   endDate: string;
   bank?: string;
   cardType?: string;
-  type?: string;
+  type?: 'percentage' | '2x1' | '3x2' | 'second-70';
 }
 
 interface Product {
@@ -40,6 +42,11 @@ interface Product {
 }
 
 const COMPANIES = [
+  { 
+    id: 'no-logo', 
+    name: 'NO LOGO', 
+    logo: '' 
+  },
   { 
     id: 'cencosud', 
     name: 'Cencosud', 
@@ -387,14 +394,17 @@ const PRODUCTS = [
 // Extraer categorías únicas de los productos
 const CATEGORIES = Array.from(new Set(PRODUCTS.map(p => p.category)));
 
-export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
+export const PosterEditor: React.FC<PosterEditorProps> = ({ 
+  onBack, 
+  initialProducts = [], 
+  initialPromotion 
+}) => {
   const [company, setCompany] = useState('');
   const [region, setRegion] = useState('');
   const [cc, setCC] = useState('');
-  const [promotion, setPromotion] = useState('');
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [promotion, setPromotion] = useState(initialPromotion?.id || '');
+  const [selectedProducts, setSelectedProducts] = useState<string[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [promoType, setPromoType] = useState<PromoType | ''>('');
   const navigate = useNavigate();
 
   // Filtrar CC basado en la región seleccionada
@@ -416,6 +426,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
     };
     navigate('/print-view', { state: printData });
   };
+
+  const selectedCompany = COMPANIES.find(c => c.id === company);
 
   return (
     <div className={`min-h-screen bg-gray-100`}>
@@ -475,18 +487,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
                 onChange={setCC}
                 locations={filteredLocations}
                 disabled={!region}
-              />
-            </div>
-          </div>
-
-          <div className="border-t pt-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo de Promoción:
-              </label>
-              <PromoTypeSelect
-                value={promoType}
-                onChange={setPromoType}
               />
             </div>
           </div>
@@ -618,6 +618,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
                 <CategoryPosterPreview
                   category={selectedCategory}
                   promotion={selectedPromotion}
+                  company={selectedCompany}
                   points="49"
                   origin="ARGENTINA"
                   barcode="7790895000782"
@@ -628,6 +629,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({ onBack }) => {
                     <PosterPreview
                       product={product}
                       promotion={selectedPromotion}
+                      company={selectedCompany}
                       pricePerUnit={`${product.price * 2}`}
                       points="49"
                       origin="ARGENTINA"

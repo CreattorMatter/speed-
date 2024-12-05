@@ -22,6 +22,11 @@ interface PosterPreviewProps {
     title?: string;
     description?: string;
   };
+  company?: {
+    id: string;
+    name: string;
+    logo: string;
+  };
   pricePerUnit?: string;
   points?: string;
   origin?: string;
@@ -35,6 +40,7 @@ interface PosterPreviewProps {
 export const PosterPreview: React.FC<PosterPreviewProps> = ({ 
   product,
   promotion,
+  company,
   pricePerUnit = '',
   points = '',
   origin = 'ARGENTINA',
@@ -104,8 +110,30 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://speed-plus.com/product/${product.id}`;
 
   return (
-    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-xl mx-auto" style={{ fontFamily: 'VAG Rounded Std, Arial Rounded MT Bold, Arial, sans-serif' }}>
-      <div className="space-y-6 text-center">
+    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto relative overflow-hidden" style={{ fontFamily: 'VAG Rounded Std, Arial Rounded MT Bold, Arial, sans-serif' }}>
+      {/* Logo de fondo translúcido */}
+      {company && company.logo && (
+        <div className="absolute inset-0 flex items-center justify-center opacity-5">
+          <img 
+            src={company.logo}
+            alt={company.name}
+            className="w-2/3 object-contain"
+          />
+        </div>
+      )}
+
+      <div className="space-y-6 text-center relative">
+        {/* Logo superior izquierdo */}
+        {company && company.logo && (
+          <div className="absolute left-0 top-0">
+            <img 
+              src={company.logo}
+              alt={company.name}
+              className="h-24 w-auto object-contain"
+            />
+          </div>
+        )}
+
         {/* Nombre y descripción del producto */}
         <div className="space-y-2">
           <div className="text-4xl font-black text-black tracking-tight leading-tight uppercase">
@@ -245,8 +273,18 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
         {/* Código de barras y QR */}
         <div className="flex justify-between items-end mt-6">
-          <div className="text-base text-left">
-            {barcode}
+          <div className="flex items-center gap-4">
+            {/* Logo inferior izquierdo */}
+            {company && company.logo && (
+              <img 
+                src={company.logo}
+                alt={company.name}
+                className="h-16 w-auto object-contain"
+              />
+            )}
+            <div className="text-base text-left">
+              {barcode}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <img 

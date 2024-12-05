@@ -27,8 +27,22 @@ function AppContent() {
   const [showProducts, setShowProducts] = useState(false);
   const [showPromotions, setShowPromotions] = useState(false);
   const [showPosterEditor, setShowPosterEditor] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+  const [promotion, setPromotion] = useState<number | undefined>(undefined);
   const navigate = useNavigate();
   const location = useLocation();
+
+  React.useEffect(() => {
+    if (location.state?.showPosterEditor) {
+      setShowPosterEditor(true);
+      if (location.state.selectedProducts) {
+        setSelectedProducts(location.state.selectedProducts);
+      }
+      if (location.state.selectedPromotion) {
+        setPromotion(location.state.selectedPromotion.id);
+      }
+    }
+  }, [location.state]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -83,15 +97,13 @@ function AppContent() {
   }
 
   if (isAuthenticated && showPosterEditor) {
-    return <PosterEditor onBack={() => setShowPosterEditor(false)} />;
-  }
-
-  if (location.pathname === '/print-view') {
-    return <PrintView 
-      products={location.state?.products || []}
-      promotion={location.state?.promotion}
-      onBack={() => navigate(-1)}
-    />;
+    return (
+      <PosterEditor 
+        onBack={() => setShowPosterEditor(false)}
+        initialProducts={location.state?.selectedProducts}
+        initialPromotion={location.state?.selectedPromotion}
+      />
+    );
   }
 
   if (isAuthenticated) {
@@ -187,6 +199,7 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/print-view" element={<PrintView />} />
         <Route path="*" element={<AppContent />} />
       </Routes>
     </Router>
