@@ -71,100 +71,196 @@ const COMPANIES = [
 ];
 
 const REGIONS = [
+  { id: 'todos', name: 'Todas las Regiones' },
   { id: 'centro', name: 'Buenos Aires Centro' },
   { id: 'norte', name: 'Buenos Aires Norte' },
   { id: 'sur', name: 'Buenos Aires Sur' }
 ];
 
 const LOCATIONS = [
-  // Centro
+  // Jumbo
   { 
-    id: 'capital-once', 
+    id: 'jumbo-once', 
     name: 'Jumbo Once', 
     region: 'centro',
-    coordinates: [-58.4055, -34.6087] as [number, number],  // Av. Rivadavia 3050
+    coordinates: [-58.4055, -34.6087] as [number, number],
     address: 'Av. Rivadavia 3050, CABA'
   },
   { 
-    id: 'capital-palermo', 
+    id: 'jumbo-palermo', 
     name: 'Jumbo Palermo', 
     region: 'centro',
-    coordinates: [-58.4272, -34.5866] as [number, number],  // Av. Bullrich 345
+    coordinates: [-58.4272, -34.5866] as [number, number],
     address: 'Av. Bullrich 345, CABA'
   },
   { 
-    id: 'capital-caballito', 
+    id: 'jumbo-almagro', 
+    name: 'Jumbo Almagro', 
+    region: 'centro',
+    coordinates: [-58.4201, -34.6103] as [number, number],
+    address: 'Av. Díaz Vélez 4580, CABA'
+  },
+  { 
+    id: 'jumbo-flores', 
+    name: 'Jumbo Flores', 
+    region: 'centro',
+    coordinates: [-58.4634, -34.6278] as [number, number],
+    address: 'Av. Rivadavia 6900, CABA'
+  },
+  { 
+    id: 'jumbo-devoto', 
+    name: 'Jumbo Villa Devoto', 
+    region: 'centro',
+    coordinates: [-58.5134, -34.5989] as [number, number],
+    address: 'Av. Francisco Beiró 5150, CABA'
+  },
+  
+  // Disco
+  { 
+    id: 'disco-caballito', 
     name: 'Disco Caballito', 
     region: 'centro',
-    coordinates: [-58.4401, -34.6190] as [number, number],  // Av. Rivadavia 4800
+    coordinates: [-58.4401, -34.6190] as [number, number],
     address: 'Av. Rivadavia 4800, CABA'
   },
   { 
-    id: 'capital-belgrano', 
+    id: 'disco-belgrano', 
     name: 'Disco Belgrano', 
     region: 'centro',
-    coordinates: [-58.4566, -34.5579] as [number, number],  // Av. Cabildo 2280
+    coordinates: [-58.4566, -34.5579] as [number, number],
     address: 'Av. Cabildo 2280, CABA'
   },
-  
-  // Norte
   { 
-    id: 'sanisidro-jumbo', 
+    id: 'disco-nunez', 
+    name: 'Disco Núñez', 
+    region: 'centro',
+    coordinates: [-58.4566, -34.5450] as [number, number],
+    address: 'Av. Cabildo 3600, CABA'
+  },
+  { 
+    id: 'disco-recoleta', 
+    name: 'Disco Recoleta', 
+    region: 'centro',
+    coordinates: [-58.3876, -34.5875] as [number, number],
+    address: 'Av. Santa Fe 1600, CABA'
+  },
+  { 
+    id: 'disco-palermo', 
+    name: 'Disco Palermo', 
+    region: 'centro',
+    coordinates: [-58.4302, -34.5876] as [number, number],
+    address: 'Av. Santa Fe 3700, CABA'
+  },
+
+  // Vea
+  { 
+    id: 'vea-flores', 
+    name: 'Vea Flores', 
+    region: 'centro',
+    coordinates: [-58.4634, -34.6278] as [number, number],
+    address: 'Av. Rivadavia 7000, CABA'
+  },
+  { 
+    id: 'vea-liniers', 
+    name: 'Vea Liniers', 
+    region: 'centro',
+    coordinates: [-58.5234, -34.6378] as [number, number],
+    address: 'Av. Rivadavia 11500, CABA'
+  },
+  { 
+    id: 'vea-mataderos', 
+    name: 'Vea Mataderos', 
+    region: 'centro',
+    coordinates: [-58.5034, -34.6578] as [number, number],
+    address: 'Av. Eva Perón 5500, CABA'
+  },
+  { 
+    id: 'vea-pompeya', 
+    name: 'Vea Nueva Pompeya', 
+    region: 'centro',
+    coordinates: [-58.4134, -34.6478] as [number, number],
+    address: 'Av. Sáenz 1200, CABA'
+  },
+  { 
+    id: 'vea-soldati', 
+    name: 'Vea Villa Soldati', 
+    region: 'centro',
+    coordinates: [-58.4334, -34.6678] as [number, number],
+    address: 'Av. Roca 3000, CABA'
+  },
+
+  // Zona Norte
+  { 
+    id: 'jumbo-san-isidro', 
     name: 'Jumbo San Isidro', 
     region: 'norte',
-    coordinates: [-58.5274, -34.4707] as [number, number],  // Paraná 3745
+    coordinates: [-58.5274, -34.4707] as [number, number],
     address: 'Paraná 3745, San Isidro'
   },
   { 
-    id: 'vicente-disco', 
-    name: 'Disco Vicente López', 
+    id: 'jumbo-unicenter', 
+    name: 'Jumbo Unicenter', 
     region: 'norte',
-    coordinates: [-58.4736, -34.5295] as [number, number],  // Av. Maipú 1210
-    address: 'Av. Maipú 1210, Vicente López'
+    coordinates: [-58.5274, -34.5107] as [number, number],
+    address: 'Paraná 3600, Martínez'
   },
   { 
-    id: 'tigre-jumbo', 
+    id: 'jumbo-tigre', 
     name: 'Jumbo Tigre', 
     region: 'norte',
-    coordinates: [-58.5796, -34.4265] as [number, number],  // Av. Cazón 1250
+    coordinates: [-58.5796, -34.4265] as [number, number],
     address: 'Av. Cazón 1250, Tigre'
   },
   { 
-    id: 'pilar-jumbo', 
+    id: 'jumbo-pilar', 
     name: 'Jumbo Pilar', 
     region: 'norte',
-    coordinates: [-58.9137, -34.4585] as [number, number],  // Au. Panamericana Km 50
+    coordinates: [-58.9137, -34.4585] as [number, number],
     address: 'Au. Panamericana Km 50, Pilar'
   },
-  
-  // Sur
   { 
-    id: 'lomas-vea', 
+    id: 'jumbo-nordelta', 
+    name: 'Jumbo Nordelta', 
+    region: 'norte',
+    coordinates: [-58.6396, -34.4065] as [number, number],
+    address: 'Av. de los Lagos 7000, Nordelta'
+  },
+
+  // Zona Sur
+  { 
+    id: 'vea-lomas', 
     name: 'Vea Lomas de Zamora', 
     region: 'sur',
-    coordinates: [-58.4066, -34.7611] as [number, number],  // Av. Hipólito Yrigoyen 8230
+    coordinates: [-58.4066, -34.7611] as [number, number],
     address: 'Av. Hipólito Yrigoyen 8230, Lomas de Zamora'
   },
   { 
-    id: 'avellaneda-jumbo', 
+    id: 'jumbo-avellaneda', 
     name: 'Jumbo Avellaneda', 
     region: 'sur',
-    coordinates: [-58.3669, -34.6606] as [number, number],  // Av. Mitre 639
+    coordinates: [-58.3669, -34.6606] as [number, number],
     address: 'Av. Mitre 639, Avellaneda'
   },
   { 
-    id: 'quilmes-disco', 
+    id: 'disco-quilmes', 
     name: 'Disco Quilmes', 
     region: 'sur',
-    coordinates: [-58.2529, -34.7207] as [number, number],  // Av. Calchaquí 3950
+    coordinates: [-58.2529, -34.7207] as [number, number],
     address: 'Av. Calchaquí 3950, Quilmes'
   },
   { 
-    id: 'laplata-vea', 
+    id: 'vea-laplata', 
     name: 'Vea La Plata', 
     region: 'sur',
-    coordinates: [-57.9544, -34.9214] as [number, number],  // Calle 13 entre 34 y 35
+    coordinates: [-57.9544, -34.9214] as [number, number],
     address: 'Calle 13 entre 34 y 35, La Plata'
+  },
+  { 
+    id: 'jumbo-laplata', 
+    name: 'Jumbo La Plata', 
+    region: 'sur',
+    coordinates: [-57.9644, -34.9114] as [number, number],
+    address: 'Av. 19 850, La Plata'
   }
 ];
 
@@ -488,7 +584,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const filteredLocations = React.useMemo(() => {
     let locations = [...LOCATIONS];
 
-    // Filtrar por empresa si hay una seleccionada
+    // Filtrar por empresa si hay una seleccionada y no es "NO LOGO"
     if (company && company !== 'no-logo') {
       const companyPrefix = company.toLowerCase();
       locations = locations.filter(loc => 
@@ -497,8 +593,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       );
     }
 
-    // Luego filtrar por región si hay una seleccionada
-    if (region) {
+    // Luego filtrar por región si hay una seleccionada y no es "todos"
+    if (region && region !== 'todos') {
       locations = locations.filter(loc => loc.region === region);
     }
 
@@ -508,7 +604,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   // Obtener regiones únicas basadas en las ubicaciones filtradas
   const availableRegions = React.useMemo(() => {
     const regions = new Set(filteredLocations.map(loc => loc.region));
-    return REGIONS.filter(r => regions.has(r.id));
+    return [
+      { id: 'todos', name: 'Todas las Regiones' },
+      ...REGIONS.filter(r => r.id !== 'todos' && regions.has(r.id))
+    ];
   }, [filteredLocations]);
 
   const selectedPromotion = PROMOTIONS.find(p => p.id === promotion);
