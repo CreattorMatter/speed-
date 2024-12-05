@@ -1,10 +1,4 @@
-import React, { useEffect, useRef } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import { MAPBOX_TOKEN } from '../../config/mapbox';
-
-// Configurar el token
-mapboxgl.accessToken = MAPBOX_TOKEN;
+import React from 'react';
 
 interface LocationMapProps {
   location?: {
@@ -14,90 +8,29 @@ interface LocationMapProps {
 }
 
 export const LocationMap: React.FC<LocationMapProps> = ({ location }) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-
-  useEffect(() => {
-    if (!mapContainer.current) return;
-
-    // Inicializar mapa con una ubicación por defecto si no hay una seleccionada
-    const defaultLocation: [number, number] = [-58.3816, -34.6037]; // Buenos Aires
-
-    if (!map.current) {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12', // Cambiar a un estilo más visible
-        center: location?.coordinates || defaultLocation,
-        zoom: 13,
-        interactive: true // Permitir interacción con el mapa
-      });
-
-      // Agregar controles de navegación
-      map.current.addControl(new mapboxgl.NavigationControl());
-
-      // Asegurarse de que el mapa se cargue completamente
-      map.current.on('load', () => {
-        console.log('Mapa cargado correctamente');
-      });
-
-      // Manejar errores
-      map.current.on('error', (e) => {
-        console.error('Error en el mapa:', e);
-      });
-    }
-
-    if (location) {
-      // Animar el movimiento al nuevo lugar
-      map.current.flyTo({
-        center: location.coordinates,
-        zoom: 13,
-        essential: true,
-        duration: 1000
-      });
-
-      // Limpiar marcadores existentes
-      const existingMarkers = document.getElementsByClassName('mapboxgl-marker');
-      while (existingMarkers[0]) {
-        existingMarkers[0].remove();
-      }
-
-      // Agregar nuevo marcador
-      new mapboxgl.Marker({
-        color: '#4F46E5',
-        scale: 1.2
-      })
-        .setLngLat(location.coordinates)
-        .setPopup(
-          new mapboxgl.Popup({
-            closeButton: false,
-            closeOnClick: false,
-            className: 'custom-popup'
-          }).setHTML(`
-            <div class="text-sm font-medium">
-              ${location.name}
-            </div>
-          `)
-        )
-        .addTo(map.current);
-    }
-
-    return () => {
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
-      }
-    };
-  }, [location]);
+  const getGoogleMapsEmbedUrl = (lat: number, lng: number, name: string) => {
+    const query = encodeURIComponent(`${lat},${lng}`);
+    return `https://maps.google.com/maps?q=${query}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+  };
 
   return (
-    <div className="relative rounded-lg overflow-hidden shadow-lg">
-      <div 
-        ref={mapContainer} 
-        className="w-full h-64 transition-all duration-500"
-        style={{ background: '#e5e7eb' }} // Agregar un color de fondo mientras carga
-      />
-      {!location && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+    <div className="relative rounded-lg overflow-hidden shadow-lg bg-white">
+      {location ? (
+        <iframe
+          title={`Mapa de ${location.name}`}
+          width="100%"
+          height="300"
+          frameBorder="0"
+          scrolling="no"
+          marginHeight={0}
+          marginWidth={0}
+          src={getGoogleMapsEmbedUrl(location.coordinates[1], location.coordinates[0], location.name)}
+          style={{ border: 0 }}
+          className="w-full"
+          loading="lazy"
+        />
+      ) : (
+        <div className="h-64 flex items-center justify-center bg-gray-100">
           <p className="text-gray-500">Selecciona una ubicación</p>
         </div>
       )}

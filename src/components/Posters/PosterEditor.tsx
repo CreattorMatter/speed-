@@ -82,31 +82,31 @@ const LOCATIONS = [
     id: 'capital', 
     name: 'Capital Federal', 
     region: 'centro',
-    coordinates: [-58.3816, -34.6037]
+    coordinates: [-58.3816, -34.6037] as [number, number]
   },
   { 
     id: 'caballito', 
     name: 'Caballito', 
     region: 'centro',
-    coordinates: [-58.4433, -34.6176]
+    coordinates: [-58.4433, -34.6176] as [number, number]
   },
   { 
     id: 'palermo', 
     name: 'Palermo', 
     region: 'centro',
-    coordinates: [-58.3732, -34.6037]
+    coordinates: [-58.3732, -34.6037] as [number, number]
   },
   { 
     id: 'belgrano', 
     name: 'Belgrano', 
     region: 'centro',
-    coordinates: [-58.4167, -34.6167]
+    coordinates: [-58.4167, -34.6167] as [number, number]
   },
   { 
     id: 'recoleta', 
     name: 'Recoleta', 
     region: 'centro',
-    coordinates: [-58.3816, -34.6037]
+    coordinates: [-58.3816, -34.6037] as [number, number]
   },
   
   // Norte
@@ -114,31 +114,31 @@ const LOCATIONS = [
     id: 'sanisidro', 
     name: 'San Isidro', 
     region: 'norte',
-    coordinates: [-58.4167, -34.6167]
+    coordinates: [-58.4167, -34.6167] as [number, number]
   },
   { 
     id: 'vicente', 
     name: 'Vicente López', 
     region: 'norte',
-    coordinates: [-58.4167, -34.6167]
+    coordinates: [-58.4167, -34.6167] as [number, number]
   },
   { 
     id: 'tigre', 
     name: 'Tigre', 
     region: 'norte',
-    coordinates: [-58.4167, -34.6167]
+    coordinates: [-58.4167, -34.6167] as [number, number]
   },
   { 
     id: 'pilar', 
     name: 'Pilar', 
     region: 'norte',
-    coordinates: [-58.4167, -34.6167]
+    coordinates: [-58.4167, -34.6167] as [number, number]
   },
   { 
     id: 'escobar', 
     name: 'Escobar', 
     region: 'norte',
-    coordinates: [-58.4167, -34.6167]
+    coordinates: [-58.4167, -34.6167] as [number, number]
   },
   
   // Sur
@@ -146,31 +146,31 @@ const LOCATIONS = [
     id: 'lomas', 
     name: 'Lomas de Zamora', 
     region: 'sur',
-    coordinates: [-58.4167, -34.6167]
+    coordinates: [-58.4167, -34.6167] as [number, number]
   },
   { 
     id: 'avellaneda', 
     name: 'Avellaneda', 
     region: 'sur',
-    coordinates: [-58.4167, -34.6167]
+    coordinates: [-58.4167, -34.6167] as [number, number]
   },
   { 
     id: 'quilmes', 
     name: 'Quilmes', 
     region: 'sur',
-    coordinates: [-58.4167, -34.6167]
+    coordinates: [-58.4167, -34.6167] as [number, number]
   },
   { 
     id: 'laplata', 
     name: 'La Plata', 
     region: 'sur',
-    coordinates: [-58.4167, -34.6167]
+    coordinates: [-58.4167, -34.6167] as [number, number]
   },
   { 
     id: 'berazategui', 
     name: 'Berazategui', 
     region: 'sur',
-    coordinates: [-58.4167, -34.6167]
+    coordinates: [-58.4167, -34.6167] as [number, number]
   }
 ];
 
