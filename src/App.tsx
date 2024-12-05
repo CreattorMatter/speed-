@@ -7,6 +7,7 @@ import Promotions from './components/Promotions';
 import { PosterEditor } from './components/Posters/PosterEditor';
 import { PrintView } from './components/Posters/PrintView';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 export interface DashboardProps {
   onLogout: () => void;

@@ -10,6 +10,7 @@ import { PromoType } from './PromoTypeSelect';
 import { PosterPreview } from './PosterPreview';
 import { CategoryPosterPreview } from './CategoryPosterPreview';
 import { useNavigate } from 'react-router-dom';
+import { LocationMap } from './LocationMap';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -77,25 +78,100 @@ const REGIONS = [
 
 const LOCATIONS = [
   // Centro
-  { id: 'capital', name: 'Capital Federal', region: 'centro' },
-  { id: 'caballito', name: 'Caballito', region: 'centro' },
-  { id: 'palermo', name: 'Palermo', region: 'centro' },
-  { id: 'belgrano', name: 'Belgrano', region: 'centro' },
-  { id: 'recoleta', name: 'Recoleta', region: 'centro' },
+  { 
+    id: 'capital', 
+    name: 'Capital Federal', 
+    region: 'centro',
+    coordinates: [-58.3816, -34.6037]
+  },
+  { 
+    id: 'caballito', 
+    name: 'Caballito', 
+    region: 'centro',
+    coordinates: [-58.4433, -34.6176]
+  },
+  { 
+    id: 'palermo', 
+    name: 'Palermo', 
+    region: 'centro',
+    coordinates: [-58.3732, -34.6037]
+  },
+  { 
+    id: 'belgrano', 
+    name: 'Belgrano', 
+    region: 'centro',
+    coordinates: [-58.4167, -34.6167]
+  },
+  { 
+    id: 'recoleta', 
+    name: 'Recoleta', 
+    region: 'centro',
+    coordinates: [-58.3816, -34.6037]
+  },
   
   // Norte
-  { id: 'sanisidro', name: 'San Isidro', region: 'norte' },
-  { id: 'vicente', name: 'Vicente López', region: 'norte' },
-  { id: 'tigre', name: 'Tigre', region: 'norte' },
-  { id: 'pilar', name: 'Pilar', region: 'norte' },
-  { id: 'escobar', name: 'Escobar', region: 'norte' },
+  { 
+    id: 'sanisidro', 
+    name: 'San Isidro', 
+    region: 'norte',
+    coordinates: [-58.4167, -34.6167]
+  },
+  { 
+    id: 'vicente', 
+    name: 'Vicente López', 
+    region: 'norte',
+    coordinates: [-58.4167, -34.6167]
+  },
+  { 
+    id: 'tigre', 
+    name: 'Tigre', 
+    region: 'norte',
+    coordinates: [-58.4167, -34.6167]
+  },
+  { 
+    id: 'pilar', 
+    name: 'Pilar', 
+    region: 'norte',
+    coordinates: [-58.4167, -34.6167]
+  },
+  { 
+    id: 'escobar', 
+    name: 'Escobar', 
+    region: 'norte',
+    coordinates: [-58.4167, -34.6167]
+  },
   
   // Sur
-  { id: 'lomas', name: 'Lomas de Zamora', region: 'sur' },
-  { id: 'avellaneda', name: 'Avellaneda', region: 'sur' },
-  { id: 'quilmes', name: 'Quilmes', region: 'sur' },
-  { id: 'laplata', name: 'La Plata', region: 'sur' },
-  { id: 'berazategui', name: 'Berazategui', region: 'sur' }
+  { 
+    id: 'lomas', 
+    name: 'Lomas de Zamora', 
+    region: 'sur',
+    coordinates: [-58.4167, -34.6167]
+  },
+  { 
+    id: 'avellaneda', 
+    name: 'Avellaneda', 
+    region: 'sur',
+    coordinates: [-58.4167, -34.6167]
+  },
+  { 
+    id: 'quilmes', 
+    name: 'Quilmes', 
+    region: 'sur',
+    coordinates: [-58.4167, -34.6167]
+  },
+  { 
+    id: 'laplata', 
+    name: 'La Plata', 
+    region: 'sur',
+    coordinates: [-58.4167, -34.6167]
+  },
+  { 
+    id: 'berazategui', 
+    name: 'Berazategui', 
+    region: 'sur',
+    coordinates: [-58.4167, -34.6167]
+  }
 ];
 
 const PROMOTIONS: Promotion[] = [
@@ -429,6 +505,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
 
   const selectedCompany = COMPANIES.find(c => c.id === company);
 
+  const selectedLocation = LOCATIONS.find(loc => loc.id === cc);
+
   return (
     <div className={`min-h-screen bg-gray-100`}>
       <header className="fixed top-0 left-0 right-0 bg-[#0A0F1C]/80 backdrop-blur-xl border-b border-white/5 z-50">
@@ -487,6 +565,14 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                 onChange={setCC}
                 locations={filteredLocations}
                 disabled={!region}
+              />
+            </div>
+            <div className="col-span-3 mt-4">
+              <LocationMap 
+                location={selectedLocation ? {
+                  name: selectedLocation.name,
+                  coordinates: selectedLocation.coordinates
+                } : undefined}
               />
             </div>
           </div>
@@ -599,18 +685,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
         {/* Vista previa de los carteles */}
         {(selectedCategory || mappedProducts.length > 0) && (
           <div className="border-t pt-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="mb-4">
               <label className="text-sm font-medium text-gray-700">
                 Vista previa de carteles:
               </label>
-              
-              <button
-                onClick={handlePrint}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg 
-                         hover:bg-indigo-700 transition-colors"
-              >
-                <span>Vista de impresión</span>
-              </button>
             </div>
 
             <div className="space-y-8">

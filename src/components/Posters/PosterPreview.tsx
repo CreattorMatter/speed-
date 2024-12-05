@@ -273,18 +273,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
         {/* Código de barras y QR */}
         <div className="flex justify-between items-end mt-6">
-          <div className="flex items-center gap-4">
-            {/* Logo inferior izquierdo */}
-            {company && company.logo && (
-              <img 
-                src={company.logo}
-                alt={company.name}
-                className="h-16 w-auto object-contain"
-              />
-            )}
-            <div className="text-base text-left">
-              {barcode}
-            </div>
+          <div className="text-base text-left">
+            {barcode}
           </div>
           <div className="flex items-center gap-2">
             <img 
