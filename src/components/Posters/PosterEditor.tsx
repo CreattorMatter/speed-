@@ -79,98 +79,92 @@ const REGIONS = [
 const LOCATIONS = [
   // Centro
   { 
-    id: 'capital', 
-    name: 'Capital Federal', 
+    id: 'capital-once', 
+    name: 'Jumbo Once', 
     region: 'centro',
-    coordinates: [-58.3816, -34.6037] as [number, number]
+    coordinates: [-58.4055, -34.6087] as [number, number],  // Av. Rivadavia 3050
+    address: 'Av. Rivadavia 3050, CABA'
   },
   { 
-    id: 'caballito', 
-    name: 'Caballito', 
+    id: 'capital-palermo', 
+    name: 'Jumbo Palermo', 
     region: 'centro',
-    coordinates: [-58.4433, -34.6176] as [number, number]
+    coordinates: [-58.4272, -34.5866] as [number, number],  // Av. Bullrich 345
+    address: 'Av. Bullrich 345, CABA'
   },
   { 
-    id: 'palermo', 
-    name: 'Palermo', 
+    id: 'capital-caballito', 
+    name: 'Disco Caballito', 
     region: 'centro',
-    coordinates: [-58.3732, -34.6037] as [number, number]
+    coordinates: [-58.4401, -34.6190] as [number, number],  // Av. Rivadavia 4800
+    address: 'Av. Rivadavia 4800, CABA'
   },
   { 
-    id: 'belgrano', 
-    name: 'Belgrano', 
+    id: 'capital-belgrano', 
+    name: 'Disco Belgrano', 
     region: 'centro',
-    coordinates: [-58.4167, -34.6167] as [number, number]
-  },
-  { 
-    id: 'recoleta', 
-    name: 'Recoleta', 
-    region: 'centro',
-    coordinates: [-58.3816, -34.6037] as [number, number]
+    coordinates: [-58.4566, -34.5579] as [number, number],  // Av. Cabildo 2280
+    address: 'Av. Cabildo 2280, CABA'
   },
   
   // Norte
   { 
-    id: 'sanisidro', 
-    name: 'San Isidro', 
+    id: 'sanisidro-jumbo', 
+    name: 'Jumbo San Isidro', 
     region: 'norte',
-    coordinates: [-58.4167, -34.6167] as [number, number]
+    coordinates: [-58.5274, -34.4707] as [number, number],  // Paraná 3745
+    address: 'Paraná 3745, San Isidro'
   },
   { 
-    id: 'vicente', 
-    name: 'Vicente López', 
+    id: 'vicente-disco', 
+    name: 'Disco Vicente López', 
     region: 'norte',
-    coordinates: [-58.4167, -34.6167] as [number, number]
+    coordinates: [-58.4736, -34.5295] as [number, number],  // Av. Maipú 1210
+    address: 'Av. Maipú 1210, Vicente López'
   },
   { 
-    id: 'tigre', 
-    name: 'Tigre', 
+    id: 'tigre-jumbo', 
+    name: 'Jumbo Tigre', 
     region: 'norte',
-    coordinates: [-58.4167, -34.6167] as [number, number]
+    coordinates: [-58.5796, -34.4265] as [number, number],  // Av. Cazón 1250
+    address: 'Av. Cazón 1250, Tigre'
   },
   { 
-    id: 'pilar', 
-    name: 'Pilar', 
+    id: 'pilar-jumbo', 
+    name: 'Jumbo Pilar', 
     region: 'norte',
-    coordinates: [-58.4167, -34.6167] as [number, number]
-  },
-  { 
-    id: 'escobar', 
-    name: 'Escobar', 
-    region: 'norte',
-    coordinates: [-58.4167, -34.6167] as [number, number]
+    coordinates: [-58.9137, -34.4585] as [number, number],  // Au. Panamericana Km 50
+    address: 'Au. Panamericana Km 50, Pilar'
   },
   
   // Sur
   { 
-    id: 'lomas', 
-    name: 'Lomas de Zamora', 
+    id: 'lomas-vea', 
+    name: 'Vea Lomas de Zamora', 
     region: 'sur',
-    coordinates: [-58.4167, -34.6167] as [number, number]
+    coordinates: [-58.4066, -34.7611] as [number, number],  // Av. Hipólito Yrigoyen 8230
+    address: 'Av. Hipólito Yrigoyen 8230, Lomas de Zamora'
   },
   { 
-    id: 'avellaneda', 
-    name: 'Avellaneda', 
+    id: 'avellaneda-jumbo', 
+    name: 'Jumbo Avellaneda', 
     region: 'sur',
-    coordinates: [-58.4167, -34.6167] as [number, number]
+    coordinates: [-58.3669, -34.6606] as [number, number],  // Av. Mitre 639
+    address: 'Av. Mitre 639, Avellaneda'
   },
   { 
-    id: 'quilmes', 
-    name: 'Quilmes', 
+    id: 'quilmes-disco', 
+    name: 'Disco Quilmes', 
     region: 'sur',
-    coordinates: [-58.4167, -34.6167] as [number, number]
+    coordinates: [-58.2529, -34.7207] as [number, number],  // Av. Calchaquí 3950
+    address: 'Av. Calchaquí 3950, Quilmes'
   },
   { 
-    id: 'laplata', 
-    name: 'La Plata', 
+    id: 'laplata-vea', 
+    name: 'Vea La Plata', 
     region: 'sur',
-    coordinates: [-58.4167, -34.6167] as [number, number]
-  },
-  { 
-    id: 'berazategui', 
-    name: 'Berazategui', 
-    region: 'sur',
-    coordinates: [-58.4167, -34.6167] as [number, number]
+    coordinates: [-57.9544, -34.9214] as [number, number],  // Calle 13 entre 34 y 35
+    address: 'Calle 13 entre 34 y 35, La Plata'
   }
 ];
 
@@ -483,10 +477,39 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [selectedCategory, setSelectedCategory] = useState('');
   const navigate = useNavigate();
 
-  // Filtrar CC basado en la región seleccionada
-  const filteredLocations = region 
-    ? LOCATIONS.filter(loc => loc.region === region)
-    : LOCATIONS;
+  // Limpiar región y CC cuando cambia la empresa
+  const handleCompanyChange = (newCompany: string) => {
+    setCompany(newCompany);
+    setRegion('');
+    setCC('');
+  };
+
+  // Filtrar ubicaciones basado en la empresa y región seleccionadas
+  const filteredLocations = React.useMemo(() => {
+    let locations = [...LOCATIONS];
+
+    // Filtrar por empresa si hay una seleccionada
+    if (company && company !== 'no-logo') {
+      const companyPrefix = company.toLowerCase();
+      locations = locations.filter(loc => 
+        loc.name.toLowerCase().includes(companyPrefix) ||
+        loc.id.includes(companyPrefix)
+      );
+    }
+
+    // Luego filtrar por región si hay una seleccionada
+    if (region) {
+      locations = locations.filter(loc => loc.region === region);
+    }
+
+    return locations;
+  }, [company, region]);
+
+  // Obtener regiones únicas basadas en las ubicaciones filtradas
+  const availableRegions = React.useMemo(() => {
+    const regions = new Set(filteredLocations.map(loc => loc.region));
+    return REGIONS.filter(r => regions.has(r.id));
+  }, [filteredLocations]);
 
   const selectedPromotion = PROMOTIONS.find(p => p.id === promotion);
 
@@ -539,7 +562,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               </label>
               <CompanySelect
                 value={company}
-                onChange={setCompany}
+                onChange={handleCompanyChange}
                 companies={COMPANIES}
               />
             </div>
@@ -553,7 +576,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   setRegion(value);
                   setCC('');
                 }}
-                regions={REGIONS}
+                regions={availableRegions}
+                disabled={false}
               />
             </div>
             <div>
@@ -571,7 +595,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               <LocationMap 
                 location={selectedLocation ? {
                   name: selectedLocation.name,
-                  coordinates: selectedLocation.coordinates
+                  coordinates: selectedLocation.coordinates,
+                  address: selectedLocation.address
                 } : undefined}
               />
             </div>
