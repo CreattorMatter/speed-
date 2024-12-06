@@ -5,6 +5,12 @@ interface CategoryPosterPreviewProps {
   promotion?: {
     discount: string;
   };
+  company?: {
+    id: string;
+    name: string;
+    logo: string;
+  };
+  showTopLogo?: boolean;
   points?: string;
   origin?: string;
   barcode?: string;
@@ -13,13 +19,37 @@ interface CategoryPosterPreviewProps {
 export const CategoryPosterPreview: React.FC<CategoryPosterPreviewProps> = ({ 
   category,
   promotion,
+  company,
+  showTopLogo = true,
   points = '',
   origin = 'ARGENTINA',
   barcode = '7790895000782'
 }) => {
   return (
-    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto font-sans">
-      <div className="space-y-6 text-center">
+    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto relative overflow-hidden">
+      {/* Logo de fondo translúcido - siempre visible si hay company */}
+      {company?.logo && (
+        <div className="absolute inset-0 flex items-center justify-center opacity-5">
+          <img 
+            src={company.logo}
+            alt={company.name}
+            className="w-2/3 object-contain"
+          />
+        </div>
+      )}
+
+      <div className="space-y-6 text-center relative">
+        {/* Logo superior izquierdo - controlado por showTopLogo */}
+        {showTopLogo && company?.logo && (
+          <div className="absolute left-0 top-0">
+            <img 
+              src={company.logo}
+              alt={company.name}
+              className="h-24 w-auto object-contain"
+            />
+          </div>
+        )}
+
         {/* Nombre de la categoría */}
         <div className="text-5xl font-bold text-black tracking-tight leading-tight uppercase">
           {category}

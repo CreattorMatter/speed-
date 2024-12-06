@@ -27,6 +27,7 @@ interface PosterPreviewProps {
     name: string;
     logo: string;
   };
+  showTopLogo?: boolean;
   pricePerUnit?: string;
   points?: string;
   origin?: string;
@@ -41,6 +42,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   product,
   promotion,
   company,
+  showTopLogo = true,
   pricePerUnit = '',
   points = '',
   origin = 'ARGENTINA',
@@ -111,8 +113,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto relative overflow-hidden" style={{ fontFamily: 'VAG Rounded Std, Arial Rounded MT Bold, Arial, sans-serif' }}>
-      {/* Logo de fondo translúcido */}
-      {company && company.logo && (
+      {/* Logo de fondo translúcido - siempre visible si hay company */}
+      {company?.logo && (
         <div className="absolute inset-0 flex items-center justify-center opacity-5">
           <img 
             src={company.logo}
@@ -123,8 +125,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
       )}
 
       <div className="space-y-6 text-center relative">
-        {/* Logo superior izquierdo */}
-        {company && company.logo && (
+        {/* Logo superior izquierdo - controlado por showTopLogo */}
+        {showTopLogo && company?.logo && (
           <div className="absolute left-0 top-0">
             <img 
               src={company.logo}

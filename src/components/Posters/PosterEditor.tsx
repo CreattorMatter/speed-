@@ -45,7 +45,7 @@ interface Product {
 const COMPANIES = [
   { 
     id: 'no-logo', 
-    name: 'NO LOGO', 
+    name: 'TODAS', 
     logo: '' 
   },
   { 
@@ -572,6 +572,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [selectedProducts, setSelectedProducts] = useState<string[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState('');
   const navigate = useNavigate();
+  const [showLogo, setShowLogo] = useState(true);
 
   // Limpiar región y CC cuando cambia la empresa
   const handleCompanyChange = (newCompany: string) => {
@@ -584,7 +585,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const filteredLocations = React.useMemo(() => {
     let locations = [...LOCATIONS];
 
-    // Filtrar por empresa si hay una seleccionada y no es "NO LOGO"
+    // Filtrar por empresa si hay una seleccionada y no es "TODAS"
     if (company && company !== 'no-logo') {
       const companyPrefix = company.toLowerCase();
       locations = locations.filter(loc => 
@@ -809,10 +810,24 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
         {/* Vista previa de los carteles */}
         {(selectedCategory || mappedProducts.length > 0) && (
           <div className="border-t pt-6">
-            <div className="mb-4">
+            <div className="flex justify-between items-center mb-4">
               <label className="text-sm font-medium text-gray-700">
                 Vista previa de carteles:
               </label>
+              
+              {/* Checkbox para controlar la visibilidad del logo */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="hide-logo"
+                  checked={!showLogo}
+                  onChange={(e) => setShowLogo(!e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <label htmlFor="hide-logo" className="text-sm text-gray-600">
+                  Solo logo de fondo
+                </label>
+              </div>
             </div>
 
             <div className="space-y-8">
@@ -821,6 +836,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   category={selectedCategory}
                   promotion={selectedPromotion}
                   company={selectedCompany}
+                  showTopLogo={showLogo}
                   points="49"
                   origin="ARGENTINA"
                   barcode="7790895000782"
@@ -832,6 +848,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       product={product}
                       promotion={selectedPromotion}
                       company={selectedCompany}
+                      showTopLogo={showLogo}
                       pricePerUnit={`${product.price * 2}`}
                       points="49"
                       origin="ARGENTINA"
