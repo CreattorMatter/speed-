@@ -573,6 +573,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [selectedCategory, setSelectedCategory] = useState('');
   const navigate = useNavigate();
   const [showLogo, setShowLogo] = useState(true);
+  const [showPesosCheck, setShowPesosCheck] = useState(false);
 
   // Limpiar región y CC cuando cambia la empresa
   const handleCompanyChange = (newCompany: string) => {
