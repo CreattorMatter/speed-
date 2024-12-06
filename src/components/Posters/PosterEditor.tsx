@@ -841,13 +841,13 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  id="hide-logo"
-                  checked={!showLogo}
-                  onChange={(e) => setShowLogo(!e.target.checked)}
+                  id="show-logo"
+                  checked={showLogo}
+                  onChange={(e) => setShowLogo(e.target.checked)}
                   className="rounded border-white/20 bg-white/10 text-violet-500 focus:ring-violet-500"
                 />
-                <label htmlFor="hide-logo" className="text-sm text-white/90">
-                  Solo logo de fondo
+                <label htmlFor="show-logo" className="text-sm text-white/90">
+                  Mostrar
                 </label>
               </div>
             </div>
