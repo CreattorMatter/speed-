@@ -8,6 +8,7 @@ import { PosterEditor } from './components/Posters/PosterEditor';
 import { PrintView } from './components/Posters/PrintView';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { ConfigurationPortal } from './components/Settings/ConfigurationPortal';
 
 export interface DashboardProps {
   onLogout: () => void;
@@ -17,6 +18,7 @@ export interface DashboardProps {
   onPromotions: () => void;
   onBack: () => void;
   userEmail?: string;
+  onSettings: () => void;
 }
 
 function AppContent() {
@@ -32,6 +34,7 @@ function AppContent() {
   const [promotion, setPromotion] = useState<number | undefined>(undefined);
   const navigate = useNavigate();
   const location = useLocation();
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   React.useEffect(() => {
     if (location.state?.showPosterEditor) {
@@ -91,6 +94,11 @@ function AppContent() {
     setShowPosterEditor(true);
   };
 
+  const handleSettings = () => {
+    console.log('Opening settings...');
+    setIsConfigOpen(true);
+  };
+
   if (isAuthenticated && showBuilder) {
     return <Builder onBack={handleBack} />;
   }
@@ -115,15 +123,22 @@ function AppContent() {
 
   if (isAuthenticated) {
     return (
-      <Dashboard 
-        onLogout={handleLogout} 
-        onNewTemplate={() => setShowBuilder(true)} 
-        onNewPoster={handleNewPoster}
-        onProducts={() => setShowProducts(true)} 
-        onPromotions={() => setShowPromotions(true)} 
-        onBack={handleBack}
-        userEmail={email}
-      />
+      <>
+        <Dashboard 
+          onLogout={handleLogout} 
+          onNewTemplate={() => setShowBuilder(true)} 
+          onNewPoster={handleNewPoster}
+          onProducts={() => setShowProducts(true)} 
+          onPromotions={() => setShowPromotions(true)} 
+          onBack={handleBack}
+          userEmail={email}
+          onSettings={handleSettings}
+        />
+        <ConfigurationPortal 
+          isOpen={isConfigOpen} 
+          onClose={() => setIsConfigOpen(false)} 
+        />
+      </>
     );
   }
 

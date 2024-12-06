@@ -1,14 +1,78 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Shield, X, UserPlus, Settings } from 'lucide-react';
+import { Users, Shield, X, UserPlus, Settings, Plus } from 'lucide-react';
+import { UsersTable } from './UsersTable';
+import { RolesTable } from './RolesTable';
 
 interface ConfigurationPortalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const mockUsers = [
+  {
+    id: '1',
+    name: 'Admin Usuario',
+    email: 'admin@ejemplo.com',
+    role: 'Administrador',
+    status: 'active' as const,
+    lastLogin: 'Hace 2 horas'
+  },
+  {
+    id: '2',
+    name: 'Usuario Normal',
+    email: 'usuario@ejemplo.com',
+    role: 'Usuario',
+    status: 'active' as const,
+    lastLogin: 'Hace 1 día'
+  }
+];
+
+const mockRoles = [
+  {
+    id: '1',
+    name: 'Administrador',
+    description: 'Control total del sistema',
+    permissions: [
+      { id: '1', name: 'Usuarios', description: 'Gestión de usuarios' },
+      { id: '2', name: 'Roles', description: 'Gestión de roles' },
+      { id: '3', name: 'Productos', description: 'Gestión de productos' }
+    ],
+    usersCount: 2
+  },
+  {
+    id: '2',
+    name: 'Usuario',
+    description: 'Acceso básico al sistema',
+    permissions: [
+      { id: '3', name: 'Productos', description: 'Gestión de productos' }
+    ],
+    usersCount: 5
+  }
+];
+
 export function ConfigurationPortal({ isOpen, onClose }: ConfigurationPortalProps) {
   const [activeTab, setActiveTab] = useState<'users' | 'roles' | 'general'>('users');
+
+  const handleEditUser = (user: any) => {
+    console.log('Editar usuario:', user);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    console.log('Eliminar usuario:', userId);
+  };
+
+  const handleStatusChange = (userId: string, newStatus: 'active' | 'inactive') => {
+    console.log('Cambiar estado:', userId, newStatus);
+  };
+
+  const handleEditRole = (role: any) => {
+    console.log('Editar rol:', role);
+  };
+
+  const handleDeleteRole = (roleId: string) => {
+    console.log('Eliminar rol:', roleId);
+  };
 
   if (!isOpen) return null;
 
@@ -22,7 +86,7 @@ export function ConfigurationPortal({ isOpen, onClose }: ConfigurationPortalProp
       <motion.div
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
-        className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[80vh] overflow-hidden"
+        className="bg-white rounded-2xl shadow-xl w-full max-w-6xl max-h-[80vh] overflow-hidden"
       >
         <div className="border-b border-gray-200 p-6 flex justify-between items-center">
           <h2 className="text-2xl font-semibold text-gray-900">Configuración del Sistema</h2>
@@ -66,23 +130,43 @@ export function ConfigurationPortal({ isOpen, onClose }: ConfigurationPortalProp
         <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
           {activeTab === 'users' && (
             <div className="space-y-6">
-              <button className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors">
-                <UserPlus className="w-4 h-4" />
-                Nuevo Usuario
-              </button>
-              {/* Aquí irá la tabla de usuarios */}
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">Gestión de Usuarios</h3>
+                <button className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors">
+                  <UserPlus className="w-4 h-4" />
+                  Nuevo Usuario
+                </button>
+              </div>
+              <UsersTable
+                users={mockUsers}
+                onEdit={handleEditUser}
+                onDelete={handleDeleteUser}
+                onStatusChange={handleStatusChange}
+              />
             </div>
           )}
           
           {activeTab === 'roles' && (
-            <div>
-              {/* Contenido de roles y permisos */}
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">Gestión de Roles</h3>
+                <button className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors">
+                  <Plus className="w-4 h-4" />
+                  Nuevo Rol
+                </button>
+              </div>
+              <RolesTable
+                roles={mockRoles}
+                onEdit={handleEditRole}
+                onDelete={handleDeleteRole}
+              />
             </div>
           )}
           
           {activeTab === 'general' && (
             <div>
-              {/* Configuración general */}
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Configuración General</h3>
+              {/* Aquí puedes agregar la configuración general */}
             </div>
           )}
         </div>

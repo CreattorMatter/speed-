@@ -33,7 +33,7 @@ export function Header({ onBack, onLogout, onSettings }: HeaderProps) {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={onSettings}
+              onClick={() => onSettings()}
               className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors flex items-center gap-2"
             >
               <Settings className="w-5 h-5" />
