@@ -147,7 +147,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
               <img 
                 src={company.logo}
                 alt={company.name}
-                className="h-16 w-auto object-contain"
+                className="h-24 w-auto object-contain"
               />
             </div>
           )}
@@ -219,7 +219,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
               </div>
 
               {/* Columna derecha */}
-              <div className="flex items-end gap-4">
+              <div className="flex items-end gap-20">
                 <div className="text-[16px] font-bold" style={roundedFontStyle}>
                   SUMÁ {points} PUNTOS JUMBO MÁS
                 </div>
