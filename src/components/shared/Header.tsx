@@ -9,6 +9,11 @@ interface HeaderProps {
 }
 
 export function Header({ onBack, onLogout, onSettings }: HeaderProps) {
+  const handleSettingsClick = () => {
+    console.log('Settings button clicked in Header');
+    onSettings();
+  };
+
   return (
     <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900 border-b border-white/10 shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
@@ -33,7 +38,7 @@ export function Header({ onBack, onLogout, onSettings }: HeaderProps) {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => onSettings()}
+              onClick={handleSettingsClick}
               className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors flex items-center gap-2"
             >
               <Settings className="w-5 h-5" />

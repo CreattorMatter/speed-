@@ -1,8 +1,8 @@
 @font-face {
   font-family: 'VAG Rounded BT';
-  src: url('/fonts/VAGRoundedBT-Black.woff2') format('woff2'),
-       url('/fonts/VAGRoundedBT-Black.woff') format('woff');
-  font-weight: 900;
+  src: url('/fonts/VAGRoundedBT-Bold.woff2') format('woff2'),
+       url('/fonts/VAGRoundedBT-Bold.woff') format('woff');
+  font-weight: bold;
   font-style: normal;
   font-display: swap;
 } 

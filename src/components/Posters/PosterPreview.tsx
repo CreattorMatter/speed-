@@ -113,182 +113,101 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://speed-plus.com/product/${product.id}`;
 
+  const roundedFontStyle = { 
+    fontFamily: 'VAG Rounded BT, VAG Rounded Std, Arial Rounded MT Bold, Arial Black, sans-serif'
+  };
+
   return (
     <div className={`${compact ? 'flex gap-4 items-center' : ''}`}>
-      {/* Logo de fondo translúcido - siempre visible si hay company */}
-      {company?.logo && (
-        <div className="absolute inset-0 flex items-center justify-center opacity-5">
-          <img 
-            src={company.logo}
-            alt={company.name}
-            className="w-2/3 object-contain"
-          />
-        </div>
-      )}
-
-      <div className="space-y-6 text-center relative">
-        {/* Logo superior izquierdo - controlado por showTopLogo */}
-        {showTopLogo && company?.logo && (
-          <div className="absolute left-0 top-0">
-            <img 
-              src={company.logo}
-              alt={company.name}
-              className="h-24 w-auto object-contain"
-            />
+      <div className={`relative bg-white rounded-lg shadow-xl overflow-hidden
+                    ${compact ? 'w-full' : 'w-[900px] h-[500px]'}`}
+        style={{
+          width: compact ? '100%' : '800px',
+          height: compact ? 'auto' : '500px',
+          padding: '1.5 rem',
+          border: '1px solid #e5e7eb',
+          ...roundedFontStyle
+        }}
+      >
+        <div className="relative z-10 flex flex-col h-full">
+          {/* Nombre del producto */}
+          <div className="text-center mb-4">
+            <h1 className="text-[60px] font-black text-black leading-none" 
+                style={roundedFontStyle}>
+              {product.name.toLowerCase()}
+            </h1>
+            <p className="text-[22px] text-gray-600 mt-1" 
+               style={roundedFontStyle}>
+              {product.description.toLowerCase()}
+            </p>
           </div>
-        )}
 
-        {/* Nombre y descripción del producto */}
-        <div className="space-y-2">
-          <div className="text-4xl font-black text-black tracking-tight leading-tight uppercase">
-            {product.name.toLowerCase()}
-          </div>
-          <div className="text-xl font-medium text-gray-600">
-            {product.description.toLowerCase()}
-          </div>
-        </div>
-
-        {/* Banner de promoción */}
-        {promotion?.type === 'second-70' && (
-          <div className="bg-red-600 text-white py-2 px-4 rounded-lg">
-            <div className="text-2xl font-black">
-              2da UNIDAD
+          {/* Condiciones y vigencia */}
+          <div className="text-right absolute top-40 right-10">
+            <div className="text-[14px]" style={roundedFontStyle}>
+              <span className="text-gray-600">Condiciones:</span><br />
+              • Válido solo los jueves
             </div>
-            <div className="text-4xl font-black">
-              70% OFF
-            </div>
-            <div className="text-sm mt-1 font-medium">
-              En la compra de 2 unidades iguales
+            <div className="text-[14px]" style={roundedFontStyle}>
+              <span className="text-gray-600">Vigencia:</span><br />
+              Del {promotion?.startDate}<br />
+              al {promotion?.endDate}
             </div>
           </div>
-        )}
 
-        <div className="flex justify-between items-start">
-          {/* Precios */}
-          <div className="flex-1 space-y-2">
-            {promotion && (
-              <div className="flex items-center justify-center gap-4">
-                {promotion.type === 'second-70' ? (
-                  <div className="flex flex-col items-center">
-                    <div className="text-3xl text-gray-500 line-through font-black">
-                      ${(product.price * 2).toLocaleString('es-AR')}
-                    </div>
-                    <div className="flex flex-col gap-1 text-lg">
-                      <div>1ra unidad ${product.price.toLocaleString('es-AR')}</div>
-                      <div className="text-red-600 font-bold">
-                        2da unidad ${priceInfo.secondUnitPrice?.toLocaleString('es-AR')}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        *Válido en la compra de dos unidades iguales
-                      </div>
-                    </div>
-                    <div className="text-xl font-bold mt-2">
-                      Precio por unidad: ${priceInfo.unitPrice.toLocaleString('es-AR')}
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="text-2xl text-gray-500 line-through font-black">
-                      ${product.price.toLocaleString('es-AR')}
-                    </div>
-                    <div className="bg-red-600 text-white px-4 py-1 rounded-full text-xl font-black">
-                      {promotion.discount}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-            
-            {/* Precio Final */}
-            <div className="flex items-baseline justify-center">
-              <span className="text-5xl font-black">$</span>
-              <span className="text-[100px] leading-none font-black tracking-tighter" style={{ letterSpacing: '-0.05em' }}>
-                {Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
+          {/* Sección de precios */}
+          <div className="flex-grow flex flex-col items-center justify-center -mt-4">
+            {/* Precio tachado y descuento */}
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-[24px] text-gray-400 line-through" 
+                    style={roundedFontStyle}>
+                ${product.price.toLocaleString('es-AR')}
               </span>
+              <div className="bg-red-600 text-white px-6 py-1.5 rounded-full text-[18px] font-bold"
+                   style={roundedFontStyle}>
+                Hasta {promotion?.discount}
+              </div>
             </div>
 
-            {promotion?.type === 'second-70' && (
-              <div className="text-2xl font-bold text-green-600">
-                ¡Ahorrás ${priceInfo.savedAmount.toLocaleString('es-AR')}!
-              </div>
-            )}
+            {/* Precio Final */}
+            <span className="text-[120px] font-black leading-none mb-8" 
+                  style={{ 
+                    ...roundedFontStyle,
+                    letterSpacing: '-0.02em'
+                  }}>
+              ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
+            </span>
           </div>
 
-          {/* Información de la promoción */}
-          {promotion && (
-            <div className="w-48 text-left space-y-2 text-xs text-gray-600">
-              {/* Banco y tarjeta */}
-              {promotion.bank && (
-                <div>
-                  <p className="font-medium">{promotion.bank}</p>
-                  {promotion.cardType && (
-                    <p>{promotion.cardType}</p>
-                  )}
-                </div>
-              )}
-
-              {/* Condiciones */}
-              {promotion.conditions && promotion.conditions.length > 0 && (
-                <div>
-                  <p className="font-medium">Condiciones:</p>
-                  <ul className="space-y-0.5">
-                    {promotion.conditions.map((condition, index) => (
-                      <li key={index} className="flex items-start gap-1">
-                        <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 flex-shrink-0" />
-                        {condition}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Vigencia */}
-              {promotion.startDate && promotion.endDate && (
-                <div>
-                  <p className="font-medium">Vigencia:</p>
-                  <p>Del {new Date(promotion.startDate).toLocaleDateString()}</p>
-                  <p>al {new Date(promotion.endDate).toLocaleDateString()}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Información adicional */}
-        <div className="grid grid-cols-2 gap-4 text-gray-800 mt-4">
-          <div className="space-y-1 text-left">
-            {pricePerUnit && (
-              <div className="text-base font-medium">
+          {/* Footer - Movido más arriba */}
+          <div className="flex justify-between items-end absolute bottom-8 left-6 right-6">
+            {/* Columna izquierda */}
+            <div>
+              <div className="text-[16px] font-bold" style={roundedFontStyle}>
                 PRECIO X LITRO ${pricePerUnit}
               </div>
-            )}
-            <div className="text-base font-medium">
-              ORIGEN: {origin}
+              <div className="text-[16px] mt-1" style={roundedFontStyle}>
+                {barcode}
+              </div>
+              <div className="text-[16px] font-bold mt-1" style={roundedFontStyle}>
+                ORIGEN: {origin}
+              </div>
             </div>
-          </div>
-          <div className="text-right">
-            {points && (
-              <div className="text-base font-bold">
+
+            {/* Columna derecha */}
+            <div className="flex items-end gap-2">
+              <div className="text-[16px] font-bold" style={roundedFontStyle}>
                 SUMÁ {points} PUNTOS JUMBO MÁS
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Código de barras y QR */}
-        <div className="flex justify-between items-end mt-6">
-          <div className="text-base text-left">
-            {barcode}
-          </div>
-          <div className="flex items-center gap-2">
-            <img 
-              src={qrUrl}
-              alt="QR Code"
-              className="w-16 h-16 rounded bg-white"
-            />
-            <span className="text-xs text-gray-500 text-left">
-              más información<br />del producto
-            </span>
+              <img 
+                src={qrUrl}
+                alt="QR Code"
+                className="w-[60px] h-[60px] ml-4"
+              />
+              <span className="text-gray-600 text-[11px] mb-1" style={roundedFontStyle}>
+                más información<br />del producto
+              </span>
+            </div>
           </div>
         </div>
       </div>
