@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, LogOut, Plus, Package2, Tags, Star, Clock, FileText, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, LogOut, Plus, Package2, Tags, Star, Clock, FileText, Sun, Moon, LayoutTemplate } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../hooks/useTheme';
 
@@ -132,64 +132,122 @@ export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProd
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* Welcome Section */}
-        <div className="flex justify-between items-end mb-12">
-          <div className="space-y-2">
-            <h2 className="text-3xl font-medium text-slate-900">
-              Bienvenido de nuevo
-            </h2>
-            <p className="text-slate-500">
-              Aquí está lo que sucede con tus plantillas.
-            </p>
-          </div>
-          <div className="flex gap-4">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onProducts}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                ${isDark 
-                  ? 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20'
-                  : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-100'}`}
-            >
-              <Package2 className="w-4 h-4 inline mr-2" />
+        {/* Welcome Section - ahora sin botones */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-medium text-slate-900">
+            Bienvenido de nuevo
+          </h2>
+          <p className="text-slate-500 mt-2">
+            Aquí está lo que sucede con tus plantillas.
+          </p>
+        </div>
+
+        {/* Action Buttons Section */}
+        <div className="flex justify-center gap-12 mb-12 py-12">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 20,
+              delay: 0.1
+            }}
+            onClick={onProducts}
+            className="group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+              bg-gradient-to-br from-white to-gray-50 text-gray-700
+              border border-gray-100 shadow-[0_0_20px_rgba(0,0,0,0.1)]
+              hover:shadow-[0_0_25px_rgba(0,0,0,0.15)] transition-all duration-300"
+          >
+            <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600
+              transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+              <Package2 className="w-10 h-10 text-white" />
+            </div>
+            <span className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
               Productos
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onPromotions}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                ${isDark 
-                  ? 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/20'
-                  : 'bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-100'}`}
-            >
-              <Tags className="w-4 h-4 inline mr-2" />
+            </span>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 20,
+              delay: 0.2
+            }}
+            onClick={onPromotions}
+            className="group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+              bg-gradient-to-br from-white to-gray-50 text-gray-700
+              border border-gray-100 shadow-[0_0_20px_rgba(0,0,0,0.1)]
+              hover:shadow-[0_0_25px_rgba(0,0,0,0.15)] transition-all duration-300"
+          >
+            <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600
+              transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+              <Tags className="w-10 h-10 text-white" />
+            </div>
+            <span className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
               Promociones
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onNewPoster}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                ${isDark 
-                  ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/20'
-                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-100'}`}
-            >
-              <Plus className="w-4 h-4 inline mr-2" />
+            </span>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 20,
+              delay: 0.3
+            }}
+            onClick={onNewPoster}
+            className="group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+              bg-gradient-to-br from-violet-500 to-violet-600 text-white
+              border border-violet-400 shadow-[0_0_30px_rgba(139,92,246,0.3)]
+              hover:shadow-[0_0_35px_rgba(139,92,246,0.4)] transition-all duration-300"
+          >
+            <div className="mb-4 p-4 rounded-2xl bg-white/20
+              transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300
+              backdrop-blur-lg">
+              <FileText className="w-10 h-10 text-white" />
+            </div>
+            <span className="text-xl font-semibold">
               Cartel
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onNewTemplate}
-              className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg text-sm font-medium
-                       text-white shadow-lg shadow-indigo-500/20 flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
+            </span>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 20,
+              delay: 0.4
+            }}
+            onClick={onNewTemplate}
+            className="group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+              bg-gradient-to-br from-white to-gray-50 text-gray-700
+              border border-gray-100 shadow-[0_0_20px_rgba(0,0,0,0.1)]
+              hover:shadow-[0_0_25px_rgba(0,0,0,0.15)] transition-all duration-300"
+          >
+            <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600
+              transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+              <LayoutTemplate className="w-10 h-10 text-white" />
+            </div>
+            <span className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
               Builder
-            </motion.button>
-          </div>
+            </span>
+          </motion.button>
         </div>
 
         {/* Stats Grid */}
