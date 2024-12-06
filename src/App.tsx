@@ -122,17 +122,17 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sky-400 via-rose-400 to-lime-400 flex items-start justify-center pt-20 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900 flex items-start justify-center pt-20 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 backdrop-blur-lg text-white mb-4 shadow-xl border border-white/30">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/10 backdrop-blur-lg text-white mb-4 shadow-xl border border-white/10">
             <LogIn className="w-10 h-10" />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">Speed+</h1>
-          <p className="text-white/80 text-lg">Inicia sesión en tu cuenta</p>
+          <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">Speed<span className="text-violet-400">+</span></h1>
+          <p className="text-white/70 text-lg">Inicia sesión en tu cuenta</p>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
+        <div className="bg-white/5 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/10">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="flex items-center gap-2 text-red-400 bg-red-500/10 p-3 rounded-lg backdrop-blur-sm border border-red-500/20">
