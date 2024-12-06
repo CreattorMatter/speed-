@@ -13,6 +13,8 @@ import { useNavigate } from 'react-router-dom';
 import { LocationMap } from './LocationMap';
 import { Header } from '../shared/Header';
 import { useTheme } from '../../hooks/useTheme';
+import { ProductSelectorModal } from '../Products/ProductSelectorModal';
+import { PosterModal } from './PosterModal';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -581,6 +583,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [showLogo, setShowLogo] = useState(true);
   const [showPesosCheck, setShowPesosCheck] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
+  const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
 
   // Limpiar región y CC cuando cambia la empresa
   const handleCompanyChange = (newCompany: string) => {
@@ -638,11 +642,31 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
 
   const selectedLocation = LOCATIONS.find(loc => loc.id === cc);
 
+  const handlePreview = (product) => {
+    navigate('/poster-preview', {
+      state: {
+        product,
+        promotion: selectedPromotion,
+        company: selectedCompany,
+        showLogo
+      }
+    });
+  };
+
+  const handleSelectProduct = (productId: string) => {
+    setSelectedProducts(prev => {
+      if (prev.includes(productId)) {
+        return prev.filter(id => id !== productId);
+      }
+      return [...prev, productId];
+    });
+  };
+
   return (
     <div className={`min-h-screen flex flex-col ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
       <Header onBack={onBack} onLogout={onLogout} />
       
-      <main className="pt-24 px-6 pb-6 max-w-7xl mx-auto space-y-6">
+      <main className="pt-10 px-6 pb-6 max-w-7xl mx-auto space-y-6 min-h-[1000px]">
         <div className="flex items-center gap-4 mb-8">
           <h2 className="text-2xl font-medium text-gray-900">Editor de Carteles</h2>
         </div>
@@ -697,7 +721,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             </div>
           </div>
 
-          <div className="border-t pt-6">
+          <div className="border-t">
             <div>
               <label className="block text-sm font-medium text-white/90 mb-1">
                 Promoción:
@@ -799,13 +823,13 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                     : PRODUCTS.filter(p => p.category === selectedCategory)
                   }
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
+                  menuPlacement="top"
                 />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Vista previa de los carteles */}
         {(selectedCategory || mappedProducts.length > 0) && (
           <div className="border-t pt-6">
             <div className="flex justify-between items-center mb-4">
@@ -817,9 +841,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   <button
                     onClick={() => setViewMode('grid')}
                     className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'grid' 
-                        ? 'bg-white/20 text-white' 
-                        : 'text-white/60 hover:text-white'
+                      viewMode === 'grid' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
                     }`}
                   >
                     <LayoutGrid className="w-4 h-4" />
@@ -827,9 +849,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   <button
                     onClick={() => setViewMode('list')}
                     className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'list' 
-                        ? 'bg-white/20 text-white' 
-                        : 'text-white/60 hover:text-white'
+                      viewMode === 'list' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
                     }`}
                   >
                     <List className="w-4 h-4" />
@@ -837,7 +857,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                 </div>
               </div>
 
-              {/* Checkbox para controlar la visibilidad del logo */}
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -852,39 +871,52 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               </div>
             </div>
 
-            <div className={viewMode === 'grid' ? 'space-y-8' : 'space-y-4'}>
-              {selectedCategory && mappedProducts.length === 0 ? (
-                <CategoryPosterPreview
-                  category={selectedCategory}
-                  promotion={selectedPromotion}
-                  company={selectedCompany}
-                  showTopLogo={showLogo}
-                  points="49"
-                  origin="ARGENTINA"
-                  barcode="7790895000782"
-                />
-              ) : (
-                <div className={viewMode === 'grid' ? 'space-y-8' : 'space-y-4'}>
-                  {mappedProducts.map(product => (
-                    <div key={product.id} className={viewMode === 'list' ? 'bg-white/5 rounded-lg p-4' : ''}>
-                      <PosterPreview
-                        product={product}
-                        promotion={selectedPromotion}
-                        company={selectedCompany}
-                        showTopLogo={showLogo}
-                        pricePerUnit={`${product.price * 2}`}
-                        points="49"
-                        origin="ARGENTINA"
-                        barcode="7790895000782"
-                        compact={viewMode === 'list'}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="h-[800px] w-[1080px] mx-auto overflow-y-auto">
+              <div className={viewMode === 'grid' ? 'space-y-8' : 'space-y-4'}>
+                {mappedProducts.map(product => (
+                  <div key={product.id} 
+                       className={`flex justify-center ${viewMode === 'list' ? 'bg-white/5 rounded-lg p-4' : ''}`}
+                       onClick={() => setSelectedPoster(product)}
+                       style={{ cursor: 'pointer' }}
+                  >
+                    <PosterPreview
+                      product={product}
+                      promotion={selectedPromotion}
+                      company={selectedCompany}
+                      showTopLogo={showLogo}
+                      pricePerUnit={`${product.price * 2}`}
+                      points="49"
+                      origin="ARGENTINA"
+                      barcode="7790895000782"
+                      compact={viewMode === 'list'}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
+
+        <ProductSelectorModal
+          isOpen={isProductSelectorOpen}
+          onClose={() => setIsProductSelectorOpen(false)}
+          products={selectedCategory === 'Todos' || !selectedCategory 
+            ? PRODUCTS
+            : PRODUCTS.filter(p => p.category === selectedCategory)
+          }
+          selectedProducts={selectedProducts}
+          onSelectProduct={handleSelectProduct}
+          category={selectedCategory}
+        />
+
+        <PosterModal
+          isOpen={!!selectedPoster}
+          onClose={() => setSelectedPoster(null)}
+          product={selectedPoster!}
+          promotion={selectedPromotion}
+          company={selectedCompany}
+          showLogo={showLogo}
+        />
       </main>
     </div>
   );

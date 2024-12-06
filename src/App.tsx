@@ -9,6 +9,7 @@ import { PrintView } from './components/Posters/PrintView';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ConfigurationPortal } from './components/Settings/ConfigurationPortal';
+import { PosterPreviewPage } from './pages/PosterPreview';
 
 export interface DashboardProps {
   onLogout: () => void;
@@ -224,6 +225,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/print-view" element={<PrintView />} />
+        <Route path="/poster-preview" element={<PosterPreviewPage />} />
         <Route path="*" element={<AppContent />} />
       </Routes>
     </Router>
