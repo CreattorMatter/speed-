@@ -65,13 +65,7 @@ const recentTemplates: RecentTemplate[] = [
   }
 ];
 
-const Dashboard: React.FC<DashboardProps> = ({ 
-  onLogout, 
-  onNewTemplate,
-  onNewPoster,
-  onProducts,
-  onPromotions
-}) => {
+export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProducts, onPromotions, onBack, userEmail }: DashboardProps) {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -95,76 +89,60 @@ const Dashboard: React.FC<DashboardProps> = ({
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-200
-      ${isDark 
-        ? 'bg-gradient-to-br from-[#0A0F1C] via-[#1A1F2E] to-[#0A0F1C] text-white' 
-        : 'bg-gradient-to-br from-slate-100 via-white to-slate-100 text-slate-900'}`}
-    >
-      {/* Header Moderno */}
-      <header className={`fixed top-0 left-0 right-0 transition-colors duration-200
-        ${isDark 
-          ? 'bg-[#0A0F1C]/80 border-indigo-500/10' 
-          : 'bg-white/80 border-slate-200'} 
-        backdrop-blur-xl border-b z-50`}>
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <h1 className="text-xl font-medium bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-              Speed+
-            </h1>
-            <nav className="flex gap-6">
-              {['Inicio', 'Plantillas', 'Estadísticas'].map((item, index) => (
-                <span 
-                  key={item}
-                  className={`cursor-pointer transition-colors
-                    ${isDark
-                      ? index === 1 ? 'text-indigo-300' : 'text-indigo-300/40 hover:text-indigo-300/60'
-                      : index === 1 ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                >
-                  {item}
-                </span>
-              ))}
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={toggleTheme}
-              className={`p-2 rounded-lg transition-colors
-                ${isDark
-                  ? 'text-indigo-300/40 hover:text-indigo-300 bg-white/5 hover:bg-white/10'
-                  : 'text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200'
-                }`}
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900 border-b border-white/10 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex justify-between items-center h-16 relative">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onBack}
+              className="flex items-center text-white/80 hover:text-white"
             >
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-            <button 
-              onClick={onLogout}
-              className={`transition-colors
-                ${isDark
-                  ? 'text-indigo-300/40 hover:text-indigo-300'
-                  : 'text-slate-500 hover:text-slate-700'
-                }`}
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              <span className="font-medium">Volver al inicio</span>
+            </motion.button>
+
+            <span className="absolute left-1/2 -translate-x-1/2 text-white font-light text-2xl tracking-tight">
+              Speed<span className="text-violet-400">+</span>
+            </span>
+
+            <div className="flex items-center gap-4">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={toggleTheme}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+              >
+                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onLogout}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+              </motion.button>
+            </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
-      <main className="pt-24 px-6 pb-6 max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Welcome Section */}
-        <div className="flex justify-between items-end">
-          <div>
-            <h2 className={`text-3xl font-medium mb-2 
-              ${isDark ? 'text-white' : 'text-slate-900'}`}>
+        <div className="flex justify-between items-end mb-12">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-medium text-slate-900">
               Bienvenido de nuevo
             </h2>
-            <p className={isDark ? 'text-indigo-300/40' : 'text-slate-500'}>
+            <p className="text-slate-500">
               Aquí está lo que sucede con tus plantillas.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -215,7 +193,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {/* Productos Stats */}
           <motion.div
             whileHover={{ scale: 1.02 }}
@@ -350,15 +328,14 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Recent Activity */}
-        <div>
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-medium text-indigo-300">Actividad Reciente</h3>
-            <button className="text-sm text-indigo-300/40 hover:text-indigo-300 transition-colors">
+        <div className="mt-12">
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-lg font-medium text-gray-900">Actividad Reciente</h3>
+            <button className="text-sm text-gray-500 hover:text-gray-700">
               Ver todo
             </button>
           </div>
-          <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-xl overflow-hidden 
-                        border border-indigo-500/10">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             {recentTemplates.map((template, index) => (
               <motion.div 
                 key={template.id}
@@ -381,9 +358,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             ))}
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
-};
-
-export default Dashboard;
+}
