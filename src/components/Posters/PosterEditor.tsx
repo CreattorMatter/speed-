@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, LayoutGrid, List } from 'lucide-react';
 import { CompanySelect } from './CompanySelect';
 import { RegionSelect } from './RegionSelect';
 import { LocationSelect } from './LocationSelect';
@@ -11,9 +11,12 @@ import { PosterPreview } from './PosterPreview';
 import { CategoryPosterPreview } from './CategoryPosterPreview';
 import { useNavigate } from 'react-router-dom';
 import { LocationMap } from './LocationMap';
+import { Header } from '../shared/Header';
+import { useTheme } from '../../hooks/useTheme';
 
 interface PosterEditorProps {
   onBack: () => void;
+  onLogout: () => void;
   initialProducts?: string[];
   initialPromotion?: Promotion;
 }
@@ -172,7 +175,7 @@ const LOCATIONS = [
     name: 'Vea Mataderos', 
     region: 'centro',
     coordinates: [-58.5034, -34.6578] as [number, number],
-    address: 'Av. Eva Perón 5500, CABA'
+    address: 'Av. Eva Pern 5500, CABA'
   },
   { 
     id: 'vea-pompeya', 
@@ -562,9 +565,12 @@ const CATEGORIES = Array.from(new Set(PRODUCTS.map(p => p.category)));
 
 export const PosterEditor: React.FC<PosterEditorProps> = ({ 
   onBack, 
+  onLogout, 
   initialProducts = [], 
   initialPromotion 
 }) => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [company, setCompany] = useState('');
   const [region, setRegion] = useState('');
   const [cc, setCC] = useState('');
@@ -574,6 +580,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const navigate = useNavigate();
   const [showLogo, setShowLogo] = useState(true);
   const [showPesosCheck, setShowPesosCheck] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Limpiar región y CC cuando cambia la empresa
   const handleCompanyChange = (newCompany: string) => {
@@ -632,43 +639,29 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const selectedLocation = LOCATIONS.find(loc => loc.id === cc);
 
   return (
-    <div className={`min-h-screen bg-gray-100`}>
-      <header className="fixed top-0 left-0 right-0 bg-[#0A0F1C]/80 backdrop-blur-xl border-b border-white/5 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <button 
-              onClick={onBack}
-              className="text-white/60 hover:text-white flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Volver</span>
-            </button>
-            <h1 className="text-xl font-medium bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-              Speed+
-            </h1>
-          </div>
-        </div>
-      </header>
-
+    <div className={`min-h-screen flex flex-col ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+      <Header onBack={onBack} onLogout={onLogout} />
+      
       <main className="pt-24 px-6 pb-6 max-w-7xl mx-auto space-y-6">
         <div className="flex items-center gap-4 mb-8">
           <h2 className="text-2xl font-medium text-gray-900">Editor de Carteles</h2>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6 space-y-6">
+        <div className="bg-white/5 backdrop-blur-lg rounded-xl shadow-2xl p-6 space-y-6 border border-white/10">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-white/90 mb-1">
                 Empresa:
               </label>
               <CompanySelect
                 value={company}
                 onChange={handleCompanyChange}
                 companies={COMPANIES}
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-white/90 mb-1">
                 Región:
               </label>
               <RegionSelect
@@ -678,11 +671,11 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   setCC('');
                 }}
                 regions={availableRegions}
-                disabled={false}
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-white/90 mb-1">
                 CC:
               </label>
               <LocationSelect
@@ -690,6 +683,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                 onChange={setCC}
                 locations={filteredLocations}
                 disabled={!region}
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
               />
             </div>
             <div className="col-span-3 mt-4">
@@ -705,13 +699,14 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
 
           <div className="border-t pt-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-white/90 mb-1">
                 Promoción:
               </label>
               <PromotionSelect
                 value={promotion}
                 onChange={setPromotion}
                 promotions={PROMOTIONS}
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
               />
             </div>
 
@@ -782,17 +777,18 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
           <div className="border-t pt-6">
             <div className="grid grid-cols-4 gap-4">
               <div className="col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white/90 mb-1">
                   Categoría:
                 </label>
                 <CategorySelect
                   value={selectedCategory}
                   onChange={setSelectedCategory}
                   categories={CATEGORIES}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
                 />
               </div>
               <div className="col-span-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white/90 mb-1">
                   Productos:
                 </label>
                 <ProductSelect
@@ -802,6 +798,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                     ? PRODUCTS
                     : PRODUCTS.filter(p => p.category === selectedCategory)
                   }
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
                 />
               </div>
             </div>
@@ -812,10 +809,34 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
         {(selectedCategory || mappedProducts.length > 0) && (
           <div className="border-t pt-6">
             <div className="flex justify-between items-center mb-4">
-              <label className="text-sm font-medium text-gray-700">
-                Vista previa de carteles:
-              </label>
-              
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium text-white/90">
+                  Vista previa de carteles:
+                </label>
+                <div className="flex bg-white/10 rounded-lg p-1">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-md transition-colors ${
+                      viewMode === 'grid' 
+                        ? 'bg-white/20 text-white' 
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-md transition-colors ${
+                      viewMode === 'list' 
+                        ? 'bg-white/20 text-white' 
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
               {/* Checkbox para controlar la visibilidad del logo */}
               <div className="flex items-center gap-2">
                 <input
@@ -823,15 +844,15 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   id="hide-logo"
                   checked={!showLogo}
                   onChange={(e) => setShowLogo(!e.target.checked)}
-                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  className="rounded border-white/20 bg-white/10 text-violet-500 focus:ring-violet-500"
                 />
-                <label htmlFor="hide-logo" className="text-sm text-gray-600">
+                <label htmlFor="hide-logo" className="text-sm text-white/90">
                   Solo logo de fondo
                 </label>
               </div>
             </div>
 
-            <div className="space-y-8">
+            <div className={viewMode === 'grid' ? 'space-y-8' : 'space-y-4'}>
               {selectedCategory && mappedProducts.length === 0 ? (
                 <CategoryPosterPreview
                   category={selectedCategory}
@@ -843,20 +864,23 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   barcode="7790895000782"
                 />
               ) : (
-                mappedProducts.map(product => (
-                  <div key={product.id}>
-                    <PosterPreview
-                      product={product}
-                      promotion={selectedPromotion}
-                      company={selectedCompany}
-                      showTopLogo={showLogo}
-                      pricePerUnit={`${product.price * 2}`}
-                      points="49"
-                      origin="ARGENTINA"
-                      barcode="7790895000782"
-                    />
-                  </div>
-                ))
+                <div className={viewMode === 'grid' ? 'space-y-8' : 'space-y-4'}>
+                  {mappedProducts.map(product => (
+                    <div key={product.id} className={viewMode === 'list' ? 'bg-white/5 rounded-lg p-4' : ''}>
+                      <PosterPreview
+                        product={product}
+                        promotion={selectedPromotion}
+                        company={selectedCompany}
+                        showTopLogo={showLogo}
+                        pricePerUnit={`${product.price * 2}`}
+                        points="49"
+                        origin="ARGENTINA"
+                        barcode="7790895000782"
+                        compact={viewMode === 'list'}
+                      />
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>

@@ -20,8 +20,8 @@ export interface DashboardProps {
 }
 
 function AppContent() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@admin.com');
+  const [password, setPassword] = useState('admin');
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
@@ -47,8 +47,14 @@ function AppContent() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsAuthenticated(true);
-    setError('');
+    
+    if (email === 'admin@admin.com' && password === 'admin') {
+      setIsAuthenticated(true);
+      setError('');
+    } else {
+      setError('Usuario o contraseña inválidos');
+      setIsAuthenticated(false);
+    }
   };
 
   const handleLogout = () => {
@@ -157,6 +163,7 @@ function AppContent() {
                   className="block w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg 
                            focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white"
                   placeholder="tu@email.com"
+                  defaultValue="admin@admin.com"
                 />
               </div>
             </div>
@@ -177,6 +184,7 @@ function AppContent() {
                   className="block w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg 
                            focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white"
                   placeholder="••••••••"
+                  defaultValue="admin"
                 />
               </div>
             </div>

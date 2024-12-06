@@ -36,6 +36,7 @@ interface PosterPreviewProps {
     id: string;
     name: string;
   };
+  compact?: boolean;
 }
 
 export const PosterPreview: React.FC<PosterPreviewProps> = ({ 
@@ -47,7 +48,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   points = '',
   origin = 'ARGENTINA',
   barcode = '7790895000782',
-  size
+  size,
+  compact = false
 }) => {
   const isCenefa = size?.id.includes('cenefa');
   const isFleje = size?.id === 'fleje';
@@ -112,7 +114,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://speed-plus.com/product/${product.id}`;
 
   return (
-    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl mx-auto relative overflow-hidden" style={{ fontFamily: 'VAG Rounded Std, Arial Rounded MT Bold, Arial, sans-serif' }}>
+    <div className={`${compact ? 'flex gap-4 items-center' : ''}`}>
       {/* Logo de fondo translúcido - siempre visible si hay company */}
       {company?.logo && (
         <div className="absolute inset-0 flex items-center justify-center opacity-5">
