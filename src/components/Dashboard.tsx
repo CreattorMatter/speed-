@@ -749,17 +749,22 @@ export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProd
                     </div>
                   </div>
                   <motion.div 
-                    whileHover={{ y: -2 }}
-                    className="flex items-center gap-4"
-                  >
-                    <span className={`px-2 py-1 rounded-full text-xs ${
+                    className={`px-2 py-1 rounded-full text-xs ${
                       template.estado === 'impreso' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {template.estado === 'impreso' ? 'Impreso' : 'No impreso'}
-                    </span>
-                    <span className="text-sm text-indigo-300/40">{template.tiempoAtras}</span>
+                        ? 'bg-green-100 text-green-800 border border-green-200' 
+                        : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                    }`}
+                  >
+                    {template.estado === 'impreso' ? (
+                      <div className="flex items-center gap-1">
+                        <span>✓</span>
+                        <span>Impreso</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <span>No impreso</span>
+                      </div>
+                    )}
                   </motion.div>
                 </motion.div>
               ))}
@@ -855,13 +860,24 @@ export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProd
 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Estado</span>
-                  <span className={`px-3 py-1 rounded-full text-sm ${
-                    selectedActivity.estado === 'impreso' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {selectedActivity.estado === 'impreso' ? 'Impreso' : 'No impreso'}
-                  </span>
+                  <motion.div 
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      selectedActivity.estado === 'impreso' 
+                        ? 'bg-green-100 text-green-800 border border-green-200' 
+                        : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                    }`}
+                  >
+                    {selectedActivity.estado === 'impreso' ? (
+                      <div className="flex items-center gap-1">
+                        <span>✓</span>
+                        <span>Impreso</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <span>No impreso</span>
+                      </div>
+                    )}
+                  </motion.div>
                 </div>
               </motion.div>
             </motion.div>

@@ -1,5 +1,22 @@
-export const products = [
-  // Productos MDH (Easy)
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  // Campos comunes obligatorios
+  sku?: string;
+  description?: string;
+  imageUrl?: string;
+  // Nuevos campos opcionales
+  subCategory?: string;
+  brand?: string;
+  image?: string;
+  packageType?: string;
+  volume?: string;
+}
+
+export const products: Product[] = [
+  // Productos MDH (Easy) existentes
   {
     id: 'MDH-001',
     sku: 'MDH-001',
@@ -21,60 +38,59 @@ export const products = [
   {
     id: 'MDH-003',
     sku: 'MDH-003',
-    name: 'Lavarropas Drean Next 8kg',
-    price: 379999.99,
+    name: 'Lavarropas Drean Next 8.14',
+    price: 259999.99,
     imageUrl: 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1',
     category: 'MDH',
-    description: 'Lavarropas Drean Next 8kg'
+    description: 'Lavarropas automático de 8kg con 1400RPM'
   },
   {
     id: 'MDH-004',
     sku: 'MDH-004',
     name: 'Smart TV Samsung 55" 4K',
-    price: 549999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1593784991095-a205069470b6',
+    price: 349999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1',
     category: 'MDH',
-    description: 'Smart TV Samsung 55" 4K'
+    description: 'Smart TV LED 55" UHD 4K'
   },
   {
     id: 'MDH-005',
     sku: 'MDH-005',
     name: 'Microondas BGH 28L',
-    price: 159999.99,
+    price: 89999.99,
     imageUrl: 'https://images.unsplash.com/photo-1585659722983-3a675dabf23d',
     category: 'MDH',
-    description: 'Microondas BGH 28L'
+    description: 'Microondas digital 28L con grill'
   },
   {
     id: 'MDH-006',
     sku: 'MDH-006',
     name: 'Aspiradora Robot Gadnic',
-    price: 129999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1589923188651-268a9765e432',
+    price: 79999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1563874257547-d19fbb71b46c',
     category: 'MDH',
-    description: 'Aspiradora Robot Gadnic'
+    description: 'Aspiradora Robot con control remoto'
   },
   {
     id: 'MDH-007',
     sku: 'MDH-007',
-    name: 'Ventilador de Pie Liliana 20"',
-    price: 49999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1615235739538-95b5b8f8c9da',
+    name: 'Ventilador de Pie Liliana',
+    price: 29999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1575435349939-0ffbdad70905',
     category: 'MDH',
-    description: 'Ventilador de Pie Liliana 20"'
+    description: 'Ventilador de pie 20" con control remoto'
   },
   {
     id: 'MDH-008',
     sku: 'MDH-008',
-    name: 'Cafetera Oster Automática',
-    price: 89999.99,
+    name: 'Cafetera Oster',
+    price: 49999.99,
     imageUrl: 'https://images.unsplash.com/photo-1585515320310-259814833e62',
     category: 'MDH',
-    description: 'Cafetera Oster Automática'
+    description: 'Cafetera automática con molinillo'
   },
-  // Tecnología
   {
-    id: '1',
+    id: 'TEC-001',
     sku: 'TEC-001',
     name: 'MacBook Pro M3 Pro 14"',
     price: 1299999.99,
@@ -82,120 +98,42 @@ export const products = [
     category: 'Tecnología',
     description: 'Laptop Apple M3 Pro 14 pulgadas'
   },
-  // Electrodomésticos
   {
-    id: '6',
-    sku: 'ELE-001',
-    name: 'Heladera Samsung French Door',
-    price: 899999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?w=500&auto=format&fit=crop&q=60',
-    category: 'Electrodomésticos',
-    description: 'Heladera Samsung French Door'
-  },
-  // Bebidas
-  {
-    id: 'BEB-001',
-    sku: 'BEB-001',
-    name: 'Coca Cola Pack x6',
-    price: 4999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
-    category: 'Bebidas',
-    description: 'Pack x6 botellas de 2.25L'
+    id: 'TEC-002',
+    sku: 'TEC-002',
+    name: 'iPad Pro 12.9"',
+    price: 799999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0',
+    category: 'Tecnología',
+    description: 'iPad Pro 12.9" M2 256GB'
   },
   {
-    id: 'BEB-002',
-    sku: 'BEB-002',
-    name: 'Sprite Pack x6',
-    price: 4599.99,
-    imageUrl: 'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3',
-    category: 'Bebidas',
-    description: 'Pack x6 botellas de 2.25L'
+    id: 'TEC-003',
+    sku: 'TEC-003',
+    name: 'iPhone 15 Pro Max',
+    price: 999999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5',
+    category: 'Tecnología',
+    description: 'iPhone 15 Pro Max 256GB'
   },
   {
-    id: 'BEB-003',
-    sku: 'BEB-003',
-    name: 'Fanta Pack x6',
-    price: 4599.99,
-    imageUrl: 'https://images.unsplash.com/photo-1624517452488-04869289c4ca',
-    category: 'Bebidas',
-    description: 'Pack x6 botellas de 2.25L'
-  },
-  // Alimentos
-  {
-    id: 'ALI-001',
-    sku: 'ALI-001',
-    name: 'Fideos Matarazzo',
-    price: 899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1612966769270-fe9b9b63ac1a',
-    category: 'Alimentos',
-    description: 'Spaghetti 500g'
+    id: 'TEC-004',
+    sku: 'TEC-004',
+    name: 'AirPods Pro 2',
+    price: 199999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1588423771073-b8903fbb85b5',
+    category: 'Tecnología',
+    description: 'AirPods Pro 2nd Generation'
   },
   {
-    id: 'ALI-002',
-    sku: 'ALI-002',
-    name: 'Arroz Gallo Oro',
-    price: 1299.99,
-    imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c',
-    category: 'Alimentos',
-    description: 'Arroz doble carolina 1kg'
+    id: 'TEC-005',
+    sku: 'TEC-005',
+    name: 'Apple Watch Series 9',
+    price: 299999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d',
+    category: 'Tecnología',
+    description: 'Apple Watch Series 9 GPS 45mm'
   },
-  {
-    id: 'ALI-003',
-    sku: 'ALI-003',
-    name: 'Aceite Natura',
-    price: 1599.99,
-    imageUrl: 'https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1',
-    category: 'Alimentos',
-    description: 'Aceite de girasol 1.5L'
-  },
-  // Bazar
-  {
-    id: 'BAZ-001',
-    sku: 'BAZ-001',
-    name: 'Set de Ollas Teflon',
-    price: 29999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1584284766247-4c1cee48194b',
-    category: 'Bazar',
-    description: 'Set 3 ollas antiadherentes'
-  },
-  {
-    id: 'BAZ-002',
-    sku: 'BAZ-002',
-    name: 'Juego de Cubiertos',
-    price: 15999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1583845112239-97ef2b576b82',
-    category: 'Bazar',
-    description: 'Set 24 piezas acero inoxidable'
-  },
-  {
-    id: 'BAZ-003',
-    sku: 'BAZ-003',
-    name: 'Vajilla Porcelana',
-    price: 45999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1603199506016-b9a594b593c0',
-    category: 'Bazar',
-    description: 'Set 20 piezas porcelana blanca'
-  },
-  // Más productos MDH
-  {
-    id: 'MDH-009',
-    sku: 'MDH-009',
-    name: 'Lavavajillas Whirlpool',
-    price: 399999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a',
-    category: 'MDH',
-    description: 'Lavavajillas 12 cubiertos acero inox'
-  },
-  {
-    id: 'MDH-010',
-    sku: 'MDH-010',
-    name: 'Secarropas Drean',
-    price: 159999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1610557892470-55d9e80c0bce',
-    category: 'MDH',
-    description: 'Secarropas 5.5kg automático'
-  },
-  // Más Tecnología
   {
     id: 'TEC-006',
     sku: 'TEC-006',
@@ -214,107 +152,274 @@ export const products = [
     category: 'Tecnología',
     description: 'Laptop HP 15" Ryzen 7'
   },
-  // Más Bebidas
+  {
+    id: 'BEB-001',
+    sku: 'BEB-001',
+    name: 'Coca Cola Pack x6',
+    price: 4999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
+    category: 'Bebidas',
+    description: 'Pack x6 botellas de 2.25L'
+  },
+  {
+    id: 'BEB-002',
+    sku: 'BEB-002',
+    name: 'Pepsi Pack x6',
+    price: 4799.99,
+    imageUrl: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e',
+    category: 'Bebidas',
+    description: 'Pack x6 botellas de 2.25L'
+  },
+  {
+    id: 'BEB-003',
+    sku: 'BEB-003',
+    name: 'Sprite Pack x6',
+    price: 4599.99,
+    imageUrl: 'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3',
+    category: 'Bebidas',
+    description: 'Pack x6 botellas de 2.25L'
+  },
   {
     id: 'BEB-004',
     sku: 'BEB-004',
-    name: 'Cerveza Quilmes Pack',
-    price: 5999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1608270586620-248524c67de9',
+    name: 'Fanta Pack x6',
+    price: 4599.99,
+    imageUrl: 'https://images.unsplash.com/photo-1624517452488-04869289c4ca',
     category: 'Bebidas',
-    description: 'Pack x12 latas 473ml'
+    description: 'Pack x6 botellas de 2.25L'
   },
   {
     id: 'BEB-005',
     sku: 'BEB-005',
-    name: 'Vino Rutini Malbec',
-    price: 7999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3',
+    name: 'Cerveza Quilmes Pack x6',
+    price: 3999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1608270586620-248524c67de9',
     category: 'Bebidas',
-    description: 'Vino tinto 750ml'
+    description: 'Pack x6 latas de 473ml'
   },
-  // Más Alimentos
-  {
-    id: 'ALI-004',
-    sku: 'ALI-004',
-    name: 'Atún La Campagnola',
-    price: 899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1597691424841-c70c8449c75d',
-    category: 'Alimentos',
-    description: 'Atún al natural 170g'
-  },
-  {
-    id: 'ALI-005',
-    sku: 'ALI-005',
-    name: 'Galletas Oreo',
-    price: 499.99,
-    imageUrl: 'https://images.unsplash.com/photo-1584361853901-dd1904bb7987',
-    category: 'Alimentos',
-    description: 'Pack familiar 118g'
-  },
-  // Más Bazar
-  {
-    id: 'BAZ-004',
-    sku: 'BAZ-004',
-    name: 'Sartén Teflon 24cm',
-    price: 12999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1593642532744-d377ab507dc8',
-    category: 'Bazar',
-    description: 'Sartén antiadherente premium'
-  },
-  {
-    id: 'BAZ-005',
-    sku: 'BAZ-005',
-    name: 'Set de Tupperware',
-    price: 8999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1606914469725-e398d2f1d7ee',
-    category: 'Bazar',
-    description: 'Set 5 contenedores herméticos'
-  },
-  // Agregar más productos de Coca-Cola
   {
     id: 'BEB-006',
     sku: 'BEB-006',
-    name: 'Coca Cola Original 2.25L',
+    name: 'Coca-cola Zero',
     price: 1299.99,
-    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
     category: 'Bebidas',
-    description: 'Gaseosa Coca Cola 2.25L'
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Plástico',
+    volume: '2.25 L',
+    description: 'Gaseosa cola zero sin azúcar'
   },
   {
     id: 'BEB-007',
     sku: 'BEB-007',
-    name: 'Coca Cola Sin Azúcar 2.25L',
-    price: 1299.99,
-    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
+    name: 'Coca-cola Zero',
+    price: 899.99,
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
     category: 'Bebidas',
-    description: 'Gaseosa Coca Cola Sin Azúcar 2.25L'
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Plástico',
+    volume: '500 Ml',
+    description: 'Gaseosa cola zero sin azúcar'
   },
   {
     id: 'BEB-008',
     sku: 'BEB-008',
-    name: 'Coca Cola Original 1.5L',
-    price: 999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
+    name: 'Coca-cola Sabor Liviano',
+    price: 1199.99,
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
     category: 'Bebidas',
-    description: 'Gaseosa Coca Cola 1.5L'
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Plástico',
+    volume: '1.75 L',
+    description: 'Gaseosa cola sabor liviano'
   },
   {
     id: 'BEB-009',
     sku: 'BEB-009',
-    name: 'Coca Cola Lata 354ml Pack x6',
-    price: 2499.99,
-    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
+    name: 'Coca-cola Sabor Liviano',
+    price: 1299.99,
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
     category: 'Bebidas',
-    description: 'Pack x6 latas Coca Cola 354ml'
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Plástico',
+    volume: '2.25 L',
+    description: 'Gaseosa cola sabor liviano'
   },
   {
     id: 'BEB-010',
     sku: 'BEB-010',
-    name: 'Coca Cola Mini 250ml Pack x6',
-    price: 1899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
+    name: 'Coca-cola Zero',
+    price: 699.99,
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
     category: 'Bebidas',
-    description: 'Pack x6 botellas mini Coca Cola 250ml'
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Lata',
+    volume: '354 Ml',
+    description: 'Gaseosa cola zero sin azúcar'
+  },
+  {
+    id: 'BEB-011',
+    sku: 'BEB-011',
+    name: 'Coca-cola Sabor Liviano',
+    price: 899.99,
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
+    category: 'Bebidas',
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Plástico',
+    volume: '500 Ml',
+    description: 'Gaseosa cola sabor liviano'
+  },
+  {
+    id: 'BEB-012',
+    sku: 'BEB-012',
+    name: 'Coca-cola Sabor Original',
+    price: 1099.99,
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
+    category: 'Bebidas',
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Plástico',
+    volume: '1.25 L',
+    description: 'Gaseosa cola sabor original'
+  },
+  {
+    id: 'BEB-013',
+    sku: 'BEB-013',
+    name: 'Coca-cola Sabor Original',
+    price: 599.99,
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
+    category: 'Bebidas',
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Vidrio',
+    volume: '237 Ml',
+    description: 'Gaseosa cola sabor original retornable'
+  },
+  // Nuevos productos de Aceites
+  {
+    id: 'aceite-natura-1.5',
+    name: 'Aceite De Girasol Natura',
+    category: 'Almacén',
+    subCategory: 'Aceites Comunes',
+    brand: 'NATURA',
+    price: 1599.99,
+    image: '/products/aceite-natura.jpg',
+    imageUrl: '/products/aceite-natura.jpg',
+    packageType: 'Botella de Plástico',
+    volume: '1.5 L',
+    description: 'Aceite de girasol 1.5L'
+  },
+  {
+    id: 'aceite-canuelas-1.5',
+    name: 'Aceite Cañuelas De Girasol',
+    category: 'Almacén',
+    subCategory: 'Aceites Comunes',
+    brand: 'CAÑUELAS',
+    price: 1499.99,
+    image: '/products/aceite-canuelas.jpg',
+    imageUrl: '/products/aceite-canuelas.jpg',
+    packageType: 'Botella de Plástico',
+    volume: '1.5 L',
+    description: 'Aceite de girasol 1.5L'
+  },
+  {
+    id: 'aceite-cocinero-1.5',
+    name: 'Aceite De Girasol Cocinero',
+    category: 'Almacén',
+    subCategory: 'Aceites Comunes',
+    brand: 'COCINERO',
+    price: 1699.99,
+    image: '/products/aceite-cocinero.jpg',
+    imageUrl: '/products/aceite-cocinero.jpg',
+    packageType: 'Botella de Plástico',
+    volume: '1.5 L',
+    description: 'Aceite de girasol 1.5L'
+  },
+  {
+    id: 'aceite-oliva-cocinero-500',
+    name: 'Aceite Oliva Extra Virgen Intenso Cocinero',
+    category: 'Almacén',
+    subCategory: 'Aceites Especiales',
+    brand: 'COCINERO',
+    price: 2499.99,
+    image: '/products/aceite-oliva-cocinero.jpg',
+    imageUrl: '/products/aceite-oliva-cocinero.jpg',
+    packageType: 'Botella de Vidrio',
+    volume: '500 Ml',
+    description: 'Aceite de oliva extra virgen 500ml'
+  },
+  {
+    id: 'aceite-oliva-nucete-2000',
+    name: 'Aceite De Oliva Extra Virgen Nucete',
+    category: 'Almacén',
+    subCategory: 'Aceites Especiales',
+    brand: 'NUCETE',
+    price: 8999.99,
+    image: '/products/aceite-oliva-nucete.jpg',
+    imageUrl: '/products/aceite-oliva-nucete.jpg',
+    packageType: 'Botella de Vidrio',
+    volume: '2000 Ml',
+    description: 'Aceite de oliva extra virgen 2L'
   }
+];
+
+export const categories = [
+  'MDH',
+  'Tecnología',
+  'Electrodomésticos',
+  'Bebidas',
+  'Alimentos',
+  'Bazar',
+  'Almacén'
+];
+
+export const productCategories = [
+  'Aceites Comunes',
+  'Aceites Especiales',
+  'Acetos',
+  'Jugos de Limón',
+  'Vinagres',
+  'Gaseosas'
+];
+
+export const packageTypes = [
+  'Aerosol',
+  'Botella',
+  'Botella de Plástico',
+  'Botella de Vidrio',
+  'Lata',
+  'Pote',
+  'Spray'
+];
+
+export const brands = [
+  'ALCAZAR',
+  'BEEPURE',
+  'CASALTA',
+  'CAÑUELAS',
+  'CHIA GRAAL',
+  'COCINERO',
+  'COWS PURE',
+  'CUISINE & CO NBE MP',
+  'DICOMERE',
+  'DOS ANCLAS',
+  'NATURA',
+  'NUCETE',
+  'Samsung',
+  'Apple',
+  'HP',
+  'Whirlpool',
+  'BGH',
+  'Drean',
+  'Liliana',
+  'Oster',
+  'Gadnic',
+  'Surrey',
+  'COCA COLA'
 ]; 
