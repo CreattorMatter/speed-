@@ -1,7 +1,8 @@
-import React from 'react';
-import { ArrowLeft, LogOut, Plus, Package2, Tags, Star, Clock, FileText, Sun, Moon, LayoutTemplate, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, LogOut, Plus, Package2, Tags, Star, Clock, FileText, Sun, Moon, LayoutTemplate, Settings, Send, FileEdit, Printer, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Header } from './shared/Header';
+import { COMPANIES } from '../data/companies';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -14,11 +15,18 @@ interface DashboardProps {
   onSettings: () => void;
 }
 
-interface RecentTemplate {
+interface PlantillaReciente {
   id: string;
-  name: string;
-  type: string;
-  timeAgo: string;
+  nombre: string;
+  tipo: 'envio' | 'edicion' | 'impresion';
+  tiempoAtras: string;
+  sucursal?: string;
+  cantidad?: number;
+  estado: 'impreso' | 'no_impreso';
+  empresa: {
+    nombre: string;
+    logo: string;
+  };
 }
 
 interface DashboardStats {
@@ -39,32 +47,311 @@ interface DashboardStats {
   };
 }
 
-const recentTemplates: RecentTemplate[] = [
+const easyLogo = COMPANIES.find(c => c.id === 'easy-mdh')?.logo;
+
+// Constantes para los logos
+const LOGOS = {
+  easy: easyLogo || 'https://upload.wikimedia.org/wikipedia/commons/8/89/Easy_logo.png',
+  jumbo: 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Logo_Jumbo_Cencosud.png',
+  disco: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Disco-Supermarket-Logo.svg/2048px-Disco-Supermarket-Logo.svg.png',
+  vea: 'https://upload.wikimedia.org/wikipedia/commons/9/94/Logo-VEA-Supermercados.png'
+};
+
+const plantillasRecientes: PlantillaReciente[] = [
+  // Easy
   {
     id: '1',
-    name: 'Summer Sale Banner',
-    type: 'Promotion',
-    timeAgo: '2h ago'
+    nombre: 'Carteles Coca Cola',
+    tipo: 'envio',
+    tiempoAtras: 'hace 2h',
+    sucursal: 'Easy San Martín',
+    cantidad: 5,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Easy',
+      logo: LOGOS.easy
+    }
   },
+  // Jumbo
   {
     id: '2',
-    name: 'Product Showcase',
-    type: 'Product Info',
-    timeAgo: '4h ago'
+    nombre: 'Carteles Ofertas Semanales',
+    tipo: 'envio',
+    tiempoAtras: 'hace 3h',
+    sucursal: 'Jumbo Quilmes',
+    cantidad: 10,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Jumbo',
+      logo: LOGOS.jumbo
+    }
   },
+  // Disco
   {
     id: '3',
-    name: 'Store Directory',
-    type: 'Directional',
-    timeAgo: '1d ago'
+    nombre: 'Carteles Black Friday',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 4h',
+    sucursal: 'Disco Belgrano',
+    cantidad: 8,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Disco',
+      logo: LOGOS.disco
+    }
   },
+  // Vea
   {
     id: '4',
-    name: 'Weekly Deals',
-    type: 'Promotion',
-    timeAgo: '2d ago'
+    nombre: 'Carteles Navidad',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 5h',
+    sucursal: 'Vea Caballito',
+    cantidad: 12,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Vea',
+      logo: LOGOS.vea
+    }
+  },
+  // Easy
+  {
+    id: '5',
+    nombre: 'Carteles Electrodomésticos',
+    tipo: 'envio',
+    tiempoAtras: 'hace 6h',
+    sucursal: 'Easy San Justo',
+    cantidad: 20,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Easy',
+      logo: LOGOS.easy
+    }
+  },
+  // Jumbo
+  {
+    id: '6',
+    nombre: 'Carteles Bebidas',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 8h',
+    sucursal: 'Jumbo Palermo',
+    cantidad: 15,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Jumbo',
+      logo: LOGOS.jumbo
+    }
+  },
+  // ... continuar hasta 20 actividades con diferentes empresas y sucursales
+  {
+    id: '7',
+    nombre: 'Carteles Tecnología',
+    tipo: 'envio',
+    tiempoAtras: 'hace 10h',
+    sucursal: 'Disco Núñez',
+    cantidad: 6,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Disco',
+      logo: LOGOS.disco
+    }
+  },
+  {
+    id: '8',
+    nombre: 'Carteles Ofertas Verano',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 12h',
+    sucursal: 'Vea Flores',
+    cantidad: 15,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Vea',
+      logo: LOGOS.vea
+    }
+  },
+  {
+    id: '9',
+    nombre: 'Carteles Productos Frescos',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 14h',
+    sucursal: 'Jumbo Pilar',
+    cantidad: 18,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Jumbo',
+      logo: LOGOS.jumbo
+    }
+  },
+  {
+    id: '10',
+    nombre: 'Carteles Jardín',
+    tipo: 'envio',
+    tiempoAtras: 'hace 16h',
+    sucursal: 'Easy Córdoba',
+    cantidad: 25,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Easy',
+      logo: LOGOS.easy
+    }
+  },
+  {
+    id: '11',
+    nombre: 'Carteles Lácteos',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 18h',
+    sucursal: 'Disco Rosario',
+    cantidad: 10,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Disco',
+      logo: LOGOS.disco
+    }
+  },
+  {
+    id: '12',
+    nombre: 'Carteles Ofertas Fin de Mes',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 20h',
+    sucursal: 'Vea Mendoza',
+    cantidad: 22,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Vea',
+      logo: LOGOS.vea
+    }
+  },
+  {
+    id: '13',
+    nombre: 'Carteles Herramientas',
+    tipo: 'envio',
+    tiempoAtras: 'hace 22h',
+    sucursal: 'Easy Tucumán',
+    cantidad: 14,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Easy',
+      logo: LOGOS.easy
+    }
+  },
+  {
+    id: '14',
+    nombre: 'Carteles Pescadería',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 1d',
+    sucursal: 'Jumbo Neuquén',
+    cantidad: 8,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Jumbo',
+      logo: LOGOS.jumbo
+    }
+  },
+  {
+    id: '15',
+    nombre: 'Carteles Panadería',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 1d',
+    sucursal: 'Disco Mar del Plata',
+    cantidad: 12,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Disco',
+      logo: LOGOS.disco
+    }
+  },
+  {
+    id: '16',
+    nombre: 'Carteles Limpieza',
+    tipo: 'envio',
+    tiempoAtras: 'hace 1d',
+    sucursal: 'Vea San Juan',
+    cantidad: 16,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Vea',
+      logo: LOGOS.vea
+    }
+  },
+  {
+    id: '17',
+    nombre: 'Carteles Decoración',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 2d',
+    sucursal: 'Easy Salta',
+    cantidad: 20,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Easy',
+      logo: LOGOS.easy
+    }
+  },
+  {
+    id: '18',
+    nombre: 'Carteles Carnicería',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 2d',
+    sucursal: 'Jumbo La Plata',
+    cantidad: 9,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Jumbo',
+      logo: LOGOS.jumbo
+    }
+  },
+  {
+    id: '19',
+    nombre: 'Carteles Perfumería',
+    tipo: 'envio',
+    tiempoAtras: 'hace 2d',
+    sucursal: 'Disco Bahía Blanca',
+    cantidad: 11,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Disco',
+      logo: LOGOS.disco
+    }
+  },
+  {
+    id: '20',
+    nombre: 'Carteles Bebidas',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 2d',
+    sucursal: 'Vea Santa Fe',
+    cantidad: 13,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Vea',
+      logo: LOGOS.vea
+    }
   }
 ];
+
+const getIconByType = (tipo: PlantillaReciente['tipo']) => {
+  switch (tipo) {
+    case 'envio':
+      return <Send className="w-4 h-4 text-white" />;
+    case 'edicion':
+      return <FileEdit className="w-4 h-4 text-white" />;
+    case 'impresion':
+      return <Printer className="w-4 h-4 text-white" />;
+    default:
+      return <FileText className="w-4 h-4 text-white" />;
+  }
+};
+
+const getTextByType = (template: PlantillaReciente) => {
+  switch (template.tipo) {
+    case 'envio':
+      return `${template.cantidad} carteles enviados a ${template.sucursal}`;
+    case 'edicion':
+      return `Editados para ${template.sucursal}`;
+    case 'impresion':
+      return `${template.cantidad} carteles impresos para ${template.sucursal}`;
+    default:
+      return template.nombre;
+  }
+};
 
 export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProducts, onPromotions, onBack, userEmail, onSettings }: DashboardProps) {
   // Datos de ejemplo
@@ -85,6 +372,8 @@ export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProd
       mostUsed: 'Promoción Bancaria'
     }
   };
+
+  const [selectedActivity, setSelectedActivity] = useState<PlantillaReciente | null>(null);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -399,39 +688,185 @@ export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProd
             className="rounded-xl border overflow-hidden backdrop-blur-sm
               bg-white/50 border-gray-200 dark:border-slate-700"
           >
-            <div className="flex justify-between items-center mb-8">
-              <h3 className={`text-lg font-medium text-gray-900`}>
-                Actividad Reciente
-              </h3>
-              <button className={`text-sm text-gray-500 hover:text-gray-700`}>
-                Ver todo
-              </button>
+            <div className="flex flex-col items-center mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <Clock className="w-5 h-5 text-indigo-500" />
+                <h3 className="text-xl font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 
+                               bg-clip-text text-transparent">
+                  Actividad Reciente
+                </h3>
+              </div>
+              <p className="text-sm text-gray-500">
+                Seguimiento de las últimas actualizaciones y cambios
+              </p>
+              <div className="mt-4">
+                <button className="text-sm text-indigo-500 hover:text-indigo-600 font-medium 
+                                  transition-colors duration-200 flex items-center gap-2">
+                  Ver historial completo
+                  <ArrowLeft className="w-4 h-4 rotate-180" />
+                </button>
+              </div>
             </div>
             <div className={`rounded-xl border overflow-hidden
               bg-white border-gray-200`}>
-              {recentTemplates.map((template, index) => (
+              {plantillasRecientes.map((template, index) => (
                 <motion.div 
                   key={template.id}
-                  whileHover={{ backgroundColor: 'rgba(99, 102, 241, 0.1)' }}
-                  className={`flex items-center justify-between p-4 transition-colors
-                            ${index !== recentTemplates.length - 1 ? 'border-b border-indigo-500/10' : ''}`}
+                  initial={{ opacity: 0.9, x: 0 }}
+                  whileHover={{ 
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    scale: 1.01,
+                    x: 4,
+                    transition: {
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 20
+                    }
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSelectedActivity(template)}
+                  className={`flex items-center justify-between p-4 transition-all duration-200 cursor-pointer
+                            ${index !== plantillasRecientes.length - 1 ? 'border-b border-indigo-500/10' : ''}
+                            hover:shadow-lg hover:shadow-indigo-500/10`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 
-                                  flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                      <FileText className="w-4 h-4 text-white" />
-                    </div>
+                    <motion.div 
+                      whileHover={{ rotate: [0, -10, 10, -10, 0] }}
+                      transition={{ duration: 0.5 }}
+                      className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 
+                                flex items-center justify-center shadow-lg shadow-indigo-500/20"
+                    >
+                      {getIconByType(template.tipo)}
+                    </motion.div>
+                    <img 
+                      src={template.empresa.logo}
+                      alt={template.empresa.nombre}
+                      className="w-6 h-6 object-contain"
+                    />
                     <div>
-                      <p className="font-medium text-indigo-300">{template.name}</p>
-                      <p className="text-sm text-indigo-300/40">{template.type}</p>
+                      <p className="font-medium text-indigo-300">{template.nombre}</p>
+                      <p className="text-sm text-indigo-300/40">{getTextByType(template)}</p>
                     </div>
                   </div>
-                  <span className="text-sm text-indigo-300/40">{template.timeAgo}</span>
+                  <motion.div 
+                    whileHover={{ y: -2 }}
+                    className="flex items-center gap-4"
+                  >
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      template.estado === 'impreso' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {template.estado === 'impreso' ? 'Impreso' : 'No impreso'}
+                    </span>
+                    <span className="text-sm text-indigo-300/40">{template.tiempoAtras}</span>
+                  </motion.div>
                 </motion.div>
               ))}
             </div>
           </motion.div>
         </div>
+
+        {selectedActivity && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedActivity(null)}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.5, y: 100 }}
+              animate={{ 
+                opacity: 1, 
+                scale: 1, 
+                y: 0,
+                transition: {
+                  type: "spring",
+                  duration: 0.5,
+                  bounce: 0.3
+                }
+              }}
+              exit={{ 
+                opacity: 0, 
+                scale: 0.8, 
+                y: -100,
+                transition: { duration: 0.2 }
+              }}
+              onClick={e => e.stopPropagation()}
+              className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 relative
+                        shadow-2xl shadow-indigo-500/20"
+            >
+              <motion.button 
+                whileHover={{ rotate: 90 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setSelectedActivity(null)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </motion.button>
+
+              <motion.div 
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="flex items-center gap-4 mb-6"
+              >
+                <motion.div 
+                  whileHover={{ rotate: [0, -10, 10, -10, 0] }}
+                  className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 
+                            flex items-center justify-center shadow-lg shadow-indigo-500/20"
+                >
+                  {getIconByType(selectedActivity.tipo)}
+                </motion.div>
+                <div>
+                  <h3 className="text-xl font-medium text-gray-900">{selectedActivity.nombre}</h3>
+                  <p className="text-sm text-gray-500">{selectedActivity.sucursal}</p>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="space-y-4"
+              >
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Empresa</span>
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src={selectedActivity.empresa.logo}
+                      alt={selectedActivity.empresa.nombre}
+                      className="w-6 h-6 object-contain"
+                    />
+                    <span className="text-gray-900">{selectedActivity.empresa.nombre}</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Cantidad</span>
+                  <span className="text-gray-900">{selectedActivity.cantidad} carteles</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Tiempo</span>
+                  <span className="text-gray-900">{selectedActivity.tiempoAtras}</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Estado</span>
+                  <span className={`px-3 py-1 rounded-full text-sm ${
+                    selectedActivity.estado === 'impreso' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {selectedActivity.estado === 'impreso' ? 'Impreso' : 'No impreso'}
+                  </span>
+                </div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );
