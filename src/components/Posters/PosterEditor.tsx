@@ -8,7 +8,6 @@ import { ProductSelect } from './ProductSelect';
 import { CategorySelect } from './CategorySelect';
 import { PosterPreview } from './PosterPreview';
 import { useNavigate } from 'react-router-dom';
-import { LocationMap } from './LocationMap';
 import { Header } from '../shared/Header';
 import { useTheme } from '../../hooks/useTheme';
 import { ProductSelectorModal } from '../Products/ProductSelectorModal';
@@ -17,6 +16,7 @@ import { COMPANIES } from '../../data/companies';
 import { LOCATIONS, REGIONS } from '../../data/locations';
 import { LoadingModal } from '../LoadingModal';
 import { products } from '../../data/products';
+import { SendingModal } from './SendingModal';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -210,8 +210,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [company, setCompany] = useState('');
-  const [region, setRegion] = useState('');
-  const [cc, setCC] = useState('');
+  const [region, setRegion] = useState<string[]>([]);
+  const [cc, setCC] = useState<string[]>([]);
   const [promotion, setPromotion] = useState(initialPromotion?.id || '');
   const [selectedProducts, setSelectedProducts] = useState<string[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -222,6 +222,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSendingModalOpen, setIsSendingModalOpen] = useState(false);
 
   console.log('LOCATIONS imported:', LOCATIONS); // Debug
   console.log('COMPANIES imported:', COMPANIES); // Debug
@@ -230,8 +231,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   // Limpiar región y CC cuando cambia la empresa
   const handleCompanyChange = (newCompany: string) => {
     setCompany(newCompany);
-    setRegion('');
-    setCC('');
+    setRegion([]);
+    setCC([]);
   };
 
   // Filtrar ubicaciones basado en la empresa y región seleccionadas
@@ -251,9 +252,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
 
     console.log('Filtered by company:', locations); // Debug
 
-    // Luego filtrar por región si hay una seleccionada y no es "todos"
-    if (region && region !== 'todos') {
-      locations = locations.filter(loc => loc.region === region);
+    // Filtrar por regiones seleccionadas
+    if (region.length > 0 && !region.includes('todos')) {
+      locations = locations.filter(loc => region.includes(loc.region));
     }
 
     console.log('Final filtered locations:', locations); // Debug
@@ -299,8 +300,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
 
   const companyDetails = COMPANIES.find(c => c.id === company);
 
-  const selectedLocation = LOCATIONS.find(loc => loc.id === cc);
-
   const handlePreview = (product: Product) => {
     navigate('/poster-preview', {
       state: {
@@ -338,6 +337,24 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   console.log('Categoría seleccionada:', selectedCategory);
   console.log('Productos filtrados:', filteredProducts);
 
+  // Agregar el handler para enviar a sucursales
+  const handleSendToLocations = () => {
+    if (!cc.length) {
+      alert('Por favor seleccione al menos una sucursal');
+      return;
+    }
+    if (!selectedProducts.length) {
+      alert('Por favor seleccione al menos un producto');
+      return;
+    }
+
+    // Cerrar el modal si está abierto y volver a abrirlo para reiniciar la animación
+    setIsSendingModalOpen(false);
+    setTimeout(() => {
+      setIsSendingModalOpen(true);
+    }, 100);
+  };
+
   return (
     <>
       <LoadingModal isOpen={isLoading} />
@@ -371,11 +388,12 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                 </label>
                 <RegionSelect
                   value={region}
-                  onChange={(value) => {
-                    setRegion(value);
-                    setCC('');
+                  onChange={(values) => {
+                    setRegion(values);
+                    setCC([]);
                   }}
                   regions={availableRegions}
+                  isMulti={true}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
                 />
               </div>
@@ -387,17 +405,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   value={cc}
                   onChange={setCC}
                   locations={filteredLocations}
-                  disabled={!region}
+                  disabled={region.length === 0}
+                  isMulti={true}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                />
-              </div>
-              <div className="col-span-3 mt-4">
-                <LocationMap 
-                  location={selectedLocation ? {
-                    name: selectedLocation.name,
-                    coordinates: selectedLocation.coordinates,
-                    address: selectedLocation.address
-                  } : undefined}
                 />
               </div>
             </div>
@@ -496,7 +506,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Productos:
                   </label>
-                  <div className="relative z-50">
+                  <div className="relative">
                     <ProductSelect
                       value={selectedProducts}
                       onChange={setSelectedProducts}
@@ -537,17 +547,31 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="show-logo"
-                    checked={showLogo}
-                    onChange={(e) => setShowLogo(e.target.checked)}
-                    className="rounded border-gray-300 bg-gray-200 text-gray-500 focus:ring-gray-500"
-                  />
-                  <label htmlFor="show-logo" className="text-sm text-gray-700">
-                    Mostrar logo
-                  </label>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="show-logo"
+                      checked={showLogo}
+                      onChange={(e) => setShowLogo(e.target.checked)}
+                      className="rounded border-gray-300 bg-gray-200 text-gray-500 focus:ring-gray-500"
+                    />
+                    <label htmlFor="show-logo" className="text-sm text-gray-700">
+                      Mostrar logo
+                    </label>
+                  </div>
+
+                  <button
+                    onClick={handleSendToLocations}
+                    disabled={!cc.length || !selectedProducts.length}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors
+                      ${(!cc.length || !selectedProducts.length)
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
+                  >
+                    Enviar a Sucursales
+                  </button>
                 </div>
               </div>
 
@@ -596,6 +620,13 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             promotion={selectedPromotion}
             company={companyDetails}
             showLogo={showLogo}
+          />
+
+          <SendingModal
+            isOpen={isSendingModalOpen}
+            onClose={() => setIsSendingModalOpen(false)}
+            locations={filteredLocations.filter(loc => cc.includes(loc.id))}
+            productsCount={selectedProducts.length}
           />
         </main>
       </div>

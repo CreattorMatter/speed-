@@ -45,7 +45,16 @@ export const ProductSelect: React.FC<ProductSelectProps> = ({
         menu: () => "bg-white rounded-lg shadow-lg",
         option: () => "px-3 py-2 hover:bg-gray-100 cursor-pointer"
       }}
-      styles={customOption}
+      styles={{
+        menu: (base) => ({
+          ...base,
+          zIndex: 40  // Aumentar el z-index para que esté por encima del cartel
+        }),
+        container: (base) => ({
+          ...base,
+          zIndex: 40  // Aumentar el z-index para que esté por encima del cartel
+        })
+      }}
       components={{
         Option: ({ children, isSelected, ...props }) => (
           <div

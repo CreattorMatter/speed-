@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import React from 'react';
+import Select from 'react-select';
 
 interface Region {
   id: string;
@@ -7,63 +7,43 @@ interface Region {
 }
 
 interface RegionSelectProps {
-  value: string;
-  onChange: (value: string) => void;
-  regions: Region[];
+  value: string[];
+  onChange: (values: string[]) => void;
+  regions: { id: string; name: string; }[];
+  isMulti?: boolean;
+  className?: string;
 }
 
-export const RegionSelect: React.FC<RegionSelectProps> = ({ value, onChange, regions }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  const selectedRegion = regions.find(r => r.id === value);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
+export const RegionSelect: React.FC<RegionSelectProps> = ({
+  value,
+  onChange,
+  regions,
+  isMulti = false,
+  className
+}) => {
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-left flex items-center justify-between
-                 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      >
-        <span className={selectedRegion ? '' : 'text-gray-500'}>
-          {selectedRegion ? selectedRegion.name : 'Seleccionar región...'}
-        </span>
-        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-          <ul className="py-1 max-h-60 overflow-auto">
-            {regions.map(region => (
-              <li key={region.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onChange(region.id);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full px-3 py-2 text-left hover:bg-gray-100
-                            ${value === region.id ? 'bg-blue-50' : ''}`}
-                >
-                  {region.name}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
+    <Select
+      isMulti={isMulti}
+      value={regions.filter(r => value.includes(r.id)).map(r => ({
+        value: r.id,
+        label: r.name
+      }))}
+      onChange={(newValue: any) => {
+        const selectedValues = newValue ? (Array.isArray(newValue) 
+          ? newValue.map(v => v.value)
+          : [newValue.value]) 
+        : [];
+        onChange(selectedValues);
+      }}
+      options={regions.map(r => ({
+        value: r.id,
+        label: r.name
+      }))}
+      classNames={{
+        control: () => className,
+        menu: () => "bg-white rounded-lg shadow-lg",
+        option: () => "px-3 py-2 hover:bg-gray-100 cursor-pointer"
+      }}
+    />
   );
 }; 

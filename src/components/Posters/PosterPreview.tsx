@@ -121,7 +121,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
     <div>
       {/* Resto del componente existente */}
       <div className={`${compact ? 'flex gap-4 items-center' : ''}`}>
-        <div className={`relative bg-white rounded-lg shadow-xl overflow-hidden
+        <div className={`relative bg-white rounded-lg shadow-xl overflow-hidden z-0
                       ${compact ? 'w-full' : 'w-[900px] h-[500px]'}`}
           style={{
             width: compact ? '100%' : '800px',
@@ -131,7 +131,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
             ...roundedFontStyle
           }}
         >
-          <div className="relative z-10 flex flex-col h-full">
+          <div className="relative z-2 flex flex-col h-full">
             {/* Logo de fondo translúcido */}
             {company?.logo && (
               <div className="absolute inset-0 flex items-center justify-center z-0">
@@ -145,7 +145,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
             {/* Logo superior izquierdo */}
             {company?.logo && showTopLogo && (
-              <div className="absolute top-20 left-3 z-20">
+              <div className="absolute top-20 left-3 z-1">
                 <img 
                   src={company.logo}
                   alt={company.name}
@@ -155,7 +155,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
             )}
 
             {/* Resto del contenido con z-index mayor */}
-            <div className="relative z-10">
+            <div className="relative z-2">
               {/* Nombre del producto */}
               <div className="text-center mb-4 mt-4">
                 <h1 className="text-[50px] font-black text-black leading-none" 
