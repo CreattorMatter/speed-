@@ -175,5 +175,146 @@ export const products = [
     imageUrl: 'https://images.unsplash.com/photo-1603199506016-b9a594b593c0',
     category: 'Bazar',
     description: 'Set 20 piezas porcelana blanca'
+  },
+  // Más productos MDH
+  {
+    id: 'MDH-009',
+    sku: 'MDH-009',
+    name: 'Lavavajillas Whirlpool',
+    price: 399999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a',
+    category: 'MDH',
+    description: 'Lavavajillas 12 cubiertos acero inox'
+  },
+  {
+    id: 'MDH-010',
+    sku: 'MDH-010',
+    name: 'Secarropas Drean',
+    price: 159999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1610557892470-55d9e80c0bce',
+    category: 'MDH',
+    description: 'Secarropas 5.5kg automático'
+  },
+  // Más Tecnología
+  {
+    id: 'TEC-006',
+    sku: 'TEC-006',
+    name: 'Samsung Galaxy S23 Ultra',
+    price: 899999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf',
+    category: 'Tecnología',
+    description: 'Smartphone Samsung 256GB'
+  },
+  {
+    id: 'TEC-007',
+    sku: 'TEC-007',
+    name: 'Notebook HP Pavilion',
+    price: 699999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed',
+    category: 'Tecnología',
+    description: 'Laptop HP 15" Ryzen 7'
+  },
+  // Más Bebidas
+  {
+    id: 'BEB-004',
+    sku: 'BEB-004',
+    name: 'Cerveza Quilmes Pack',
+    price: 5999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1608270586620-248524c67de9',
+    category: 'Bebidas',
+    description: 'Pack x12 latas 473ml'
+  },
+  {
+    id: 'BEB-005',
+    sku: 'BEB-005',
+    name: 'Vino Rutini Malbec',
+    price: 7999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3',
+    category: 'Bebidas',
+    description: 'Vino tinto 750ml'
+  },
+  // Más Alimentos
+  {
+    id: 'ALI-004',
+    sku: 'ALI-004',
+    name: 'Atún La Campagnola',
+    price: 899.99,
+    imageUrl: 'https://images.unsplash.com/photo-1597691424841-c70c8449c75d',
+    category: 'Alimentos',
+    description: 'Atún al natural 170g'
+  },
+  {
+    id: 'ALI-005',
+    sku: 'ALI-005',
+    name: 'Galletas Oreo',
+    price: 499.99,
+    imageUrl: 'https://images.unsplash.com/photo-1584361853901-dd1904bb7987',
+    category: 'Alimentos',
+    description: 'Pack familiar 118g'
+  },
+  // Más Bazar
+  {
+    id: 'BAZ-004',
+    sku: 'BAZ-004',
+    name: 'Sartén Teflon 24cm',
+    price: 12999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1593642532744-d377ab507dc8',
+    category: 'Bazar',
+    description: 'Sartén antiadherente premium'
+  },
+  {
+    id: 'BAZ-005',
+    sku: 'BAZ-005',
+    name: 'Set de Tupperware',
+    price: 8999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1606914469725-e398d2f1d7ee',
+    category: 'Bazar',
+    description: 'Set 5 contenedores herméticos'
+  },
+  // Agregar más productos de Coca-Cola
+  {
+    id: 'BEB-006',
+    sku: 'BEB-006',
+    name: 'Coca Cola Original 2.25L',
+    price: 1299.99,
+    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
+    category: 'Bebidas',
+    description: 'Gaseosa Coca Cola 2.25L'
+  },
+  {
+    id: 'BEB-007',
+    sku: 'BEB-007',
+    name: 'Coca Cola Sin Azúcar 2.25L',
+    price: 1299.99,
+    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
+    category: 'Bebidas',
+    description: 'Gaseosa Coca Cola Sin Azúcar 2.25L'
+  },
+  {
+    id: 'BEB-008',
+    sku: 'BEB-008',
+    name: 'Coca Cola Original 1.5L',
+    price: 999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
+    category: 'Bebidas',
+    description: 'Gaseosa Coca Cola 1.5L'
+  },
+  {
+    id: 'BEB-009',
+    sku: 'BEB-009',
+    name: 'Coca Cola Lata 354ml Pack x6',
+    price: 2499.99,
+    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
+    category: 'Bebidas',
+    description: 'Pack x6 latas Coca Cola 354ml'
+  },
+  {
+    id: 'BEB-010',
+    sku: 'BEB-010',
+    name: 'Coca Cola Mini 250ml Pack x6',
+    price: 1899.99,
+    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
+    category: 'Bebidas',
+    description: 'Pack x6 botellas mini Coca Cola 250ml'
   }
 ]; 

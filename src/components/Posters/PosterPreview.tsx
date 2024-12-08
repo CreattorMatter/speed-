@@ -145,7 +145,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
             {/* Logo superior izquierdo */}
             {company?.logo && showTopLogo && (
-              <div className="absolute top-6 left-6 z-20">
+              <div className="absolute top-20 left-3 z-20">
                 <img 
                   src={company.logo}
                   alt={company.name}
