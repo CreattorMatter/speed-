@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, LayoutGrid, List } from 'lucide-react';
 import { CompanySelect } from './CompanySelect';
 import { RegionSelect } from './RegionSelect';
@@ -17,6 +17,7 @@ import { ProductSelectorModal } from '../Products/ProductSelectorModal';
 import { PosterModal } from './PosterModal';
 import { COMPANIES } from '../../data/companies';
 import { LOCATIONS, REGIONS } from '../../data/locations';
+import { LoadingModal } from '../LoadingModal';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -365,6 +366,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   console.log('LOCATIONS imported:', LOCATIONS); // Debug
   console.log('COMPANIES imported:', COMPANIES); // Debug
@@ -463,8 +465,19 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     });
   };
 
+  // Simular carga inicial
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000); // Cambiado de 2000 a 2500 para que dure 2.5 segundos
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className={`min-h-screen flex flex-col ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+      <LoadingModal isOpen={isLoading} />
+      
       <Header onBack={onBack} onLogout={onLogout} />
       
       <main className="pt-10 px-6 pb-6 max-w-7xl mx-auto space-y-6 min-h-[1000px]">
