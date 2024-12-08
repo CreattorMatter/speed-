@@ -7,12 +7,7 @@ export interface Company {
 export const COMPANIES: Company[] = [
   { 
     id: 'no-logo', 
-    name: 'TODAS', 
-    logo: '' 
-  },
-  { 
-    id: 'cencosud', 
-    name: 'Cencosud', 
+    name: 'TODAS',
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Cencosud_logo.svg/1200px-Cencosud_logo.svg.png'
   },
   { 
