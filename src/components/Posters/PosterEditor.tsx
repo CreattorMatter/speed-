@@ -15,6 +15,8 @@ import { Header } from '../shared/Header';
 import { useTheme } from '../../hooks/useTheme';
 import { ProductSelectorModal } from '../Products/ProductSelectorModal';
 import { PosterModal } from './PosterModal';
+import { COMPANIES } from '../../data/companies';
+import { LOCATIONS, REGIONS } from '../../data/locations';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -46,228 +48,6 @@ interface Product {
   imageUrl: string;
   category: string;
 }
-
-const COMPANIES = [
-  { 
-    id: 'no-logo', 
-    name: 'TODAS', 
-    logo: '' 
-  },
-  { 
-    id: 'cencosud', 
-    name: 'Cencosud', 
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Cencosud_logo.svg/1200px-Cencosud_logo.svg.png'
-  },
-  { 
-    id: 'jumbo', 
-    name: 'Jumbo', 
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Logo_Jumbo_Cencosud.png'
-  },
-  { 
-    id: 'disco', 
-    name: 'Disco', 
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Disco-Supermarket-Logo.svg/2048px-Disco-Supermarket-Logo.svg.png'
-  },
-  { 
-    id: 'vea', 
-    name: 'Vea', 
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/9/94/Logo-VEA-Supermercados.png'
-  }
-];
-
-const REGIONS = [
-  { id: 'todos', name: 'Todas las Regiones' },
-  { id: 'centro', name: 'Buenos Aires Centro' },
-  { id: 'norte', name: 'Buenos Aires Norte' },
-  { id: 'sur', name: 'Buenos Aires Sur' }
-];
-
-const LOCATIONS = [
-  // Jumbo
-  { 
-    id: 'jumbo-once', 
-    name: 'Jumbo Once', 
-    region: 'centro',
-    coordinates: [-58.4055, -34.6087] as [number, number],
-    address: 'Av. Rivadavia 3050, CABA'
-  },
-  { 
-    id: 'jumbo-palermo', 
-    name: 'Jumbo Palermo', 
-    region: 'centro',
-    coordinates: [-58.4272, -34.5866] as [number, number],
-    address: 'Av. Bullrich 345, CABA'
-  },
-  { 
-    id: 'jumbo-almagro', 
-    name: 'Jumbo Almagro', 
-    region: 'centro',
-    coordinates: [-58.4201, -34.6103] as [number, number],
-    address: 'Av. Díaz Vélez 4580, CABA'
-  },
-  { 
-    id: 'jumbo-flores', 
-    name: 'Jumbo Flores', 
-    region: 'centro',
-    coordinates: [-58.4634, -34.6278] as [number, number],
-    address: 'Av. Rivadavia 6900, CABA'
-  },
-  { 
-    id: 'jumbo-devoto', 
-    name: 'Jumbo Villa Devoto', 
-    region: 'centro',
-    coordinates: [-58.5134, -34.5989] as [number, number],
-    address: 'Av. Francisco Beiró 5150, CABA'
-  },
-  
-  // Disco
-  { 
-    id: 'disco-caballito', 
-    name: 'Disco Caballito', 
-    region: 'centro',
-    coordinates: [-58.4401, -34.6190] as [number, number],
-    address: 'Av. Rivadavia 4800, CABA'
-  },
-  { 
-    id: 'disco-belgrano', 
-    name: 'Disco Belgrano', 
-    region: 'centro',
-    coordinates: [-58.4566, -34.5579] as [number, number],
-    address: 'Av. Cabildo 2280, CABA'
-  },
-  { 
-    id: 'disco-nunez', 
-    name: 'Disco Núñez', 
-    region: 'centro',
-    coordinates: [-58.4566, -34.5450] as [number, number],
-    address: 'Av. Cabildo 3600, CABA'
-  },
-  { 
-    id: 'disco-recoleta', 
-    name: 'Disco Recoleta', 
-    region: 'centro',
-    coordinates: [-58.3876, -34.5875] as [number, number],
-    address: 'Av. Santa Fe 1600, CABA'
-  },
-  { 
-    id: 'disco-palermo', 
-    name: 'Disco Palermo', 
-    region: 'centro',
-    coordinates: [-58.4302, -34.5876] as [number, number],
-    address: 'Av. Santa Fe 3700, CABA'
-  },
-
-  // Vea
-  { 
-    id: 'vea-flores', 
-    name: 'Vea Flores', 
-    region: 'centro',
-    coordinates: [-58.4634, -34.6278] as [number, number],
-    address: 'Av. Rivadavia 7000, CABA'
-  },
-  { 
-    id: 'vea-liniers', 
-    name: 'Vea Liniers', 
-    region: 'centro',
-    coordinates: [-58.5234, -34.6378] as [number, number],
-    address: 'Av. Rivadavia 11500, CABA'
-  },
-  { 
-    id: 'vea-mataderos', 
-    name: 'Vea Mataderos', 
-    region: 'centro',
-    coordinates: [-58.5034, -34.6578] as [number, number],
-    address: 'Av. Eva Pern 5500, CABA'
-  },
-  { 
-    id: 'vea-pompeya', 
-    name: 'Vea Nueva Pompeya', 
-    region: 'centro',
-    coordinates: [-58.4134, -34.6478] as [number, number],
-    address: 'Av. Sáenz 1200, CABA'
-  },
-  { 
-    id: 'vea-soldati', 
-    name: 'Vea Villa Soldati', 
-    region: 'centro',
-    coordinates: [-58.4334, -34.6678] as [number, number],
-    address: 'Av. Roca 3000, CABA'
-  },
-
-  // Zona Norte
-  { 
-    id: 'jumbo-san-isidro', 
-    name: 'Jumbo San Isidro', 
-    region: 'norte',
-    coordinates: [-58.5274, -34.4707] as [number, number],
-    address: 'Paraná 3745, San Isidro'
-  },
-  { 
-    id: 'jumbo-unicenter', 
-    name: 'Jumbo Unicenter', 
-    region: 'norte',
-    coordinates: [-58.5274, -34.5107] as [number, number],
-    address: 'Paraná 3600, Martínez'
-  },
-  { 
-    id: 'jumbo-tigre', 
-    name: 'Jumbo Tigre', 
-    region: 'norte',
-    coordinates: [-58.5796, -34.4265] as [number, number],
-    address: 'Av. Cazón 1250, Tigre'
-  },
-  { 
-    id: 'jumbo-pilar', 
-    name: 'Jumbo Pilar', 
-    region: 'norte',
-    coordinates: [-58.9137, -34.4585] as [number, number],
-    address: 'Au. Panamericana Km 50, Pilar'
-  },
-  { 
-    id: 'jumbo-nordelta', 
-    name: 'Jumbo Nordelta', 
-    region: 'norte',
-    coordinates: [-58.6396, -34.4065] as [number, number],
-    address: 'Av. de los Lagos 7000, Nordelta'
-  },
-
-  // Zona Sur
-  { 
-    id: 'vea-lomas', 
-    name: 'Vea Lomas de Zamora', 
-    region: 'sur',
-    coordinates: [-58.4066, -34.7611] as [number, number],
-    address: 'Av. Hipólito Yrigoyen 8230, Lomas de Zamora'
-  },
-  { 
-    id: 'jumbo-avellaneda', 
-    name: 'Jumbo Avellaneda', 
-    region: 'sur',
-    coordinates: [-58.3669, -34.6606] as [number, number],
-    address: 'Av. Mitre 639, Avellaneda'
-  },
-  { 
-    id: 'disco-quilmes', 
-    name: 'Disco Quilmes', 
-    region: 'sur',
-    coordinates: [-58.2529, -34.7207] as [number, number],
-    address: 'Av. Calchaquí 3950, Quilmes'
-  },
-  { 
-    id: 'vea-laplata', 
-    name: 'Vea La Plata', 
-    region: 'sur',
-    coordinates: [-57.9544, -34.9214] as [number, number],
-    address: 'Calle 13 entre 34 y 35, La Plata'
-  },
-  { 
-    id: 'jumbo-laplata', 
-    name: 'Jumbo La Plata', 
-    region: 'sur',
-    coordinates: [-57.9644, -34.9114] as [number, number],
-    address: 'Av. 19 850, La Plata'
-  }
-];
 
 const PROMOTIONS: Promotion[] = [
   {
@@ -586,6 +366,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
 
+  console.log('LOCATIONS imported:', LOCATIONS); // Debug
+  console.log('COMPANIES imported:', COMPANIES); // Debug
+
   // Limpiar región y CC cuando cambia la empresa
   const handleCompanyChange = (newCompany: string) => {
     setCompany(newCompany);
@@ -596,32 +379,50 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   // Filtrar ubicaciones basado en la empresa y región seleccionadas
   const filteredLocations = React.useMemo(() => {
     let locations = [...LOCATIONS];
+    console.log('Company selected:', company); // Debug
+    console.log('All locations:', locations); // Debug
 
     // Filtrar por empresa si hay una seleccionada y no es "TODAS"
     if (company && company !== 'no-logo') {
-      const companyPrefix = company.toLowerCase();
-      locations = locations.filter(loc => 
-        loc.name.toLowerCase().includes(companyPrefix) ||
-        loc.id.includes(companyPrefix)
-      );
+      locations = locations.filter(loc => {
+        const matches = loc.id.startsWith(company.toLowerCase());
+        console.log(`Checking location ${loc.id} against ${company.toLowerCase()}: ${matches}`); // Debug
+        return matches;
+      });
     }
+
+    console.log('Filtered by company:', locations); // Debug
 
     // Luego filtrar por región si hay una seleccionada y no es "todos"
     if (region && region !== 'todos') {
       locations = locations.filter(loc => loc.region === region);
     }
 
+    console.log('Final filtered locations:', locations); // Debug
     return locations;
   }, [company, region]);
 
-  // Obtener regiones únicas basadas en las ubicaciones filtradas
+  // Obtener regiones únicas basadas en las ubicaciones filtradas por empresa
   const availableRegions = React.useMemo(() => {
-    const regions = new Set(filteredLocations.map(loc => loc.region));
-    return [
+    console.log('Calculating regions for company:', company); // Debug
+    const locations = company && company !== 'no-logo'
+      ? LOCATIONS.filter(loc => {
+          const matches = loc.id.startsWith(company.toLowerCase());
+          console.log(`Checking location ${loc.id} for regions: ${matches}`); // Debug
+          return matches;
+        })
+      : LOCATIONS;
+      
+    const regions = new Set(locations.map(loc => loc.region));
+    console.log('Available regions:', regions); // Debug
+    
+    const result = [
       { id: 'todos', name: 'Todas las Regiones' },
       ...REGIONS.filter(r => r.id !== 'todos' && regions.has(r.id))
     ];
-  }, [filteredLocations]);
+    console.log('Final regions list:', result); // Debug
+    return result;
+  }, [company]);
 
   const selectedPromotion = PROMOTIONS.find(p => p.id === promotion);
 
@@ -638,16 +439,16 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     navigate('/print-view', { state: printData });
   };
 
-  const selectedCompany = COMPANIES.find(c => c.id === company);
+  const companyDetails = COMPANIES.find(c => c.id === company);
 
   const selectedLocation = LOCATIONS.find(loc => loc.id === cc);
 
-  const handlePreview = (product) => {
+  const handlePreview = (product: Product) => {
     navigate('/poster-preview', {
       state: {
         product,
         promotion: selectedPromotion,
-        company: selectedCompany,
+        company: companyDetails,
         showLogo
       }
     });
@@ -882,7 +683,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                     <PosterPreview
                       product={product}
                       promotion={selectedPromotion}
-                      company={selectedCompany}
+                      company={companyDetails}
                       showTopLogo={showLogo}
                       pricePerUnit={`${product.price * 2}`}
                       points="49"
@@ -914,7 +715,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
           onClose={() => setSelectedPoster(null)}
           product={selectedPoster!}
           promotion={selectedPromotion}
-          company={selectedCompany}
+          company={companyDetails}
           showLogo={showLogo}
         />
       </main>
