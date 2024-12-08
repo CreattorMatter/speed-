@@ -16,31 +16,28 @@ export const ProductSelect: React.FC<ProductSelectProps> = ({
   products,
   className 
 }) => {
-  const customOption = {
-    option: (provided: any, state: any) => ({
-      ...provided,
-      display: 'flex',
-      alignItems: 'center',
-      padding: '8px 12px',
-      cursor: 'pointer',
-      backgroundColor: state.isFocused ? '#f3f4f6' : 'white',
-      '&:hover': {
-        backgroundColor: '#f3f4f6'
-      }
-    }),
-    multiValue: (provided: any) => ({
-      ...provided,
-      backgroundColor: '#e5e7eb',
-      borderRadius: '4px'
-    })
-  };
+  console.log('ProductSelect recibió:', products);
+
+  // Transformar los productos para el Select
+  const options = products.map(p => ({ 
+    value: p.id, 
+    label: `${p.name} - ${p.category}`  // Agregar categoría para mejor identificación
+  }));
+
+  // Transformar el value actual para el Select
+  const selectedValues = value.map(id => 
+    options.find(opt => opt.value === id)
+  ).filter(Boolean);
 
   return (
     <Select
       isMulti
-      options={products.map(p => ({ value: p.id, label: p.name }))}
-      value={value}
-      onChange={onChange}
+      options={options}
+      value={selectedValues}
+      onChange={(newValue) => {
+        const selectedIds = newValue ? newValue.map(v => v.value) : [];
+        onChange(selectedIds);
+      }}
       menuPlacement="top"
       maxMenuHeight={200}
       classNames={{

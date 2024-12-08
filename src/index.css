@@ -9,3 +9,7 @@ html {
 .smooth-scroll {
   @apply transition-all duration-300 ease-in-out;
 }
+
+.poster-editor {
+  @apply bg-black;
+}

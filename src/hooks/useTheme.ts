@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 
 type Theme = 'light' | 'dark';
 
-export const useTheme = () => {
+export const useTheme = (forceDark?: boolean) => {
   const [theme, setTheme] = useState<Theme>(() => {
+    if (forceDark) return 'dark';
     // Verificar si hay una preferencia guardada
     const savedTheme = localStorage.getItem('theme') as Theme;
     if (savedTheme) return savedTheme;

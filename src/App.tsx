@@ -116,6 +116,7 @@ function AppContent() {
     return (
       <PosterEditor 
         onBack={() => setShowPosterEditor(false)}
+        onLogout={handleLogout}
         initialProducts={location.state?.selectedProducts}
         initialPromotion={location.state?.selectedPromotion}
       />
