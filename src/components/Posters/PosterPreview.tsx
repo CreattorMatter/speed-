@@ -141,7 +141,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                     ${product.price.toLocaleString('es-AR')}
                   </span>
                   {promotion && (
-                    <div className="bg-red-600 text-white px-4 py-1 rounded-full text-lg font-bold">
+                    <div className="bg-red-600 text-center text-white px-4 py-1 rounded-full text-lg font-bold">
                       {promotion.discount}
                     </div>
                   )}
@@ -155,7 +155,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
               <div className="flex items-center gap-8">
                 <div className="flex items-center gap-4">
-                  <div className="text-sm text-gray-600">{barcode}</div>
+                  <div className="text-sm text-gray-600">SKU: {barcode}</div>
                   <img src={qrUrl} alt="QR Code" className="w-16 h-16" />
                 </div>
                 <div className="text-sm" style={roundedFontStyle}>
@@ -267,7 +267,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
             {/* Código de barras y QR */}
             <div className="flex justify-between items-end mt-4">
               <div className="text-base text-left">
-                {barcode}
+                SKU: {barcode}
               </div>
               <div className="flex items-center gap-2">
                 <img 
