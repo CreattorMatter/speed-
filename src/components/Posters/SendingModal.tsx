@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, Send } from 'lucide-react';
+import { Package, Send, Check } from 'lucide-react';
 
 interface SendingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  locations: { id: string; name: string; }[];
+  locations: { id: string; name: string }[];
   productsCount: number;
 }
 
@@ -14,75 +14,74 @@ export const SendingModal: React.FC<SendingModalProps> = ({
   locations,
   productsCount
 }) => {
-  const [currentLocation, setCurrentLocation] = useState(0);
-  const [isSending, setIsSending] = useState(true);
-
+  const [step, setStep] = useState(0);
+  
   useEffect(() => {
     if (isOpen) {
-      setCurrentLocation(0);
-      setIsSending(true);
-      
-      const interval = setInterval(() => {
-        setCurrentLocation(prev => {
-          if (prev < locations.length - 1) return prev + 1;
-          clearInterval(interval);
-          setIsSending(false);
-          return prev;
-        });
-      }, 800);
+      setStep(0);
+      const timer1 = setTimeout(() => setStep(1), 1500); // Empacando
+      const timer2 = setTimeout(() => setStep(2), 3000); // Enviando
+      const timer3 = setTimeout(() => {
+        setStep(3);  // Completado
+        setTimeout(onClose, 1000);
+      }, 4500);
 
-      return () => clearInterval(interval);
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+      };
     }
-  }, [isOpen, locations.length]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100]">
-      <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 relative">
-        <h3 className="text-xl font-semibold text-gray-900 mb-6">
-          {isSending ? 'Enviando carteles...' : '¡Envío completado!'}
-        </h3>
-
-        <div className="space-y-4">
-          {locations.map((location, index) => (
-            <div 
-              key={location.id}
-              className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300
-                ${index === currentLocation && isSending ? 'bg-indigo-50 scale-105' : 
-                  index < currentLocation || !isSending ? 'bg-green-50' : 'bg-gray-50'}`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-full 
-                  ${index === currentLocation && isSending ? 'bg-indigo-100' :
-                    index < currentLocation || !isSending ? 'bg-green-100' : 'bg-gray-100'}`}
-                >
-                  {index === currentLocation && isSending ? (
-                    <Send className="w-4 h-4 text-indigo-600 animate-pulse" />
-                  ) : index < currentLocation || !isSending ? (
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <Send className="w-4 h-4 text-gray-400" />
-                  )}
-                </div>
-                <span className="font-medium text-gray-700">{location.name}</span>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full space-y-6">
+        <div className="flex flex-col items-center justify-center space-y-4">
+          {/* Animación de empaque y envío */}
+          <div className="relative h-24 w-24">
+            {step === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center animate-bounce">
+                <Package className="w-12 h-12 text-indigo-600" />
               </div>
-              <span className="text-sm text-gray-500">
-                {productsCount} {productsCount === 1 ? 'cartel' : 'carteles'}
-              </span>
-            </div>
-          ))}
-        </div>
+            )}
+            {step === 1 && (
+              <div className="absolute inset-0 flex items-center justify-center animate-pulse">
+                <Package className="w-12 h-12 text-indigo-600" />
+              </div>
+            )}
+            {step === 2 && (
+              <div className="absolute inset-0 flex items-center justify-center animate-ping">
+                <Send className="w-12 h-12 text-indigo-600" />
+              </div>
+            )}
+            {step === 3 && (
+              <div className="absolute inset-0 flex items-center justify-center animate-bounce">
+                <Check className="w-12 h-12 text-green-500" />
+              </div>
+            )}
+          </div>
 
-        {!isSending && (
-          <button
-            onClick={onClose}
-            className="mt-6 w-full py-2 px-4 bg-indigo-600 text-white rounded-lg
-                     hover:bg-indigo-700 transition-colors font-medium"
-          >
-            Cerrar
-          </button>
-        )}
+          {/* Texto de estado */}
+          <h3 className="text-xl font-medium text-gray-900">
+            {step === 0 && 'Preparando envío...'}
+            {step === 1 && 'Empacando carteles...'}
+            {step === 2 && 'Enviando a sucursales...'}
+            {step === 3 && '¡Envío completado!'}
+          </h3>
+
+          {/* Detalles */}
+          <div className="text-sm text-gray-500 text-center">
+            <p>{productsCount} carteles serán enviados a:</p>
+            <ul className="mt-2 space-y-1">
+              {locations.map(location => (
+                <li key={location.id}>{location.name}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );

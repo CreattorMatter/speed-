@@ -27,7 +27,7 @@ interface ProductOption {
 // Función para transformar un producto en una opción del selector
 const mapProductToOption = (product: Product): ProductOption => ({
   value: product.id,
-  label: `${product.name} - $${product.price.toLocaleString('es-AR')}`,
+  label: product.name,
   price: product.price,
   category: product.category
 });
