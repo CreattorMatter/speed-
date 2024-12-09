@@ -117,7 +117,18 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
     <div className="flex justify-center items-center min-h-screen bg-gray-100 p-8">
       <div className="relative">
         {/* Fondo A4 */}
-        <div className="bg-white shadow-xl relative" style={{ width: '210mm', height: '297mm' }}>
+        <div 
+          className="bg-white shadow-xl relative" 
+          style={{ 
+            width: '210mm', 
+            height: '297mm',
+            backgroundImage: `
+              linear-gradient(to right, #f0f0f0 1px, transparent 1px),
+              linear-gradient(to bottom, #f0f0f0 1px, transparent 1px)
+            `,
+            backgroundSize: '10mm 10mm',
+          }}
+        >
           {/* Etiqueta A4 */}
           <div className="absolute -top-6 left-0 flex items-center gap-2 text-gray-500 text-sm">
             <span className="bg-gray-200 px-2 py-1 rounded-md font-medium">A4</span>
