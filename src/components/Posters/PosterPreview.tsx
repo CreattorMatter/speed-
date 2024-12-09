@@ -193,7 +193,9 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
               }}
             >
               {/* Cartel */}
-              <div className="absolute inset-0 flex justify-center items-center z-[9000]">
+              <div 
+                className="absolute top-8 left-0 right-0 flex justify-center z-[9000]"
+              >
                 {compact ? (
                   <div className="transform scale-[0.85]">
                     <div className="relative bg-white rounded-lg shadow-2xl overflow-hidden z-0 w-[900px] h-[200px] flex">
