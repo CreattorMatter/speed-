@@ -235,6 +235,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [showFormatSelector, setShowFormatSelector] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [cardSize, setCardSize] = useState(0.85);
+  const [isLandscape, setIsLandscape] = useState(false);
 
   console.log('LOCATIONS imported:', LOCATIONS); // Debug
   console.log('COMPANIES imported:', COMPANIES); // Debug
@@ -547,10 +548,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             <div className="border-t border-gray-200 pt-6">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-4">
-                  <label className="text-sm font-medium text-gray-700">
-                    Vista previa de carteles:
-                  </label>
-
                   {/* Controles agrupados */}
                   <div className="flex items-center gap-4">
                     {/* Vista grilla/lista */}
@@ -614,6 +611,27 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         </div>
                       )}
                     </div>
+
+                    {/* Separador vertical */}
+                    <div className="h-8 w-px bg-gray-200"></div>
+
+                    {/* Control de orientación */}
+                    <button
+                      onClick={() => setIsLandscape(!isLandscape)}
+                      className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors flex items-center gap-2"
+                    >
+                      <svg 
+                        className={`w-4 h-4 transition-transform ${isLandscape ? 'rotate-90' : ''}`} 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor"
+                      >
+                        <rect x="4" y="5" width="16" height="14" rx="2" strokeWidth="2"/>
+                      </svg>
+                      <span className="text-sm">
+                        {isLandscape ? 'Horizontal' : 'Vertical'}
+                      </span>
+                    </button>
 
                     {/* Separador vertical */}
                     <div className="h-8 w-px bg-gray-200"></div>
@@ -709,6 +727,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         selectedFormat={selectedFormat}
                         zoom={zoom}
                         cardSize={cardSize}
+                        isLandscape={isLandscape}
                       />
                     </div>
                   ))}

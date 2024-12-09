@@ -45,6 +45,7 @@ interface PosterPreviewProps {
   };
   zoom: number;
   cardSize: number;
+  isLandscape?: boolean;
 }
 
 // Definimos los formatos de papel disponibles
@@ -69,7 +70,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   size,
   selectedFormat,
   zoom,
-  cardSize
+  cardSize,
+  isLandscape = false
 }) => {
   // En el componente, agregamos el estado para el formato seleccionado
   const [showFormatSelector, setShowFormatSelector] = useState(false);
@@ -79,7 +81,11 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
   // Manejadores de movimiento
   const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevenir selección de texto
+    // Solo activar el arrastre si se hace clic en el cartel
+    const target = e.target as HTMLElement;
+    if (!target.closest('.poster-content')) return;
+
+    e.preventDefault();
     setIsDragging(true);
     setDragStart({
       x: e.clientX - position.x,
@@ -95,7 +101,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
     const newY = e.clientY - dragStart.y;
 
     // Limitar el movimiento dentro de la hoja
-    const maxOffset = 200; // Ajustar según necesidad
+    const maxOffset = 500; // Aumentamos el rango de movimiento
     setPosition({
       x: Math.max(-maxOffset, Math.min(maxOffset, newX)),
       y: Math.max(-maxOffset, Math.min(maxOffset, newY))
@@ -187,8 +193,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
             <div 
               className="bg-white shadow-xl relative transition-transform"
               style={{ 
-                width: selectedFormat.width, 
-                height: selectedFormat.height,
+                width: isLandscape ? selectedFormat.height : selectedFormat.width, 
+                height: isLandscape ? selectedFormat.width : selectedFormat.height,
                 transform: `scale(${zoom}) translate(${position.x}px, ${position.y}px)`,
                 transformOrigin: 'center center',
                 backgroundImage: `
@@ -200,7 +206,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
             >
               {/* Cartel */}
               <div 
-                className="absolute top-8 left-0 right-0 flex justify-center z-[9000]"
+                className="poster-content absolute inset-0 flex items-center justify-center z-[9000]"
               >
                 {compact ? (
                   <div className="transform" style={{ transform: `scale(${cardSize})` }}>
@@ -281,7 +287,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                         </div>
 
                         {/* Nombre del producto */}
-                        <div className="text-4xl font-bold text-black tracking-tight leading-tight uppercase mt-28 text-center">
+                        <div className="text-5xl font-bold text-black tracking-tight leading-tight uppercase mt-28 text-center">
                           {product.name}
                         </div>
 
@@ -315,7 +321,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                           </div>
                         )}
 
-                        {/* Sección de precios - Movemos arriba antes de la información adicional */}
+                        {/* Sección de precios */}
                         <div className="flex-grow flex flex-col items-center justify-center -mt-0">
                           {/* Precio tachado y descuento */}
                           <div className="flex items-center gap-4 mb-4">
