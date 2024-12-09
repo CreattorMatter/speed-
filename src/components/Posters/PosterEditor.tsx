@@ -220,9 +220,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [showPesosCheck, setShowPesosCheck] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
-  const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSendingModalOpen, setIsSendingModalOpen] = useState(false);
+  const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
 
   console.log('LOCATIONS imported:', LOCATIONS); // Debug
   console.log('COMPANIES imported:', COMPANIES); // Debug
@@ -580,8 +580,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   {mappedProducts.map(product => (
                     <div key={product.id} 
                          className={`flex justify-center ${viewMode === 'list' ? 'bg-gray-100 rounded-lg p-4' : ''}`}
-                         onClick={() => setSelectedPoster(product)}
-                         style={{ cursor: 'pointer' }}
                     >
                       <PosterPreview
                         product={product}
@@ -613,6 +611,13 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             category={selectedCategory}
           />
 
+          <SendingModal
+            isOpen={isSendingModalOpen}
+            onClose={() => setIsSendingModalOpen(false)}
+            locations={filteredLocations.filter(loc => cc.includes(loc.id))}
+            productsCount={selectedProducts.length}
+          />
+
           <PosterModal
             isOpen={!!selectedPoster}
             onClose={() => setSelectedPoster(null)}
@@ -620,13 +625,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             promotion={selectedPromotion}
             company={companyDetails}
             showLogo={showLogo}
-          />
-
-          <SendingModal
-            isOpen={isSendingModalOpen}
-            onClose={() => setIsSendingModalOpen(false)}
-            locations={filteredLocations.filter(loc => cc.includes(loc.id))}
-            productsCount={selectedProducts.length}
           />
         </main>
       </div>
