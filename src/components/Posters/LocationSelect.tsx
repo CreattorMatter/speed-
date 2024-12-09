@@ -24,30 +24,46 @@ export const LocationSelect: React.FC<LocationSelectProps> = ({
   isMulti = false,
   className
 }) => {
+  const selectAllOption = {
+    value: '*',
+    label: 'Seleccionar todos'
+  };
+
+  const handleChange = (selectedOptions: any) => {
+    if (Array.isArray(selectedOptions)) {
+      if (selectedOptions.some(option => option.value === '*')) {
+        onChange(locations.map(location => location.id));
+      } else {
+        onChange(selectedOptions.map(option => option.value));
+      }
+    } else {
+      onChange(selectedOptions ? [selectedOptions.value] : []);
+    }
+  };
+
+  const options = [
+    selectAllOption,
+    ...locations.map(l => ({
+      value: l.id,
+      label: l.name
+    }))
+  ];
+
   return (
     <Select
       isMulti={isMulti}
       isDisabled={disabled}
-      value={locations.filter(l => value.includes(l.id)).map(l => ({
-        value: l.id,
-        label: l.name
-      }))}
-      onChange={(newValue: any) => {
-        const selectedValues = newValue ? (Array.isArray(newValue) 
-          ? newValue.map(v => v.value)
-          : [newValue.value]) 
-        : [];
-        onChange(selectedValues);
-      }}
-      options={locations.map(l => ({
-        value: l.id,
-        label: l.name
-      }))}
+      value={value.length === locations.length 
+        ? [selectAllOption]
+        : options.filter(option => value.includes(option.value))}
+      onChange={handleChange}
+      options={options}
       classNames={{
         control: (state) => `${className} ${state.isFocused ? 'border-indigo-500' : ''}`,
         menu: () => "bg-white rounded-lg shadow-lg",
         option: () => "px-3 py-2 hover:bg-gray-100 cursor-pointer"
       }}
+      placeholder="Seleccionar sucursales..."
     />
   );
 }; 

@@ -379,6 +379,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     setCardSize(Math.max(0.5, Math.min(roundedSize, 1.2)));
   };
 
+  const handleCCChange = (selectedIds: string[]) => {
+    setCC(selectedIds);
+  };
+
   return (
     <>
       <LoadingModal isOpen={isLoading} />
@@ -427,11 +431,11 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                 </label>
                 <LocationSelect
                   value={cc}
-                  onChange={setCC}
+                  onChange={handleCCChange}
                   locations={filteredLocations}
                   disabled={region.length === 0}
                   isMulti={true}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
+                  className="bg-white/10 border-white/20 text-white placeholder-white/50 focus:border-white/30"
                 />
               </div>
             </div>
