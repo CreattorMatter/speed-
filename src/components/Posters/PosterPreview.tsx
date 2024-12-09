@@ -163,7 +163,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
         </div>
       ) : (
         /* Modo grilla - Diseño original */
-        <div className="bg-white p-2 rounded-lg shadow-lg w-full max-w-4xl h-[600px] mx-auto relative overflow-hidden">
+        <div className="bg-white p-2 rounded-lg shadow-lg w-[900px] h-[600px] relative overflow-hidden">
           {/* Logo de fondo translúcido */}
           {company?.logo && (
             <div className="absolute inset-0 flex items-center justify-center opacity-5">
@@ -183,14 +183,14 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                   <img 
                     src={company.logo}
                     alt={company.name}
-                    className="h-20 w-auto object-contain"
+                    className="h-24 w-auto object-contain"
                   />
                 </div>
               )}
             </div>
 
             {/* Nombre del producto */}
-            <div className="text-5xl font-bold text-black tracking-tight leading-tight uppercase mt-28 text-center">
+            <div className="text-4xl font-bold text-black tracking-tight leading-tight uppercase mt-28 text-center">
               {product.name}
             </div>
 
