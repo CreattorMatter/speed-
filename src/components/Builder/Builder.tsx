@@ -80,7 +80,10 @@ export default function Builder({ onBack }: BuilderProps) {
         {
           id: `image-${Date.now()}`,
           type: 'image',
-          content: { imageUrl: product.imageUrl },
+          content: { 
+            imageUrl: product.imageUrl,
+            alt: product.name 
+          },
           position: { x: 50, y: selectedCompany ? 320 : 220 },
           size: { width: 300, height: 300 }
         },

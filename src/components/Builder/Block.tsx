@@ -86,58 +86,79 @@ export const Block = React.memo(function Block({
     if (!showToolbar || ['image', 'logo'].includes(block.type)) return null;
 
     return (
-      <div className="absolute -top-10 left-0 bg-white shadow-lg rounded-lg px-2 py-1 flex items-center gap-1 z-50">
-        <button
-          type="button"
-          onClick={() => toggleStyle('bold')}
-          className={`p-1 rounded hover:bg-gray-100 ${block.content.bold ? 'bg-gray-200' : ''}`}
-        >
-          <Bold className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => toggleStyle('italic')}
-          className={`p-1 rounded hover:bg-gray-100 ${block.content.italic ? 'bg-gray-200' : ''}`}
-        >
-          <Italic className="w-4 h-4" />
-        </button>
-        <div className="w-px h-4 bg-gray-200 mx-1" />
-        <button
-          type="button"
-          onClick={() => setAlignment('left')}
-          className={`p-1 rounded hover:bg-gray-100 ${block.content.align === 'left' ? 'bg-gray-200' : ''}`}
-        >
-          <AlignLeft className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setAlignment('center')}
-          className={`p-1 rounded hover:bg-gray-100 ${block.content.align === 'center' ? 'bg-gray-200' : ''}`}
-        >
-          <AlignCenter className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setAlignment('right')}
-          className={`p-1 rounded hover:bg-gray-100 ${block.content.align === 'right' ? 'bg-gray-200' : ''}`}
-        >
-          <AlignRight className="w-4 h-4" />
-        </button>
-        <div className="w-px h-4 bg-gray-200 mx-1" />
-        <button
-          type="button"
-          onClick={() => changeFontSize(-1)}
-          className="p-1 rounded hover:bg-gray-100"
-        >
-          A-
-        </button>
-        <button
-          type="button"
-          onClick={() => changeFontSize(1)}
-          className="p-1 rounded hover:bg-gray-100"
-        >
-          A+
-        </button>
+      <div className="absolute -top-12 left-0 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg px-3 py-2 
+                      flex items-center gap-2 z-50 border border-gray-100">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => toggleStyle('bold')}
+            className={`p-2 rounded-md hover:bg-gray-100 transition-colors ${
+              block.content.bold ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700'
+            }`}
+          >
+            <Bold className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleStyle('italic')}
+            className={`p-2 rounded-md hover:bg-gray-100 transition-colors ${
+              block.content.italic ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700'
+            }`}
+          >
+            <Italic className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="w-px h-6 bg-gray-200" />
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setAlignment('left')}
+            className={`p-2 rounded-md hover:bg-gray-100 transition-colors ${
+              block.content.align === 'left' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700'
+            }`}
+          >
+            <AlignLeft className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setAlignment('center')}
+            className={`p-2 rounded-md hover:bg-gray-100 transition-colors ${
+              block.content.align === 'center' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700'
+            }`}
+          >
+            <AlignCenter className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setAlignment('right')}
+            className={`p-2 rounded-md hover:bg-gray-100 transition-colors ${
+              block.content.align === 'right' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700'
+            }`}
+          >
+            <AlignRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="w-px h-6 bg-gray-200" />
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => changeFontSize(-1)}
+            className="p-2 rounded-md hover:bg-gray-100 transition-colors text-gray-700 font-medium"
+          >
+            A-
+          </button>
+          <button
+            type="button"
+            onClick={() => changeFontSize(1)}
+            className="p-2 rounded-md hover:bg-gray-100 transition-colors text-gray-700 font-medium"
+          >
+            A+
+          </button>
+        </div>
       </div>
     );
   };
@@ -147,18 +168,23 @@ export const Block = React.memo(function Block({
       return (
         <div className="w-full h-full relative group">
           {block.content?.imageUrl ? (
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-full bg-white p-2">
               <img 
                 src={block.content.imageUrl} 
                 alt={block.type}
-                className="w-full h-full object-contain hover:object-cover transition-all duration-300"
+                className="w-full h-full object-contain"
+                style={{
+                  filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))',
+                  imageRendering: 'crisp-edges'
+                }}
               />
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 
-                            transition-opacity flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 
+                            transition-all duration-200 flex items-center justify-center backdrop-blur-sm">
                 <button
                   onClick={handleImageClick}
-                  className="bg-white text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-100 
-                           transition-colors text-sm font-medium"
+                  className="bg-white/90 text-gray-800 px-6 py-2.5 rounded-lg hover:bg-white 
+                           transition-all duration-200 text-sm font-medium shadow-lg
+                           hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   Cambiar imagen
                 </button>
@@ -167,14 +193,13 @@ export const Block = React.memo(function Block({
           ) : (
             <button 
               onClick={handleImageClick}
-              className="w-full h-full flex flex-col items-center justify-center bg-gray-50 
-                       hover:bg-gray-100 transition-colors border-2 border-dashed border-gray-300"
+              className="w-full h-full flex flex-col items-center justify-center bg-gray-50/50 
+                       hover:bg-gray-50 transition-colors border-2 border-dashed border-gray-300
+                       hover:border-indigo-300 group"
             >
-              <Image className="w-8 h-8 text-gray-400 mb-2" />
-              <span className="text-gray-500 text-sm">
-                {block.type === 'header' ? 'Agregar encabezado' :
-                 block.type === 'footer' ? 'Agregar pie de página' :
-                 'Agregar imagen'}
+              <Image className="w-8 h-8 text-gray-400 group-hover:text-indigo-400 transition-colors mb-2" />
+              <span className="text-sm text-gray-500 group-hover:text-indigo-500 transition-colors">
+                {block.type === 'logo' ? 'Agregar logo' : 'Agregar imagen'}
               </span>
             </button>
           )}
