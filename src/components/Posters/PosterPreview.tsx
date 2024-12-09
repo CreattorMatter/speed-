@@ -44,6 +44,7 @@ interface PosterPreviewProps {
     name: string;
   };
   zoom: number;
+  cardSize: number;
 }
 
 // Definimos los formatos de papel disponibles
@@ -67,7 +68,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   compact = false,
   size,
   selectedFormat,
-  zoom
+  zoom,
+  cardSize
 }) => {
   // En el componente, agregamos el estado para el formato seleccionado
   const [showFormatSelector, setShowFormatSelector] = useState(false);
@@ -77,6 +79,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
   // Manejadores de movimiento
   const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevenir selección de texto
     setIsDragging(true);
     setDragStart({
       x: e.clientX - position.x,
@@ -86,14 +89,17 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
-    setPosition({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
-    });
-  };
+    
+    // Calcular nueva posición
+    const newX = e.clientX - dragStart.x;
+    const newY = e.clientY - dragStart.y;
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
+    // Limitar el movimiento dentro de la hoja
+    const maxOffset = 200; // Ajustar según necesidad
+    setPosition({
+      x: Math.max(-maxOffset, Math.min(maxOffset, newX)),
+      y: Math.max(-maxOffset, Math.min(maxOffset, newY))
+    });
   };
 
   // Calcular el precio con descuento
@@ -173,8 +179,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          onMouseUp={() => setIsDragging(false)}
+          onMouseLeave={() => setIsDragging(false)}
         >
           <div className="relative"> {/* Contenedor para la hoja y los controles */}
             {/* Mantener solo la hoja */}
@@ -197,7 +203,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                 className="absolute top-8 left-0 right-0 flex justify-center z-[9000]"
               >
                 {compact ? (
-                  <div className="transform scale-[0.85]">
+                  <div className="transform" style={{ transform: `scale(${cardSize})` }}>
                     <div className="relative bg-white rounded-lg shadow-2xl overflow-hidden z-0 w-[900px] h-[200px] flex">
                       {/* Logo en modo lista */}
                       {company?.logo && showTopLogo && (
@@ -247,7 +253,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="transform scale-[0.85]">
+                  <div className="transform" style={{ transform: `scale(${cardSize})` }}>
                     <div className="bg-white p-2 rounded-lg shadow-2xl w-[900px] h-[600px] relative overflow-hidden">
                       {/* Logo de fondo translúcido */}
                       {company?.logo && (

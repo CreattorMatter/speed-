@@ -234,6 +234,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [selectedFormat, setSelectedFormat] = useState(PAPER_FORMATS[2]); // A4 por defecto
   const [showFormatSelector, setShowFormatSelector] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [cardSize, setCardSize] = useState(0.85);
 
   console.log('LOCATIONS imported:', LOCATIONS); // Debug
   console.log('COMPANIES imported:', COMPANIES); // Debug
@@ -369,6 +370,13 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   // Agregar las funciones de zoom
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
+
+  const handleCardSizeChange = (newSize: number) => {
+    // Redondeamos al múltiplo de 5 más cercano
+    const roundedSize = Math.round(newSize * 20) / 20;
+    // Limitamos entre 50% y 120%
+    setCardSize(Math.max(0.5, Math.min(roundedSize, 1.2)));
+  };
 
   return (
     <>
@@ -628,6 +636,28 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
+
+                    {/* Separador vertical */}
+                    <div className="h-8 w-px bg-gray-200"></div>
+
+                    {/* Controles de tamaño del cartel */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleCardSizeChange(cardSize - 0.05)}
+                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="text-sm text-gray-600 min-w-[3rem] text-center">
+                        {Math.round(cardSize * 100)}%
+                      </span>
+                      <button
+                        onClick={() => handleCardSizeChange(cardSize + 0.05)}
+                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -678,6 +708,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         compact={viewMode === 'list'}
                         selectedFormat={selectedFormat}
                         zoom={zoom}
+                        cardSize={cardSize}
                       />
                     </div>
                   ))}
