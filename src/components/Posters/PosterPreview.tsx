@@ -118,7 +118,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
       {/* Si es modo compacto (lista) usamos el nuevo diseño horizontal */}
       {compact ? (
         <div className="flex gap-4 items-center">
-          <div className="relative bg-white rounded-lg shadow-xl overflow-hidden z-0 w-full h-[200px] flex">
+          <div className="relative bg-white rounded-lg shadow-xl overflow-hidden z-0 w-[900px] h-[200px] flex">
             {/* Logo en modo lista */}
             {company?.logo && showTopLogo && (
               <div className="w-[200px] p-4 flex items-center justify-center border-r border-gray-100">
