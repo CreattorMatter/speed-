@@ -132,7 +132,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
             {/* Contenido en modo lista */}
             <div className="flex-1 p-4 flex justify-between items-center">
-              <div className="flex-1 px-6">
+              <div className="flex-1 px-6" style={roundedFontStyle}>
                 <h1 className="text-2xl font-black text-black leading-none">
                   {product.name.toLowerCase()}
                 </h1>
@@ -158,7 +158,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                   <div className="text-sm text-gray-600">{barcode}</div>
                   <img src={qrUrl} alt="QR Code" className="w-16 h-16" />
                 </div>
-                <div className="text-sm">
+                <div className="text-sm" style={roundedFontStyle}>
                   <div className="font-medium">ORIGEN: {origin}</div>
                   {points && <div className="font-bold">SUMÁ {points} PUNTOS</div>}
                 </div>
@@ -180,7 +180,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
             </div>
           )}
 
-          <div className="space-y-4 text-center relative h-full">
+          <div className="space-y-4 text-center relative h-full" style={roundedFontStyle}>
             {/* Reservamos el espacio para el logo siempre, esté visible o no */}
             <div className="h-20">
               {showTopLogo && company?.logo && (
@@ -195,7 +195,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
             </div>
 
             {/* Nombre del producto */}
-            <div className="text-4xl font-bold text-black tracking-tight leading-tight uppercase mt-28 text-center">
+            <div className="text-5xl font-bold text-black tracking-tight leading-tight uppercase mt-28 text-center">
               {product.name}
             </div>
 
