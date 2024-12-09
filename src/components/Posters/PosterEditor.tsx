@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, LayoutGrid, List } from 'lucide-react';
+import { ArrowLeft, LayoutGrid, List, Minus, Plus } from 'lucide-react';
 import { CompanySelect } from './CompanySelect';
 import { RegionSelect } from './RegionSelect';
 import { LocationSelect } from './LocationSelect';
@@ -48,6 +48,14 @@ interface Product {
   imageUrl: string;
   category: string;
 }
+
+const PAPER_FORMATS = [
+  { id: 'A2', width: '420mm', height: '594mm', name: 'A2 (420 × 594 mm)' },
+  { id: 'A3', width: '297mm', height: '420mm', name: 'A3 (297 × 420 mm)' },
+  { id: 'A4', width: '210mm', height: '297mm', name: 'A4 (210 × 297 mm)' },
+  { id: 'letter', width: '215.9mm', height: '279.4mm', name: 'Carta (215.9 × 279.4 mm)' },
+  { id: 'legal', width: '215.9mm', height: '355.6mm', name: 'Legal (215.9 × 355.6 mm)' }
+];
 
 const PROMOTIONS: Promotion[] = [
   {
@@ -223,6 +231,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSendingModalOpen, setIsSendingModalOpen] = useState(false);
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
+  const [selectedFormat, setSelectedFormat] = useState(PAPER_FORMATS[2]); // A4 por defecto
+  const [showFormatSelector, setShowFormatSelector] = useState(false);
+  const [zoom, setZoom] = useState(1);
 
   console.log('LOCATIONS imported:', LOCATIONS); // Debug
   console.log('COMPANIES imported:', COMPANIES); // Debug
@@ -354,6 +365,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       setIsSendingModalOpen(true);
     }, 100);
   };
+
+  // Agregar las funciones de zoom
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
 
   return (
     <>
@@ -527,26 +542,96 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   <label className="text-sm font-medium text-gray-700">
                     Vista previa de carteles:
                   </label>
-                  <div className="flex bg-gray-200 rounded-lg p-1">
-                    <button
-                      onClick={() => setViewMode('grid')}
-                      className={`p-2 rounded-md transition-colors ${
-                        viewMode === 'grid' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      <LayoutGrid className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setViewMode('list')}
-                      className={`p-2 rounded-md transition-colors ${
-                        viewMode === 'list' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      <List className="w-4 h-4" />
-                    </button>
+
+                  {/* Controles agrupados */}
+                  <div className="flex items-center gap-4">
+                    {/* Vista grilla/lista */}
+                    <div className="flex bg-gray-200 rounded-lg p-1">
+                      <button
+                        onClick={() => setViewMode('grid')}
+                        className={`p-2 rounded-md transition-colors ${
+                          viewMode === 'grid' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        <LayoutGrid className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setViewMode('list')}
+                        className={`p-2 rounded-md transition-colors ${
+                          viewMode === 'list' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        <List className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Separador vertical */}
+                    <div className="h-8 w-px bg-gray-200"></div>
+
+                    {/* Selector de formato */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowFormatSelector(!showFormatSelector)}
+                        className="bg-gray-200 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors flex items-center gap-2"
+                      >
+                        {selectedFormat.id}
+                        <span className="text-xs text-gray-500">
+                          {selectedFormat.width} × {selectedFormat.height}
+                        </span>
+                        <svg className="w-4 h-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+
+                      {/* Menú desplegable de formatos */}
+                      {showFormatSelector && (
+                        <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-64 z-50">
+                          {PAPER_FORMATS.map(format => (
+                            <button
+                              key={format.id}
+                              onClick={() => {
+                                setSelectedFormat(format);
+                                setShowFormatSelector(false);
+                              }}
+                              className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center justify-between ${
+                                selectedFormat.id === format.id ? 'bg-gray-50 text-indigo-600' : 'text-gray-700'
+                              }`}
+                            >
+                              <span className="font-medium">{format.name}</span>
+                              <span className="text-xs text-gray-500">
+                                {format.width} × {format.height}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Separador vertical */}
+                    <div className="h-8 w-px bg-gray-200"></div>
+
+                    {/* Controles de zoom */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleZoomOut}
+                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="text-sm text-gray-600 min-w-[3rem] text-center">
+                        {Math.round(zoom * 100)}%
+                      </span>
+                      <button
+                        onClick={handleZoomIn}
+                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
+                {/* Controles del lado derecho */}
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <input
@@ -554,7 +639,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       id="show-logo"
                       checked={showLogo}
                       onChange={(e) => setShowLogo(e.target.checked)}
-                      className="rounded border-gray-300 bg-gray-200 text-gray-500 focus:ring-gray-500"
+                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />
                     <label htmlFor="show-logo" className="text-sm text-gray-700">
                       Mostrar logo
@@ -591,6 +676,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         origin="ARGENTINA"
                         barcode="7790895000782"
                         compact={viewMode === 'list'}
+                        selectedFormat={selectedFormat}
+                        zoom={zoom}
                       />
                     </div>
                   ))}

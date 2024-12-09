@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
+import Select from 'react-select';
 
 interface Product {
   id: string;
@@ -16,127 +17,79 @@ interface ProductSelectProps {
   products: Product[];
 }
 
-export const ProductSelect: React.FC<ProductSelectProps> = ({ value, onChange, products }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
+interface ProductOption {
+  value: string;
+  label: string;
+  price: number;
+  category: string;
+}
 
-  const selectedProducts = products.filter(p => value.includes(p.id));
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.category.toLowerCase().includes(search.toLowerCase())
+// Función para transformar un producto en una opción del selector
+const mapProductToOption = (product: Product): ProductOption => ({
+  value: product.id,
+  label: `${product.name} - $${product.price.toLocaleString('es-AR')}`,
+  price: product.price,
+  category: product.category
+});
+
+export const ProductSelect: React.FC<ProductSelectProps> = ({
+  value,
+  onChange,
+  products,
+  ...props
+}) => {
+  // Transformar productos a opciones
+  const options = products.map(mapProductToOption);
+
+  // Personalizar el renderizado de cada opción
+  const customOption = ({ label, price, category }: ProductOption) => (
+    <div className="flex justify-between items-center py-1">
+      <div>
+        <div className="font-medium text-gray-900">{label}</div>
+        <div className="text-sm text-gray-600">{category}</div>
+      </div>
+      <div className="text-sm font-medium text-gray-900">
+        ${price.toLocaleString('es-AR')}
+      </div>
+    </div>
   );
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const toggleProduct = (productId: string) => {
-    if (value.includes(productId)) {
-      onChange(value.filter(id => id !== productId));
-    } else {
-      onChange([...value, productId]);
-    }
-  };
-
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-left flex items-center justify-between
-                 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      >
-        <div className="flex flex-col w-full gap-2">
-          {selectedProducts.length > 0 ? (
-            <div className="space-y-2">
-              {selectedProducts.map(product => (
-                <div 
-                  key={product.id}
-                  className="flex flex-col bg-gray-50 p-2 rounded-md"
-                >
-                  <div className="flex items-center gap-2">
-                    <img 
-                      src={product.imageUrl} 
-                      alt={product.name}
-                      className="w-6 h-6 object-cover rounded"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{product.name}</span>
-                          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-200 text-gray-600">
-                            {product.category}
-                          </span>
-                        </div>
-                        <span className="text-sm text-gray-500">${product.price}</span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{product.description}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <span className="text-gray-500">Seleccionar productos...</span>
-          )}
-        </div>
-        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform flex-shrink-0 ml-2 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-          <div className="p-2 border-b">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nombre o categoría..."
-                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-          <ul className="py-1 max-h-[300px] overflow-auto">
-            {filteredProducts.map(product => (
-              <li key={product.id}>
-                <button
-                  type="button"
-                  onClick={() => toggleProduct(product.id)}
-                  className={`w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center gap-3
-                            ${value.includes(product.id) ? 'bg-blue-50' : ''}`}
-                >
-                  <img 
-                    src={product.imageUrl} 
-                    alt={product.name}
-                    className="w-10 h-10 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="font-medium">{product.name}</span>
-                        <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
-                          {product.category}
-                        </span>
-                      </div>
-                      <span className="text-sm text-gray-500">${product.price}</span>
-                    </div>
-                    <p className="text-sm text-gray-500">{product.description}</p>
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
+    <Select
+      isMulti
+      options={options}
+      value={options.filter(option => value.includes(option.value))}
+      onChange={(selected) => {
+        onChange(selected ? selected.map(option => option.value) : []);
+      }}
+      formatOptionLabel={customOption}
+      styles={{
+        control: (base) => ({
+          ...base,
+          backgroundColor: 'white',
+        }),
+        option: (base, state) => ({
+          ...base,
+          backgroundColor: state.isFocused ? '#f3f4f6' : 'white',
+          color: 'black',
+          '&:hover': {
+            backgroundColor: '#f3f4f6'
+          }
+        }),
+        multiValue: (base) => ({
+          ...base,
+          backgroundColor: '#f3f4f6'
+        }),
+        multiValueLabel: (base) => ({
+          ...base,
+          color: 'black'
+        }),
+        menu: (base) => ({
+          ...base,
+          backgroundColor: 'white'
+        })
+      }}
+      {...props}
+    />
   );
 }; 
