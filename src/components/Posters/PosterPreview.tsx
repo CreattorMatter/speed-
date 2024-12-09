@@ -287,7 +287,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                         </div>
 
                         {/* Nombre del producto */}
-                        <div className="text-5xl font-bold text-black tracking-tight leading-tight uppercase mt-28 text-center">
+                        <div className="text-4xl font-bold text-black tracking-tight leading-tight uppercase mt-28 text-center">
                           {product.name}
                         </div>
 
@@ -331,7 +331,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                           </div>
 
                           {/* Precio Final */}
-                          <span className="text-[100px] font-black leading-none mb-4" 
+                          <span className="text-[90px] font-black leading-none mb-4" 
                                 style={{ 
                                   ...roundedFontStyle,
                                   letterSpacing: '-0.01em'

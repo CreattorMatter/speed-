@@ -2849,7 +2849,7 @@ export const LocationSelect: React.FC<LocationSelectProps> = ({
 
 === src/components/Posters/PosterEditor.tsx ===
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, LayoutGrid, List } from 'lucide-react';
+import { ArrowLeft, LayoutGrid, List, Minus, Plus } from 'lucide-react';
 import { CompanySelect } from './CompanySelect';
 import { RegionSelect } from './RegionSelect';
 import { LocationSelect } from './LocationSelect';
@@ -2898,6 +2898,14 @@ interface Product {
   imageUrl: string;
   category: string;
 }
+
+const PAPER_FORMATS = [
+  { id: 'A2', width: '420mm', height: '594mm', name: 'A2 (420 × 594 mm)' },
+  { id: 'A3', width: '297mm', height: '420mm', name: 'A3 (297 × 420 mm)' },
+  { id: 'A4', width: '210mm', height: '297mm', name: 'A4 (210 × 297 mm)' },
+  { id: 'letter', width: '215.9mm', height: '279.4mm', name: 'Carta (215.9 × 279.4 mm)' },
+  { id: 'legal', width: '215.9mm', height: '355.6mm', name: 'Legal (215.9 × 355.6 mm)' }
+];
 
 const PROMOTIONS: Promotion[] = [
   {
@@ -3070,9 +3078,14 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [showPesosCheck, setShowPesosCheck] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
-  const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSendingModalOpen, setIsSendingModalOpen] = useState(false);
+  const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
+  const [selectedFormat, setSelectedFormat] = useState(PAPER_FORMATS[2]); // A4 por defecto
+  const [showFormatSelector, setShowFormatSelector] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [cardSize, setCardSize] = useState(0.85);
+  const [isLandscape, setIsLandscape] = useState(false);
 
   console.log('LOCATIONS imported:', LOCATIONS); // Debug
   console.log('COMPANIES imported:', COMPANIES); // Debug
@@ -3203,6 +3216,17 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     setTimeout(() => {
       setIsSendingModalOpen(true);
     }, 100);
+  };
+
+  // Agregar las funciones de zoom
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
+
+  const handleCardSizeChange = (newSize: number) => {
+    // Redondeamos al múltiplo de 5 más cercano
+    const roundedSize = Math.round(newSize * 20) / 20;
+    // Limitamos entre 50% y 120%
+    setCardSize(Math.max(0.5, Math.min(roundedSize, 1.2)));
   };
 
   return (
@@ -3374,29 +3398,138 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             <div className="border-t border-gray-200 pt-6">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-4">
-                  <label className="text-sm font-medium text-gray-700">
-                    Vista previa de carteles:
-                  </label>
-                  <div className="flex bg-gray-200 rounded-lg p-1">
+                  {/* Controles agrupados */}
+                  <div className="flex items-center gap-4">
+                    {/* Vista grilla/lista */}
+                    <div className="flex bg-gray-200 rounded-lg p-1">
+                      <button
+                        onClick={() => setViewMode('grid')}
+                        className={`p-2 rounded-md transition-colors ${
+                          viewMode === 'grid' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        <LayoutGrid className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setViewMode('list')}
+                        className={`p-2 rounded-md transition-colors ${
+                          viewMode === 'list' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        <List className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Separador vertical */}
+                    <div className="h-8 w-px bg-gray-200"></div>
+
+                    {/* Selector de formato */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowFormatSelector(!showFormatSelector)}
+                        className="bg-gray-200 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors flex items-center gap-2"
+                      >
+                        {selectedFormat.id}
+                        <span className="text-xs text-gray-500">
+                          {selectedFormat.width} × {selectedFormat.height}
+                        </span>
+                        <svg className="w-4 h-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+
+                      {/* Menú desplegable de formatos */}
+                      {showFormatSelector && (
+                        <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-64 z-50">
+                          {PAPER_FORMATS.map(format => (
+                            <button
+                              key={format.id}
+                              onClick={() => {
+                                setSelectedFormat(format);
+                                setShowFormatSelector(false);
+                              }}
+                              className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center justify-between ${
+                                selectedFormat.id === format.id ? 'bg-gray-50 text-indigo-600' : 'text-gray-700'
+                              }`}
+                            >
+                              <span className="font-medium">{format.name}</span>
+                              <span className="text-xs text-gray-500">
+                                {format.width} × {format.height}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Separador vertical */}
+                    <div className="h-8 w-px bg-gray-200"></div>
+
+                    {/* Control de orientación */}
                     <button
-                      onClick={() => setViewMode('grid')}
-                      className={`p-2 rounded-md transition-colors ${
-                        viewMode === 'grid' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
-                      }`}
+                      onClick={() => setIsLandscape(!isLandscape)}
+                      className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors flex items-center gap-2"
                     >
-                      <LayoutGrid className="w-4 h-4" />
+                      <svg 
+                        className={`w-4 h-4 transition-transform ${isLandscape ? 'rotate-90' : ''}`} 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor"
+                      >
+                        <rect x="4" y="5" width="16" height="14" rx="2" strokeWidth="2"/>
+                      </svg>
+                      <span className="text-sm">
+                        {isLandscape ? 'Horizontal' : 'Vertical'}
+                      </span>
                     </button>
-                    <button
-                      onClick={() => setViewMode('list')}
-                      className={`p-2 rounded-md transition-colors ${
-                        viewMode === 'list' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      <List className="w-4 h-4" />
-                    </button>
+
+                    {/* Separador vertical */}
+                    <div className="h-8 w-px bg-gray-200"></div>
+
+                    {/* Controles de zoom */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleZoomOut}
+                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="text-sm text-gray-600 min-w-[3rem] text-center">
+                        {Math.round(zoom * 100)}%
+                      </span>
+                      <button
+                        onClick={handleZoomIn}
+                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Separador vertical */}
+                    <div className="h-8 w-px bg-gray-200"></div>
+
+                    {/* Controles de tamaño del cartel */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleCardSizeChange(cardSize - 0.05)}
+                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="text-sm text-gray-600 min-w-[3rem] text-center">
+                        {Math.round(cardSize * 100)}%
+                      </span>
+                      <button
+                        onClick={() => handleCardSizeChange(cardSize + 0.05)}
+                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
+                {/* Controles del lado derecho */}
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <input
@@ -3404,7 +3537,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       id="show-logo"
                       checked={showLogo}
                       onChange={(e) => setShowLogo(e.target.checked)}
-                      className="rounded border-gray-300 bg-gray-200 text-gray-500 focus:ring-gray-500"
+                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />
                     <label htmlFor="show-logo" className="text-sm text-gray-700">
                       Mostrar logo
@@ -3430,8 +3563,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   {mappedProducts.map(product => (
                     <div key={product.id} 
                          className={`flex justify-center ${viewMode === 'list' ? 'bg-gray-100 rounded-lg p-4' : ''}`}
-                         onClick={() => setSelectedPoster(product)}
-                         style={{ cursor: 'pointer' }}
                     >
                       <PosterPreview
                         product={product}
@@ -3443,6 +3574,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         origin="ARGENTINA"
                         barcode="7790895000782"
                         compact={viewMode === 'list'}
+                        selectedFormat={selectedFormat}
+                        zoom={zoom}
+                        cardSize={cardSize}
+                        isLandscape={isLandscape}
                       />
                     </div>
                   ))}
@@ -3463,6 +3598,13 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             category={selectedCategory}
           />
 
+          <SendingModal
+            isOpen={isSendingModalOpen}
+            onClose={() => setIsSendingModalOpen(false)}
+            locations={filteredLocations.filter(loc => cc.includes(loc.id))}
+            productsCount={selectedProducts.length}
+          />
+
           <PosterModal
             isOpen={!!selectedPoster}
             onClose={() => setSelectedPoster(null)}
@@ -3470,13 +3612,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             promotion={selectedPromotion}
             company={companyDetails}
             showLogo={showLogo}
-          />
-
-          <SendingModal
-            isOpen={isSendingModalOpen}
-            onClose={() => setIsSendingModalOpen(false)}
-            locations={filteredLocations.filter(loc => cc.includes(loc.id))}
-            productsCount={selectedProducts.length}
           />
         </main>
       </div>
@@ -3542,7 +3677,7 @@ export const PosterModal: React.FC<PosterModalProps> = ({
 
 
 === src/components/Posters/PosterPreview.tsx ===
-import React from 'react';
+import React, { useState } from 'react';
 
 interface Product {
   id: string;
@@ -3581,7 +3716,25 @@ interface PosterPreviewProps {
     name: string;
   };
   compact?: boolean;
+  selectedFormat: {
+    id: string;
+    width: string;
+    height: string;
+    name: string;
+  };
+  zoom: number;
+  cardSize: number;
+  isLandscape?: boolean;
 }
+
+// Definimos los formatos de papel disponibles
+const PAPER_FORMATS = [
+  { id: 'A2', width: '420mm', height: '594mm', name: 'A2 (420 × 594 mm)' },
+  { id: 'A3', width: '297mm', height: '420mm', name: 'A3 (297 × 420 mm)' },
+  { id: 'A4', width: '210mm', height: '297mm', name: 'A4 (210 × 297 mm)' },
+  { id: 'letter', width: '215.9mm', height: '279.4mm', name: 'Carta (215.9 × 279.4 mm)' },
+  { id: 'legal', width: '215.9mm', height: '355.6mm', name: 'Legal (215.9 × 355.6 mm)' }
+];
 
 export const PosterPreview: React.FC<PosterPreviewProps> = ({ 
   product,
@@ -3592,11 +3745,47 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   points = '',
   origin = 'ARGENTINA',
   barcode = '7790895000782',
+  compact = false,
   size,
-  compact = false
+  selectedFormat,
+  zoom,
+  cardSize,
+  isLandscape = false
 }) => {
-  const isCenefa = size?.id.includes('cenefa');
-  const isFleje = size?.id === 'fleje';
+  // En el componente, agregamos el estado para el formato seleccionado
+  const [showFormatSelector, setShowFormatSelector] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  // Manejadores de movimiento
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Solo activar el arrastre si se hace clic en el cartel
+    const target = e.target as HTMLElement;
+    if (!target.closest('.poster-content')) return;
+
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    
+    // Calcular nueva posición
+    const newX = e.clientX - dragStart.x;
+    const newY = e.clientY - dragStart.y;
+
+    // Limitar el movimiento dentro de la hoja
+    const maxOffset = 500; // Aumentamos el rango de movimiento
+    setPosition({
+      x: Math.max(-maxOffset, Math.min(maxOffset, newX)),
+      y: Math.max(-maxOffset, Math.min(maxOffset, newY))
+    });
+  };
 
   // Calcular el precio con descuento
   const calculatePrice = () => {
@@ -3661,125 +3850,211 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
     fontFamily: 'VAG Rounded BT, VAG Rounded Std, Arial Rounded MT Bold, Arial Black, sans-serif'
   };
 
+  // Renderizado normal cuando no es modal
   return (
-    <div>
-      {/* Resto del componente existente */}
-      <div className={`${compact ? 'flex gap-4 items-center' : ''}`}>
-        <div className={`relative bg-white rounded-lg shadow-xl overflow-hidden z-0
-                      ${compact ? 'w-full' : 'w-[900px] h-[500px]'}`}
+    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-8">
+      <div className="flex gap-4 items-start">
+        {/* Área de la hoja con zoom y movimiento */}
+        <div 
+          className="relative overflow-hidden flex items-center justify-center"
           style={{
-            width: compact ? '100%' : '800px',
-            height: compact ? 'auto' : '500px',
-            padding: '1.5 rem',
-            border: '1px solid #e5e7eb',
-            ...roundedFontStyle
+            width: '100vw',
+            height: '90vh',
+            cursor: isDragging ? 'grabbing' : 'grab'
           }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={() => setIsDragging(false)}
+          onMouseLeave={() => setIsDragging(false)}
         >
-          <div className="relative z-2 flex flex-col h-full">
-            {/* Logo de fondo translúcido */}
-            {company?.logo && (
-              <div className="absolute inset-0 flex items-center justify-center z-0">
-                <img 
-                  src={company.logo}
-                  alt={company.name}
-                  className="w-2/3 h-auto object-contain opacity-5"
-                />
-              </div>
-            )}
+          <div className="relative"> {/* Contenedor para la hoja y los controles */}
+            {/* Mantener solo la hoja */}
+            <div 
+              className="bg-white shadow-xl relative transition-transform"
+              style={{ 
+                width: isLandscape ? selectedFormat.height : selectedFormat.width, 
+                height: isLandscape ? selectedFormat.width : selectedFormat.height,
+                transform: `scale(${zoom}) translate(${position.x}px, ${position.y}px)`,
+                transformOrigin: 'center center',
+                backgroundImage: `
+                  linear-gradient(to right, #f0f0f0 1px, transparent 1px),
+                  linear-gradient(to bottom, #f0f0f0 1px, transparent 1px)
+                `,
+                backgroundSize: '10mm 10mm',
+              }}
+            >
+              {/* Cartel */}
+              <div 
+                className="poster-content absolute inset-0 flex items-center justify-center z-[9000]"
+              >
+                {compact ? (
+                  <div className="transform" style={{ transform: `scale(${cardSize})` }}>
+                    <div className="relative bg-white rounded-lg shadow-2xl overflow-hidden z-0 w-[900px] h-[200px] flex">
+                      {/* Logo en modo lista */}
+                      {company?.logo && showTopLogo && (
+                        <div className="w-[200px] p-4 flex items-center justify-center border-r border-gray-100">
+                          <img 
+                            src={company.logo}
+                            alt={company.name}
+                            className="h-full w-auto object-contain"
+                          />
+                        </div>
+                      )}
 
-            {/* Logo superior izquierdo */}
-            {company?.logo && showTopLogo && (
-              <div className="absolute top-20 left-3 z-1">
-                <img 
-                  src={company.logo}
-                  alt={company.name}
-                  className="h-24 w-auto object-contain"
-                />
-              </div>
-            )}
+                      {/* Contenido en modo lista */}
+                      <div className="flex-1 p-4 flex justify-between items-center">
+                        <div className="flex-1 px-6" style={roundedFontStyle}>
+                          <h1 className="text-2xl font-black text-black leading-none">
+                            {product.name.toLowerCase()}
+                          </h1>
+                          <div className="mt-2 flex items-center gap-4">
+                            <span className="text-2xl text-gray-400 line-through">
+                              ${product.price.toLocaleString('es-AR')}
+                            </span>
+                            {promotion && (
+                              <div className="bg-red-600 text-center text-white px-4 py-1 rounded-full text-lg font-bold">
+                                {promotion.discount}
+                              </div>
+                            )}
+                          </div>
+                          <div className="mt-2">
+                            <span className="text-4xl font-black text-black" style={roundedFontStyle}>
+                              ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
+                            </span>
+                          </div>
+                        </div>
 
-            {/* Resto del contenido con z-index mayor */}
-            <div className="relative z-2">
-              {/* Nombre del producto */}
-              <div className="text-center mb-4 mt-4">
-                <h1 className="text-[50px] font-black text-black leading-none" 
-                    style={roundedFontStyle}>
-                  {product.name.toLowerCase()}
-                </h1>
-                <p className="text-[22px] text-gray-600 mt-1" 
-                   style={roundedFontStyle}>
-                  {product.description.toLowerCase()}
-                </p>
-              </div>
-
-              {/* Condiciones y vigencia */}
-              <div className="text-right absolute top-40 right-10">
-                <div className="text-[14px]" style={roundedFontStyle}>
-                  <span className="text-gray-600">Condiciones:</span><br />
-                  • Válido solo los jueves
-                </div>
-                <div className="text-[14px]" style={roundedFontStyle}>
-                  <span className="text-gray-600">Vigencia:</span><br />
-                  Del {promotion?.startDate}<br />
-                  al {promotion?.endDate}
-                </div>
-              </div>
-
-              {/* Sección de precios */}
-              <div className="flex-grow flex flex-col items-center justify-center -mt-0">
-                {/* Precio tachado y descuento */}
-                <div className="flex items-center gap-4 mb-4">
-                  <span className="text-[50px] text-gray-400 line-through" 
-                        style={roundedFontStyle}>
-                    ${product.price.toLocaleString('es-AR')}
-                  </span>
-                  <div className="bg-red-600 text-white px-6 py-1.5 rounded-full text-[18px] font-bold"
-                       style={roundedFontStyle}>
-                    Hasta {promotion?.discount}
+                        <div className="flex items-center gap-8">
+                          <div className="flex items-center gap-4">
+                            <div className="text-sm text-gray-600">SKU: {barcode}</div>
+                            <img src={qrUrl} alt="QR Code" className="w-16 h-16" />
+                          </div>
+                          <div className="text-sm" style={roundedFontStyle}>
+                            <div className="font-medium">ORIGEN: {origin}</div>
+                            {points && <div className="font-bold">SUMÁ {points} PUNTOS</div>}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="transform" style={{ transform: `scale(${cardSize})` }}>
+                    <div className="bg-white p-2 rounded-lg shadow-2xl w-[900px] h-[600px] relative overflow-hidden">
+                      {/* Logo de fondo translúcido */}
+                      {company?.logo && (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-5">
+                          <img 
+                            src={company.logo}
+                            alt={company.name}
+                            className="w-2/3 object-contain"
+                          />
+                        </div>
+                      )}
 
-                {/* Precio Final */}
-                <span className="text-[110px] font-black leading-none mb-8" 
-                      style={{ 
-                        ...roundedFontStyle,
-                        letterSpacing: '-0.01em'
-                      }}>
-                  ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
-                </span>
-              </div>
+                      <div className="space-y-4 text-center relative h-full" style={roundedFontStyle}>
+                        {/* Reservamos el espacio para el logo siempre, esté visible o no */}
+                        <div className="h-20">
+                          {showTopLogo && company?.logo && (
+                            <div className="absolute left-1 top-1">
+                              <img 
+                                src={company.logo}
+                                alt={company.name}
+                                className="h-24 w-auto object-contain"
+                              />
+                            </div>
+                          )}
+                        </div>
 
-              {/* Footer - En la parte inferior */}
-              <div className="flex justify-between items-end absolute bottom-39 left-8 right-8">
-                {/* Columna izquierda */}
-                <div className="flex flex-col gap-1">
-                  <div className="text-[16px] font-bold" style={roundedFontStyle}>
-                    PRECIO X LITRO ${pricePerUnit}
-                  </div>
-                  <div className="text-[16px]" style={roundedFontStyle}>
-                    {barcode}
-                  </div>
-                  <div className="text-[16px] font-bold" style={roundedFontStyle}>
-                    ORIGEN: {origin}
-                  </div>
-                </div>
+                        {/* Nombre del producto */}
+                        <div className="text-5xl font-bold text-black tracking-tight leading-tight uppercase mt-28 text-center">
+                          {product.name}
+                        </div>
 
-                {/* Columna derecha */}
-                <div className="flex items-end gap-20">
-                  <div className="text-[16px] font-bold" style={roundedFontStyle}>
-                    SUMÁ {points} PUNTOS JUMBO MÁS
+                        {/* Descuento y Condiciones */}
+                        {promotion && (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-center">
+                              <div className="bg-red-600 text-white px-6 py-2 rounded-full text-3xl font-bold">
+                                {promotion.discount}
+                              </div>
+                            </div>
+
+                            {/* Condiciones y vigencia */}
+                            <div className="text-right absolute top-40 right-10">
+                              {promotion.conditions && promotion.conditions.length > 0 && (
+                                <div className="text-[14px]" style={roundedFontStyle}>
+                                  <span className="text-gray-600">Condiciones:</span><br />
+                                  {promotion.conditions.map((condition, index) => (
+                                    <div key={index}>• {condition}</div>
+                                  ))}
+                                </div>
+                              )}
+                              {(promotion.startDate || promotion.endDate) && (
+                                <div className="text-[14px] mt-2" style={roundedFontStyle}>
+                                  <span className="text-gray-600">Vigencia:</span><br />
+                                  {promotion.startDate && <div>Del {new Date(promotion.startDate).toLocaleDateString()}</div>}
+                                  {promotion.endDate && <div>al {new Date(promotion.endDate).toLocaleDateString()}</div>}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Sección de precios */}
+                        <div className="flex-grow flex flex-col items-center justify-center -mt-0">
+                          {/* Precio tachado y descuento */}
+                          <div className="flex items-center gap-4 mb-4">
+                            <span className="text-[50px] text-gray-400 line-through">
+                              ${product.price.toLocaleString('es-AR')}
+                            </span>
+                          </div>
+
+                          {/* Precio Final */}
+                          <span className="text-[100px] font-black leading-none mb-4" 
+                                style={{ 
+                                  ...roundedFontStyle,
+                                  letterSpacing: '-0.01em'
+                                }}>
+                            ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
+                          </span>
+                        </div>
+
+                        {/* Información adicional */}
+                        <div className="grid grid-cols-2 gap-4 text-gray-800 mt-4">
+                          <div className="space-y-1 text-left">
+                            <div className="text-base font-medium">
+                              ORIGEN: {origin}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            {points && (
+                              <div className="text-base font-bold">
+                                SUMÁ {points} PUNTOS JUMBO MÁS
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Código de barras y QR */}
+                        <div className="flex justify-between items-end mt-4">
+                          <div className="text-base text-left">
+                            SKU: {barcode}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <img 
+                              src={qrUrl}
+                              alt="QR Code"
+                              className="w-16 h-16 rounded bg-white"
+                            />
+                            <span className="text-xs text-gray-500 text-left">
+                              más información<br />del producto
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-end gap-2">
-                    <img 
-                      src={qrUrl}
-                      alt="QR Code"
-                      className="w-[60px] h-[60px]"
-                    />
-                    <span className="text-gray-600 text-[11px] mb-1" style={roundedFontStyle}>
-                      más información<br />del producto
-                    </span>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -3943,6 +4218,7 @@ export const PrintView: React.FC = () => {
 === src/components/Posters/ProductSelect.tsx ===
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
+import Select from 'react-select';
 
 interface Product {
   id: string;
@@ -3959,128 +4235,80 @@ interface ProductSelectProps {
   products: Product[];
 }
 
-export const ProductSelect: React.FC<ProductSelectProps> = ({ value, onChange, products }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
+interface ProductOption {
+  value: string;
+  label: string;
+  price: number;
+  category: string;
+}
 
-  const selectedProducts = products.filter(p => value.includes(p.id));
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.category.toLowerCase().includes(search.toLowerCase())
+// Función para transformar un producto en una opción del selector
+const mapProductToOption = (product: Product): ProductOption => ({
+  value: product.id,
+  label: product.name,
+  price: product.price,
+  category: product.category
+});
+
+export const ProductSelect: React.FC<ProductSelectProps> = ({
+  value,
+  onChange,
+  products,
+  ...props
+}) => {
+  // Transformar productos a opciones
+  const options = products.map(mapProductToOption);
+
+  // Personalizar el renderizado de cada opción
+  const customOption = ({ label, price, category }: ProductOption) => (
+    <div className="flex justify-between items-center py-1">
+      <div>
+        <div className="font-medium text-gray-900">{label}</div>
+        <div className="text-sm text-gray-600">{category}</div>
+      </div>
+      <div className="text-sm font-medium text-gray-900">
+        ${price.toLocaleString('es-AR')}
+      </div>
+    </div>
   );
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const toggleProduct = (productId: string) => {
-    if (value.includes(productId)) {
-      onChange(value.filter(id => id !== productId));
-    } else {
-      onChange([...value, productId]);
-    }
-  };
-
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-left flex items-center justify-between
-                 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      >
-        <div className="flex flex-col w-full gap-2">
-          {selectedProducts.length > 0 ? (
-            <div className="space-y-2">
-              {selectedProducts.map(product => (
-                <div 
-                  key={product.id}
-                  className="flex flex-col bg-gray-50 p-2 rounded-md"
-                >
-                  <div className="flex items-center gap-2">
-                    <img 
-                      src={product.imageUrl} 
-                      alt={product.name}
-                      className="w-6 h-6 object-cover rounded"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{product.name}</span>
-                          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-200 text-gray-600">
-                            {product.category}
-                          </span>
-                        </div>
-                        <span className="text-sm text-gray-500">${product.price}</span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{product.description}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <span className="text-gray-500">Seleccionar productos...</span>
-          )}
-        </div>
-        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform flex-shrink-0 ml-2 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-          <div className="p-2 border-b">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nombre o categoría..."
-                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-          <ul className="py-1 max-h-[300px] overflow-auto">
-            {filteredProducts.map(product => (
-              <li key={product.id}>
-                <button
-                  type="button"
-                  onClick={() => toggleProduct(product.id)}
-                  className={`w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center gap-3
-                            ${value.includes(product.id) ? 'bg-blue-50' : ''}`}
-                >
-                  <img 
-                    src={product.imageUrl} 
-                    alt={product.name}
-                    className="w-10 h-10 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="font-medium">{product.name}</span>
-                        <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
-                          {product.category}
-                        </span>
-                      </div>
-                      <span className="text-sm text-gray-500">${product.price}</span>
-                    </div>
-                    <p className="text-sm text-gray-500">{product.description}</p>
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
+    <Select
+      isMulti
+      options={options}
+      value={options.filter(option => value.includes(option.value))}
+      onChange={(selected) => {
+        onChange(selected ? selected.map(option => option.value) : []);
+      }}
+      formatOptionLabel={customOption}
+      styles={{
+        control: (base) => ({
+          ...base,
+          backgroundColor: 'white',
+        }),
+        option: (base, state) => ({
+          ...base,
+          backgroundColor: state.isFocused ? '#f3f4f6' : 'white',
+          color: 'black',
+          '&:hover': {
+            backgroundColor: '#f3f4f6'
+          }
+        }),
+        multiValue: (base) => ({
+          ...base,
+          backgroundColor: '#f3f4f6'
+        }),
+        multiValueLabel: (base) => ({
+          ...base,
+          color: 'black'
+        }),
+        menu: (base) => ({
+          ...base,
+          backgroundColor: 'white'
+        })
+      }}
+      {...props}
+    />
   );
 }; 
 
@@ -4376,12 +4604,12 @@ export const RegionSelect: React.FC<RegionSelectProps> = ({
 
 === src/components/Posters/SendingModal.tsx ===
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, Send } from 'lucide-react';
+import { Package, Send, Check } from 'lucide-react';
 
 interface SendingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  locations: { id: string; name: string; }[];
+  locations: { id: string; name: string }[];
   productsCount: number;
 }
 
@@ -4391,75 +4619,74 @@ export const SendingModal: React.FC<SendingModalProps> = ({
   locations,
   productsCount
 }) => {
-  const [currentLocation, setCurrentLocation] = useState(0);
-  const [isSending, setIsSending] = useState(true);
-
+  const [step, setStep] = useState(0);
+  
   useEffect(() => {
     if (isOpen) {
-      setCurrentLocation(0);
-      setIsSending(true);
-      
-      const interval = setInterval(() => {
-        setCurrentLocation(prev => {
-          if (prev < locations.length - 1) return prev + 1;
-          clearInterval(interval);
-          setIsSending(false);
-          return prev;
-        });
-      }, 800);
+      setStep(0);
+      const timer1 = setTimeout(() => setStep(1), 1500); // Empacando
+      const timer2 = setTimeout(() => setStep(2), 3000); // Enviando
+      const timer3 = setTimeout(() => {
+        setStep(3);  // Completado
+        setTimeout(onClose, 1000);
+      }, 4500);
 
-      return () => clearInterval(interval);
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+      };
     }
-  }, [isOpen, locations.length]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100]">
-      <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 relative">
-        <h3 className="text-xl font-semibold text-gray-900 mb-6">
-          {isSending ? 'Enviando carteles...' : '¡Envío completado!'}
-        </h3>
-
-        <div className="space-y-4">
-          {locations.map((location, index) => (
-            <div 
-              key={location.id}
-              className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300
-                ${index === currentLocation && isSending ? 'bg-indigo-50 scale-105' : 
-                  index < currentLocation || !isSending ? 'bg-green-50' : 'bg-gray-50'}`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-full 
-                  ${index === currentLocation && isSending ? 'bg-indigo-100' :
-                    index < currentLocation || !isSending ? 'bg-green-100' : 'bg-gray-100'}`}
-                >
-                  {index === currentLocation && isSending ? (
-                    <Send className="w-4 h-4 text-indigo-600 animate-pulse" />
-                  ) : index < currentLocation || !isSending ? (
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <Send className="w-4 h-4 text-gray-400" />
-                  )}
-                </div>
-                <span className="font-medium text-gray-700">{location.name}</span>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full space-y-6">
+        <div className="flex flex-col items-center justify-center space-y-4">
+          {/* Animación de empaque y envío */}
+          <div className="relative h-24 w-24">
+            {step === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center animate-bounce">
+                <Package className="w-12 h-12 text-indigo-600" />
               </div>
-              <span className="text-sm text-gray-500">
-                {productsCount} {productsCount === 1 ? 'cartel' : 'carteles'}
-              </span>
-            </div>
-          ))}
-        </div>
+            )}
+            {step === 1 && (
+              <div className="absolute inset-0 flex items-center justify-center animate-pulse">
+                <Package className="w-12 h-12 text-indigo-600" />
+              </div>
+            )}
+            {step === 2 && (
+              <div className="absolute inset-0 flex items-center justify-center animate-ping">
+                <Send className="w-12 h-12 text-indigo-600" />
+              </div>
+            )}
+            {step === 3 && (
+              <div className="absolute inset-0 flex items-center justify-center animate-bounce">
+                <Check className="w-12 h-12 text-green-500" />
+              </div>
+            )}
+          </div>
 
-        {!isSending && (
-          <button
-            onClick={onClose}
-            className="mt-6 w-full py-2 px-4 bg-indigo-600 text-white rounded-lg
-                     hover:bg-indigo-700 transition-colors font-medium"
-          >
-            Cerrar
-          </button>
-        )}
+          {/* Texto de estado */}
+          <h3 className="text-xl font-medium text-gray-900">
+            {step === 0 && 'Preparando envío...'}
+            {step === 1 && 'Empacando carteles...'}
+            {step === 2 && 'Enviando a sucursales...'}
+            {step === 3 && '¡Envío completado!'}
+          </h3>
+
+          {/* Detalles */}
+          <div className="text-sm text-gray-500 text-center">
+            <p>{productsCount} carteles serán enviados a:</p>
+            <ul className="mt-2 space-y-1">
+              {locations.map(location => (
+                <li key={location.id}>{location.name}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );
