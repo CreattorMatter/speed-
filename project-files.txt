@@ -229,6 +229,7 @@ function AppContent() {
     return (
       <PosterEditor 
         onBack={() => setShowPosterEditor(false)}
+        onLogout={handleLogout}
         initialProducts={location.state?.selectedProducts}
         initialPromotion={location.state?.selectedPromotion}
       />
@@ -1474,10 +1475,11 @@ function getDaysAgo(date: string): number {
 
 
 === src/components/Dashboard.tsx ===
-import React from 'react';
-import { ArrowLeft, LogOut, Plus, Package2, Tags, Star, Clock, FileText, Sun, Moon, LayoutTemplate, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, LogOut, Plus, Package2, Tags, Star, Clock, FileText, Sun, Moon, LayoutTemplate, Settings, Send, FileEdit, Printer, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Header } from './shared/Header';
+import { COMPANIES } from '../data/companies';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -1490,11 +1492,18 @@ interface DashboardProps {
   onSettings: () => void;
 }
 
-interface RecentTemplate {
+interface PlantillaReciente {
   id: string;
-  name: string;
-  type: string;
-  timeAgo: string;
+  nombre: string;
+  tipo: 'envio' | 'edicion' | 'impresion';
+  tiempoAtras: string;
+  sucursal?: string;
+  cantidad?: number;
+  estado: 'impreso' | 'no_impreso';
+  empresa: {
+    nombre: string;
+    logo: string;
+  };
 }
 
 interface DashboardStats {
@@ -1515,32 +1524,311 @@ interface DashboardStats {
   };
 }
 
-const recentTemplates: RecentTemplate[] = [
+const easyLogo = COMPANIES.find(c => c.id === 'easy-mdh')?.logo;
+
+// Constantes para los logos
+const LOGOS = {
+  easy: easyLogo || 'https://upload.wikimedia.org/wikipedia/commons/8/89/Easy_logo.png',
+  jumbo: 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Logo_Jumbo_Cencosud.png',
+  disco: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Disco-Supermarket-Logo.svg/2048px-Disco-Supermarket-Logo.svg.png',
+  vea: 'https://upload.wikimedia.org/wikipedia/commons/9/94/Logo-VEA-Supermercados.png'
+};
+
+const plantillasRecientes: PlantillaReciente[] = [
+  // Easy
   {
     id: '1',
-    name: 'Summer Sale Banner',
-    type: 'Promotion',
-    timeAgo: '2h ago'
+    nombre: 'Carteles Coca Cola',
+    tipo: 'envio',
+    tiempoAtras: 'hace 2h',
+    sucursal: 'Easy San Martín',
+    cantidad: 5,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Easy',
+      logo: LOGOS.easy
+    }
   },
+  // Jumbo
   {
     id: '2',
-    name: 'Product Showcase',
-    type: 'Product Info',
-    timeAgo: '4h ago'
+    nombre: 'Carteles Ofertas Semanales',
+    tipo: 'envio',
+    tiempoAtras: 'hace 3h',
+    sucursal: 'Jumbo Quilmes',
+    cantidad: 10,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Jumbo',
+      logo: LOGOS.jumbo
+    }
   },
+  // Disco
   {
     id: '3',
-    name: 'Store Directory',
-    type: 'Directional',
-    timeAgo: '1d ago'
+    nombre: 'Carteles Black Friday',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 4h',
+    sucursal: 'Disco Belgrano',
+    cantidad: 8,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Disco',
+      logo: LOGOS.disco
+    }
   },
+  // Vea
   {
     id: '4',
-    name: 'Weekly Deals',
-    type: 'Promotion',
-    timeAgo: '2d ago'
+    nombre: 'Carteles Navidad',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 5h',
+    sucursal: 'Vea Caballito',
+    cantidad: 12,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Vea',
+      logo: LOGOS.vea
+    }
+  },
+  // Easy
+  {
+    id: '5',
+    nombre: 'Carteles Electrodomésticos',
+    tipo: 'envio',
+    tiempoAtras: 'hace 6h',
+    sucursal: 'Easy San Justo',
+    cantidad: 20,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Easy',
+      logo: LOGOS.easy
+    }
+  },
+  // Jumbo
+  {
+    id: '6',
+    nombre: 'Carteles Bebidas',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 8h',
+    sucursal: 'Jumbo Palermo',
+    cantidad: 15,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Jumbo',
+      logo: LOGOS.jumbo
+    }
+  },
+  // ... continuar hasta 20 actividades con diferentes empresas y sucursales
+  {
+    id: '7',
+    nombre: 'Carteles Tecnología',
+    tipo: 'envio',
+    tiempoAtras: 'hace 10h',
+    sucursal: 'Disco Núñez',
+    cantidad: 6,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Disco',
+      logo: LOGOS.disco
+    }
+  },
+  {
+    id: '8',
+    nombre: 'Carteles Ofertas Verano',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 12h',
+    sucursal: 'Vea Flores',
+    cantidad: 15,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Vea',
+      logo: LOGOS.vea
+    }
+  },
+  {
+    id: '9',
+    nombre: 'Carteles Productos Frescos',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 14h',
+    sucursal: 'Jumbo Pilar',
+    cantidad: 18,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Jumbo',
+      logo: LOGOS.jumbo
+    }
+  },
+  {
+    id: '10',
+    nombre: 'Carteles Jardín',
+    tipo: 'envio',
+    tiempoAtras: 'hace 16h',
+    sucursal: 'Easy Córdoba',
+    cantidad: 25,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Easy',
+      logo: LOGOS.easy
+    }
+  },
+  {
+    id: '11',
+    nombre: 'Carteles Lácteos',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 18h',
+    sucursal: 'Disco Rosario',
+    cantidad: 10,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Disco',
+      logo: LOGOS.disco
+    }
+  },
+  {
+    id: '12',
+    nombre: 'Carteles Ofertas Fin de Mes',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 20h',
+    sucursal: 'Vea Mendoza',
+    cantidad: 22,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Vea',
+      logo: LOGOS.vea
+    }
+  },
+  {
+    id: '13',
+    nombre: 'Carteles Herramientas',
+    tipo: 'envio',
+    tiempoAtras: 'hace 22h',
+    sucursal: 'Easy Tucumán',
+    cantidad: 14,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Easy',
+      logo: LOGOS.easy
+    }
+  },
+  {
+    id: '14',
+    nombre: 'Carteles Pescadería',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 1d',
+    sucursal: 'Jumbo Neuquén',
+    cantidad: 8,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Jumbo',
+      logo: LOGOS.jumbo
+    }
+  },
+  {
+    id: '15',
+    nombre: 'Carteles Panadería',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 1d',
+    sucursal: 'Disco Mar del Plata',
+    cantidad: 12,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Disco',
+      logo: LOGOS.disco
+    }
+  },
+  {
+    id: '16',
+    nombre: 'Carteles Limpieza',
+    tipo: 'envio',
+    tiempoAtras: 'hace 1d',
+    sucursal: 'Vea San Juan',
+    cantidad: 16,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Vea',
+      logo: LOGOS.vea
+    }
+  },
+  {
+    id: '17',
+    nombre: 'Carteles Decoración',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 2d',
+    sucursal: 'Easy Salta',
+    cantidad: 20,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Easy',
+      logo: LOGOS.easy
+    }
+  },
+  {
+    id: '18',
+    nombre: 'Carteles Carnicería',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 2d',
+    sucursal: 'Jumbo La Plata',
+    cantidad: 9,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Jumbo',
+      logo: LOGOS.jumbo
+    }
+  },
+  {
+    id: '19',
+    nombre: 'Carteles Perfumería',
+    tipo: 'envio',
+    tiempoAtras: 'hace 2d',
+    sucursal: 'Disco Bahía Blanca',
+    cantidad: 11,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Disco',
+      logo: LOGOS.disco
+    }
+  },
+  {
+    id: '20',
+    nombre: 'Carteles Bebidas',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 2d',
+    sucursal: 'Vea Santa Fe',
+    cantidad: 13,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Vea',
+      logo: LOGOS.vea
+    }
   }
 ];
+
+const getIconByType = (tipo: PlantillaReciente['tipo']) => {
+  switch (tipo) {
+    case 'envio':
+      return <Send className="w-4 h-4 text-white" />;
+    case 'edicion':
+      return <FileEdit className="w-4 h-4 text-white" />;
+    case 'impresion':
+      return <Printer className="w-4 h-4 text-white" />;
+    default:
+      return <FileText className="w-4 h-4 text-white" />;
+  }
+};
+
+const getTextByType = (template: PlantillaReciente) => {
+  switch (template.tipo) {
+    case 'envio':
+      return `${template.cantidad} carteles enviados a ${template.sucursal}`;
+    case 'edicion':
+      return `Editados para ${template.sucursal}`;
+    case 'impresion':
+      return `${template.cantidad} carteles impresos para ${template.sucursal}`;
+    default:
+      return template.nombre;
+  }
+};
 
 export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProducts, onPromotions, onBack, userEmail, onSettings }: DashboardProps) {
   // Datos de ejemplo
@@ -1561,6 +1849,8 @@ export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProd
       mostUsed: 'Promoción Bancaria'
     }
   };
+
+  const [selectedActivity, setSelectedActivity] = useState<PlantillaReciente | null>(null);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -1875,39 +2165,201 @@ export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProd
             className="rounded-xl border overflow-hidden backdrop-blur-sm
               bg-white/50 border-gray-200 dark:border-slate-700"
           >
-            <div className="flex justify-between items-center mb-8">
-              <h3 className={`text-lg font-medium text-gray-900`}>
-                Actividad Reciente
-              </h3>
-              <button className={`text-sm text-gray-500 hover:text-gray-700`}>
-                Ver todo
-              </button>
+            <div className="flex flex-col items-center mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <Clock className="w-5 h-5 text-indigo-500" />
+                <h3 className="text-xl font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 
+                               bg-clip-text text-transparent">
+                  Actividad Reciente
+                </h3>
+              </div>
+              <p className="text-sm text-gray-500">
+                Seguimiento de las últimas actualizaciones y cambios
+              </p>
+              <div className="mt-4">
+                <button className="text-sm text-indigo-500 hover:text-indigo-600 font-medium 
+                                  transition-colors duration-200 flex items-center gap-2">
+                  Ver historial completo
+                  <ArrowLeft className="w-4 h-4 rotate-180" />
+                </button>
+              </div>
             </div>
             <div className={`rounded-xl border overflow-hidden
               bg-white border-gray-200`}>
-              {recentTemplates.map((template, index) => (
+              {plantillasRecientes.map((template, index) => (
                 <motion.div 
                   key={template.id}
-                  whileHover={{ backgroundColor: 'rgba(99, 102, 241, 0.1)' }}
-                  className={`flex items-center justify-between p-4 transition-colors
-                            ${index !== recentTemplates.length - 1 ? 'border-b border-indigo-500/10' : ''}`}
+                  initial={{ opacity: 0.9, x: 0 }}
+                  whileHover={{ 
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    scale: 1.01,
+                    x: 4,
+                    transition: {
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 20
+                    }
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSelectedActivity(template)}
+                  className={`flex items-center justify-between p-4 transition-all duration-200 cursor-pointer
+                            ${index !== plantillasRecientes.length - 1 ? 'border-b border-indigo-500/10' : ''}
+                            hover:shadow-lg hover:shadow-indigo-500/10`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 
-                                  flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                      <FileText className="w-4 h-4 text-white" />
-                    </div>
+                    <motion.div 
+                      whileHover={{ rotate: [0, -10, 10, -10, 0] }}
+                      transition={{ duration: 0.5 }}
+                      className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 
+                                flex items-center justify-center shadow-lg shadow-indigo-500/20"
+                    >
+                      {getIconByType(template.tipo)}
+                    </motion.div>
+                    <img 
+                      src={template.empresa.logo}
+                      alt={template.empresa.nombre}
+                      className="w-6 h-6 object-contain"
+                    />
                     <div>
-                      <p className="font-medium text-indigo-300">{template.name}</p>
-                      <p className="text-sm text-indigo-300/40">{template.type}</p>
+                      <p className="font-medium text-indigo-300">{template.nombre}</p>
+                      <p className="text-sm text-indigo-300/40">{getTextByType(template)}</p>
                     </div>
                   </div>
-                  <span className="text-sm text-indigo-300/40">{template.timeAgo}</span>
+                  <motion.div 
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      template.estado === 'impreso' 
+                        ? 'bg-green-100 text-green-800 border border-green-200' 
+                        : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                    }`}
+                  >
+                    {template.estado === 'impreso' ? (
+                      <div className="flex items-center gap-1">
+                        <span>✓</span>
+                        <span>Impreso</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <span>No impreso</span>
+                      </div>
+                    )}
+                  </motion.div>
                 </motion.div>
               ))}
             </div>
           </motion.div>
         </div>
+
+        {selectedActivity && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedActivity(null)}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.5, y: 100 }}
+              animate={{ 
+                opacity: 1, 
+                scale: 1, 
+                y: 0,
+                transition: {
+                  type: "spring",
+                  duration: 0.5,
+                  bounce: 0.3
+                }
+              }}
+              exit={{ 
+                opacity: 0, 
+                scale: 0.8, 
+                y: -100,
+                transition: { duration: 0.2 }
+              }}
+              onClick={e => e.stopPropagation()}
+              className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 relative
+                        shadow-2xl shadow-indigo-500/20"
+            >
+              <motion.button 
+                whileHover={{ rotate: 90 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setSelectedActivity(null)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </motion.button>
+
+              <motion.div 
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="flex items-center gap-4 mb-6"
+              >
+                <motion.div 
+                  whileHover={{ rotate: [0, -10, 10, -10, 0] }}
+                  className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 
+                            flex items-center justify-center shadow-lg shadow-indigo-500/20"
+                >
+                  {getIconByType(selectedActivity.tipo)}
+                </motion.div>
+                <div>
+                  <h3 className="text-xl font-medium text-gray-900">{selectedActivity.nombre}</h3>
+                  <p className="text-sm text-gray-500">{selectedActivity.sucursal}</p>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="space-y-4"
+              >
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Empresa</span>
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src={selectedActivity.empresa.logo}
+                      alt={selectedActivity.empresa.nombre}
+                      className="w-6 h-6 object-contain"
+                    />
+                    <span className="text-gray-900">{selectedActivity.empresa.nombre}</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Cantidad</span>
+                  <span className="text-gray-900">{selectedActivity.cantidad} carteles</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Tiempo</span>
+                  <span className="text-gray-900">{selectedActivity.tiempoAtras}</span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Estado</span>
+                  <motion.div 
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      selectedActivity.estado === 'impreso' 
+                        ? 'bg-green-100 text-green-800 border border-green-200' 
+                        : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                    }`}
+                  >
+                    {selectedActivity.estado === 'impreso' ? (
+                      <div className="flex items-center gap-1">
+                        <span>✓</span>
+                        <span>Impreso</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <span>No impreso</span>
+                      </div>
+                    )}
+                  </motion.div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );
@@ -1960,7 +2412,7 @@ export const LoadingModal: React.FC<LoadingModalProps> = ({ isOpen }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100]">
       <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg p-6 w-96 space-y-4">
         <div className="flex flex-col items-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-violet-500"></div>
@@ -2340,8 +2792,8 @@ export const LocationMap: React.FC<LocationMapProps> = ({ location }) => {
 
 
 === src/components/Posters/LocationSelect.tsx ===
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import React from 'react';
+import Select from 'react-select';
 
 interface Location {
   id: string;
@@ -2350,67 +2802,47 @@ interface Location {
 }
 
 interface LocationSelectProps {
-  value: string;
-  onChange: (value: string) => void;
+  value: string[];
+  onChange: (values: string[]) => void;
   locations: Location[];
   disabled?: boolean;
+  isMulti?: boolean;
+  className?: string;
 }
 
-export const LocationSelect: React.FC<LocationSelectProps> = ({ value, onChange, locations, disabled }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  const selectedLocation = locations.find(l => l.id === value);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
+export const LocationSelect: React.FC<LocationSelectProps> = ({
+  value,
+  onChange,
+  locations,
+  disabled = false,
+  isMulti = false,
+  className
+}) => {
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-left flex items-center justify-between
-                 focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                 ${disabled ? 'bg-gray-50 cursor-not-allowed' : ''}`}
-      >
-        <span className={selectedLocation ? '' : 'text-gray-500'}>
-          {selectedLocation ? selectedLocation.name : 'Seleccionar localidad...'}
-        </span>
-        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && !disabled && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-          <ul className="py-1 max-h-60 overflow-auto">
-            {locations.map(location => (
-              <li key={location.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onChange(location.id);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full px-3 py-2 text-left hover:bg-gray-100
-                            ${value === location.id ? 'bg-blue-50' : ''}`}
-                >
-                  {location.name}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
+    <Select
+      isMulti={isMulti}
+      isDisabled={disabled}
+      value={locations.filter(l => value.includes(l.id)).map(l => ({
+        value: l.id,
+        label: l.name
+      }))}
+      onChange={(newValue: any) => {
+        const selectedValues = newValue ? (Array.isArray(newValue) 
+          ? newValue.map(v => v.value)
+          : [newValue.value]) 
+        : [];
+        onChange(selectedValues);
+      }}
+      options={locations.map(l => ({
+        value: l.id,
+        label: l.name
+      }))}
+      classNames={{
+        control: (state) => `${className} ${state.isFocused ? 'border-indigo-500' : ''}`,
+        menu: () => "bg-white rounded-lg shadow-lg",
+        option: () => "px-3 py-2 hover:bg-gray-100 cursor-pointer"
+      }}
+    />
   );
 }; 
 
@@ -2424,11 +2856,8 @@ import { LocationSelect } from './LocationSelect';
 import { PromotionSelect } from './PromotionSelect';
 import { ProductSelect } from './ProductSelect';
 import { CategorySelect } from './CategorySelect';
-import { PromoType } from './PromoTypeSelect';
 import { PosterPreview } from './PosterPreview';
-import { CategoryPosterPreview } from './CategoryPosterPreview';
 import { useNavigate } from 'react-router-dom';
-import { LocationMap } from './LocationMap';
 import { Header } from '../shared/Header';
 import { useTheme } from '../../hooks/useTheme';
 import { ProductSelectorModal } from '../Products/ProductSelectorModal';
@@ -2436,6 +2865,8 @@ import { PosterModal } from './PosterModal';
 import { COMPANIES } from '../../data/companies';
 import { LOCATIONS, REGIONS } from '../../data/locations';
 import { LoadingModal } from '../LoadingModal';
+import { products } from '../../data/products';
+import { SendingModal } from './SendingModal';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -2461,8 +2892,8 @@ interface Promotion {
 
 interface Product {
   id: string;
+  sku: string;
   name: string;
-  description: string;
   price: number;
   imageUrl: string;
   category: string;
@@ -2614,155 +3045,11 @@ const PROMOTIONS: Promotion[] = [
   }
 ];
 
-const PRODUCTS = [
-  {
-    id: '1',
-    name: 'Leche La Serenísima',
-    description: 'Leche entera 1L',
-    price: 890,
-    imageUrl: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&auto=format&fit=crop&q=60',
-    category: 'Lácteos'
-  },
-  {
-    id: '2',
-    name: 'Yogur Ser',
-    description: 'Yogur bebible frutilla 1L',
-    price: 950,
-    imageUrl: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&auto=format&fit=crop&q=60',
-    category: 'Lácteos'
-  },
-  {
-    id: '3',
-    name: 'Queso Cremon',
-    description: 'Queso cremoso x kg',
-    price: 2500,
-    imageUrl: 'https://images.unsplash.com/photo-1552767059-ce182ead6c1b?w=500&auto=format&fit=crop&q=60',
-    category: 'Lácteos'
-  },
-  {
-    id: '4',
-    name: 'Manteca La Serenísima',
-    description: 'Manteca x 200g',
-    price: 780,
-    imageUrl: 'https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=500&auto=format&fit=crop&q=60',
-    category: 'Lácteos'
-  },
-  {
-    id: '5',
-    name: 'Coca-Cola',
-    description: 'Gaseosa Coca-Cola 2.25L',
-    price: 1200,
-    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=500&auto=format&fit=crop&q=60',
-    category: 'Bebidas'
-  },
-  {
-    id: '6',
-    name: 'Sprite',
-    description: 'Gaseosa Sprite 2.25L',
-    price: 1150,
-    imageUrl: 'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?w=500&auto=format&fit=crop&q=60',
-    category: 'Bebidas'
-  },
-  {
-    id: '7',
-    name: 'Fanta',
-    description: 'Gaseosa Fanta 2.25L',
-    price: 1150,
-    imageUrl: 'https://images.unsplash.com/photo-1624517452488-04869289c4ca?w=500&auto=format&fit=crop&q=60',
-    category: 'Bebidas'
-  },
-  {
-    id: '8',
-    name: 'Agua Mineral',
-    description: 'Agua mineral sin gas 2L',
-    price: 580,
-    imageUrl: 'https://images.unsplash.com/photo-1560493676-04071c5f467b?w=500&auto=format&fit=crop&q=60',
-    category: 'Bebidas'
-  },
-  {
-    id: '9',
-    name: 'Pan Bimbo',
-    description: 'Pan de molde blanco x 500g',
-    price: 920,
-    imageUrl: 'https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?w=500&auto=format&fit=crop&q=60',
-    category: 'Almacén'
-  },
-  {
-    id: '10',
-    name: 'Fideos Matarazzo',
-    description: 'Fideos tallarín x 500g',
-    price: 560,
-    imageUrl: 'https://images.unsplash.com/photo-1612966769270-fe9b9b63ac1a?w=500&auto=format&fit=crop&q=60',
-    category: 'Almacén'
-  },
-  {
-    id: '11',
-    name: 'Arroz Gallo',
-    description: 'Arroz largo fino x 1kg',
-    price: 890,
-    imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=500&auto=format&fit=crop&q=60',
-    category: 'Almacén'
-  },
-  {
-    id: '12',
-    name: 'Aceite Natura',
-    description: 'Aceite de girasol 1.5L',
-    price: 1450,
-    imageUrl: 'https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?w=500&auto=format&fit=crop&q=60',
-    category: 'Almacén'
-  },
-  {
-    id: '13',
-    name: 'Galletitas Oreo',
-    description: 'Galletitas chocolate x 118g',
-    price: 450,
-    imageUrl: 'https://images.unsplash.com/photo-1584644207984-15cf898e18d1?w=500&auto=format&fit=crop&q=60',
-    category: 'Almacén'
-  },
-  {
-    id: '14',
-    name: 'Chocolate Milka',
-    description: 'Chocolate con leche x 120g',
-    price: 780,
-    imageUrl: 'https://images.unsplash.com/photo-1587132137056-bfbf0166836e?w=500&auto=format&fit=crop&q=60',
-    category: 'Almacén'
-  },
-  {
-    id: '15',
-    name: 'Papel Higiénico Elite',
-    description: 'Pack x 4 rollos doble hoja',
-    price: 890,
-    imageUrl: 'https://images.unsplash.com/photo-1585602173562-e7eeb0e6f380?w=500&auto=format&fit=crop&q=60',
-    category: 'Limpieza'
-  },
-  {
-    id: '16',
-    name: 'Detergente Magistral',
-    description: 'Detergente líquido 750ml',
-    price: 680,
-    imageUrl: 'https://images.unsplash.com/photo-1585670149967-b4f4da88cc9f?w=500&auto=format&fit=crop&q=60',
-    category: 'Limpieza'
-  },
-  {
-    id: '17',
-    name: 'Jabón en Polvo Skip',
-    description: 'Jabón en polvo 3kg',
-    price: 2890,
-    imageUrl: 'https://images.unsplash.com/photo-1585670149967-b4f4da88cc9f?w=500&auto=format&fit=crop&q=60',
-    category: 'Limpieza'
-  },
-  {
-    id: '18',
-    name: 'Suavizante Comfort',
-    description: 'Suavizante para ropa 900ml',
-    price: 790,
-    imageUrl: 'https://images.unsplash.com/photo-1585670149967-b4f4da88cc9f?w=500&auto=format&fit=crop&q=60',
-    category: 'Limpieza'
-  }
-];
+console.log('Importación de productos:', { products });
 
 // Extraer categorías únicas de los productos
-const CATEGORIES = Array.from(new Set(PRODUCTS.map(p => p.category)));
+const CATEGORIES = Array.from(new Set(products.map(p => p.category)));
+console.log('Categorías encontradas:', CATEGORIES);
 
 export const PosterEditor: React.FC<PosterEditorProps> = ({ 
   onBack, 
@@ -2773,8 +3060,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [company, setCompany] = useState('');
-  const [region, setRegion] = useState('');
-  const [cc, setCC] = useState('');
+  const [region, setRegion] = useState<string[]>([]);
+  const [cc, setCC] = useState<string[]>([]);
   const [promotion, setPromotion] = useState(initialPromotion?.id || '');
   const [selectedProducts, setSelectedProducts] = useState<string[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -2785,15 +3072,17 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSendingModalOpen, setIsSendingModalOpen] = useState(false);
 
   console.log('LOCATIONS imported:', LOCATIONS); // Debug
   console.log('COMPANIES imported:', COMPANIES); // Debug
+  console.log('Productos disponibles:', products);
 
   // Limpiar región y CC cuando cambia la empresa
   const handleCompanyChange = (newCompany: string) => {
     setCompany(newCompany);
-    setRegion('');
-    setCC('');
+    setRegion([]);
+    setCC([]);
   };
 
   // Filtrar ubicaciones basado en la empresa y región seleccionadas
@@ -2813,9 +3102,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
 
     console.log('Filtered by company:', locations); // Debug
 
-    // Luego filtrar por región si hay una seleccionada y no es "todos"
-    if (region && region !== 'todos') {
-      locations = locations.filter(loc => loc.region === region);
+    // Filtrar por regiones seleccionadas
+    if (region.length > 0 && !region.includes('todos')) {
+      locations = locations.filter(loc => region.includes(loc.region));
     }
 
     console.log('Final filtered locations:', locations); // Debug
@@ -2848,7 +3137,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
 
   // Renombrar a mappedProducts para evitar la redeclaración
   const mappedProducts = selectedProducts.map(productId => 
-    PRODUCTS.find(p => p.id === productId)
+    products.find(p => p.id === productId)
   ).filter((p): p is Product => p !== undefined);
 
   const handlePrint = () => {
@@ -2860,8 +3149,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   };
 
   const companyDetails = COMPANIES.find(c => c.id === company);
-
-  const selectedLocation = LOCATIONS.find(loc => loc.id === cc);
 
   const handlePreview = (product: Product) => {
     navigate('/poster-preview', {
@@ -2892,265 +3179,308 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  return (
-    <div className={`min-h-screen flex flex-col ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
-      <LoadingModal isOpen={isLoading} />
-      
-      <Header onBack={onBack} onLogout={onLogout} />
-      
-      <main className="pt-10 px-6 pb-6 max-w-7xl mx-auto space-y-6 min-h-[1000px]">
-        <div className="flex items-center gap-4 mb-8">
-          <h2 className="text-2xl font-medium text-gray-900">Editor de Carteles</h2>
-        </div>
+  // Modificar donde se usan los productos
+  const filteredProducts = selectedCategory === 'Todos' || !selectedCategory 
+    ? products
+    : products.filter(p => p.category === selectedCategory);
 
-        <div className="bg-white/5 backdrop-blur-lg rounded-xl shadow-2xl p-6 space-y-6 border border-white/10">
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-1">
-                Empresa:
-              </label>
-              <CompanySelect
-                value={company}
-                onChange={handleCompanyChange}
-                companies={COMPANIES}
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-1">
-                Región:
-              </label>
-              <RegionSelect
-                value={region}
-                onChange={(value) => {
-                  setRegion(value);
-                  setCC('');
-                }}
-                regions={availableRegions}
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-1">
-                CC:
-              </label>
-              <LocationSelect
-                value={cc}
-                onChange={setCC}
-                locations={filteredLocations}
-                disabled={!region}
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-              />
-            </div>
-            <div className="col-span-3 mt-4">
-              <LocationMap 
-                location={selectedLocation ? {
-                  name: selectedLocation.name,
-                  coordinates: selectedLocation.coordinates,
-                  address: selectedLocation.address
-                } : undefined}
-              />
-            </div>
+  console.log('Categoría seleccionada:', selectedCategory);
+  console.log('Productos filtrados:', filteredProducts);
+
+  // Agregar el handler para enviar a sucursales
+  const handleSendToLocations = () => {
+    if (!cc.length) {
+      alert('Por favor seleccione al menos una sucursal');
+      return;
+    }
+    if (!selectedProducts.length) {
+      alert('Por favor seleccione al menos un producto');
+      return;
+    }
+
+    // Cerrar el modal si está abierto y volver a abrirlo para reiniciar la animación
+    setIsSendingModalOpen(false);
+    setTimeout(() => {
+      setIsSendingModalOpen(true);
+    }, 100);
+  };
+
+  return (
+    <>
+      <LoadingModal isOpen={isLoading} />
+      <div className="poster-editor-container min-h-screen flex flex-col bg-white">
+        <Header 
+          onBack={onBack} 
+          onLogout={onLogout} 
+          onSettings={() => console.log('Settings clicked')} 
+        />
+        <main className="pt-10 px-6 pb-6 max-w-7xl mx-auto space-y-6 min-h-[1000px]">
+          <div className="flex items-center gap-4 mb-8">
+            <h2 className="text-2xl font-medium text-gray-900">Editor de Carteles</h2>
           </div>
 
-          <div className="border-t">
-            <div>
-              <label className="block text-sm font-medium text-white/90 mb-1">
-                Promoción:
-              </label>
-              <PromotionSelect
-                value={promotion}
-                onChange={setPromotion}
-                promotions={PROMOTIONS}
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-              />
+          <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Empresa:
+                </label>
+                <CompanySelect
+                  value={company}
+                  onChange={handleCompanyChange}
+                  companies={COMPANIES}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Región:
+                </label>
+                <RegionSelect
+                  value={region}
+                  onChange={(values) => {
+                    setRegion(values);
+                    setCC([]);
+                  }}
+                  regions={availableRegions}
+                  isMulti={true}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  CC:
+                </label>
+                <LocationSelect
+                  value={cc}
+                  onChange={setCC}
+                  locations={filteredLocations}
+                  disabled={region.length === 0}
+                  isMulti={true}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
+                />
+              </div>
             </div>
 
-            {selectedPromotion && (
-              <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-                <div className="flex items-start gap-6">
-                  <img 
-                    src={selectedPromotion.imageUrl}
-                    alt={selectedPromotion.title}
-                    className="w-32 h-32 object-cover rounded-lg"
-                  />
-                  <div className="flex-1 space-y-4">
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-medium text-gray-900">
-                          {selectedPromotion.title}
-                        </h3>
-                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                          {selectedPromotion.category}
-                        </span>
-                      </div>
-                      <p className="text-gray-600 mt-1">{selectedPromotion.description}</p>
-                    </div>
+            <div className="border-t border-gray-200">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Promoción:
+                </label>
+                <PromotionSelect
+                  value={promotion}
+                  onChange={setPromotion}
+                  promotions={PROMOTIONS}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
+                />
+              </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+              {selectedPromotion && (
+                <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+                  <div className="flex items-start gap-6">
+                    <img 
+                      src={selectedPromotion.imageUrl}
+                      alt={selectedPromotion.title}
+                      className="w-32 h-32 object-cover rounded-lg"
+                    />
+                    <div className="flex-1 space-y-4">
                       <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Descuento</h4>
-                        <p className="text-2xl font-bold text-indigo-600">{selectedPromotion.discount}</p>
+                        <div className="flex items-center gap-3">
+                          <h3 className="text-lg font-medium text-gray-900">
+                            {selectedPromotion.title}
+                          </h3>
+                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                            {selectedPromotion.category}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 mt-1">{selectedPromotion.description}</p>
                       </div>
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Vigencia</h4>
-                        <p className="text-gray-900">
-                          {new Date(selectedPromotion.startDate).toLocaleDateString()} - {new Date(selectedPromotion.endDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
 
-                    {selectedPromotion.category === 'Bancaria' && (
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-1">Banco</h4>
-                          <p className="text-gray-900">{selectedPromotion.bank}</p>
+                          <h4 className="text-sm font-medium text-gray-700 mb-1">Descuento</h4>
+                          <p className="text-2xl font-bold text-indigo-600">{selectedPromotion.discount}</p>
                         </div>
                         <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-1">Tarjetas</h4>
-                          <p className="text-gray-900">{selectedPromotion.cardType}</p>
+                          <h4 className="text-sm font-medium text-gray-700 mb-1">Vigencia</h4>
+                          <p className="text-gray-900">
+                            {new Date(selectedPromotion.startDate).toLocaleDateString()} - {new Date(selectedPromotion.endDate).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
-                    )}
 
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Condiciones</h4>
-                      <ul className="space-y-1">
-                        {selectedPromotion.conditions.map((condition, index) => (
-                          <li key={index} className="text-gray-600 text-sm flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                            {condition}
-                          </li>
-                        ))}
-                      </ul>
+                      {selectedPromotion.category === 'Bancaria' && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-1">Banco</h4>
+                            <p className="text-gray-900">{selectedPromotion.bank}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-1">Tarjetas</h4>
+                            <p className="text-gray-900">{selectedPromotion.cardType}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Condiciones</h4>
+                        <ul className="space-y-1">
+                          {selectedPromotion.conditions.map((condition, index) => (
+                            <li key={index} className="text-gray-600 text-sm flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                              {condition}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <div className="border-t pt-6">
-            <div className="grid grid-cols-4 gap-4">
-              <div className="col-span-1">
-                <label className="block text-sm font-medium text-white/90 mb-1">
-                  Categoría:
-                </label>
-                <CategorySelect
-                  value={selectedCategory}
-                  onChange={setSelectedCategory}
-                  categories={CATEGORIES}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                />
-              </div>
-              <div className="col-span-3">
-                <label className="block text-sm font-medium text-white/90 mb-1">
-                  Productos:
-                </label>
-                <ProductSelect
-                  value={selectedProducts}
-                  onChange={setSelectedProducts}
-                  products={selectedCategory === 'Todos' || !selectedCategory 
-                    ? PRODUCTS
-                    : PRODUCTS.filter(p => p.category === selectedCategory)
-                  }
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                  menuPlacement="top"
-                />
+            <div className="border-t border-gray-200 pt-6">
+              <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Categoría:
+                  </label>
+                  <CategorySelect
+                    value={selectedCategory}
+                    onChange={setSelectedCategory}
+                    categories={CATEGORIES}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
+                  />
+                </div>
+                <div className="col-span-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Productos:
+                  </label>
+                  <div className="relative">
+                    <ProductSelect
+                      value={selectedProducts}
+                      onChange={setSelectedProducts}
+                      products={filteredProducts}
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
+                      menuPlacement="top"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {(selectedCategory || mappedProducts.length > 0) && (
-          <div className="border-t pt-6">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-4">
-                <label className="text-sm font-medium text-white/90">
-                  Vista previa de carteles:
-                </label>
-                <div className="flex bg-white/10 rounded-lg p-1">
+          {(selectedCategory || mappedProducts.length > 0) && (
+            <div className="border-t border-gray-200 pt-6">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-4">
+                  <label className="text-sm font-medium text-gray-700">
+                    Vista previa de carteles:
+                  </label>
+                  <div className="flex bg-gray-200 rounded-lg p-1">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-2 rounded-md transition-colors ${
+                        viewMode === 'grid' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`p-2 rounded-md transition-colors ${
+                        viewMode === 'list' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="show-logo"
+                      checked={showLogo}
+                      onChange={(e) => setShowLogo(e.target.checked)}
+                      className="rounded border-gray-300 bg-gray-200 text-gray-500 focus:ring-gray-500"
+                    />
+                    <label htmlFor="show-logo" className="text-sm text-gray-700">
+                      Mostrar logo
+                    </label>
+                  </div>
+
                   <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'grid' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
-                    }`}
+                    onClick={handleSendToLocations}
+                    disabled={!cc.length || !selectedProducts.length}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors
+                      ${(!cc.length || !selectedProducts.length)
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
                   >
-                    <LayoutGrid className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'list' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'
-                    }`}
-                  >
-                    <List className="w-4 h-4" />
+                    Enviar a Sucursales
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="show-logo"
-                  checked={showLogo}
-                  onChange={(e) => setShowLogo(e.target.checked)}
-                  className="rounded border-white/20 bg-white/10 text-violet-500 focus:ring-violet-500"
-                />
-                <label htmlFor="show-logo" className="text-sm text-white/90">
-                  Mostrar
-                </label>
+              <div className="h-[800px] w-[1080px] mx-auto overflow-y-auto">
+                <div className={viewMode === 'grid' ? 'space-y-8' : 'space-y-4'}>
+                  {mappedProducts.map(product => (
+                    <div key={product.id} 
+                         className={`flex justify-center ${viewMode === 'list' ? 'bg-gray-100 rounded-lg p-4' : ''}`}
+                         onClick={() => setSelectedPoster(product)}
+                         style={{ cursor: 'pointer' }}
+                    >
+                      <PosterPreview
+                        product={product}
+                        promotion={selectedPromotion}
+                        company={companyDetails}
+                        showTopLogo={showLogo}
+                        pricePerUnit={`${product.price * 2}`}
+                        points="49"
+                        origin="ARGENTINA"
+                        barcode="7790895000782"
+                        compact={viewMode === 'list'}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="h-[800px] w-[1080px] mx-auto overflow-y-auto">
-              <div className={viewMode === 'grid' ? 'space-y-8' : 'space-y-4'}>
-                {mappedProducts.map(product => (
-                  <div key={product.id} 
-                       className={`flex justify-center ${viewMode === 'list' ? 'bg-white/5 rounded-lg p-4' : ''}`}
-                       onClick={() => setSelectedPoster(product)}
-                       style={{ cursor: 'pointer' }}
-                  >
-                    <PosterPreview
-                      product={product}
-                      promotion={selectedPromotion}
-                      company={companyDetails}
-                      showTopLogo={showLogo}
-                      pricePerUnit={`${product.price * 2}`}
-                      points="49"
-                      origin="ARGENTINA"
-                      barcode="7790895000782"
-                      compact={viewMode === 'list'}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+          <ProductSelectorModal
+            isOpen={isProductSelectorOpen}
+            onClose={() => setIsProductSelectorOpen(false)}
+            products={selectedCategory === 'Todos' || !selectedCategory 
+              ? products
+              : products.filter(p => p.category === selectedCategory)
+            }
+            selectedProducts={selectedProducts}
+            onSelectProduct={handleSelectProduct}
+            category={selectedCategory}
+          />
 
-        <ProductSelectorModal
-          isOpen={isProductSelectorOpen}
-          onClose={() => setIsProductSelectorOpen(false)}
-          products={selectedCategory === 'Todos' || !selectedCategory 
-            ? PRODUCTS
-            : PRODUCTS.filter(p => p.category === selectedCategory)
-          }
-          selectedProducts={selectedProducts}
-          onSelectProduct={handleSelectProduct}
-          category={selectedCategory}
-        />
+          <PosterModal
+            isOpen={!!selectedPoster}
+            onClose={() => setSelectedPoster(null)}
+            product={selectedPoster!}
+            promotion={selectedPromotion}
+            company={companyDetails}
+            showLogo={showLogo}
+          />
 
-        <PosterModal
-          isOpen={!!selectedPoster}
-          onClose={() => setSelectedPoster(null)}
-          product={selectedPoster!}
-          promotion={selectedPromotion}
-          company={companyDetails}
-          showLogo={showLogo}
-        />
-      </main>
-    </div>
+          <SendingModal
+            isOpen={isSendingModalOpen}
+            onClose={() => setIsSendingModalOpen(false)}
+            locations={filteredLocations.filter(loc => cc.includes(loc.id))}
+            productsCount={selectedProducts.length}
+          />
+        </main>
+      </div>
+    </>
   );
 }; 
 
@@ -3186,7 +3516,7 @@ export const PosterModal: React.FC<PosterModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100]">
       <div className="relative">
         <button
           onClick={onClose}
@@ -3335,7 +3665,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
     <div>
       {/* Resto del componente existente */}
       <div className={`${compact ? 'flex gap-4 items-center' : ''}`}>
-        <div className={`relative bg-white rounded-lg shadow-xl overflow-hidden
+        <div className={`relative bg-white rounded-lg shadow-xl overflow-hidden z-0
                       ${compact ? 'w-full' : 'w-[900px] h-[500px]'}`}
           style={{
             width: compact ? '100%' : '800px',
@@ -3345,7 +3675,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
             ...roundedFontStyle
           }}
         >
-          <div className="relative z-10 flex flex-col h-full">
+          <div className="relative z-2 flex flex-col h-full">
             {/* Logo de fondo translúcido */}
             {company?.logo && (
               <div className="absolute inset-0 flex items-center justify-center z-0">
@@ -3359,7 +3689,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
             {/* Logo superior izquierdo */}
             {company?.logo && showTopLogo && (
-              <div className="absolute top-6 left-6 z-20">
+              <div className="absolute top-20 left-3 z-1">
                 <img 
                   src={company.logo}
                   alt={company.name}
@@ -3369,7 +3699,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
             )}
 
             {/* Resto del contenido con z-index mayor */}
-            <div className="relative z-10">
+            <div className="relative z-2">
               {/* Nombre del producto */}
               <div className="text-center mb-4 mt-4">
                 <h1 className="text-[50px] font-black text-black leading-none" 
@@ -3755,6 +4085,73 @@ export const ProductSelect: React.FC<ProductSelectProps> = ({ value, onChange, p
 }; 
 
 
+=== src/components/Posters/ProductSelector.tsx ===
+import { useState } from 'react';
+import { products, productCategories, brands } from '../../data/products';
+
+interface ProductSelectorProps {
+  onSelectProduct: (product: Product) => void;
+}
+
+export function ProductSelector({ onSelectProduct }: ProductSelectorProps) {
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedBrand, setSelectedBrand] = useState<string>('');
+  
+  const filteredProducts = products.filter(product => {
+    if (selectedCategory && product.subCategory !== selectedCategory) return false;
+    if (selectedBrand && product.brand !== selectedBrand) return false;
+    return true;
+  });
+
+  return (
+    <div className="p-4">
+      <div className="flex gap-4 mb-4">
+        <select 
+          className="p-2 border rounded"
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          value={selectedCategory}
+        >
+          <option value="">Todas las categorías</option>
+          {productCategories.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+
+        <select
+          className="p-2 border rounded"
+          onChange={(e) => setSelectedBrand(e.target.value)}
+          value={selectedBrand}
+        >
+          <option value="">Todas las marcas</option>
+          {brands.map(brand => (
+            <option key={brand} value={brand}>{brand}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        {filteredProducts.map(product => (
+          <div 
+            key={product.id}
+            onClick={() => onSelectProduct(product)}
+            className="p-4 border rounded cursor-pointer hover:bg-gray-50"
+          >
+            <img 
+              src={product.image} 
+              alt={product.name}
+              className="w-full h-40 object-contain mb-2"
+            />
+            <h3 className="font-medium">{product.name}</h3>
+            <p className="text-sm text-gray-500">{product.brand}</p>
+            <p className="text-sm text-gray-500">{product.volume}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+} 
+
+
 === src/components/Posters/PromoTypeSelect.tsx ===
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
@@ -3926,8 +4323,8 @@ export const PromotionSelect: React.FC<PromotionSelectProps> = ({ value, onChang
 
 
 === src/components/Posters/RegionSelect.tsx ===
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import React from 'react';
+import Select from 'react-select';
 
 interface Region {
   id: string;
@@ -3935,63 +4332,135 @@ interface Region {
 }
 
 interface RegionSelectProps {
-  value: string;
-  onChange: (value: string) => void;
-  regions: Region[];
+  value: string[];
+  onChange: (values: string[]) => void;
+  regions: { id: string; name: string; }[];
+  isMulti?: boolean;
+  className?: string;
 }
 
-export const RegionSelect: React.FC<RegionSelectProps> = ({ value, onChange, regions }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+export const RegionSelect: React.FC<RegionSelectProps> = ({
+  value,
+  onChange,
+  regions,
+  isMulti = false,
+  className
+}) => {
+  return (
+    <Select
+      isMulti={isMulti}
+      value={regions.filter(r => value.includes(r.id)).map(r => ({
+        value: r.id,
+        label: r.name
+      }))}
+      onChange={(newValue: any) => {
+        const selectedValues = newValue ? (Array.isArray(newValue) 
+          ? newValue.map(v => v.value)
+          : [newValue.value]) 
+        : [];
+        onChange(selectedValues);
+      }}
+      options={regions.map(r => ({
+        value: r.id,
+        label: r.name
+      }))}
+      classNames={{
+        control: () => className,
+        menu: () => "bg-white rounded-lg shadow-lg",
+        option: () => "px-3 py-2 hover:bg-gray-100 cursor-pointer"
+      }}
+    />
+  );
+}; 
 
-  const selectedRegion = regions.find(r => r.id === value);
+
+=== src/components/Posters/SendingModal.tsx ===
+import React, { useState, useEffect } from 'react';
+import { CheckCircle, Send } from 'lucide-react';
+
+interface SendingModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  locations: { id: string; name: string; }[];
+  productsCount: number;
+}
+
+export const SendingModal: React.FC<SendingModalProps> = ({
+  isOpen,
+  onClose,
+  locations,
+  productsCount
+}) => {
+  const [currentLocation, setCurrentLocation] = useState(0);
+  const [isSending, setIsSending] = useState(true);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
+    if (isOpen) {
+      setCurrentLocation(0);
+      setIsSending(true);
+      
+      const interval = setInterval(() => {
+        setCurrentLocation(prev => {
+          if (prev < locations.length - 1) return prev + 1;
+          clearInterval(interval);
+          setIsSending(false);
+          return prev;
+        });
+      }, 800);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+      return () => clearInterval(interval);
+    }
+  }, [isOpen, locations.length]);
+
+  if (!isOpen) return null;
 
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full border border-gray-300 rounded-md px-3 py-2 bg-white text-left flex items-center justify-between
-                 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      >
-        <span className={selectedRegion ? '' : 'text-gray-500'}>
-          {selectedRegion ? selectedRegion.name : 'Seleccionar región...'}
-        </span>
-        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100]">
+      <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 relative">
+        <h3 className="text-xl font-semibold text-gray-900 mb-6">
+          {isSending ? 'Enviando carteles...' : '¡Envío completado!'}
+        </h3>
 
-      {isOpen && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-          <ul className="py-1 max-h-60 overflow-auto">
-            {regions.map(region => (
-              <li key={region.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onChange(region.id);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full px-3 py-2 text-left hover:bg-gray-100
-                            ${value === region.id ? 'bg-blue-50' : ''}`}
+        <div className="space-y-4">
+          {locations.map((location, index) => (
+            <div 
+              key={location.id}
+              className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300
+                ${index === currentLocation && isSending ? 'bg-indigo-50 scale-105' : 
+                  index < currentLocation || !isSending ? 'bg-green-50' : 'bg-gray-50'}`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-full 
+                  ${index === currentLocation && isSending ? 'bg-indigo-100' :
+                    index < currentLocation || !isSending ? 'bg-green-100' : 'bg-gray-100'}`}
                 >
-                  {region.name}
-                </button>
-              </li>
-            ))}
-          </ul>
+                  {index === currentLocation && isSending ? (
+                    <Send className="w-4 h-4 text-indigo-600 animate-pulse" />
+                  ) : index < currentLocation || !isSending ? (
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <Send className="w-4 h-4 text-gray-400" />
+                  )}
+                </div>
+                <span className="font-medium text-gray-700">{location.name}</span>
+              </div>
+              <span className="text-sm text-gray-500">
+                {productsCount} {productsCount === 1 ? 'cartel' : 'carteles'}
+              </span>
+            </div>
+          ))}
         </div>
-      )}
+
+        {!isSending && (
+          <button
+            onClick={onClose}
+            className="mt-6 w-full py-2 px-4 bg-indigo-600 text-white rounded-lg
+                     hover:bg-indigo-700 transition-colors font-medium"
+          >
+            Cerrar
+          </button>
+        )}
+      </div>
     </div>
   );
 }; 
@@ -5072,31 +5541,28 @@ export const ProductSelect: React.FC<ProductSelectProps> = ({
   products,
   className 
 }) => {
-  const customOption = {
-    option: (provided: any, state: any) => ({
-      ...provided,
-      display: 'flex',
-      alignItems: 'center',
-      padding: '8px 12px',
-      cursor: 'pointer',
-      backgroundColor: state.isFocused ? '#f3f4f6' : 'white',
-      '&:hover': {
-        backgroundColor: '#f3f4f6'
-      }
-    }),
-    multiValue: (provided: any) => ({
-      ...provided,
-      backgroundColor: '#e5e7eb',
-      borderRadius: '4px'
-    })
-  };
+  console.log('ProductSelect recibió:', products);
+
+  // Transformar los productos para el Select
+  const options = products.map(p => ({ 
+    value: p.id, 
+    label: `${p.name} - ${p.category}`  // Agregar categoría para mejor identificación
+  }));
+
+  // Transformar el value actual para el Select
+  const selectedValues = value.map(id => 
+    options.find(opt => opt.value === id)
+  ).filter(Boolean);
 
   return (
     <Select
       isMulti
-      options={products.map(p => ({ value: p.id, label: p.name }))}
-      value={value}
-      onChange={onChange}
+      options={options}
+      value={selectedValues}
+      onChange={(newValue) => {
+        const selectedIds = newValue ? newValue.map(v => v.value) : [];
+        onChange(selectedIds);
+      }}
       menuPlacement="top"
       maxMenuHeight={200}
       classNames={{
@@ -5104,7 +5570,16 @@ export const ProductSelect: React.FC<ProductSelectProps> = ({
         menu: () => "bg-white rounded-lg shadow-lg",
         option: () => "px-3 py-2 hover:bg-gray-100 cursor-pointer"
       }}
-      styles={customOption}
+      styles={{
+        menu: (base) => ({
+          ...base,
+          zIndex: 40  // Aumentar el z-index para que esté por encima del cartel
+        }),
+        container: (base) => ({
+          ...base,
+          zIndex: 40  // Aumentar el z-index para que esté por encima del cartel
+        })
+      }}
       components={{
         Option: ({ children, isSelected, ...props }) => (
           <div
@@ -8257,525 +8732,430 @@ export const LOCATIONS = [
 
 
 === src/data/products.ts ===
-export const products = [
-  // Tecnología
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  // Campos comunes obligatorios
+  sku?: string;
+  description?: string;
+  imageUrl?: string;
+  // Nuevos campos opcionales
+  subCategory?: string;
+  brand?: string;
+  image?: string;
+  packageType?: string;
+  volume?: string;
+}
+
+export const products: Product[] = [
+  // Productos MDH (Easy) existentes
   {
-    id: '1',
+    id: 'MDH-001',
+    sku: 'MDH-001',
+    name: 'Aire Acondicionado Split Surrey 3000FC',
+    price: 449999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1631385309847-960f92ec3585',
+    category: 'MDH',
+    description: 'Split Inverter Frío/Calor 3000 Frigorías'
+  },
+  {
+    id: 'MDH-002',
+    sku: 'MDH-002',
+    name: 'Heladera Whirlpool No Frost 375L',
+    price: 699999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1584568694244-14fbdf83bd30',
+    category: 'MDH',
+    description: 'Heladera No Frost con freezer superior'
+  },
+  {
+    id: 'MDH-003',
+    sku: 'MDH-003',
+    name: 'Lavarropas Drean Next 8.14',
+    price: 259999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1',
+    category: 'MDH',
+    description: 'Lavarropas automático de 8kg con 1400RPM'
+  },
+  {
+    id: 'MDH-004',
+    sku: 'MDH-004',
+    name: 'Smart TV Samsung 55" 4K',
+    price: 349999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1',
+    category: 'MDH',
+    description: 'Smart TV LED 55" UHD 4K'
+  },
+  {
+    id: 'MDH-005',
+    sku: 'MDH-005',
+    name: 'Microondas BGH 28L',
+    price: 89999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1585659722983-3a675dabf23d',
+    category: 'MDH',
+    description: 'Microondas digital 28L con grill'
+  },
+  {
+    id: 'MDH-006',
+    sku: 'MDH-006',
+    name: 'Aspiradora Robot Gadnic',
+    price: 79999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1563874257547-d19fbb71b46c',
+    category: 'MDH',
+    description: 'Aspiradora Robot con control remoto'
+  },
+  {
+    id: 'MDH-007',
+    sku: 'MDH-007',
+    name: 'Ventilador de Pie Liliana',
+    price: 29999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1575435349939-0ffbdad70905',
+    category: 'MDH',
+    description: 'Ventilador de pie 20" con control remoto'
+  },
+  {
+    id: 'MDH-008',
+    sku: 'MDH-008',
+    name: 'Cafetera Oster',
+    price: 49999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1585515320310-259814833e62',
+    category: 'MDH',
+    description: 'Cafetera automática con molinillo'
+  },
+  {
+    id: 'TEC-001',
     sku: 'TEC-001',
     name: 'MacBook Pro M3 Pro 14"',
     price: 1299999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500&auto=format&fit=crop&q=60',
-    category: 'Tecnología'
+    imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8',
+    category: 'Tecnología',
+    description: 'Laptop Apple M3 Pro 14 pulgadas'
   },
   {
-    id: '2',
+    id: 'TEC-002',
     sku: 'TEC-002',
-    name: 'iPhone 15 Pro Max 256GB',
-    price: 999999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=500&auto=format&fit=crop&q=60',
-    category: 'Tecnología'
-  },
-  {
-    id: '3',
-    sku: 'TEC-003',
-    name: 'Samsung QLED 4K 65"',
+    name: 'iPad Pro 12.9"',
     price: 799999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1593784991095-a205069470b6?w=500&auto=format&fit=crop&q=60',
-    category: 'Tecnología'
+    imageUrl: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0',
+    category: 'Tecnología',
+    description: 'iPad Pro 12.9" M2 256GB'
   },
   {
-    id: '4',
+    id: 'TEC-003',
+    sku: 'TEC-003',
+    name: 'iPhone 15 Pro Max',
+    price: 999999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5',
+    category: 'Tecnología',
+    description: 'iPhone 15 Pro Max 256GB'
+  },
+  {
+    id: 'TEC-004',
     sku: 'TEC-004',
-    name: 'PlayStation 5 Digital',
-    price: 599999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=500&auto=format&fit=crop&q=60',
-    category: 'Tecnología'
+    name: 'AirPods Pro 2',
+    price: 199999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1588423771073-b8903fbb85b5',
+    category: 'Tecnología',
+    description: 'AirPods Pro 2nd Generation'
   },
   {
-    id: '5',
+    id: 'TEC-005',
     sku: 'TEC-005',
-    name: 'iPad Pro 12.9" M2',
+    name: 'Apple Watch Series 9',
+    price: 299999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d',
+    category: 'Tecnología',
+    description: 'Apple Watch Series 9 GPS 45mm'
+  },
+  {
+    id: 'TEC-006',
+    sku: 'TEC-006',
+    name: 'Samsung Galaxy S23 Ultra',
     price: 899999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=500&auto=format&fit=crop&q=60',
-    category: 'Tecnología'
-  },
-  // Electrodomésticos
-  {
-    id: '6',
-    sku: 'ELE-001',
-    name: 'Heladera Samsung French Door',
-    price: 899999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?w=500&auto=format&fit=crop&q=60',
-    category: 'Electrodomésticos'
+    imageUrl: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf',
+    category: 'Tecnología',
+    description: 'Smartphone Samsung 256GB'
   },
   {
-    id: '7',
-    sku: 'ELE-002',
-    name: 'Lavarropas Samsung 10.5kg',
-    price: 399999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=500&auto=format&fit=crop&q=60',
-    category: 'Electrodomésticos'
-  },
-  // Hogar
-  {
-    id: '8',
-    sku: 'HOG-001',
-    name: 'Smart TV Samsung 75"',
-    price: 1299999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1593784991095-a205069470b6?w=500&auto=format&fit=crop&q=60',
-    category: 'Hogar'
+    id: 'TEC-007',
+    sku: 'TEC-007',
+    name: 'Notebook HP Pavilion',
+    price: 699999.99,
+    imageUrl: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed',
+    category: 'Tecnología',
+    description: 'Laptop HP 15" Ryzen 7'
   },
   {
-    id: '9',
-    sku: 'HOG-002',
-    name: 'Aire Acondicionado Split Samsung',
-    price: 449999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1631385309847-960f92ec3585?w=500&auto=format&fit=crop&q=60',
-    category: 'Hogar'
-  },
-  // Deportes
-  {
-    id: '10',
-    sku: 'DEP-001',
-    name: 'Bicicleta Mountain Bike 29"',
-    price: 249999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1576435728678-68d0fbf94e91?w=500&auto=format&fit=crop&q=60',
-    category: 'Deportes'
-  },
-  // Almacén
-  {
-    id: '11',
-    sku: 'ALM-001',
-    name: 'Aceite De Oliva Extra Virgen Cuisine & Co 500ml',
-    price: 2499.99,
-    imageUrl: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&auto=format&fit=crop&q=60',
-    category: 'Almacén'
-  },
-  {
-    id: '12',
-    sku: 'ALM-002',
-    name: 'Galletitas Real Cookies Cuisine & Co 454g',
-    price: 1299.99,
-    imageUrl: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=500&auto=format&fit=crop&q=60',
-    category: 'Almacén'
-  },
-  // Bebidas
-  {
-    id: '13',
+    id: 'BEB-001',
     sku: 'BEB-001',
-    name: 'Coca Cola 2.25L Pack x6',
+    name: 'Coca Cola Pack x6',
     price: 4999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=500&auto=format&fit=crop&q=60',
-    category: 'Bebidas'
+    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
+    category: 'Bebidas',
+    description: 'Pack x6 botellas de 2.25L'
   },
   {
-    id: '14',
+    id: 'BEB-002',
     sku: 'BEB-002',
-    name: 'Vino Tinto Malbec Reserva 750ml',
+    name: 'Pepsi Pack x6',
+    price: 4799.99,
+    imageUrl: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e',
+    category: 'Bebidas',
+    description: 'Pack x6 botellas de 2.25L'
+  },
+  {
+    id: 'BEB-003',
+    sku: 'BEB-003',
+    name: 'Sprite Pack x6',
+    price: 4599.99,
+    imageUrl: 'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3',
+    category: 'Bebidas',
+    description: 'Pack x6 botellas de 2.25L'
+  },
+  {
+    id: 'BEB-004',
+    sku: 'BEB-004',
+    name: 'Fanta Pack x6',
+    price: 4599.99,
+    imageUrl: 'https://images.unsplash.com/photo-1624517452488-04869289c4ca',
+    category: 'Bebidas',
+    description: 'Pack x6 botellas de 2.25L'
+  },
+  {
+    id: 'BEB-005',
+    sku: 'BEB-005',
+    name: 'Cerveza Quilmes Pack x6',
     price: 3999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=500&auto=format&fit=crop&q=60',
-    category: 'Bebidas'
-  },
-  // Carnes
-  {
-    id: '15',
-    sku: 'CAR-001',
-    name: 'Milanesa de Nalga Premium x kg',
-    price: 4999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1615937657715-bc7b4b7962c1?w=500&auto=format&fit=crop&q=60',
-    category: 'Carnes'
+    imageUrl: 'https://images.unsplash.com/photo-1608270586620-248524c67de9',
+    category: 'Bebidas',
+    description: 'Pack x6 latas de 473ml'
   },
   {
-    id: '16',
-    sku: 'CAR-002',
-    name: 'Pechuga de Pollo x kg',
-    price: 2899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=500&auto=format&fit=crop&q=60',
-    category: 'Carnes'
-  },
-  // Frutas y Verduras
-  {
-    id: '17',
-    sku: 'FYV-001',
-    name: 'Palta Hass x kg',
-    price: 999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=500&auto=format&fit=crop&q=60',
-    category: 'Frutas y Verduras'
-  },
-  {
-    id: '18',
-    sku: 'FYV-002',
-    name: 'Melón Blanco x kg',
-    price: 799.99,
-    imageUrl: 'https://images.unsplash.com/photo-1571575173700-afb9492e6a50?w=500&auto=format&fit=crop&q=60',
-    category: 'Frutas y Verduras'
-  },
-  // Lácteos
-  {
-    id: '19',
-    sku: 'LAC-001',
-    name: 'Yogur Griego Natural 500g',
-    price: 899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=500&auto=format&fit=crop&q=60',
-    category: 'Lácteos'
-  },
-  {
-    id: '20',
-    sku: 'LAC-002',
-    name: 'Queso Mozzarella x kg',
-    price: 2499.99,
-    imageUrl: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=500&auto=format&fit=crop&q=60',
-    category: 'Lácteos'
-  },
-  // Limpieza
-  {
-    id: '21',
-    sku: 'LIM-001',
-    name: 'Detergente Concentrado 1L',
-    price: 999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1563453392212-326f5e854473?w=500&auto=format&fit=crop&q=60',
-    category: 'Limpieza'
-  },
-  {
-    id: '22',
-    sku: 'LIM-002',
-    name: 'Lavandina Concentrada 2L',
-    price: 799.99,
-    imageUrl: 'https://images.unsplash.com/photo-1585166059782-fb2b2c71ad81?w=500&auto=format&fit=crop&q=60',
-    category: 'Limpieza'
-  },
-  // Perfumería
-  {
-    id: '23',
-    sku: 'PER-001',
-    name: 'Shampoo Dove Nutrición Óleo 400ml',
-    price: 1499.99,
-    imageUrl: 'https://images.unsplash.com/photo-1631729371254-42c2892f0e6e?w=500&auto=format&fit=crop&q=60',
-    category: 'Perfumería'
-  },
-  {
-    id: '24',
-    sku: 'PER-002',
-    name: 'Crema Facial Hidratante 50ml',
-    price: 2999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?w=500&auto=format&fit=crop&q=60',
-    category: 'Perfumería'
-  },
-  // Mascotas
-  {
-    id: '25',
-    sku: 'MAS-001',
-    name: 'Alimento Premium Perro Adulto 15kg',
-    price: 12999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=500&auto=format&fit=crop&q=60',
-    category: 'Mascotas'
-  },
-  {
-    id: '26',
-    sku: 'MAS-002',
-    name: 'Arena para Gatos 4kg',
-    price: 1999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1516750105099-4b8a83e217ee?w=500&auto=format&fit=crop&q=60',
-    category: 'Mascotas'
-  },
-  // Bebés
-  {
-    id: '27',
-    sku: 'BEB-001',
-    name: 'Pañales Premium T4 x60',
-    price: 5999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=500&auto=format&fit=crop&q=60',
-    category: 'Bebés'
-  },
-  {
-    id: '28',
-    sku: 'BEB-002',
-    name: 'Toallitas Húmedas x100',
-    price: 999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=500&auto=format&fit=crop&q=60',
-    category: 'Bebés'
-  },
-  // Panadería
-  {
-    id: '29',
-    sku: 'PAN-001',
-    name: 'Pan de Campo x kg',
-    price: 899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&auto=format&fit=crop&q=60',
-    category: 'Panadería'
-  },
-  {
-    id: '30',
-    sku: 'PAN-002',
-    name: 'Facturas Surtidas x12',
+    id: 'BEB-006',
+    sku: 'BEB-006',
+    name: 'Coca-cola Zero',
     price: 1299.99,
-    imageUrl: 'https://images.unsplash.com/photo-1483695028939-5bb13f8648b0?w=500&auto=format&fit=crop&q=60',
-    category: 'Panadería'
-  },
-  // Congelados
-  {
-    id: '31',
-    sku: 'CON-001',
-    name: 'Pizza Congelada Mozzarella',
-    price: 1499.99,
-    imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&auto=format&fit=crop&q=60',
-    category: 'Congelados'
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
+    category: 'Bebidas',
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Plástico',
+    volume: '2.25 L',
+    description: 'Gaseosa cola zero sin azúcar'
   },
   {
-    id: '32',
-    sku: 'CON-002',
-    name: 'Hamburguesas Premium x4',
-    price: 1999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=500&auto=format&fit=crop&q=60',
-    category: 'Congelados'
-  },
-  // Desayuno
-  {
-    id: '33',
-    sku: 'DES-001',
-    name: 'Cereales Integrales 500g',
-    price: 999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1521483756775-c37af386fce9?w=500&auto=format&fit=crop&q=60',
-    category: 'Desayuno'
-  },
-  {
-    id: '34',
-    sku: 'DES-002',
-    name: 'Mermelada Light 454g',
-    price: 799.99,
-    imageUrl: 'https://images.unsplash.com/photo-1622484211817-4f764a14cd99?w=500&auto=format&fit=crop&q=60',
-    category: 'Desayuno'
-  },
-  // Snacks
-  {
-    id: '35',
-    sku: 'SNK-001',
-    name: 'Papas Fritas Clásicas 145g',
+    id: 'BEB-007',
+    sku: 'BEB-007',
+    name: 'Coca-cola Zero',
     price: 899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=500&auto=format&fit=crop&q=60',
-    category: 'Snacks'
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
+    category: 'Bebidas',
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Plástico',
+    volume: '500 Ml',
+    description: 'Gaseosa cola zero sin azúcar'
   },
   {
-    id: '36',
-    sku: 'SNK-002',
-    name: 'Mix de Frutos Secos 200g',
+    id: 'BEB-008',
+    sku: 'BEB-008',
+    name: 'Coca-cola Sabor Liviano',
+    price: 1199.99,
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
+    category: 'Bebidas',
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Plástico',
+    volume: '1.75 L',
+    description: 'Gaseosa cola sabor liviano'
+  },
+  {
+    id: 'BEB-009',
+    sku: 'BEB-009',
+    name: 'Coca-cola Sabor Liviano',
     price: 1299.99,
-    imageUrl: 'https://images.unsplash.com/photo-1536591375915-f9e7b1a6e1b5?w=500&auto=format&fit=crop&q=60',
-    category: 'Snacks'
-  },
-  // Bebidas Alcohólicas
-  {
-    id: '37',
-    sku: 'ALC-001',
-    name: 'Cerveza Premium Pack x6',
-    price: 2999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?w=500&auto=format&fit=crop&q=60',
-    category: 'Bebidas Alcohólicas'
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
+    category: 'Bebidas',
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Plástico',
+    volume: '2.25 L',
+    description: 'Gaseosa cola sabor liviano'
   },
   {
-    id: '38',
-    sku: 'ALC-002',
-    name: 'Whisky 12 Años 750ml',
-    price: 15999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?w=500&auto=format&fit=crop&q=60',
-    category: 'Bebidas Alcohólicas'
-  },
-  // Artículos de Limpieza
-  {
-    id: '39',
-    sku: 'LIM-003',
-    name: 'Escoba con Palo Extensible',
-    price: 2499.99,
-    imageUrl: 'https://images.unsplash.com/photo-1603666326350-92af6b5f7590?w=500&auto=format&fit=crop&q=60',
-    category: 'Limpieza'
-  },
-  {
-    id: '40',
-    sku: 'LIM-004',
-    name: 'Set de Limpieza Completo',
-    price: 4999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1563453392212-326f5e854473?w=500&auto=format&fit=crop&q=60',
-    category: 'Limpieza'
-  },
-  // Almacén - Aceites y Vinagres
-  {
-    id: '41',
-    sku: 'ALM-001',
-    name: 'Aceite de Oliva Extra Virgen Cuisine & Co 500ml',
-    price: 2499.99,
-    imageUrl: 'https://images.unsplash.com/photo-1619813938421-6b0f40e70766?w=500&auto=format&fit=crop&q=60',
-    category: 'Aceites y Vinagres'
-  },
-  {
-    id: '42',
-    sku: 'ALM-002',
-    name: 'Aceite de Girasol Natura 1.5L',
-    price: 1299.99,
-    imageUrl: 'https://images.unsplash.com/photo-1597403491447-3ab08f8e44dc?w=500&auto=format&fit=crop&q=60',
-    category: 'Aceites y Vinagres'
-  },
-
-  // Almacén - Aderezos
-  {
-    id: '43',
-    sku: 'ADE-001',
-    name: 'Mayonesa Hellmanns 500g',
-    price: 799.99,
-    imageUrl: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=500&auto=format&fit=crop&q=60',
-    category: 'Aderezos'
-  },
-  {
-    id: '44',
-    sku: 'ADE-002',
-    name: 'Mostaza Savora 250g',
-    price: 499.99,
-    imageUrl: 'https://images.unsplash.com/photo-1528750717929-32abb73d3bd9?w=500&auto=format&fit=crop&q=60',
-    category: 'Aderezos'
-  },
-
-  // Almacén - Arroz y Legumbres
-  {
-    id: '45',
-    sku: 'ARR-001',
-    name: 'Arroz Largo Fino Gallo 1kg',
-    price: 899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=500&auto=format&fit=crop&q=60',
-    category: 'Arroz y Legumbres'
-  },
-  {
-    id: '46',
-    sku: 'ARR-002',
-    name: 'Lentejas Cuisine & Co 400g',
-    price: 599.99,
-    imageUrl: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=500&auto=format&fit=crop&q=60',
-    category: 'Arroz y Legumbres'
-  },
-
-  // Desayuno y Merienda
-  {
-    id: '47',
-    sku: 'DES-001',
-    name: 'Galletitas Oreo 354g',
-    price: 899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1584361853901-dd1904bb7987?w=500&auto=format&fit=crop&q=60',
-    category: 'Desayuno y Merienda'
-  },
-  {
-    id: '48',
-    sku: 'DES-002',
-    name: 'Mermelada BC La Campagnola 454g',
+    id: 'BEB-010',
+    sku: 'BEB-010',
+    name: 'Coca-cola Zero',
     price: 699.99,
-    imageUrl: 'https://images.unsplash.com/photo-1590683885822-a7cc6c657821?w=500&auto=format&fit=crop&q=60',
-    category: 'Desayuno y Merienda'
-  },
-
-  // Golosinas y Chocolates
-  {
-    id: '49',
-    sku: 'GOL-001',
-    name: 'Chocolate Milka Leche 100g',
-    price: 799.99,
-    imageUrl: 'https://images.unsplash.com/photo-1548907040-4d42bfc0c273?w=500&auto=format&fit=crop&q=60',
-    category: 'Golosinas y Chocolates'
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
+    category: 'Bebidas',
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Lata',
+    volume: '354 Ml',
+    description: 'Gaseosa cola zero sin azúcar'
   },
   {
-    id: '50',
-    sku: 'GOL-002',
-    name: 'Alfajor Milka Mousse 55g',
-    price: 299.99,
-    imageUrl: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=500&auto=format&fit=crop&q=60',
-    category: 'Golosinas y Chocolates'
-  },
-
-  // Harinas
-  {
-    id: '51',
-    sku: 'HAR-001',
-    name: 'Harina 0000 Blancaflor 1kg',
-    price: 499.99,
-    imageUrl: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=500&auto=format&fit=crop&q=60',
-    category: 'Harinas'
+    id: 'BEB-011',
+    sku: 'BEB-011',
+    name: 'Coca-cola Sabor Liviano',
+    price: 899.99,
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
+    category: 'Bebidas',
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Plástico',
+    volume: '500 Ml',
+    description: 'Gaseosa cola sabor liviano'
   },
   {
-    id: '52',
-    sku: 'HAR-002',
-    name: 'Harina Leudante Pureza 1kg',
+    id: 'BEB-012',
+    sku: 'BEB-012',
+    name: 'Coca-cola Sabor Original',
+    price: 1099.99,
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
+    category: 'Bebidas',
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Plástico',
+    volume: '1.25 L',
+    description: 'Gaseosa cola sabor original'
+  },
+  {
+    id: 'BEB-013',
+    sku: 'BEB-013',
+    name: 'Coca-cola Sabor Original',
     price: 599.99,
-    imageUrl: 'https://images.unsplash.com/photo-1603566541830-65be84e479f9?w=500&auto=format&fit=crop&q=60',
-    category: 'Harinas'
+    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
+    category: 'Bebidas',
+    subCategory: 'Gaseosas',
+    brand: 'COCA COLA',
+    packageType: 'Botella de Vidrio',
+    volume: '237 Ml',
+    description: 'Gaseosa cola sabor original retornable'
   },
-
-  // Conservas
+  // Nuevos productos de Aceites
   {
-    id: '53',
-    sku: 'CON-001',
-    name: 'Atún al Natural La Campagnola 170g',
-    price: 899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1597691424841-c70c8449c75d?w=500&auto=format&fit=crop&q=60',
-    category: 'Conservas'
-  },
-  {
-    id: '54',
-    sku: 'CON-002',
-    name: 'Arvejas Arcor 350g',
-    price: 399.99,
-    imageUrl: 'https://images.unsplash.com/photo-1596097635121-14b63b7a0c23?w=500&auto=format&fit=crop&q=60',
-    category: 'Conservas'
-  },
-
-  // Snacks
-  {
-    id: '55',
-    sku: 'SNK-001',
-    name: 'Papas Fritas Lays Clásicas 145g',
-    price: 899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1613919113640-25732ec5e61f?w=500&auto=format&fit=crop&q=60',
-    category: 'Snacks'
+    id: 'aceite-natura-1.5',
+    name: 'Aceite De Girasol Natura',
+    category: 'Almacén',
+    subCategory: 'Aceites Comunes',
+    brand: 'NATURA',
+    price: 1599.99,
+    image: '/products/aceite-natura.jpg',
+    imageUrl: '/products/aceite-natura.jpg',
+    packageType: 'Botella de Plástico',
+    volume: '1.5 L',
+    description: 'Aceite de girasol 1.5L'
   },
   {
-    id: '56',
-    sku: 'SNK-002',
-    name: 'Doritos Queso 145g',
-    price: 899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1600952841320-db92ec4047ca?w=500&auto=format&fit=crop&q=60',
-    category: 'Snacks'
-  },
-
-  // Bebidas
-  {
-    id: '57',
-    sku: 'BEB-001',
-    name: 'Coca Cola 2.25L',
-    price: 899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=500&auto=format&fit=crop&q=60',
-    category: 'Bebidas'
+    id: 'aceite-canuelas-1.5',
+    name: 'Aceite Cañuelas De Girasol',
+    category: 'Almacén',
+    subCategory: 'Aceites Comunes',
+    brand: 'CAÑUELAS',
+    price: 1499.99,
+    image: '/products/aceite-canuelas.jpg',
+    imageUrl: '/products/aceite-canuelas.jpg',
+    packageType: 'Botella de Plástico',
+    volume: '1.5 L',
+    description: 'Aceite de girasol 1.5L'
   },
   {
-    id: '58',
-    sku: 'BEB-002',
-    name: 'Sprite 2.25L',
-    price: 899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?w=500&auto=format&fit=crop&q=60',
-    category: 'Bebidas'
-  },
-
-  // Lácteos
-  {
-    id: '59',
-    sku: 'LAC-001',
-    name: 'Leche La Serenísima 1L',
-    price: 599.99,
-    imageUrl: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&auto=format&fit=crop&q=60',
-    category: 'Lácteos'
+    id: 'aceite-cocinero-1.5',
+    name: 'Aceite De Girasol Cocinero',
+    category: 'Almacén',
+    subCategory: 'Aceites Comunes',
+    brand: 'COCINERO',
+    price: 1699.99,
+    image: '/products/aceite-cocinero.jpg',
+    imageUrl: '/products/aceite-cocinero.jpg',
+    packageType: 'Botella de Plástico',
+    volume: '1.5 L',
+    description: 'Aceite de girasol 1.5L'
   },
   {
-    id: '60',
-    sku: 'LAC-002',
-    name: 'Yogur Ser Frutilla 190g',
-    price: 299.99,
-    imageUrl: 'https://images.unsplash.com/photo-1571212515416-fca988684e08?w=500&auto=format&fit=crop&q=60',
-    category: 'Lácteos'
+    id: 'aceite-oliva-cocinero-500',
+    name: 'Aceite Oliva Extra Virgen Intenso Cocinero',
+    category: 'Almacén',
+    subCategory: 'Aceites Especiales',
+    brand: 'COCINERO',
+    price: 2499.99,
+    image: '/products/aceite-oliva-cocinero.jpg',
+    imageUrl: '/products/aceite-oliva-cocinero.jpg',
+    packageType: 'Botella de Vidrio',
+    volume: '500 Ml',
+    description: 'Aceite de oliva extra virgen 500ml'
+  },
+  {
+    id: 'aceite-oliva-nucete-2000',
+    name: 'Aceite De Oliva Extra Virgen Nucete',
+    category: 'Almacén',
+    subCategory: 'Aceites Especiales',
+    brand: 'NUCETE',
+    price: 8999.99,
+    image: '/products/aceite-oliva-nucete.jpg',
+    imageUrl: '/products/aceite-oliva-nucete.jpg',
+    packageType: 'Botella de Vidrio',
+    volume: '2000 Ml',
+    description: 'Aceite de oliva extra virgen 2L'
   }
+];
+
+export const categories = [
+  'MDH',
+  'Tecnología',
+  'Electrodomésticos',
+  'Bebidas',
+  'Alimentos',
+  'Bazar',
+  'Almacén'
+];
+
+export const productCategories = [
+  'Aceites Comunes',
+  'Aceites Especiales',
+  'Acetos',
+  'Jugos de Limón',
+  'Vinagres',
+  'Gaseosas'
+];
+
+export const packageTypes = [
+  'Aerosol',
+  'Botella',
+  'Botella de Plástico',
+  'Botella de Vidrio',
+  'Lata',
+  'Pote',
+  'Spray'
+];
+
+export const brands = [
+  'ALCAZAR',
+  'BEEPURE',
+  'CASALTA',
+  'CAÑUELAS',
+  'CHIA GRAAL',
+  'COCINERO',
+  'COWS PURE',
+  'CUISINE & CO NBE MP',
+  'DICOMERE',
+  'DOS ANCLAS',
+  'NATURA',
+  'NUCETE',
+  'Samsung',
+  'Apple',
+  'HP',
+  'Whirlpool',
+  'BGH',
+  'Drean',
+  'Liliana',
+  'Oster',
+  'Gadnic',
+  'Surrey',
+  'COCA COLA'
 ]; 
 
 
@@ -9322,8 +9702,9 @@ import { useState, useEffect } from 'react';
 
 type Theme = 'light' | 'dark';
 
-export const useTheme = () => {
+export const useTheme = (forceDark?: boolean) => {
   const [theme, setTheme] = useState<Theme>(() => {
+    if (forceDark) return 'dark';
     // Verificar si hay una preferencia guardada
     const savedTheme = localStorage.getItem('theme') as Theme;
     if (savedTheme) return savedTheme;
@@ -9367,6 +9748,10 @@ html {
 
 .smooth-scroll {
   @apply transition-all duration-300 ease-in-out;
+}
+
+.poster-editor {
+  @apply bg-black;
 }
 
 
@@ -9604,9 +9989,10 @@ export interface Product {
   id: string;
   sku: string;
   name: string;
+  description: string;
   price: number;
-  category: string;
   imageUrl: string;
+  category: string;
 } 
 
 

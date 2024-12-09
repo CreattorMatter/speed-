@@ -48,12 +48,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   points = '',
   origin = 'ARGENTINA',
   barcode = '7790895000782',
-  size,
   compact = false
 }) => {
-  const isCenefa = size?.id.includes('cenefa');
-  const isFleje = size?.id === 'fleje';
-
   // Calcular el precio con descuento
   const calculatePrice = () => {
     if (!promotion) return {
@@ -119,128 +115,169 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
   return (
     <div>
-      {/* Resto del componente existente */}
-      <div className={`${compact ? 'flex gap-4 items-center' : ''}`}>
-        <div className={`relative bg-white rounded-lg shadow-xl overflow-hidden z-0
-                      ${compact ? 'w-full' : 'w-[900px] h-[500px]'}`}
-          style={{
-            width: compact ? '100%' : '800px',
-            height: compact ? 'auto' : '500px',
-            padding: '1.5 rem',
-            border: '1px solid #e5e7eb',
-            ...roundedFontStyle
-          }}
-        >
-          <div className="relative z-2 flex flex-col h-full">
-            {/* Logo de fondo translúcido */}
-            {company?.logo && (
-              <div className="absolute inset-0 flex items-center justify-center z-0">
-                <img 
-                  src={company.logo}
-                  alt={company.name}
-                  className="w-2/3 h-auto object-contain opacity-5"
-                />
-              </div>
-            )}
-
-            {/* Logo superior izquierdo */}
+      {/* Si es modo compacto (lista) usamos el nuevo diseño horizontal */}
+      {compact ? (
+        <div className="flex gap-4 items-center">
+          <div className="relative bg-white rounded-lg shadow-xl overflow-hidden z-0 w-full h-[200px] flex">
+            {/* Logo en modo lista */}
             {company?.logo && showTopLogo && (
-              <div className="absolute top-20 left-3 z-1">
+              <div className="w-[200px] p-4 flex items-center justify-center border-r border-gray-100">
                 <img 
                   src={company.logo}
                   alt={company.name}
-                  className="h-24 w-auto object-contain"
+                  className="h-full w-auto object-contain"
                 />
               </div>
             )}
 
-            {/* Resto del contenido con z-index mayor */}
-            <div className="relative z-2">
-              {/* Nombre del producto */}
-              <div className="text-center mb-4 mt-4">
-                <h1 className="text-[50px] font-black text-black leading-none" 
-                    style={roundedFontStyle}>
+            {/* Contenido en modo lista */}
+            <div className="flex-1 p-4 flex justify-between items-center">
+              <div className="flex-1 px-6">
+                <h1 className="text-2xl font-black text-black leading-none">
                   {product.name.toLowerCase()}
                 </h1>
-                <p className="text-[22px] text-gray-600 mt-1" 
-                   style={roundedFontStyle}>
-                  {product.description.toLowerCase()}
-                </p>
-              </div>
-
-              {/* Condiciones y vigencia */}
-              <div className="text-right absolute top-40 right-10">
-                <div className="text-[14px]" style={roundedFontStyle}>
-                  <span className="text-gray-600">Condiciones:</span><br />
-                  • Válido solo los jueves
-                </div>
-                <div className="text-[14px]" style={roundedFontStyle}>
-                  <span className="text-gray-600">Vigencia:</span><br />
-                  Del {promotion?.startDate}<br />
-                  al {promotion?.endDate}
-                </div>
-              </div>
-
-              {/* Sección de precios */}
-              <div className="flex-grow flex flex-col items-center justify-center -mt-0">
-                {/* Precio tachado y descuento */}
-                <div className="flex items-center gap-4 mb-4">
-                  <span className="text-[50px] text-gray-400 line-through" 
-                        style={roundedFontStyle}>
+                <div className="mt-2 flex items-center gap-4">
+                  <span className="text-2xl text-gray-400 line-through">
                     ${product.price.toLocaleString('es-AR')}
                   </span>
-                  <div className="bg-red-600 text-white px-6 py-1.5 rounded-full text-[18px] font-bold"
-                       style={roundedFontStyle}>
-                    Hasta {promotion?.discount}
-                  </div>
+                  {promotion && (
+                    <div className="bg-red-600 text-white px-4 py-1 rounded-full text-lg font-bold">
+                      {promotion.discount}
+                    </div>
+                  )}
                 </div>
-
-                {/* Precio Final */}
-                <span className="text-[110px] font-black leading-none mb-8" 
-                      style={{ 
-                        ...roundedFontStyle,
-                        letterSpacing: '-0.01em'
-                      }}>
-                  ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
-                </span>
               </div>
 
-              {/* Footer - En la parte inferior */}
-              <div className="flex justify-between items-end absolute bottom-39 left-8 right-8">
-                {/* Columna izquierda */}
-                <div className="flex flex-col gap-1">
-                  <div className="text-[16px] font-bold" style={roundedFontStyle}>
-                    PRECIO X LITRO ${pricePerUnit}
-                  </div>
-                  <div className="text-[16px]" style={roundedFontStyle}>
-                    {barcode}
-                  </div>
-                  <div className="text-[16px] font-bold" style={roundedFontStyle}>
-                    ORIGEN: {origin}
-                  </div>
+              <div className="flex items-center gap-8">
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-gray-600">{barcode}</div>
+                  <img src={qrUrl} alt="QR Code" className="w-16 h-16" />
                 </div>
-
-                {/* Columna derecha */}
-                <div className="flex items-end gap-20">
-                  <div className="text-[16px] font-bold" style={roundedFontStyle}>
-                    SUMÁ {points} PUNTOS JUMBO MÁS
-                  </div>
-                  <div className="flex items-end gap-2">
-                    <img 
-                      src={qrUrl}
-                      alt="QR Code"
-                      className="w-[60px] h-[60px]"
-                    />
-                    <span className="text-gray-600 text-[11px] mb-1" style={roundedFontStyle}>
-                      más información<br />del producto
-                    </span>
-                  </div>
+                <div className="text-sm">
+                  <div className="font-medium">ORIGEN: {origin}</div>
+                  {points && <div className="font-bold">SUMÁ {points} PUNTOS</div>}
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        /* Modo grilla - Diseño original */
+        <div className="bg-white p-2 rounded-lg shadow-lg w-full max-w-4xl h-[600px] mx-auto relative overflow-hidden">
+          {/* Logo de fondo translúcido */}
+          {company?.logo && (
+            <div className="absolute inset-0 flex items-center justify-center opacity-5">
+              <img 
+                src={company.logo}
+                alt={company.name}
+                className="w-2/3 object-contain"
+              />
+            </div>
+          )}
+
+          <div className="space-y-4 text-center relative h-full">
+            {/* Reservamos el espacio para el logo siempre, esté visible o no */}
+            <div className="h-20">
+              {showTopLogo && company?.logo && (
+                <div className="absolute left-1 top-1">
+                  <img 
+                    src={company.logo}
+                    alt={company.name}
+                    className="h-20 w-auto object-contain"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Nombre del producto */}
+            <div className="text-5xl font-bold text-black tracking-tight leading-tight uppercase mt-28 text-center">
+              {product.name}
+            </div>
+
+            {/* Descuento y Condiciones */}
+            {promotion && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-center">
+                  <div className="bg-red-600 text-white px-6 py-2 rounded-full text-3xl font-bold">
+                    {promotion.discount}
+                  </div>
+                </div>
+
+                {/* Condiciones y vigencia */}
+                <div className="text-right absolute top-40 right-10">
+                  {promotion.conditions && promotion.conditions.length > 0 && (
+                    <div className="text-[14px]" style={roundedFontStyle}>
+                      <span className="text-gray-600">Condiciones:</span><br />
+                      {promotion.conditions.map((condition, index) => (
+                        <div key={index}>• {condition}</div>
+                      ))}
+                    </div>
+                  )}
+                  {(promotion.startDate || promotion.endDate) && (
+                    <div className="text-[14px] mt-2" style={roundedFontStyle}>
+                      <span className="text-gray-600">Vigencia:</span><br />
+                      {promotion.startDate && <div>Del {new Date(promotion.startDate).toLocaleDateString()}</div>}
+                      {promotion.endDate && <div>al {new Date(promotion.endDate).toLocaleDateString()}</div>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Sección de precios - Movemos arriba antes de la información adicional */}
+            <div className="flex-grow flex flex-col items-center justify-center -mt-0">
+              {/* Precio tachado y descuento */}
+              <div className="flex items-center gap-4 mb-4">
+                <span className="text-[50px] text-gray-400 line-through">
+                  ${product.price.toLocaleString('es-AR')}
+                </span>
+              </div>
+
+              {/* Precio Final */}
+              <span className="text-[110px] font-black leading-none mb-4" 
+                    style={{ 
+                      ...roundedFontStyle,
+                      letterSpacing: '-0.01em'
+                    }}>
+                ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
+              </span>
+            </div>
+
+            {/* Información adicional */}
+            <div className="grid grid-cols-2 gap-4 text-gray-800 mt-4">
+              <div className="space-y-1 text-left">
+                <div className="text-base font-medium">
+                  ORIGEN: {origin}
+                </div>
+              </div>
+              <div className="text-right">
+                {points && (
+                  <div className="text-base font-bold">
+                    SUMÁ {points} PUNTOS JUMBO MÁS
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Código de barras y QR */}
+            <div className="flex justify-between items-end mt-4">
+              <div className="text-base text-left">
+                {barcode}
+              </div>
+              <div className="flex items-center gap-2">
+                <img 
+                  src={qrUrl}
+                  alt="QR Code"
+                  className="w-16 h-16 rounded bg-white"
+                />
+                <span className="text-xs text-gray-500 text-left">
+                  más información<br />del producto
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }; 
