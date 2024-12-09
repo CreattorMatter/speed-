@@ -11,6 +11,7 @@ import { ProductSelector } from './ProductSelector';
 import { Product } from '../../types/product';
 import { Company } from '../../data/companies';
 import Select from 'react-select';
+import { PaperFormatSelector } from './PaperFormatSelector';
 
 interface SelectOption<T> {
   value: string;
@@ -41,6 +42,10 @@ interface ToolbarProps {
   selectedCompany: Company | null;
   onCompanySelect: (company: Company | null) => void;
   onAddBlock: (block: Block) => void;
+  paperFormat: PaperFormat;
+  onPaperFormatChange: (format: PaperFormat) => void;
+  isLandscape: boolean;
+  onToggleLandscape: () => void;
 }
 
 export default function Toolbar({
@@ -65,7 +70,11 @@ export default function Toolbar({
   companies,
   selectedCompany,
   onCompanySelect,
-  onAddBlock
+  onAddBlock,
+  paperFormat,
+  onPaperFormatChange,
+  isLandscape,
+  onToggleLandscape
 }: ToolbarProps) {
   const [showExportOptions, setShowExportOptions] = useState(false);
 
@@ -104,6 +113,13 @@ export default function Toolbar({
     <div className="flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200">
       {/* Grupo izquierdo */}
       <div className="flex items-center space-x-4">
+        <PaperFormatSelector
+          selectedFormat={paperFormat}
+          onFormatChange={onPaperFormatChange}
+          isLandscape={isLandscape}
+          onToggleLandscape={onToggleLandscape}
+        />
+        
         <ProductSelector
           products={products}
           selectedProduct={selectedProduct}

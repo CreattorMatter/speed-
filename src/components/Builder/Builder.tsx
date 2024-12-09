@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ArrowLeft, Layout, LayoutTemplate, Tag, Image, DollarSign, Percent, Gift, Square } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Toolbar from './Toolbar';
@@ -59,13 +59,15 @@ export default function Builder({ onBack }: BuilderProps) {
     if (product) {
       // Crear bloques automáticamente
       const newBlocks: Block[] = [
+        // SKU
         {
           id: `sku-${Date.now()}`,
           type: 'sku',
           content: { text: product.sku },
-          position: { x: 50, y: selectedCompany ? 150 : 50 }, // Ajustar posición si hay logo
+          position: { x: 50, y: selectedCompany ? 150 : 50 },
           size: { width: 200, height: 50 }
         },
+        // Precio
         {
           id: `price-${Date.now()}`,
           type: 'price',
@@ -73,24 +75,72 @@ export default function Builder({ onBack }: BuilderProps) {
           position: { x: 50, y: selectedCompany ? 220 : 120 },
           size: { width: 200, height: 80 }
         },
+        // Imagen del producto
         {
           id: `image-${Date.now()}`,
           type: 'image',
           content: { imageUrl: product.imageUrl },
           position: { x: 50, y: selectedCompany ? 320 : 220 },
           size: { width: 300, height: 300 }
+        },
+        // Precio por unidad
+        {
+          id: `price-per-unit-${Date.now()}`,
+          type: 'price-per-unit',
+          content: { text: product.pricePerUnit },
+          position: { x: 270, y: selectedCompany ? 220 : 120 },
+          size: { width: 150, height: 40 }
+        },
+        // Puntos
+        {
+          id: `points-${Date.now()}`,
+          type: 'points',
+          content: { text: product.points },
+          position: { x: 270, y: selectedCompany ? 270 : 170 },
+          size: { width: 100, height: 40 }
+        },
+        // Origen
+        {
+          id: `origin-${Date.now()}`,
+          type: 'origin',
+          content: { text: product.origin },
+          position: { x: 270, y: selectedCompany ? 320 : 220 },
+          size: { width: 150, height: 40 }
+        },
+        // Código de barras
+        {
+          id: `barcode-${Date.now()}`,
+          type: 'barcode',
+          content: { text: product.barcode },
+          position: { x: 50, y: selectedCompany ? 640 : 540 },
+          size: { width: 200, height: 80 }
+        },
+        // Marca
+        {
+          id: `brand-${Date.now()}`,
+          type: 'brand',
+          content: { text: product.brand },
+          position: { x: 50, y: selectedCompany ? 180 : 80 },
+          size: { width: 200, height: 40 }
+        },
+        // Unidad de empaque
+        {
+          id: `pack-unit-${Date.now()}`,
+          type: 'pack-unit',
+          content: { text: product.packUnit },
+          position: { x: 270, y: selectedCompany ? 180 : 80 },
+          size: { width: 100, height: 40 }
         }
       ];
 
       setBlocks(prevBlocks => {
-        // Mantener el logo si existe y agregar los nuevos bloques
-        const logoBlock = prevBlocks.find(block => block.type === 'logo');
-        const blocksWithoutProduct = prevBlocks.filter(block => 
-          block.type !== 'sku' && 
-          block.type !== 'price' && 
-          block.type !== 'image'
+        // Mantener el logo y header/footer si existen
+        const persistentBlocks = prevBlocks.filter(block => 
+          block.type === 'logo' || 
+          block.type === 'header' || 
+          block.type === 'footer'
         );
-        return [...blocksWithoutProduct, ...newBlocks];
+        return [...persistentBlocks, ...newBlocks];
       });
     }
   };
@@ -132,6 +182,14 @@ export default function Builder({ onBack }: BuilderProps) {
     // Implementar alineación
     console.log('Alineando bloque:', alignment);
   };
+
+  const handleTextChange = useCallback((id: string, text: string) => {
+    setBlocks(prevBlocks => prevBlocks.map(block => 
+      block.id === id 
+        ? { ...block, content: { ...block.content, text } }
+        : block
+    ));
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
@@ -193,6 +251,7 @@ export default function Builder({ onBack }: BuilderProps) {
               showPoints={showPoints}
               showOrigin={showOrigin}
               showBarcode={showBarcode}
+              onTextChange={handleTextChange}
             />
           </ErrorBoundary>
         </div>

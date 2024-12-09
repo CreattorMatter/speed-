@@ -89,6 +89,18 @@ export const Block = React.memo(function Block({
         return <div className="text-lg font-medium">{block.content.text}</div>;
       case 'price':
         return <div className="text-2xl font-bold text-indigo-600">{block.content.text}</div>;
+      case 'price-per-unit':
+        return <div className="text-sm font-medium text-gray-600">{block.content.text}</div>;
+      case 'points':
+        return <div className="text-lg font-bold text-green-600">{block.content.text} pts</div>;
+      case 'origin':
+        return <div className="text-sm uppercase font-medium text-gray-500">{block.content.text}</div>;
+      case 'barcode':
+        return <div className="text-sm font-mono text-gray-800">{block.content.text}</div>;
+      case 'brand':
+        return <div className="text-lg font-bold text-gray-800">{block.content.text}</div>;
+      case 'pack-unit':
+        return <div className="text-sm font-medium text-gray-600">{block.content.text}</div>;
       default:
         return <div>{block.content.text}</div>;
     }

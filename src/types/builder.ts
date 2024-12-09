@@ -7,12 +7,14 @@ export type BlockType =
   | 'sku'
   | 'image'
   | 'price'
-  | 'discount'
-  | 'promotion'
-  | 'logo'
+  | 'price-per-unit'
   | 'points'
   | 'origin'
-  | 'barcode';
+  | 'barcode'
+  | 'brand'
+  | 'pack-unit'
+  | 'logo'
+  | 'promotion';
 
 export interface BlockContent {
   text?: string;
