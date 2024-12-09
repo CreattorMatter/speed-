@@ -146,6 +146,11 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                     </div>
                   )}
                 </div>
+                <div className="mt-2">
+                  <span className="text-4xl font-black text-black" style={roundedFontStyle}>
+                    ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
+                  </span>
+                </div>
               </div>
 
               <div className="flex items-center gap-8">
