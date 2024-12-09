@@ -34,9 +34,9 @@ export const SendingModal: React.FC<SendingModalProps> = ({
       setCurrentLocation(0);
       setStep('preparing');
 
-      // Secuencia de animación
-      const preparingTimeout = setTimeout(() => setStep('packing'), 2000);
-      const packingTimeout = setTimeout(() => setStep('sending'), 4000);
+      // Secuencia de animación con tiempos reducidos a la mitad
+      const preparingTimeout = setTimeout(() => setStep('packing'), 1000);  // Reducido de 2000 a 1000
+      const packingTimeout = setTimeout(() => setStep('sending'), 2000);    // Reducido de 4000 a 2000
       
       // Comenzar envío a sucursales después de empaquetar
       const sendingTimeout = setTimeout(() => {
@@ -50,10 +50,10 @@ export const SendingModal: React.FC<SendingModalProps> = ({
             setStep('complete');
             return prev;
           });
-        }, 1000);
+        }, 500); // Reducido de 1000 a 500
 
         return () => clearInterval(interval);
-      }, 6000);
+      }, 3000); // Reducido de 6000 a 3000
 
       return () => {
         clearTimeout(preparingTimeout);
@@ -149,15 +149,25 @@ export const SendingModal: React.FC<SendingModalProps> = ({
     );
   };
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (isComplete && e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={handleBackdropClick}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 overflow-hidden"
+            onClick={e => e.stopPropagation()}
           >
             {/* Header */}
             <div className="p-6 border-b border-gray-200">
@@ -169,8 +179,7 @@ export const SendingModal: React.FC<SendingModalProps> = ({
                 </h3>
                 <button
                   onClick={onClose}
-                  disabled={!isComplete}
-                  className={`text-gray-400 hover:text-gray-500 ${!isComplete && 'opacity-50 cursor-not-allowed'}`}
+                  className="text-gray-400 hover:text-gray-500 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
