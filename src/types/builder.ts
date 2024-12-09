@@ -25,6 +25,10 @@ export interface BlockContent {
   origin?: string;
   barcode?: string;
   pricePerUnit?: string;
+  bold?: boolean;
+  italic?: boolean;
+  align?: 'left' | 'center' | 'right';
+  fontSize?: number;
 }
 
 export interface Block {
