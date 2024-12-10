@@ -20,6 +20,7 @@ export interface DashboardProps {
   onBack: () => void;
   userEmail?: string;
   onSettings: () => void;
+  userRole: 'admin' | 'limited';
 }
 
 function AppContent() {
@@ -36,6 +37,7 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [userRole, setUserRole] = useState<'admin' | 'limited'>('admin');
 
   React.useEffect(() => {
     if (location.state?.showPosterEditor) {
@@ -52,8 +54,19 @@ function AppContent() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (email === 'admin@admin.com' && password === 'admin') {
+    // Validar múltiples credenciales
+    const validCredentials = [
+      { email: 'admin@admin.com', password: 'admin', role: 'admin' as const },
+      { email: 'olivos@cenco.com', password: 'olivos', role: 'limited' as const }
+    ];
+
+    const user = validCredentials.find(
+      cred => cred.email === email && cred.password === password
+    );
+    
+    if (user) {
       setIsAuthenticated(true);
+      setUserRole(user.role);
       setError('');
     } else {
       setError('Usuario o contraseña inválidos');
@@ -135,6 +148,7 @@ function AppContent() {
           onBack={handleBack}
           userEmail={email}
           onSettings={handleSettings}
+          userRole={userRole}
         />
         <ConfigurationPortal 
           isOpen={isConfigOpen} 

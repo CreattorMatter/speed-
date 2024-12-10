@@ -13,6 +13,7 @@ interface DashboardProps {
   onBack: () => void;
   userEmail?: string;
   onSettings: () => void;
+  userRole: 'admin' | 'limited';
 }
 
 interface PlantillaReciente {
@@ -353,7 +354,17 @@ const getTextByType = (template: PlantillaReciente) => {
   }
 };
 
-export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProducts, onPromotions, onBack, userEmail, onSettings }: DashboardProps) {
+export default function Dashboard({ 
+  onLogout, 
+  onNewTemplate, 
+  onNewPoster, 
+  onProducts, 
+  onPromotions, 
+  onBack, 
+  userEmail,
+  onSettings,
+  userRole
+}: DashboardProps) {
   // Datos de ejemplo
   const stats: DashboardStats = {
     products: {
@@ -471,21 +482,13 @@ export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProd
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              type: "spring",
-              stiffness: 260,
-              damping: 20,
-              delay: 0.3
-            }}
-            onClick={onNewPoster}
-            className="group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
-              bg-gradient-to-br from-violet-500 to-violet-600 text-white
-              border border-violet-400 shadow-[0_0_30px_rgba(139,92,246,0.3)]
-              hover:shadow-[0_0_35px_rgba(139,92,246,0.4)] transition-all duration-300"
+            whileHover={userRole === 'admin' ? { scale: 1.05 } : {}}
+            whileTap={userRole === 'admin' ? { scale: 0.95 } : {}}
+            onClick={userRole === 'admin' ? onNewPoster : undefined}
+            className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+              ${userRole === 'admin' 
+                ? 'bg-gradient-to-br from-violet-500 to-violet-600 text-white hover:shadow-[0_0_35px_rgba(139,92,246,0.4)]' 
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
           >
             <div className="mb-4 p-4 rounded-2xl bg-white/20
               transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300
@@ -498,20 +501,13 @@ export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProd
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              type: "spring",
-              stiffness: 260,
-              damping: 20,
-              delay: 0.4
-            }}
-            onClick={onNewTemplate}
+            whileHover={userRole === 'admin' ? { scale: 1.05 } : {}}
+            whileTap={userRole === 'admin' ? { scale: 0.95 } : {}}
+            onClick={userRole === 'admin' ? onNewTemplate : undefined}
             className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
-              bg-gradient-to-br from-white to-gray-50 border-gray-100 shadow-[0_0_20px_rgba(0,0,0,0.1)]
-              transition-all duration-300`}
+              ${userRole === 'admin' 
+                ? 'bg-gradient-to-br from-white to-gray-50 hover:shadow-lg' 
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
           >
             <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600
               transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
@@ -523,20 +519,13 @@ export default function Dashboard({ onLogout, onNewTemplate, onNewPoster, onProd
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              type: "spring",
-              stiffness: 260,
-              damping: 20,
-              delay: 0.5
-            }}
-            onClick={onSettings}
+            whileHover={userRole === 'admin' ? { scale: 1.05 } : {}}
+            whileTap={userRole === 'admin' ? { scale: 0.95 } : {}}
+            onClick={userRole === 'admin' ? onSettings : undefined}
             className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
-              bg-gradient-to-br from-white to-gray-50 border-gray-100 shadow-[0_0_20px_rgba(0,0,0,0.1)]
-              transition-all duration-300`}
+              ${userRole === 'admin' 
+                ? 'bg-gradient-to-br from-white to-gray-50 hover:shadow-lg' 
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
           >
             <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-yellow-500 to-yellow-600
               transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
