@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Header } from '../shared/Header';
 import { BarChart3, TrendingUp, MapPin, Building2, Package } from 'lucide-react';
@@ -28,6 +28,12 @@ interface AnalyticsProps {
   onLogout: () => void;
 }
 
+interface TopProduct {
+  name: string;
+  value: number;
+  company?: string;
+}
+
 interface AnalyticsData {
   salesData: Array<{
     name: string;
@@ -40,16 +46,14 @@ interface AnalyticsData {
     Easy: number;
     Jumbo: number;
     Disco: number;
+    Vea: number;
   }>;
   regionData: Array<{
     name: string;
     value: number;
     byCompany: Record<string, number>;
   }>;
-  topProducts: Array<{
-    name: string;
-    value: number;
-  }>;
+  topProducts: Record<string, TopProduct[]>;
   stats: {
     totalSales: string;
     regions: number;
@@ -73,6 +77,57 @@ const REGION_COLORS = {
   'Tucumán': '#FFEEAD'       // Amarillo suave
 };
 
+// Agregar el componente LoadingModal
+const LoadingModal = () => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+  >
+    <motion.div
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 0.9, opacity: 0 }}
+      className="bg-white rounded-xl p-8 max-w-md w-full mx-4 shadow-xl"
+    >
+      <div className="flex flex-col items-center text-center">
+        <motion.img
+          initial={{ y: 10 }}
+          animate={{ y: [10, -10, 10] }}
+          transition={{ 
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/SAP_2011_logo.svg/2560px-SAP_2011_logo.svg.png"
+          alt="SAP Logo"
+          className="h-12 object-contain mb-6"
+        />
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2 }}
+          className="w-full bg-gray-200 rounded-full h-2 mb-4"
+        >
+          <motion.div
+            initial={{ width: "0%" }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 2 }}
+            className="bg-indigo-600 h-2 rounded-full"
+          />
+        </motion.div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          Conectando con SAP
+        </h3>
+        <p className="text-gray-600">
+          Obteniendo datos del sistema ERP...
+        </p>
+      </div>
+    </motion.div>
+  </motion.div>
+);
+
 export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
   const [dateRange, setDateRange] = useState(() => {
     const end = new Date();
@@ -87,6 +142,16 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
   });
   const [data, setData] = useState<AnalyticsData>(generateRandomData(dateRange.start, dateRange.end));
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simular carga de datos
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleDateChange = useCallback((start: Date, end: Date) => {
     setDateRange({ start, end });
@@ -94,40 +159,58 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
   }, []);
 
   const filteredData = React.useMemo(() => {
-    if (!selectedCompany) return data;
+    if (!selectedCompany) {
+      // Cuando no hay empresa seleccionada, combinar todos los productos
+      const allProducts = Object.entries(data.topProducts)
+        .flatMap(([company, products]) => 
+          products.map(product => ({
+            ...product,
+            company
+          }))
+        )
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5);
 
+      return {
+        ...data,
+        topProducts: allProducts
+      };
+    }
+
+    // Cuando hay una empresa seleccionada
     return {
       ...data,
       salesData: data.salesData.filter(item => item.name === selectedCompany),
-      monthlyData: data.monthlyData.map(month => ({
-        name: month.name,
-        [selectedCompany]: month[selectedCompany as keyof typeof month]
-      })),
+      monthlyData: data.monthlyData.map(month => {
+        const filteredMonth = {
+          name: month.name
+        } as any;
+
+        switch(selectedCompany) {
+          case 'Easy':
+            filteredMonth.Easy = month.Easy;
+            break;
+          case 'Jumbo':
+            filteredMonth.Jumbo = month.Jumbo;
+            break;
+          case 'Disco':
+            filteredMonth.Disco = month.Disco;
+            break;
+          case 'Vea':
+            filteredMonth.Vea = month.Vea;
+            break;
+        }
+
+        return filteredMonth;
+      }),
       regionData: data.regionData.map(region => ({
         name: region.name,
         value: region.byCompany[selectedCompany] || 0
       })),
-      topProducts: data.topProducts.map(product => {
-        const companyData = data.salesData.find(c => c.name === selectedCompany);
-        const totalSales = data.salesData.reduce((sum, company) => sum + company.value, 0);
-        const companyProportion = companyData ? companyData.value / totalSales : 1;
-        
-        return {
-          name: product.name,
-          value: Math.floor(product.value * companyProportion)
-        };
-      }),
-      stats: {
-        totalSales: `$${(parseFloat(data.stats.totalSales.replace('$', '').replace('M', '')) / 
-                      data.salesData.length).toFixed(1)}M`,
-        regions: data.stats.regions,
-        products: `${Math.floor(parseInt(data.stats.products) / data.salesData.length)}`,
-        trends: {
-          sales: data.stats.trends.sales,
-          regions: data.stats.trends.regions,
-          products: `+${Math.floor(parseInt(data.stats.trends.products) / data.salesData.length)}`
-        }
-      }
+      // Asegurarnos de que topProducts sea siempre un array
+      topProducts: Array.isArray(data.topProducts[selectedCompany]) 
+        ? data.topProducts[selectedCompany] 
+        : []
     };
   }, [data, selectedCompany]);
 
@@ -266,6 +349,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
           <Area type="monotone" dataKey="Easy" stackId="1" stroke="#6366f1" fill="#6366f1" />
           <Area type="monotone" dataKey="Jumbo" stackId="1" stroke="#8b5cf6" fill="#8b5cf6" />
           <Area type="monotone" dataKey="Disco" stackId="1" stroke="#ec4899" fill="#ec4899" />
+          <Area type="monotone" dataKey="Vea" stackId="1" stroke="#f43f5e" fill="#f43f5e" />
         </>
       )}
     </AreaChart>
@@ -405,6 +489,10 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <AnimatePresence>
+        {isLoading && <LoadingModal />}
+      </AnimatePresence>
+
       <Header onBack={onBack} onLogout={onLogout} />
       
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -523,19 +611,53 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
             </ResponsiveContainer>
           </ChartCard>
 
-          <ChartCard title="Top Productos">
+          <ChartCard title={`Top Productos ${selectedCompany ? `- ${selectedCompany}` : ''}`}>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart
-                data={filteredData.topProducts}
+                data={Array.isArray(filteredData.topProducts) ? filteredData.topProducts : []}
                 layout="vertical"
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={100} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#6366f1">
-                  {filteredData.topProducts.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                <YAxis dataKey="name" type="category" width={150} />
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length > 0) {
+                      const data = payload[0].payload as TopProduct;
+                      return (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="bg-white p-3 rounded-lg shadow-lg border border-gray-100"
+                        >
+                          <p className="font-medium text-gray-900">{data.name}</p>
+                          <p className="text-sm text-gray-600">
+                            Ventas: ${data.value.toLocaleString()}
+                          </p>
+                          {!selectedCompany && data.company && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              {data.company}
+                            </p>
+                          )}
+                        </motion.div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar 
+                  dataKey="value" 
+                  fill="#6366f1"
+                  animationDuration={1000}
+                >
+                  {(Array.isArray(filteredData.topProducts) ? filteredData.topProducts : []).map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={selectedCompany 
+                        ? data.salesData.find(c => c.name === selectedCompany)?.color || COLORS[index % COLORS.length]
+                        : COLORS[index % COLORS.length]
+                      }
+                    />
                   ))}
                 </Bar>
               </BarChart>

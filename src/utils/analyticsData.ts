@@ -40,6 +40,44 @@ const REGIONAL_DISTRIBUTIONS = {
   }
 };
 
+// Definir productos top por empresa
+const COMPANY_PRODUCTS = {
+  Easy: [
+    { name: 'Taladro Eléctrico', baseValue: 500 },
+    { name: 'Pintura Interior', baseValue: 450 },
+    { name: 'Set Herramientas', baseValue: 400 },
+    { name: 'Lámparas LED', baseValue: 350 },
+    { name: 'Cerraduras', baseValue: 300 }
+  ],
+  Jumbo: [
+    { name: 'Coca Cola 2.25L', baseValue: 500 },
+    { name: 'Cerveza Quilmes', baseValue: 450 },
+    { name: 'Aceite Cocinero', baseValue: 400 },
+    { name: 'Papel Higiénico', baseValue: 350 },
+    { name: 'Arroz Gallo', baseValue: 300 }
+  ],
+  Disco: [
+    { name: 'Leche La Serenísima', baseValue: 500 },
+    { name: 'Pan Lactal', baseValue: 450 },
+    { name: 'Yogur Yogurísimo', baseValue: 400 },
+    { name: 'Queso Cremoso', baseValue: 350 },
+    { name: 'Galletitas Oreo', baseValue: 300 }
+  ],
+  Vea: [
+    { name: 'Fideos Matarazzo', baseValue: 500 },
+    { name: 'Puré de Tomate', baseValue: 450 },
+    { name: 'Jabón en Polvo', baseValue: 400 },
+    { name: 'Gaseosa Manaos', baseValue: 350 },
+    { name: 'Galletas Surtidas', baseValue: 300 }
+  ]
+};
+
+interface TopProduct {
+  name: string;
+  value: number;
+  company?: string; // Opcional, para cuando mostramos todos los productos
+}
+
 export const generateRandomData = (startDate: Date, endDate: Date) => {
   const multiplier = getMultiplier(startDate, endDate);
   const baseValues = {
@@ -102,6 +140,21 @@ export const generateRandomData = (startDate: Date, endDate: Date) => {
     });
   });
 
+  // Generar productos top por empresa
+  const topProductsByCompany = {} as Record<string, TopProduct[]>;
+  
+  salesData.forEach(company => {
+    const products = COMPANY_PRODUCTS[company.name as keyof typeof COMPANY_PRODUCTS];
+    if (products) {
+      topProductsByCompany[company.name] = products.map(product => ({
+        name: product.name,
+        value: Math.floor((Math.random() * 200 + product.baseValue) * multiplier)
+      }));
+    }
+  });
+
+  console.log('Generated topProducts:', topProductsByCompany); // Para debug
+
   return {
     salesData,
     monthlyData: getMonthlyData(startDate, endDate, multiplier),
@@ -110,13 +163,7 @@ export const generateRandomData = (startDate: Date, endDate: Date) => {
       value,
       byCompany
     })),
-    topProducts: [
-      { name: 'Coca Cola 2.25L', value: Math.floor((Math.random() * 200 + baseValues.products.cocaCola) * multiplier) },
-      { name: 'Cerveza Quilmes', value: Math.floor((Math.random() * 180 + baseValues.products.cerveza) * multiplier) },
-      { name: 'Aceite Cocinero', value: Math.floor((Math.random() * 150 + baseValues.products.aceite) * multiplier) },
-      { name: 'Papel Higiénico', value: Math.floor((Math.random() * 120 + baseValues.products.papel) * multiplier) },
-      { name: 'Arroz Gallo', value: Math.floor((Math.random() * 100 + baseValues.products.arroz) * multiplier) },
-    ],
+    topProducts: topProductsByCompany,
     stats: {
       totalSales: `$${((Math.random() * 2 + 8) * multiplier).toFixed(1)}M`,
       regions: Math.floor(Math.random() * 5 + 20),
@@ -136,7 +183,8 @@ function getMonthlyData(startDate: Date, endDate: Date, multiplier: number) {
   const baseValues = {
     easy: 2000,
     jumbo: 1800,
-    disco: 1500
+    disco: 1500,
+    vea: 1200
   };
   
   while (currentDate <= endDate) {
@@ -145,6 +193,7 @@ function getMonthlyData(startDate: Date, endDate: Date, multiplier: number) {
       Easy: Math.floor((Math.random() * 1000 + baseValues.easy) * multiplier),
       Jumbo: Math.floor((Math.random() * 800 + baseValues.jumbo) * multiplier),
       Disco: Math.floor((Math.random() * 600 + baseValues.disco) * multiplier),
+      Vea: Math.floor((Math.random() * 400 + baseValues.vea) * multiplier)
     });
     currentDate.setMonth(currentDate.getMonth() + 1);
   }
