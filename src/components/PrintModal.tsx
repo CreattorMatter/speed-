@@ -49,11 +49,12 @@ export const PrintModal: React.FC<PrintModalProps> = ({
       onClick={onClose}
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.5, y: 100 }}
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.5, y: 100 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
         onClick={e => e.stopPropagation()}
-        className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 relative"
+        className="bg-white rounded-xl p-4 sm:p-6 max-w-lg w-full mx-2 sm:mx-4 relative 
+                   max-h-[90vh] overflow-y-auto"
       >
         <button
           onClick={onClose}

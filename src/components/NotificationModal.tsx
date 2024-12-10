@@ -34,10 +34,11 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           onClick={e => e.stopPropagation()}
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden"
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-2 sm:mx-4 
+                     overflow-hidden max-h-[90vh] my-2 sm:my-0"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-6 text-white relative">
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-4 sm:p-6 text-white relative">
             <button
               onClick={onClose}
               className="absolute top-4 right-4 text-white/80 hover:text-white"
@@ -58,7 +59,7 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
           </div>
 
           {/* Content */}
-          <div className="p-6 max-h-[60vh] overflow-y-auto">
+          <div className="p-3 sm:p-6 max-h-[60vh] overflow-y-auto">
             <div className="space-y-4">
               {pendingActivities.map((activity, index) => (
                 <motion.div
@@ -75,8 +76,8 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
                       damping: 10
                     }
                   }}
-                  className="bg-gray-50 rounded-xl p-4 flex items-center justify-between 
-                           border border-gray-200 hover:border-indigo-300 
+                  className="bg-gray-50 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center 
+                           justify-between p-3 sm:p-4 gap-2 sm:gap-0 border border-gray-200 hover:border-indigo-300 
                            transition-all duration-300 group cursor-pointer
                            hover:shadow-lg hover:shadow-indigo-500/10"
                 >

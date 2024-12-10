@@ -561,7 +561,7 @@ export default function Dashboard({
         </motion.div>
 
         {/* Action Buttons Section */}
-        <div className="flex justify-center gap-12 mb-12 py-12">
+        <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8 lg:gap-12 mb-8 sm:mb-12 py-6 sm:py-12 px-4">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -673,7 +673,7 @@ export default function Dashboard({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 mb-12 px-2 md:px-0"
         >
           {/* Productos Stats */}
           <motion.div
@@ -805,8 +805,7 @@ export default function Dashboard({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="rounded-xl border overflow-hidden backdrop-blur-sm
-              bg-white/50 border-gray-200 dark:border-slate-700"
+            className="rounded-xl border overflow-hidden backdrop-blur-sm bg-white/50 border-gray-200 mx-2 md:mx-0"
           >
             <div className="flex flex-col items-center mb-8">
               <div className="flex items-center gap-3 mb-2">

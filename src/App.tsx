@@ -159,13 +159,17 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900 flex items-start justify-center pt-20 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900 
+                    flex items-start justify-center pt-10 sm:pt-20 p-2 sm:p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/10 backdrop-blur-lg text-white mb-4 shadow-xl border border-white/10">
-            <LogIn className="w-10 h-10" />
+          <div className="inline-flex items-center justify-center w-16 sm:w-20 h-16 sm:h-20 
+                        rounded-full bg-white/10 backdrop-blur-lg">
+            <LogIn className="w-8 sm:w-10 h-8 sm:h-10" />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">Speed<span className="text-violet-400">+</span></h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+            Speed<span className="text-violet-400">+</span>
+          </h1>
           <p className="text-white/70 text-lg">Inicia sesión en tu cuenta</p>
         </div>
 
