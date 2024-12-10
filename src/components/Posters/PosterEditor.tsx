@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, LayoutGrid, List, Minus, Plus } from 'lucide-react';
+import { ArrowLeft, LayoutGrid, List, Minus, Plus, LayoutTemplate } from 'lucide-react';
 import { CompanySelect } from './CompanySelect';
 import { RegionSelect } from './RegionSelect';
 import { LocationSelect } from './LocationSelect';
@@ -17,6 +17,10 @@ import { LOCATIONS, REGIONS } from '../../data/locations';
 import { LoadingModal } from '../LoadingModal';
 import { products } from '../../data/products';
 import { SendingModal } from './SendingModal';
+import { TemplateSelect } from './TemplateSelect';
+import { FinancingModal } from './FinancingModal';
+import { CreditCard } from 'lucide-react';
+import { POSTER_TEMPLATES } from '../../constants/templates';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -47,6 +51,14 @@ interface Product {
   price: number;
   imageUrl: string;
   category: string;
+}
+
+interface FinancingOption {
+  bank: string;
+  logo: string;
+  cardName: string;
+  cardImage: string;
+  plan: string;
 }
 
 const PAPER_FORMATS = [
@@ -236,6 +248,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [zoom, setZoom] = useState(1);
   const [cardSize, setCardSize] = useState(0.85);
   const [isLandscape, setIsLandscape] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [isFinancingModalOpen, setIsFinancingModalOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [selectedFinancing, setSelectedFinancing] = useState<FinancingOption | null>(null);
 
   console.log('LOCATIONS imported:', LOCATIONS); // Debug
   console.log('COMPANIES imported:', COMPANIES); // Debug
@@ -383,6 +399,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     setCC(selectedIds);
   };
 
+  const selectedTemplateDetails = POSTER_TEMPLATES.find(t => t.id === selectedTemplate);
+
   return (
     <>
       <LoadingModal isOpen={isLoading} />
@@ -398,10 +416,11 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200">
+            {/* Primera fila: Empresa, Región y CC en línea */}
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Empresa:
+                <label className="block text-sm font-medium text-white/70 mb-1">
+                  Empresa
                 </label>
                 <CompanySelect
                   value={company}
@@ -410,9 +429,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Región:
+                <label className="block text-sm font-medium text-white/70 mb-1">
+                  Región
                 </label>
                 <RegionSelect
                   value={region}
@@ -425,8 +445,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-white/70 mb-1">
                   CC:
                 </label>
                 <LocationSelect
@@ -440,7 +461,41 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               </div>
             </div>
 
-            <div className="border-t border-gray-200">
+            {/* Segunda fila: Plantilla y botón de Financiación */}
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  
+                </label>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setIsTemplateModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 
+                      rounded-lg hover:bg-gray-50 transition-colors text-gray-700 w-64"
+                  >
+                    <LayoutTemplate className="w-5 h-5 text-gray-500 shrink-0" />
+                    <span className="truncate">
+                      {selectedTemplateDetails?.name || "Seleccionar plantilla..."}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setIsFinancingModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 
+                      rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+                  >
+                    <CreditCard className="w-5 h-5 text-gray-500" />
+                    <span>
+                      {selectedFinancing 
+                        ? `${selectedFinancing.bank} - ${selectedFinancing.plan}`
+                        : "Ver financiación"
+                      }
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Promoción:
@@ -766,6 +821,19 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             promotion={selectedPromotion}
             company={companyDetails}
             showLogo={showLogo}
+          />
+
+          <FinancingModal
+            isOpen={isFinancingModalOpen}
+            onClose={() => setIsFinancingModalOpen(false)}
+            onSelect={setSelectedFinancing}
+          />
+
+          <TemplateSelect
+            isOpen={isTemplateModalOpen}
+            onClose={() => setIsTemplateModalOpen(false)}
+            value={selectedTemplate}
+            onChange={setSelectedTemplate}
           />
         </main>
       </div>
