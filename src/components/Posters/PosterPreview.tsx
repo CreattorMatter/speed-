@@ -17,7 +17,8 @@ interface FinancingOption {
 }
 
 interface PosterPreviewProps {
-  product: Product;
+  product?: Product;
+  category?: string;
   promotion?: {
     discount: string;
     bank?: string;
@@ -39,10 +40,6 @@ interface PosterPreviewProps {
   points?: string;
   origin?: string;
   barcode?: string;
-  size?: {
-    id: string;
-    name: string;
-  };
   compact?: boolean;
   selectedFormat: {
     id: string;
@@ -65,17 +62,17 @@ const PAPER_FORMATS = [
   { id: 'legal', width: '215.9mm', height: '355.6mm', name: 'Legal (215.9 × 355.6 mm)' }
 ];
 
-export const PosterPreview: React.FC<PosterPreviewProps> = ({ 
+export const PosterPreview: React.FC<PosterPreviewProps> = ({
   product,
+  category,
   promotion,
   company,
   showTopLogo = true,
-  pricePerUnit = '',
-  points = '',
+  pricePerUnit,
+  points,
   origin = 'ARGENTINA',
-  barcode = '7790895000782',
+  barcode,
   compact = false,
-  size,
   selectedFormat,
   zoom,
   cardSize,
@@ -120,8 +117,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   // Calcular el precio con descuento
   const calculatePrice = () => {
     if (!promotion) return {
-      finalPrice: product.price,
-      unitPrice: product.price,
+      finalPrice: product?.price || 0,
+      unitPrice: product?.price || 0,
       totalUnits: 1,
       savedAmount: 0,
       secondUnitPrice: 0
@@ -129,55 +126,223 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
     switch (promotion.type) {
       case 'second-70':
-        const secondUnitPrice = product.price * 0.3; // 70% de descuento en la segunda unidad
+        const secondUnitPrice = product?.price * 0.3 || 0; // 70% de descuento en la segunda unidad
         return {
-          finalPrice: product.price + secondUnitPrice,
-          unitPrice: (product.price + secondUnitPrice) / 2,
+          finalPrice: product?.price + secondUnitPrice || 0,
+          unitPrice: (product?.price + secondUnitPrice) / 2,
           totalUnits: 2,
-          savedAmount: product.price * 0.7,
+          savedAmount: product?.price * 0.7 || 0,
           secondUnitPrice
         };
       case '2x1':
         return {
-          finalPrice: product.price,
-          unitPrice: product.price / 2,
+          finalPrice: product?.price || 0,
+          unitPrice: product?.price / 2 || 0,
           totalUnits: 2,
-          savedAmount: product.price
+          savedAmount: product?.price || 0
         };
       case '3x2':
         return {
-          finalPrice: product.price * 2,
-          unitPrice: (product.price * 2) / 3,
+          finalPrice: product?.price * 2 || 0,
+          unitPrice: (product?.price * 2) / 3 || 0,
           totalUnits: 3,
-          savedAmount: product.price
+          savedAmount: product?.price || 0
         };
       default:
         // Descuento porcentual normal
         const discountMatch = promotion.discount.match(/(\d+)/);
         if (!discountMatch) return {
-          finalPrice: product.price,
-          unitPrice: product.price,
+          finalPrice: product?.price || 0,
+          unitPrice: product?.price || 0,
           totalUnits: 1,
           savedAmount: 0
         };
         
         const discountPercent = parseInt(discountMatch[0]);
-        const finalPrice = product.price * (1 - discountPercent / 100);
+        const finalPrice = product?.price * (1 - discountPercent / 100) || 0;
         return {
           finalPrice,
           unitPrice: finalPrice,
           totalUnits: 1,
-          savedAmount: product.price - finalPrice
+          savedAmount: product?.price - finalPrice || 0
         };
     }
   };
 
   const priceInfo = calculatePrice();
 
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://speed-plus.com/product/${product.id}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://speed-plus.com/product/${product?.id}`;
 
   const roundedFontStyle = { 
     fontFamily: 'VAG Rounded BT, VAG Rounded Std, Arial Rounded MT Bold, Arial Black, sans-serif'
+  };
+
+  // Función para renderizar las condiciones y vigencia
+  const renderConditionsAndDates = () => {
+    if (!promotion) return null;
+
+    return (
+      <div className="text-right px-4">
+        {promotion.conditions && promotion.conditions.length > 0 && (
+          <div className="text-[14px]" style={roundedFontStyle}>
+            <span className="text-gray-600">Condiciones:</span><br />
+            {promotion.conditions.map((condition, index) => (
+              <div key={index}>• {condition}</div>
+            ))}
+          </div>
+        )}
+        {(promotion.startDate || promotion.endDate) && (
+          <div className="text-[14px] mt-2" style={roundedFontStyle}>
+            <span className="text-gray-600">Vigencia:</span><br />
+            {promotion.startDate && <div>Del {new Date(promotion.startDate).toLocaleDateString()}</div>}
+            {promotion.endDate && <div>al {new Date(promotion.endDate).toLocaleDateString()}</div>}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Función para renderizar el contenido principal
+  const renderContent = () => {
+    if (product) {
+      return (
+        <>
+          <div className="text-4xl font-bold text-black tracking-tight leading-tight uppercase px-4 max-h-[120px] overflow-hidden">
+            {product.name}
+          </div>
+          {/* Descuento y Condiciones para productos */}
+          {promotion && (
+            <div className="relative h-[100px]">
+              <div className="flex items-center justify-center">
+                <div className="bg-red-600 text-white px-6 py-2 rounded-full text-3xl font-bold">
+                  {promotion.discount}
+                </div>
+              </div>
+              {/* Condiciones y vigencia */}
+              <div className="absolute top-0 right-4">
+                {renderConditionsAndDates()}
+              </div>
+            </div>
+          )}
+        </>
+      );
+    } else if (category) {
+      return (
+        <div className="flex h-full">
+          {/* Contenido principal centrado */}
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="text-6xl font-black text-black tracking-tight leading-tight uppercase text-center mb-8">
+              {category}
+            </div>
+            {promotion && (
+              <div className="text-4xl font-bold text-red-600 text-center mb-8">
+                {promotion.title || promotion.discount}
+              </div>
+            )}
+            {financing && (
+              <div className="mt-2 mb-8 bg-indigo-600 text-white py-1 px-3 rounded text-sm">
+                {financing.plan} - {financing.bank}
+              </div>
+            )}
+            <div className="text-2xl text-gray-600 text-center">
+              Ver productos seleccionados
+            </div>
+          </div>
+
+          {/* Condiciones y vigencia al costado */}
+          {promotion && (
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 w-[300px] text-right">
+              {promotion.conditions && promotion.conditions.length > 0 && (
+                <div className="text-[14px] mb-4" style={roundedFontStyle}>
+                  <span className="text-gray-600 font-medium">Condiciones:</span><br />
+                  {promotion.conditions.map((condition, index) => (
+                    <div key={index} className="mt-1">• {condition}</div>
+                  ))}
+                </div>
+              )}
+              {(promotion.startDate || promotion.endDate) && (
+                <div className="text-[14px]" style={roundedFontStyle}>
+                  <span className="text-gray-600 font-medium">Vigencia:</span><br />
+                  {promotion.startDate && (
+                    <div className="mt-1">Del {new Date(promotion.startDate).toLocaleDateString()}</div>
+                  )}
+                  {promotion.endDate && (
+                    <div>al {new Date(promotion.endDate).toLocaleDateString()}</div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Función para renderizar la sección de precios
+  const renderPriceSection = () => {
+    if (!product) return null; // No mostrar precios si no hay producto
+
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[160px]">
+        <div className="flex items-center gap-4 mb-4">
+          <span className="text-[50px] text-gray-400 line-through">
+            ${product.price.toLocaleString('es-AR')}
+          </span>
+        </div>
+
+        <div className="text-center flex flex-col items-center">
+          <span className="text-[90px] font-black leading-none">
+            ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
+          </span>
+          {financing && (
+            <div className="mt-3 bg-indigo-600 text-white py-0.5 px-2 rounded text-xs">
+              {financing.plan} - {financing.bank}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Función para renderizar la sección inferior
+  const renderBottomSection = () => {
+    if (!product) return null; // No mostrar sección inferior si no hay producto
+
+    return (
+      <div className="h-[120px] flex flex-col justify-end pb-4">
+        <div className="grid grid-cols-2 gap-4 text-gray-800 px-4">
+          <div className="space-y-1 text-left">
+            <div className="text-base font-medium">
+              ORIGEN: {origin}
+            </div>
+          </div>
+          <div className="text-right">
+            {points && (
+              <div className="text-base font-bold">
+                SUMÁ {points} PUNTOS JUMBO MÁS
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-between items-end mt-4 px-4">
+          <div className="text-base text-left">
+            SKU: {barcode}
+          </div>
+          <div className="flex items-center gap-2">
+            <img 
+              src={qrUrl}
+              alt="QR Code"
+              className="w-16 h-16 rounded bg-white"
+            />
+            <span className="text-xs text-gray-500 text-left">
+              más información<br />del producto
+            </span>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Renderizado normal cuando no es modal
@@ -235,11 +400,11 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                       <div className="flex-1 p-6 flex justify-between items-center">
                         <div className="flex-1 px-6" style={roundedFontStyle}>
                           <h1 className="text-2xl font-black text-black leading-none">
-                            {product.name.toLowerCase()}
+                            {product?.name.toLowerCase()}
                           </h1>
                           <div className="mt-2 flex items-center gap-4">
                             <span className="text-2xl text-gray-400 line-through">
-                              ${product.price.toLocaleString('es-AR')}
+                              ${product?.price.toLocaleString('es-AR')}
                             </span>
                             {promotion && (
                               <div className="bg-red-600 text-center text-white px-4 py-1 rounded-full text-lg font-bold">
@@ -312,96 +477,13 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                         )}
                       </div>
 
-                      {/* Nombre del producto - altura máxima */}
-                      <div className="text-4xl font-bold text-black tracking-tight leading-tight uppercase px-4 max-h-[120px] overflow-hidden">
-                        {product.name}
-                      </div>
+                      {renderContent()}
 
-                      {/* Descuento y Condiciones */}
-                      {promotion && (
-                        <div className="relative h-[100px]">
-                          <div className="flex items-center justify-center">
-                            <div className="bg-red-600 text-white px-6 py-2 rounded-full text-3xl font-bold">
-                              {promotion.discount}
-                            </div>
-                          </div>
+                      {/* Sección de precios - solo si hay producto */}
+                      {renderPriceSection()}
 
-                          {/* Condiciones y vigencia */}
-                          <div className="absolute top-0 right-4 text-right">
-                            {promotion.conditions && promotion.conditions.length > 0 && (
-                              <div className="text-[14px]" style={roundedFontStyle}>
-                                <span className="text-gray-600">Condiciones:</span><br />
-                                {promotion.conditions.map((condition, index) => (
-                                  <div key={index}>• {condition}</div>
-                                ))}
-                              </div>
-                            )}
-                            {(promotion.startDate || promotion.endDate) && (
-                              <div className="text-[14px] mt-2" style={roundedFontStyle}>
-                                <span className="text-gray-600">Vigencia:</span><br />
-                                {promotion.startDate && <div>Del {new Date(promotion.startDate).toLocaleDateString()}</div>}
-                                {promotion.endDate && <div>al {new Date(promotion.endDate).toLocaleDateString()}</div>}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Sección de precios - altura fija */}
-                      <div className="flex-1 flex flex-col items-center justify-center min-h-[160px]">
-                        <div className="flex items-center gap-4 mb-4">
-                          <span className="text-[50px] text-gray-400 line-through">
-                            ${product.price.toLocaleString('es-AR')}
-                          </span>
-                        </div>
-
-                        <div className="text-center flex flex-col items-center">
-                          <span className="text-[90px] font-black leading-none">
-                            ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
-                          </span>
-                          {financing && (
-                            <div className="mt-3 bg-indigo-600 text-white py-0.5 px-2 rounded text-xs">
-                              {financing.plan} - {financing.bank}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Sección inferior - altura fija */}
-                      <div className="h-[120px] flex flex-col justify-end pb-4">
-                        {/* Información adicional */}
-                        <div className="grid grid-cols-2 gap-4 text-gray-800 px-4">
-                          <div className="space-y-1 text-left">
-                            <div className="text-base font-medium">
-                              ORIGEN: {origin}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            {points && (
-                              <div className="text-base font-bold">
-                                SUMÁ {points} PUNTOS JUMBO MÁS
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Código de barras y QR */}
-                        <div className="flex justify-between items-end mt-4 px-4">
-                          <div className="text-base text-left">
-                            SKU: {barcode}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <img 
-                              src={qrUrl}
-                              alt="QR Code"
-                              className="w-16 h-16 rounded bg-white"
-                            />
-                            <span className="text-xs text-gray-500 text-left">
-                              más información<br />del producto
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                      {/* Sección inferior - solo si hay producto */}
+                      {renderBottomSection()}
                     </div>
                   </div>
                 )}

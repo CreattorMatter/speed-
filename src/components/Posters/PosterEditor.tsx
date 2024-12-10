@@ -401,6 +401,51 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
 
   const selectedTemplateDetails = POSTER_TEMPLATES.find(t => t.id === selectedTemplate);
 
+  const renderPosters = () => {
+    if (selectedProducts.length > 0) {
+      // Renderizar carteles de productos seleccionados
+      return mappedProducts.map(product => (
+        <div key={product.id} className={`flex justify-center ${viewMode === 'list' ? 'bg-gray-100 rounded-lg p-4' : ''}`}>
+          <PosterPreview
+            product={product}
+            promotion={selectedPromotion}
+            company={companyDetails}
+            showTopLogo={showLogo}
+            pricePerUnit={`${product.price * 2}`}
+            points="49"
+            origin="ARGENTINA"
+            barcode="7790895000782"
+            compact={viewMode === 'list'}
+            selectedFormat={selectedFormat}
+            zoom={zoom}
+            cardSize={cardSize}
+            isLandscape={isLandscape}
+            financing={selectedFinancing}
+          />
+        </div>
+      ));
+    } else if (selectedCategory) {
+      // Renderizar cartel de categoría
+      return (
+        <div className="flex justify-center">
+          <PosterPreview
+            category={selectedCategory}
+            promotion={selectedPromotion}
+            company={companyDetails}
+            showTopLogo={showLogo}
+            selectedFormat={selectedFormat}
+            zoom={zoom}
+            cardSize={cardSize}
+            isLandscape={isLandscape}
+            financing={selectedFinancing}
+          />
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
   return (
     <>
       <LoadingModal isOpen={isLoading} />
@@ -769,28 +814,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
 
               <div className="h-[800px] w-[1080px] mx-auto overflow-y-auto">
                 <div className={viewMode === 'grid' ? 'space-y-8' : 'space-y-4'}>
-                  {mappedProducts.map(product => (
-                    <div key={product.id} 
-                         className={`flex justify-center ${viewMode === 'list' ? 'bg-gray-100 rounded-lg p-4' : ''}`}
-                    >
-                      <PosterPreview
-                        product={product}
-                        promotion={selectedPromotion}
-                        company={companyDetails}
-                        showTopLogo={showLogo}
-                        pricePerUnit={`${product.price * 2}`}
-                        points="49"
-                        origin="ARGENTINA"
-                        barcode="7790895000782"
-                        compact={viewMode === 'list'}
-                        selectedFormat={selectedFormat}
-                        zoom={zoom}
-                        cardSize={cardSize}
-                        isLandscape={isLandscape}
-                        financing={selectedFinancing}
-                      />
-                    </div>
-                  ))}
+                  {renderPosters()}
                 </div>
               </div>
             </div>
