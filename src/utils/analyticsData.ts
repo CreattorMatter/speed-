@@ -99,25 +99,25 @@ export const generateRandomData = (startDate: Date, endDate: Date) => {
     { 
       name: 'Easy', 
       value: Math.floor((Math.random() * 1000 + baseValues.easy) * multiplier), 
-      color: '#6366f1',
+      color: '#D64045', // Rojo Easy más oscuro (Pantone-like)
       logo: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Easy-Logo.svg'
     },
     { 
       name: 'Jumbo', 
       value: Math.floor((Math.random() * 800 + baseValues.jumbo) * multiplier), 
-      color: '#8b5cf6',
+      color: '#7EC9AC', // Verde Jumbo pastel (Pantone-like)
       logo: 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Logo_Jumbo_Cencosud.png'
     },
     { 
       name: 'Disco', 
       value: Math.floor((Math.random() * 600 + baseValues.disco) * multiplier), 
-      color: '#ec4899',
+      color: '#FF9B9B', // Rojo Disco pastel (Pantone-like)
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Disco-Supermarket-Logo.svg/2048px-Disco-Supermarket-Logo.svg.png'
     },
     { 
       name: 'Vea', 
       value: Math.floor((Math.random() * 400 + baseValues.vea) * multiplier), 
-      color: '#f43f5e',
+      color: '#FFE5A5', // Amarillo Vea pastel (Pantone-like)
       logo: 'https://upload.wikimedia.org/wikipedia/commons/9/94/Logo-VEA-Supermercados.png'
     },
   ];

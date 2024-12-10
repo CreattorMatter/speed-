@@ -66,15 +66,20 @@ interface AnalyticsData {
   };
 }
 
-const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316'];
+const COLORS = [
+  '#D64045', // Rojo Easy más oscuro (Pantone-like)
+  '#7EC9AC', // Verde Jumbo pastel (Pantone-like)
+  '#FF9B9B', // Rojo Disco pastel (Pantone-like)
+  '#FFE5A5', // Amarillo Vea pastel (Pantone-like)
+];
 
-// Definir colores más vibrantes para las regiones
+// Actualizar los colores de las regiones a tonos Pantone pastel
 const REGION_COLORS = {
-  'Buenos Aires': '#FF6B6B',  // Rojo coral
-  'Córdoba': '#4ECDC4',      // Turquesa
-  'Santa Fe': '#45B7D1',     // Azul cielo
-  'Mendoza': '#96CEB4',      // Verde menta
-  'Tucumán': '#FFEEAD'       // Amarillo suave
+  'Buenos Aires': '#E8A598', // Rosa coral pastel
+  'Córdoba': '#98C9A3',     // Verde sage pastel
+  'Santa Fe': '#9BCDDF',    // Azul cielo pastel
+  'Mendoza': '#B5E5BE',     // Verde menta pastel
+  'Tucumán': '#F7D794'      // Amarillo durazno pastel
 };
 
 // Agregar el componente LoadingModal
@@ -343,13 +348,21 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
           dataKey={selectedCompany} 
           stroke={data.salesData.find(c => c.name === selectedCompany)?.color} 
           fill={data.salesData.find(c => c.name === selectedCompany)?.color} 
+          fillOpacity={0.6}
         />
       ) : (
         <>
-          <Area type="monotone" dataKey="Easy" stackId="1" stroke="#6366f1" fill="#6366f1" />
-          <Area type="monotone" dataKey="Jumbo" stackId="1" stroke="#8b5cf6" fill="#8b5cf6" />
-          <Area type="monotone" dataKey="Disco" stackId="1" stroke="#ec4899" fill="#ec4899" />
-          <Area type="monotone" dataKey="Vea" stackId="1" stroke="#f43f5e" fill="#f43f5e" />
+          {data.salesData.map(company => (
+            <Area 
+              key={company.name}
+              type="monotone" 
+              dataKey={company.name} 
+              stackId="1" 
+              stroke={company.color}
+              fill={company.color}
+              fillOpacity={0.6}
+            />
+          ))}
         </>
       )}
     </AreaChart>
@@ -556,7 +569,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
           <ChartCard title="Ventas por Empresa">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={filteredData.salesData} margin={{ top: 50, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" opacity={0.5} />
                 <XAxis 
                   dataKey="name" 
                   tick={{ fill: '#666' }}
@@ -589,11 +602,13 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
                   dataKey="value" 
                   fill="#6366f1"
                   label={<CustomBarLabel />}
+                  radius={[10, 10, 0, 0]}
                 >
                   {filteredData.salesData.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
                       fill={entry.color}
+                      opacity={0.8}
                     />
                   ))}
                 </Bar>
@@ -617,26 +632,40 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
                 data={Array.isArray(filteredData.topProducts) ? filteredData.topProducts : []}
                 layout="vertical"
               >
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" opacity={0.5} />
                 <XAxis type="number" />
                 <YAxis dataKey="name" type="category" width={150} />
                 <Tooltip 
                   content={({ active, payload }) => {
                     if (active && payload && payload.length > 0) {
-                      const data = payload[0].payload as TopProduct;
+                      const item = payload[0].payload as TopProduct;
+                      let color: string;
+
+                      if (selectedCompany) {
+                        color = filteredData.salesData[0]?.color || COLORS[0];
+                      } else {
+                        color = item.company 
+                          ? data.salesData.find(c => c.name === item.company)?.color || COLORS[0]
+                          : COLORS[0];
+                      }
+
                       return (
                         <motion.div
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
                           className="bg-white p-3 rounded-lg shadow-lg border border-gray-100"
+                          style={{ 
+                            borderLeftColor: color,
+                            borderLeftWidth: 4 
+                          }}
                         >
-                          <p className="font-medium text-gray-900">{data.name}</p>
+                          <p className="font-medium text-gray-900">{item.name}</p>
                           <p className="text-sm text-gray-600">
-                            Ventas: ${data.value.toLocaleString()}
+                            Ventas: ${item.value.toLocaleString()}
                           </p>
-                          {!selectedCompany && data.company && (
+                          {!selectedCompany && item.company && (
                             <p className="text-xs text-gray-500 mt-1">
-                              {data.company}
+                              {item.company}
                             </p>
                           )}
                         </motion.div>
@@ -649,16 +678,26 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
                   dataKey="value" 
                   fill="#6366f1"
                   animationDuration={1000}
+                  radius={[0, 10, 10, 0]}
                 >
-                  {(Array.isArray(filteredData.topProducts) ? filteredData.topProducts : []).map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={selectedCompany 
-                        ? data.salesData.find(c => c.name === selectedCompany)?.color || COLORS[index % COLORS.length]
-                        : COLORS[index % COLORS.length]
-                      }
-                    />
-                  ))}
+                  {(Array.isArray(filteredData.topProducts) ? filteredData.topProducts : []).map((entry, index) => {
+                    let color: string;
+
+                    if (selectedCompany) {
+                      color = filteredData.salesData[0]?.color || COLORS[index % COLORS.length];
+                    } else {
+                      color = entry.company 
+                        ? data.salesData.find((c) => c.name === entry.company)?.color || COLORS[index % COLORS.length]
+                        : COLORS[index % COLORS.length];
+                    }
+
+                    return (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={color}
+                      />
+                    );
+                  })}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
