@@ -21,6 +21,7 @@ import {
 } from 'recharts';
 import { DateRangeSelector } from './DateRangeSelector';
 import { generateRandomData } from '../../utils/analyticsData';
+import { AnimatePresence } from 'framer-motion';
 
 interface AnalyticsProps {
   onBack: () => void;
@@ -43,6 +44,7 @@ interface AnalyticsData {
   regionData: Array<{
     name: string;
     value: number;
+    byCompany: Record<string, number>;
   }>;
   topProducts: Array<{
     name: string;
@@ -61,6 +63,15 @@ interface AnalyticsData {
 }
 
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316'];
+
+// Definir colores más vibrantes para las regiones
+const REGION_COLORS = {
+  'Buenos Aires': '#FF6B6B',  // Rojo coral
+  'Córdoba': '#4ECDC4',      // Turquesa
+  'Santa Fe': '#45B7D1',     // Azul cielo
+  'Mendoza': '#96CEB4',      // Verde menta
+  'Tucumán': '#FFEEAD'       // Amarillo suave
+};
 
 export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
   const [dateRange, setDateRange] = useState(() => {
@@ -92,11 +103,30 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
         name: month.name,
         [selectedCompany]: month[selectedCompany as keyof typeof month]
       })),
-      topProducts: data.topProducts.slice(0, 3),
+      regionData: data.regionData.map(region => ({
+        name: region.name,
+        value: region.byCompany[selectedCompany] || 0
+      })),
+      topProducts: data.topProducts.map(product => {
+        const companyData = data.salesData.find(c => c.name === selectedCompany);
+        const totalSales = data.salesData.reduce((sum, company) => sum + company.value, 0);
+        const companyProportion = companyData ? companyData.value / totalSales : 1;
+        
+        return {
+          name: product.name,
+          value: Math.floor(product.value * companyProportion)
+        };
+      }),
       stats: {
-        ...data.stats,
-        totalSales: `$${(parseFloat(data.stats.totalSales.replace('$', '').replace('M', '')) / 4).toFixed(1)}M`,
-        products: `${Math.floor(parseInt(data.stats.products) / 4)}`
+        totalSales: `$${(parseFloat(data.stats.totalSales.replace('$', '').replace('M', '')) / 
+                      data.salesData.length).toFixed(1)}M`,
+        regions: data.stats.regions,
+        products: `${Math.floor(parseInt(data.stats.products) / data.salesData.length)}`,
+        trends: {
+          sales: data.stats.trends.sales,
+          regions: data.stats.trends.regions,
+          products: `+${Math.floor(parseInt(data.stats.trends.products) / data.salesData.length)}`
+        }
       }
     };
   }, [data, selectedCompany]);
@@ -132,9 +162,17 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-50 rounded-lg">
+            <motion.div
+              initial={{ scale: 1 }}
+              animate={{ 
+                scale: selectedCompany ? 1.2 : 1,
+                rotate: selectedCompany ? 360 : 0
+              }}
+              transition={{ duration: 0.5, type: "spring" }}
+              className="p-2 bg-indigo-50 rounded-lg"
+            >
               <Building2 className="w-5 h-5 text-indigo-600" />
-            </div>
+            </motion.div>
             <div>
               <h3 className="text-sm font-medium text-gray-900">Empresa</h3>
               <p className="text-sm text-gray-500">
@@ -144,8 +182,8 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
           </div>
           <div className="flex gap-2">
             <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setSelectedCompany(null)}
               className={`px-3 py-1 text-sm ${
                 !selectedCompany 
@@ -158,21 +196,50 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
             {data.salesData.map((company) => (
               <motion.button
                 key={company.name}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setSelectedCompany(company.name)}
                 className={`flex items-center gap-2 px-3 py-1 text-sm ${
                   selectedCompany === company.name 
-                    ? 'bg-indigo-50 text-indigo-600' 
+                    ? 'bg-indigo-50 text-indigo-600 shadow-lg' 
                     : 'text-indigo-600 hover:bg-indigo-50'
-                } rounded-lg`}
+                } rounded-lg transition-all duration-300`}
               >
-                <img 
-                  src={company.logo} 
-                  alt={company.name} 
-                  className="w-4 h-4 object-contain"
-                />
-                {company.name}
+                <motion.div
+                  initial={{ scale: 1 }}
+                  animate={{ 
+                    scale: selectedCompany === company.name ? 1.2 : 1,
+                    rotate: selectedCompany === company.name ? 360 : 0
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 260,
+                    damping: 20
+                  }}
+                  className="relative"
+                >
+                  <motion.img 
+                    src={company.logo} 
+                    alt={company.name} 
+                    className="w-6 h-6 object-contain"
+                    style={{ 
+                      filter: selectedCompany === company.name ? 'none' : 'grayscale(0.5)'
+                    }}
+                  />
+                  {selectedCompany === company.name && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -inset-1 bg-indigo-100 rounded-full -z-10"
+                      layoutId="selectedCompany"
+                    />
+                  )}
+                </motion.div>
+                <span className={`font-medium ${
+                  selectedCompany === company.name ? 'scale-105' : ''
+                } transition-transform duration-300`}>
+                  {company.name}
+                </span>
               </motion.button>
             ))}
           </div>
@@ -180,6 +247,161 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
       </div>
     </div>
   );
+
+  const renderAreaChart = () => (
+    <AreaChart data={filteredData.monthlyData}>
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="name" />
+      <YAxis />
+      <Tooltip />
+      {selectedCompany ? (
+        <Area 
+          type="monotone" 
+          dataKey={selectedCompany} 
+          stroke={data.salesData.find(c => c.name === selectedCompany)?.color} 
+          fill={data.salesData.find(c => c.name === selectedCompany)?.color} 
+        />
+      ) : (
+        <>
+          <Area type="monotone" dataKey="Easy" stackId="1" stroke="#6366f1" fill="#6366f1" />
+          <Area type="monotone" dataKey="Jumbo" stackId="1" stroke="#8b5cf6" fill="#8b5cf6" />
+          <Area type="monotone" dataKey="Disco" stackId="1" stroke="#ec4899" fill="#ec4899" />
+        </>
+      )}
+    </AreaChart>
+  );
+
+  // Componente personalizado para el gráfico de distribución regional
+  const RegionalDistributionChart = () => {
+    const [key, setKey] = React.useState(0);
+    const [rotation, setRotation] = React.useState(0);
+
+    // Actualizar key y rotación cuando cambia la empresa o las fechas
+    React.useEffect(() => {
+      setKey(prev => prev + 1);
+      setRotation(prev => prev + 90); // Rotar 90 grados en cada cambio
+    }, [selectedCompany, dateRange]);
+
+    return (
+      <ChartCard title="Distribución Regional">
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={filteredData.regionData}
+              cx="50%"
+              cy="50%"
+              outerRadius={100}
+              innerRadius={60} // Agregar innerRadius para hacer un donut chart
+              fill="#8884d8"
+              dataKey="value"
+              label={({
+                cx,
+                cy,
+                midAngle,
+                innerRadius,
+                outerRadius,
+                value,
+                name
+              }) => {
+                const RADIAN = Math.PI / 180;
+                const radius = 25 + innerRadius + (outerRadius - innerRadius);
+                const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                return (
+                  <text
+                    x={x}
+                    y={y}
+                    className="text-xs"
+                    fill="#666"
+                    textAnchor={x > cx ? 'start' : 'end'}
+                    dominantBaseline="central"
+                  >
+                    {`${name} (${((value / filteredData.regionData.reduce((a, b) => a + b.value, 0)) * 100).toFixed(1)}%)`}
+                  </text>
+                );
+              }}
+              labelLine={true}
+              animationBegin={0}
+              animationDuration={800}
+              animationEasing="ease-out"
+              key={key}
+              startAngle={rotation}
+              endAngle={rotation + 360}
+            >
+              {filteredData.regionData.map((entry) => (
+                <Cell 
+                  key={`cell-${entry.name}-${key}`}
+                  fill={REGION_COLORS[entry.name as keyof typeof REGION_COLORS]}
+                >
+                  <animate
+                    attributeName="d"
+                    dur="800ms"
+                    fill="freeze"
+                    begin="0s"
+                  />
+                </Cell>
+              ))}
+            </Pie>
+            <Tooltip 
+              content={({ active, payload }) => {
+                if (active && payload?.[0]) {
+                  const data = payload[0].payload;
+                  const total = filteredData.regionData.reduce((a, b) => a + b.value, 0);
+                  const percentage = ((data.value / total) * 100).toFixed(1);
+                  
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-white p-3 rounded-lg shadow-lg border border-gray-100"
+                    >
+                      <p className="font-medium text-gray-900">{data.name}</p>
+                      <p className="text-sm text-gray-600">
+                        Ventas: ${data.value.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {percentage}% del total
+                      </p>
+                    </motion.div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Legend
+              content={({ payload }) => (
+                <div className="flex flex-wrap justify-center gap-4 mt-4">
+                  {payload?.map((entry: any, index: number) => (
+                    <motion.div
+                      key={`legend-${entry.value}-${key}`}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ 
+                        delay: index * 0.1,
+                        type: "spring",
+                        stiffness: 100
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <motion.div 
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: entry.color }}
+                        whileHover={{ scale: 1.2 }}
+                      />
+                      <span className="text-sm text-gray-600">
+                        {entry.value}
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </ChartCard>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -291,41 +513,13 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
             </ResponsiveContainer>
           </ChartCard>
 
-          <ChartCard title="Distribución Regional">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={filteredData.regionData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label
-                >
-                  {filteredData.regionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartCard>
+          <RegionalDistributionChart />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ChartCard title="Tendencia Mensual">
+          <ChartCard title={`Cantidad de Ventas ${selectedCompany ? `- ${selectedCompany}` : ''}`}>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={filteredData.monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Area type="monotone" dataKey="Easy" stackId="1" stroke="#6366f1" fill="#6366f1" />
-                <Area type="monotone" dataKey="Jumbo" stackId="1" stroke="#8b5cf6" fill="#8b5cf6" />
-                <Area type="monotone" dataKey="Disco" stackId="1" stroke="#ec4899" fill="#ec4899" />
-              </AreaChart>
+              {renderAreaChart()}
             </ResponsiveContainer>
           </ChartCard>
 

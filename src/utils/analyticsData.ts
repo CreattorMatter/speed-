@@ -8,6 +8,38 @@ const getMultiplier = (startDate: Date, endDate: Date): number => {
   return 1;                         // Mes
 };
 
+// Definir distribuciones base por empresa
+const REGIONAL_DISTRIBUTIONS = {
+  Easy: {
+    'Buenos Aires': 0.35,  // 35% de las ventas
+    'Córdoba': 0.25,      // 25% de las ventas
+    'Santa Fe': 0.20,     // 20% de las ventas
+    'Mendoza': 0.15,      // 15% de las ventas
+    'Tucumán': 0.05       // 5% de las ventas
+  },
+  Jumbo: {
+    'Buenos Aires': 0.45,
+    'Córdoba': 0.20,
+    'Santa Fe': 0.15,
+    'Mendoza': 0.12,
+    'Tucumán': 0.08
+  },
+  Disco: {
+    'Buenos Aires': 0.40,
+    'Córdoba': 0.22,
+    'Santa Fe': 0.18,
+    'Mendoza': 0.13,
+    'Tucumán': 0.07
+  },
+  Vea: {
+    'Buenos Aires': 0.30,
+    'Córdoba': 0.28,
+    'Santa Fe': 0.22,
+    'Mendoza': 0.12,
+    'Tucumán': 0.08
+  }
+};
+
 export const generateRandomData = (startDate: Date, endDate: Date) => {
   const multiplier = getMultiplier(startDate, endDate);
   const baseValues = {
@@ -24,41 +56,60 @@ export const generateRandomData = (startDate: Date, endDate: Date) => {
     }
   };
 
+  // Generar datos de ventas por empresa primero
+  const salesData = [
+    { 
+      name: 'Easy', 
+      value: Math.floor((Math.random() * 1000 + baseValues.easy) * multiplier), 
+      color: '#6366f1',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Easy-Logo.svg'
+    },
+    { 
+      name: 'Jumbo', 
+      value: Math.floor((Math.random() * 800 + baseValues.jumbo) * multiplier), 
+      color: '#8b5cf6',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Logo_Jumbo_Cencosud.png'
+    },
+    { 
+      name: 'Disco', 
+      value: Math.floor((Math.random() * 600 + baseValues.disco) * multiplier), 
+      color: '#ec4899',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Disco-Supermarket-Logo.svg/2048px-Disco-Supermarket-Logo.svg.png'
+    },
+    { 
+      name: 'Vea', 
+      value: Math.floor((Math.random() * 400 + baseValues.vea) * multiplier), 
+      color: '#f43f5e',
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/9/94/Logo-VEA-Supermercados.png'
+    },
+  ];
+
+  // Generar datos regionales basados en las ventas de cada empresa
+  const regionData = Object.keys(REGIONAL_DISTRIBUTIONS.Easy).map(region => ({
+    name: region,
+    value: 0, // Inicializar en 0
+    byCompany: {} as Record<string, number> // Guardar valores por empresa
+  }));
+
+  // Calcular valores regionales para cada empresa
+  salesData.forEach(company => {
+    const distribution = REGIONAL_DISTRIBUTIONS[company.name as keyof typeof REGIONAL_DISTRIBUTIONS];
+    Object.entries(distribution).forEach(([region, percentage]) => {
+      const regionValue = Math.floor(company.value * percentage);
+      const regionIndex = regionData.findIndex(r => r.name === region);
+      regionData[regionIndex].value += regionValue;
+      regionData[regionIndex].byCompany[company.name] = regionValue;
+    });
+  });
+
   return {
-    salesData: [
-      { 
-        name: 'Easy', 
-        value: Math.floor((Math.random() * 1000 + baseValues.easy) * multiplier), 
-        color: '#6366f1',
-        logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRaiNrct47zvNoB19TpUqoe01LcuRmVJ6hEDg&s'
-      },
-      { 
-        name: 'Jumbo', 
-        value: Math.floor((Math.random() * 800 + baseValues.jumbo) * multiplier), 
-        color: '#8b5cf6',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Logo_Jumbo_Cencosud.png'
-      },
-      { 
-        name: 'Disco', 
-        value: Math.floor((Math.random() * 600 + baseValues.disco) * multiplier), 
-        color: '#ec4899',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Disco-Supermarket-Logo.svg/2048px-Disco-Supermarket-Logo.svg.png'
-      },
-      { 
-        name: 'Vea', 
-        value: Math.floor((Math.random() * 400 + baseValues.vea) * multiplier), 
-        color: '#f43f5e',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/9/94/Logo-VEA-Supermercados.png'
-      },
-    ],
+    salesData,
     monthlyData: getMonthlyData(startDate, endDate, multiplier),
-    regionData: [
-      { name: 'Buenos Aires', value: Math.floor((Math.random() * 2000 + 5000) * multiplier) },
-      { name: 'Córdoba', value: Math.floor((Math.random() * 1000 + 3000) * multiplier) },
-      { name: 'Santa Fe', value: Math.floor((Math.random() * 1000 + 2000) * multiplier) },
-      { name: 'Mendoza', value: Math.floor((Math.random() * 800 + 1500) * multiplier) },
-      { name: 'Tucumán', value: Math.floor((Math.random() * 500 + 1000) * multiplier) },
-    ],
+    regionData: regionData.map(({ name, value, byCompany }) => ({
+      name,
+      value,
+      byCompany
+    })),
     topProducts: [
       { name: 'Coca Cola 2.25L', value: Math.floor((Math.random() * 200 + baseValues.products.cocaCola) * multiplier) },
       { name: 'Cerveza Quilmes', value: Math.floor((Math.random() * 180 + baseValues.products.cerveza) * multiplier) },
