@@ -39,6 +39,7 @@ const mockRoles = [
       { id: '3', name: 'Productos', description: 'Gestión de productos' },
       { id: '3', name: 'Promociones', description: 'Gestión de Promociones' },
       { id: '3', name: 'Cartel', description: 'Creación de Carteles' },
+      { id: '3', name: 'Impresión', description: 'Impresión de Carteles' },
       { id: '3', name: 'Builder', description: 'Creación de Plantillas' }
     ],
     usersCount: 2
@@ -49,6 +50,8 @@ const mockRoles = [
     description: 'Acceso básico al sistema',
     permissions: [
       { id: '3', name: 'Productos', description: 'Gestión de productos' },
+      { id: '3', name: 'Impresión', description: 'Impresión de Carteles' },
+      { id: '3', name: 'Re Impresión', description: 'Impresión de Carteles' },
       { id: '3', name: 'Promociones', description: 'Gestión de Promociones' }
     ],
     usersCount: 5
