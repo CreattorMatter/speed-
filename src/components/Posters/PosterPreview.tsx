@@ -9,6 +9,13 @@ interface Product {
   category: string;
 }
 
+interface FinancingOption {
+  logo: string;
+  bank: string;
+  cardName: string;
+  plan: string;
+}
+
 interface PosterPreviewProps {
   product: Product;
   promotion?: {
@@ -46,6 +53,7 @@ interface PosterPreviewProps {
   zoom: number;
   cardSize: number;
   isLandscape?: boolean;
+  financing?: FinancingOption | null;
 }
 
 // Definimos los formatos de papel disponibles
@@ -71,7 +79,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   selectedFormat,
   zoom,
   cardSize,
-  isLandscape = false
+  isLandscape = false,
+  financing = null
 }) => {
   // En el componente, agregamos el estado para el formato seleccionado
   const [showFormatSelector, setShowFormatSelector] = useState(false);
@@ -223,7 +232,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                       )}
 
                       {/* Contenido en modo lista */}
-                      <div className="flex-1 p-4 flex justify-between items-center">
+                      <div className="flex-1 p-6 flex justify-between items-center">
                         <div className="flex-1 px-6" style={roundedFontStyle}>
                           <h1 className="text-2xl font-black text-black leading-none">
                             {product.name.toLowerCase()}
@@ -238,110 +247,130 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                               </div>
                             )}
                           </div>
-                          <div className="mt-2">
-                            <span className="text-4xl font-black text-black" style={roundedFontStyle}>
-                              ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
-                            </span>
-                          </div>
                         </div>
 
-                        <div className="flex items-center gap-8">
-                          <div className="flex items-center gap-4">
-                            <div className="text-sm text-gray-600">SKU: {barcode}</div>
-                            <img src={qrUrl} alt="QR Code" className="w-16 h-16" />
+                        <div className="flex flex-col items-end">
+                          <div className="text-4xl font-black text-black" style={roundedFontStyle}>
+                            ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
                           </div>
-                          <div className="text-sm" style={roundedFontStyle}>
-                            <div className="font-medium">ORIGEN: {origin}</div>
-                            {points && <div className="font-bold">SUMÁ {points} PUNTOS</div>}
+                          {financing && (
+                            <div className="mt-1 bg-indigo-600 text-white px-2 py-0.5 rounded text-xs">
+                              {financing.plan} - {financing.bank}
+                            </div>
+                          )}
+                          <div className="mt-2 flex items-center gap-4">
+                            <div className="text-sm text-gray-600">SKU: {barcode}</div>
+                            <img src={qrUrl} alt="QR Code" className="w-12 h-12" />
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="transform" style={{ transform: `scale(${cardSize})` }}>
-                    <div className="bg-white p-2 rounded-lg shadow-2xl w-[900px] h-[600px] relative overflow-hidden">
-                      {/* Logo de fondo translúcido */}
+                  <div 
+                    className="transform bg-white rounded-lg shadow-2xl overflow-hidden"
+                    style={{ 
+                      transform: `scale(${cardSize})`,
+                      width: '900px',  // Ancho fijo
+                      height: '600px', // Alto fijo
+                    }}
+                  >
+                    <div className="space-y-4 text-center relative h-full flex flex-col justify-center" style={roundedFontStyle}>
+                      {/* Logo de fondo translúcido - Movido fuera de la sección de logo */}
                       {company?.logo && (
-                        <div className="absolute inset-0 flex items-center justify-center opacity-5">
+                        <div className="absolute inset-0 z-0 pointer-events-none">
                           <img 
                             src={company.logo}
                             alt={company.name}
-                            className="w-2/3 object-contain"
+                            style={{
+                              position: 'absolute',
+                              width: '100%',
+                              height: '100%',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%) rotate(-30deg)',
+                              opacity: 0.08,
+                              objectFit: 'contain',
+                              filter: 'grayscale(0%)',
+                              mixBlendMode: 'multiply',
+                              transformOrigin: 'center center'
+                            }}
                           />
                         </div>
                       )}
 
-                      <div className="space-y-4 text-center relative h-full" style={roundedFontStyle}>
-                        {/* Reservamos el espacio para el logo siempre, esté visible o no */}
-                        <div className="h-20">
-                          {showTopLogo && company?.logo && (
-                            <div className="absolute left-1 top-1">
-                              <img 
-                                src={company.logo}
-                                alt={company.name}
-                                className="h-24 w-auto object-contain"
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Nombre del producto */}
-                        <div className="text-4xl font-bold text-black tracking-tight leading-tight uppercase mt-28 text-center">
-                          {product.name}
-                        </div>
-
-                        {/* Descuento y Condiciones */}
-                        {promotion && (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-center">
-                              <div className="bg-red-600 text-white px-6 py-2 rounded-full text-3xl font-bold">
-                                {promotion.discount}
-                              </div>
-                            </div>
-
-                            {/* Condiciones y vigencia */}
-                            <div className="text-right absolute top-40 right-10">
-                              {promotion.conditions && promotion.conditions.length > 0 && (
-                                <div className="text-[14px]" style={roundedFontStyle}>
-                                  <span className="text-gray-600">Condiciones:</span><br />
-                                  {promotion.conditions.map((condition, index) => (
-                                    <div key={index}>• {condition}</div>
-                                  ))}
-                                </div>
-                              )}
-                              {(promotion.startDate || promotion.endDate) && (
-                                <div className="text-[14px] mt-2" style={roundedFontStyle}>
-                                  <span className="text-gray-600">Vigencia:</span><br />
-                                  {promotion.startDate && <div>Del {new Date(promotion.startDate).toLocaleDateString()}</div>}
-                                  {promotion.endDate && <div>al {new Date(promotion.endDate).toLocaleDateString()}</div>}
-                                </div>
-                              )}
-                            </div>
+                      {/* Logo section - solo para el logo superior */}
+                      <div className="h-[100px] relative z-10">
+                        {showTopLogo && company?.logo && (
+                          <div className="absolute left-1 top-1">
+                            <img 
+                              src={company.logo}
+                              alt={company.name}
+                              className="h-24 w-auto object-contain"
+                            />
                           </div>
                         )}
+                      </div>
 
-                        {/* Sección de precios */}
-                        <div className="flex-grow flex flex-col items-center justify-center -mt-0">
-                          {/* Precio tachado y descuento */}
-                          <div className="flex items-center gap-4 mb-4">
-                            <span className="text-[50px] text-gray-400 line-through">
-                              ${product.price.toLocaleString('es-AR')}
-                            </span>
+                      {/* Nombre del producto - altura máxima */}
+                      <div className="text-4xl font-bold text-black tracking-tight leading-tight uppercase px-4 max-h-[120px] overflow-hidden">
+                        {product.name}
+                      </div>
+
+                      {/* Descuento y Condiciones */}
+                      {promotion && (
+                        <div className="relative h-[100px]">
+                          <div className="flex items-center justify-center">
+                            <div className="bg-red-600 text-white px-6 py-2 rounded-full text-3xl font-bold">
+                              {promotion.discount}
+                            </div>
                           </div>
 
-                          {/* Precio Final */}
-                          <span className="text-[90px] font-black leading-none mb-4" 
-                                style={{ 
-                                  ...roundedFontStyle,
-                                  letterSpacing: '-0.01em'
-                                }}>
-                            ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
+                          {/* Condiciones y vigencia */}
+                          <div className="absolute top-0 right-4 text-right">
+                            {promotion.conditions && promotion.conditions.length > 0 && (
+                              <div className="text-[14px]" style={roundedFontStyle}>
+                                <span className="text-gray-600">Condiciones:</span><br />
+                                {promotion.conditions.map((condition, index) => (
+                                  <div key={index}>• {condition}</div>
+                                ))}
+                              </div>
+                            )}
+                            {(promotion.startDate || promotion.endDate) && (
+                              <div className="text-[14px] mt-2" style={roundedFontStyle}>
+                                <span className="text-gray-600">Vigencia:</span><br />
+                                {promotion.startDate && <div>Del {new Date(promotion.startDate).toLocaleDateString()}</div>}
+                                {promotion.endDate && <div>al {new Date(promotion.endDate).toLocaleDateString()}</div>}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Sección de precios - altura fija */}
+                      <div className="flex-1 flex flex-col items-center justify-center min-h-[160px]">
+                        <div className="flex items-center gap-4 mb-4">
+                          <span className="text-[50px] text-gray-400 line-through">
+                            ${product.price.toLocaleString('es-AR')}
                           </span>
                         </div>
 
+                        <div className="text-center flex flex-col items-center">
+                          <span className="text-[90px] font-black leading-none">
+                            ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
+                          </span>
+                          {financing && (
+                            <div className="mt-3 bg-indigo-600 text-white py-0.5 px-2 rounded text-xs">
+                              {financing.plan} - {financing.bank}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Sección inferior - altura fija */}
+                      <div className="h-[120px] flex flex-col justify-end pb-4">
                         {/* Información adicional */}
-                        <div className="grid grid-cols-2 gap-4 text-gray-800 mt-4">
+                        <div className="grid grid-cols-2 gap-4 text-gray-800 px-4">
                           <div className="space-y-1 text-left">
                             <div className="text-base font-medium">
                               ORIGEN: {origin}
@@ -357,7 +386,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                         </div>
 
                         {/* Código de barras y QR */}
-                        <div className="flex justify-between items-end mt-4">
+                        <div className="flex justify-between items-end mt-4 px-4">
                           <div className="text-base text-left">
                             SKU: {barcode}
                           </div>

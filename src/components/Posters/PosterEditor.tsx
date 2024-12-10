@@ -787,6 +787,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         zoom={zoom}
                         cardSize={cardSize}
                         isLandscape={isLandscape}
+                        financing={selectedFinancing}
                       />
                     </div>
                   ))}
