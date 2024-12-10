@@ -3,6 +3,7 @@ import { ArrowLeft, LogOut, Plus, Package2, Tags, Star, Clock, FileText, Sun, Mo
 import { motion } from 'framer-motion';
 import { Header } from './shared/Header';
 import { COMPANIES } from '../data/companies';
+import { PrintModal } from './PrintModal';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -481,6 +482,7 @@ export default function Dashboard({
   };
 
   const [selectedActivity, setSelectedActivity] = useState<PlantillaReciente | null>(null);
+  const [printModalActivity, setPrintModalActivity] = useState<PlantillaReciente | null>(null);
 
   // Filtrar plantillas recientes según el rol y usuario
   const filteredPlantillasRecientes = React.useMemo(() => {
@@ -493,6 +495,20 @@ export default function Dashboard({
       plantilla.sucursal?.toLowerCase().includes('pilar')
     );
   }, [userRole]);
+
+  const handlePrint = (id: string) => {
+    // Actualizar el estado de la actividad a 'impreso'
+    const updatedPlantillas = plantillasRecientes.map(plantilla => 
+      plantilla.id === id 
+        ? { ...plantilla, estado: 'impreso' as const }
+        : plantilla
+    );
+    
+    // Actualizar el estado global de plantillas
+    // Aquí deberías tener una función para actualizar el estado global
+    // Por ahora solo cerramos el modal
+    setPrintModalActivity(null);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -845,24 +861,35 @@ export default function Dashboard({
                       <p className="text-sm text-indigo-300/40">{getTextByType(template)}</p>
                     </div>
                   </div>
-                  <motion.div 
-                    className={`px-2 py-1 rounded-full text-xs ${
+                  <div className="flex items-center gap-2">
+                    {template.estado === 'no_impreso' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPrintModalActivity(template);
+                        }}
+                        className="p-2 rounded-lg hover:bg-indigo-50 transition-colors"
+                      >
+                        <Printer className="w-4 h-4 text-indigo-600" />
+                      </button>
+                    )}
+                    <motion.div className={`px-2 py-1 rounded-full text-xs ${
                       template.estado === 'impreso' 
                         ? 'bg-green-100 text-green-800 border border-green-200' 
                         : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                    }`}
-                  >
-                    {template.estado === 'impreso' ? (
-                      <div className="flex items-center gap-1">
-                        <span>✓</span>
-                        <span>Impreso</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1">
-                        <span>No impreso</span>
-                      </div>
-                    )}
-                  </motion.div>
+                    }`}>
+                      {template.estado === 'impreso' ? (
+                        <div className="flex items-center gap-1">
+                          <span>✓</span>
+                          <span>Impreso</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <span>No impreso</span>
+                        </div>
+                      )}
+                    </motion.div>
+                  </div>
                 </motion.div>
               ))}
             </div>
@@ -980,6 +1007,13 @@ export default function Dashboard({
             </motion.div>
           </motion.div>
         )}
+
+        <PrintModal
+          isOpen={!!printModalActivity}
+          onClose={() => setPrintModalActivity(null)}
+          activity={printModalActivity!}
+          onPrint={handlePrint}
+        />
       </motion.div>
     </div>
   );
