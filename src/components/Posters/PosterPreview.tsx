@@ -212,7 +212,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
           </div>
           {/* Descuento y Condiciones para productos */}
           {promotion && (
-            <div className="relative h-[100px]">
+            <div className="relative h-[70px]">
               <div className="flex items-center justify-center">
                 <div className="bg-red-600 text-white px-6 py-2 rounded-full text-3xl font-bold">
                   {promotion.discount}
