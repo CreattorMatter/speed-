@@ -325,6 +325,102 @@ const plantillasRecientes: PlantillaReciente[] = [
       nombre: 'Vea',
       logo: LOGOS.vea
     }
+  },
+  // Nuevas actividades para Jumbo Pilar
+  {
+    id: '21',
+    nombre: 'Carteles Ofertas Semanales',
+    tipo: 'envio',
+    tiempoAtras: 'hace 1h',
+    sucursal: 'Jumbo Pilar',
+    cantidad: 15,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Jumbo',
+      logo: LOGOS.jumbo
+    }
+  },
+  {
+    id: '22',
+    nombre: 'Carteles Frutas y Verduras',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 3h',
+    sucursal: 'Jumbo Pilar',
+    cantidad: 8,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Jumbo',
+      logo: LOGOS.jumbo
+    }
+  },
+
+  // Nuevas actividades para Disco Pilar
+  {
+    id: '23',
+    nombre: 'Carteles Lácteos',
+    tipo: 'envio',
+    tiempoAtras: 'hace 2h',
+    sucursal: 'Disco Pilar',
+    cantidad: 12,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Disco',
+      logo: LOGOS.disco
+    }
+  },
+  {
+    id: '24',
+    nombre: 'Carteles Limpieza',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 4h',
+    sucursal: 'Disco Pilar',
+    cantidad: 6,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Disco',
+      logo: LOGOS.disco
+    }
+  },
+
+  // Nuevas actividades para Easy Pilar
+  {
+    id: '25',
+    nombre: 'Carteles Herramientas',
+    tipo: 'envio',
+    tiempoAtras: 'hace 30m',
+    sucursal: 'Easy Pilar',
+    cantidad: 20,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Easy',
+      logo: LOGOS.easy
+    }
+  },
+  {
+    id: '26',
+    nombre: 'Carteles Jardín',
+    tipo: 'impresion',
+    tiempoAtras: 'hace 5h',
+    sucursal: 'Easy Pilar',
+    cantidad: 15,
+    estado: 'impreso',
+    empresa: {
+      nombre: 'Easy',
+      logo: LOGOS.easy
+    }
+  },
+  {
+    id: '27',
+    nombre: 'Carteles Electrodomésticos',
+    tipo: 'edicion',
+    tiempoAtras: 'hace 6h',
+    sucursal: 'Easy Pilar',
+    cantidad: 10,
+    estado: 'no_impreso',
+    empresa: {
+      nombre: 'Easy',
+      logo: LOGOS.easy
+    }
   }
 ];
 
@@ -385,6 +481,18 @@ export default function Dashboard({
   };
 
   const [selectedActivity, setSelectedActivity] = useState<PlantillaReciente | null>(null);
+
+  // Filtrar plantillas recientes según el rol y usuario
+  const filteredPlantillasRecientes = React.useMemo(() => {
+    if (userRole === 'admin') {
+      return plantillasRecientes;
+    }
+    
+    // Para el usuario pilar, solo mostrar actividades de su sucursal
+    return plantillasRecientes.filter(plantilla => 
+      plantilla.sucursal?.toLowerCase().includes('pilar')
+    );
+  }, [userRole]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -698,7 +806,7 @@ export default function Dashboard({
             </div>
             <div className={`rounded-xl border overflow-hidden
               bg-white border-gray-200`}>
-              {plantillasRecientes.map((template, index) => (
+              {filteredPlantillasRecientes.map((template, index) => (
                 <motion.div 
                   key={template.id}
                   initial={{ opacity: 0.9, x: 0 }}
@@ -715,7 +823,7 @@ export default function Dashboard({
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setSelectedActivity(template)}
                   className={`flex items-center justify-between p-4 transition-all duration-200 cursor-pointer
-                            ${index !== plantillasRecientes.length - 1 ? 'border-b border-indigo-500/10' : ''}
+                            ${index !== filteredPlantillasRecientes.length - 1 ? 'border-b border-indigo-500/10' : ''}
                             hover:shadow-lg hover:shadow-indigo-500/10`}
                 >
                   <div className="flex items-center gap-4">
