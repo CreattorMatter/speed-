@@ -12,16 +12,16 @@ interface ConfigurationPortalProps {
 const mockUsers = [
   {
     id: '1',
-    name: 'Admin Usuario',
-    email: 'admin@ejemplo.com',
+    name: 'Usuario Administrador',
+    email: 'admin@admin.com',
     role: 'Administrador',
     status: 'active' as const,
     lastLogin: 'Hace 2 horas'
   },
   {
     id: '2',
-    name: 'Usuario Normal',
-    email: 'usuario@ejemplo.com',
+    name: 'Usuario Sucursal Pilar',
+    email: 'pilar@cenco.com',
     role: 'Usuario',
     status: 'active' as const,
     lastLogin: 'Hace 1 día'
@@ -36,7 +36,10 @@ const mockRoles = [
     permissions: [
       { id: '1', name: 'Usuarios', description: 'Gestión de usuarios' },
       { id: '2', name: 'Roles', description: 'Gestión de roles' },
-      { id: '3', name: 'Productos', description: 'Gestión de productos' }
+      { id: '3', name: 'Productos', description: 'Gestión de productos' },
+      { id: '3', name: 'Promociones', description: 'Gestión de Promociones' },
+      { id: '3', name: 'Cartel', description: 'Creación de Carteles' },
+      { id: '3', name: 'Builder', description: 'Creación de Plantillas' }
     ],
     usersCount: 2
   },
@@ -45,7 +48,8 @@ const mockRoles = [
     name: 'Usuario',
     description: 'Acceso básico al sistema',
     permissions: [
-      { id: '3', name: 'Productos', description: 'Gestión de productos' }
+      { id: '3', name: 'Productos', description: 'Gestión de productos' },
+      { id: '3', name: 'Promociones', description: 'Gestión de Promociones' }
     ],
     usersCount: 5
   }
