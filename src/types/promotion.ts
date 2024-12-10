@@ -1,12 +1,20 @@
 export interface Promotion {
   id: string;
   title: string;
-  description?: string;
+  description: string;
   discount: string;
+  startDate: string;
+  endDate: string;
+  imageUrl: string;
+  category: 'Bancaria' | 'Producto' | 'Categoría' | 'Especial';
+  conditions: string[];
+  isActive: boolean;
   bank?: string;
   cardType?: string;
-  conditions?: string[];
-  startDate?: string;
-  endDate?: string;
-  type?: 'percentage' | '2x1' | '3x2' | 'second-70';
+  selectedBanks: string[];
+  cardOptions: {
+    debit: boolean;
+    credit: boolean;
+    cardBrands: string[];
+  };
 } 

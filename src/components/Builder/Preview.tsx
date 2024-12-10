@@ -1,24 +1,15 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { Block, PaperFormat } from '../../types/builder';
+import { Block } from '../../types/builder';
 import { renderBlockContent } from '../../utils/blockRenderer';
-import { Company } from '../../data/companies';
-import { Promotion } from '../../types/promotion';
 
 interface PreviewProps {
   blocks: Block[];
   isOpen: boolean;
   onClose: () => void;
-  paperFormat: PaperFormat;
-  isLandscape: boolean;
-  company: Company | null;
-  promotion: Promotion | null;
-  showPoints: boolean;
-  showOrigin: boolean;
-  showBarcode: boolean;
 }
 
-export default function Preview({ blocks, isOpen, onClose, paperFormat, isLandscape, company, promotion, showPoints, showOrigin, showBarcode }: PreviewProps) {
+export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
   if (!isOpen) return null;
 
   return (
