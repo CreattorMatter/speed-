@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Header } from './shared/Header';
 import { COMPANIES } from '../data/companies';
 import { PrintModal } from './PrintModal';
+import { NotificationModal } from './NotificationModal';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -483,31 +484,37 @@ export default function Dashboard({
 
   const [selectedActivity, setSelectedActivity] = useState<PlantillaReciente | null>(null);
   const [printModalActivity, setPrintModalActivity] = useState<PlantillaReciente | null>(null);
+  const [showNotificationModal, setShowNotificationModal] = useState(true);
+  const [plantillas, setPlantillas] = useState(plantillasRecientes);
 
-  // Filtrar plantillas recientes según el rol y usuario
+  // Actualizar el filtrado para usar el estado local
   const filteredPlantillasRecientes = React.useMemo(() => {
     if (userRole === 'admin') {
-      return plantillasRecientes;
+      return plantillas;
     }
     
-    // Para el usuario pilar, solo mostrar actividades de su sucursal
-    return plantillasRecientes.filter(plantilla => 
+    return plantillas.filter(plantilla => 
       plantilla.sucursal?.toLowerCase().includes('pilar')
     );
-  }, [userRole]);
+  }, [userRole, plantillas]);
 
   const handlePrint = (id: string) => {
     // Actualizar el estado de la actividad a 'impreso'
-    const updatedPlantillas = plantillasRecientes.map(plantilla => 
-      plantilla.id === id 
-        ? { ...plantilla, estado: 'impreso' as const }
-        : plantilla
+    setPlantillas(prevPlantillas => 
+      prevPlantillas.map(plantilla => 
+        plantilla.id === id 
+          ? { ...plantilla, estado: 'impreso' as const }
+          : plantilla
+      )
     );
     
-    // Actualizar el estado global de plantillas
-    // Aquí deberías tener una función para actualizar el estado global
-    // Por ahora solo cerramos el modal
+    // Cerrar el modal de impresión
     setPrintModalActivity(null);
+  };
+
+  const handlePrintFromNotification = (activity: PlantillaReciente) => {
+    setPrintModalActivity(activity);
+    setShowNotificationModal(false);
   };
 
   return (
@@ -1014,6 +1021,15 @@ export default function Dashboard({
           activity={printModalActivity!}
           onPrint={handlePrint}
         />
+
+        {userRole === 'limited' && (
+          <NotificationModal
+            isOpen={showNotificationModal}
+            onClose={() => setShowNotificationModal(false)}
+            activities={filteredPlantillasRecientes}
+            onPrint={handlePrintFromNotification}
+          />
+        )}
       </motion.div>
     </div>
   );
