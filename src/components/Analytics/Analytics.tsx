@@ -17,7 +17,8 @@ import {
   Line,
   Legend,
   Area,
-  AreaChart
+  AreaChart,
+  linearGradient
 } from 'recharts';
 import { DateRangeSelector } from './DateRangeSelector';
 import { generateRandomData } from '../../utils/analyticsData';
@@ -132,6 +133,26 @@ const LoadingModal = () => (
     </motion.div>
   </motion.div>
 );
+
+// Definir los gradientes para cada empresa
+const GRADIENTS = {
+  Easy: {
+    id: 'easyGradient',
+    colors: ['#D64045', '#FF8A8D']
+  },
+  Jumbo: {
+    id: 'jumboGradient',
+    colors: ['#7EC9AC', '#A8E6C9']
+  },
+  Disco: {
+    id: 'discoGradient',
+    colors: ['#FF9B9B', '#FFC4C4']
+  },
+  Vea: {
+    id: 'veaGradient',
+    colors: ['#FFE5A5', '#FFF2D1']
+  }
+};
 
 export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
   const [dateRange, setDateRange] = useState(() => {
@@ -338,17 +359,31 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
 
   const renderAreaChart = () => (
     <AreaChart data={filteredData.monthlyData}>
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="name" />
-      <YAxis />
+      <defs>
+        {Object.entries(GRADIENTS).map(([_, gradient]) => (
+          <linearGradient key={gradient.id} id={gradient.id} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={gradient.colors[0]} stopOpacity={0.8}/>
+            <stop offset="95%" stopColor={gradient.colors[1]} stopOpacity={0.2}/>
+          </linearGradient>
+        ))}
+      </defs>
+      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+      <XAxis 
+        dataKey="name" 
+        axisLine={{ stroke: '#E5E7EB' }}
+        tick={{ fill: '#666' }}
+      />
+      <YAxis 
+        axisLine={{ stroke: '#E5E7EB' }}
+        tick={{ fill: '#666' }}
+      />
       <Tooltip />
       {selectedCompany ? (
         <Area 
           type="monotone" 
           dataKey={selectedCompany} 
-          stroke={data.salesData.find(c => c.name === selectedCompany)?.color} 
-          fill={data.salesData.find(c => c.name === selectedCompany)?.color} 
-          fillOpacity={0.6}
+          stroke={GRADIENTS[selectedCompany as keyof typeof GRADIENTS].colors[0]}
+          fill={`url(#${GRADIENTS[selectedCompany as keyof typeof GRADIENTS].id})`}
         />
       ) : (
         <>
@@ -358,9 +393,8 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
               type="monotone" 
               dataKey={company.name} 
               stackId="1" 
-              stroke={company.color}
-              fill={company.color}
-              fillOpacity={0.6}
+              stroke={GRADIENTS[company.name as keyof typeof GRADIENTS].colors[0]}
+              fill={`url(#${GRADIENTS[company.name as keyof typeof GRADIENTS].id})`}
             />
           ))}
         </>
@@ -569,12 +603,24 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
           <ChartCard title="Ventas por Empresa">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={filteredData.salesData} margin={{ top: 50, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.5} />
+                <defs>
+                  {Object.entries(GRADIENTS).map(([_, gradient]) => (
+                    <linearGradient key={gradient.id} id={gradient.id} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={gradient.colors[0]} stopOpacity={0.9}/>
+                      <stop offset="95%" stopColor={gradient.colors[1]} stopOpacity={0.9}/>
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis 
                   dataKey="name" 
                   tick={{ fill: '#666' }}
+                  axisLine={{ stroke: '#E5E7EB' }}
                 />
-                <YAxis />
+                <YAxis 
+                  axisLine={{ stroke: '#E5E7EB' }}
+                  tick={{ fill: '#666' }}
+                />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
@@ -600,15 +646,13 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
                 />
                 <Bar 
                   dataKey="value" 
-                  fill="#6366f1"
-                  label={<CustomBarLabel />}
                   radius={[10, 10, 0, 0]}
+                  label={<CustomBarLabel />}
                 >
-                  {filteredData.salesData.map((entry, index) => (
+                  {filteredData.salesData.map((entry) => (
                     <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.color}
-                      opacity={0.8}
+                      key={`cell-${entry.name}`} 
+                      fill={`url(#${GRADIENTS[entry.name as keyof typeof GRADIENTS].id})`}
                     />
                   ))}
                 </Bar>
@@ -632,9 +676,27 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
                 data={Array.isArray(filteredData.topProducts) ? filteredData.topProducts : []}
                 layout="vertical"
               >
-                <CartesianGrid strokeDasharray="3 3" opacity={0.5} />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={150} />
+                <defs>
+                  {Object.entries(GRADIENTS).map(([_, gradient]) => (
+                    <linearGradient key={gradient.id} id={gradient.id} x1="1" y1="0" x2="0" y2="0">
+                      <stop offset="5%" stopColor={gradient.colors[0]} stopOpacity={0.9}/>
+                      <stop offset="95%" stopColor={gradient.colors[1]} stopOpacity={0.9}/>
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis 
+                  type="number"
+                  axisLine={{ stroke: '#E5E7EB' }}
+                  tick={{ fill: '#666' }}
+                />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={150}
+                  axisLine={{ stroke: '#E5E7EB' }}
+                  tick={{ fill: '#666' }}
+                />
                 <Tooltip 
                   content={({ active, payload }) => {
                     if (active && payload && payload.length > 0) {
@@ -676,25 +738,20 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
                 />
                 <Bar 
                   dataKey="value" 
-                  fill="#6366f1"
-                  animationDuration={1000}
                   radius={[0, 10, 10, 0]}
+                  animationDuration={1000}
                 >
                   {(Array.isArray(filteredData.topProducts) ? filteredData.topProducts : []).map((entry, index) => {
-                    let color: string;
-
-                    if (selectedCompany) {
-                      color = filteredData.salesData[0]?.color || COLORS[index % COLORS.length];
-                    } else {
-                      color = entry.company 
-                        ? data.salesData.find((c) => c.name === entry.company)?.color || COLORS[index % COLORS.length]
-                        : COLORS[index % COLORS.length];
-                    }
+                    const gradientId = selectedCompany 
+                      ? GRADIENTS[selectedCompany].id
+                      : entry.company 
+                        ? GRADIENTS[entry.company as keyof typeof GRADIENTS].id
+                        : GRADIENTS.Easy.id;
 
                     return (
                       <Cell 
                         key={`cell-${index}`} 
-                        fill={color}
+                        fill={`url(#${gradientId})`}
                       />
                     );
                   })}
