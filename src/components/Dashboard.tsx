@@ -815,6 +815,13 @@ export default function Dashboard({
                                bg-clip-text text-transparent">
                   Actividad Reciente
                 </h3>
+                <div className={`px-2 py-1 rounded-full text-sm font-medium
+                  ${userRole === 'admin' 
+                    ? 'bg-indigo-100 text-indigo-800' 
+                    : 'bg-yellow-100 text-yellow-800'}`}
+                >
+                  {filteredPlantillasRecientes.filter(p => p.estado === 'no_impreso').length} pendientes
+                </div>
               </div>
               <p className="text-sm text-gray-500">
                 Seguimiento de las últimas actualizaciones y cambios
