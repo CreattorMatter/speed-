@@ -57,7 +57,7 @@ function AppContent() {
     // Validar múltiples credenciales
     const validCredentials = [
       { email: 'admin@admin.com', password: 'admin', role: 'admin' as const },
-      { email: 'olivos@cenco.com', password: 'olivos', role: 'limited' as const }
+      { email: 'pilar@cenco.com', password: 'pilar', role: 'limited' as const }
     ];
 
     const user = validCredentials.find(
