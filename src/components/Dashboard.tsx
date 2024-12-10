@@ -630,7 +630,7 @@ export default function Dashboard({
             onClick={userRole === 'admin' ? onNewTemplate : undefined}
             className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
               ${userRole === 'admin' 
-                ? 'bg-gradient-to-br from-white to-gray-50 hover:shadow-lg' 
+                ? 'bg-gradient-to-br from-white to-gray-100 border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg' 
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
           >
             <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600
@@ -648,7 +648,7 @@ export default function Dashboard({
             onClick={userRole === 'admin' ? onSettings : undefined}
             className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
               ${userRole === 'admin' 
-                ? 'bg-gradient-to-br from-white to-gray-50 hover:shadow-lg' 
+                ? 'bg-gradient-to-br from-white to-gray-100 border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg' 
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
           >
             <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-yellow-500 to-yellow-600
