@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, LogOut, Plus, Package2, Tags, Star, Clock, FileText, Sun, Moon, LayoutTemplate, Settings, Send, FileEdit, Printer, X } from 'lucide-react';
+import { ArrowLeft, LogOut, Plus, Package2, Tags, Star, Clock, FileText, Sun, Moon, LayoutTemplate, Settings, Send, FileEdit, Printer, X, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Header } from './shared/Header';
 import { COMPANIES } from '../data/companies';
@@ -16,6 +16,7 @@ interface DashboardProps {
   userEmail?: string;
   onSettings: () => void;
   userRole: 'admin' | 'limited';
+  onAnalytics: () => void;
 }
 
 interface PlantillaReciente {
@@ -461,7 +462,8 @@ export default function Dashboard({
   onBack, 
   userEmail,
   onSettings,
-  userRole
+  userRole,
+  onAnalytics
 }: DashboardProps) {
   // Datos de ejemplo
   const stats: DashboardStats = {
@@ -664,6 +666,33 @@ export default function Dashboard({
             </div>
             <span className={`text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent`}>
               Configuración
+            </span>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 20,
+              delay: 0.2
+            }}
+            onClick={onAnalytics}
+            className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+              bg-gradient-to-br from-white to-gray-100 border border-gray-200 
+              shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg
+              transition-all duration-300`}
+          >
+            <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600
+              transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+              <BarChart3 className="w-10 h-10 text-white" />
+            </div>
+            <span className={`text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 
+              bg-clip-text text-transparent`}>
+              Analítica
             </span>
           </motion.button>
         </div>

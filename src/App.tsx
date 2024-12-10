@@ -10,6 +10,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ConfigurationPortal } from './components/Settings/ConfigurationPortal';
 import { PosterPreviewPage } from './pages/PosterPreview';
+import { Analytics } from './components/Analytics/Analytics';
 
 export interface DashboardProps {
   onLogout: () => void;
@@ -21,6 +22,7 @@ export interface DashboardProps {
   userEmail?: string;
   onSettings: () => void;
   userRole: 'admin' | 'limited';
+  onAnalytics: () => void;
 }
 
 function AppContent() {
@@ -38,6 +40,7 @@ function AppContent() {
   const location = useLocation();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'limited'>('admin');
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   React.useEffect(() => {
     if (location.state?.showPosterEditor) {
@@ -113,6 +116,10 @@ function AppContent() {
     setIsConfigOpen(true);
   };
 
+  const handleAnalytics = () => {
+    setShowAnalytics(true);
+  };
+
   if (isAuthenticated && showBuilder) {
     return <Builder onBack={handleBack} />;
   }
@@ -136,6 +143,10 @@ function AppContent() {
     );
   }
 
+  if (isAuthenticated && showAnalytics) {
+    return <Analytics onBack={() => setShowAnalytics(false)} onLogout={handleLogout} />;
+  }
+
   if (isAuthenticated) {
     return (
       <>
@@ -149,6 +160,7 @@ function AppContent() {
           userEmail={email}
           onSettings={handleSettings}
           userRole={userRole}
+          onAnalytics={handleAnalytics}
         />
         <ConfigurationPortal 
           isOpen={isConfigOpen} 

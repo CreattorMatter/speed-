@@ -31,6 +31,7 @@
     "react-resizable": "^3.0.5",
     "react-router-dom": "^7.0.2",
     "react-select": "^5.8.3",
+    "recharts": "^2.14.1",
     "tailwind-merge": "^2.5.5",
     "tsparticles": "^2.12.0"
   },
