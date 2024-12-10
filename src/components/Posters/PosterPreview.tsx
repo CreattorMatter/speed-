@@ -50,7 +50,7 @@ interface PosterPreviewProps {
   zoom: number;
   cardSize: number;
   isLandscape?: boolean;
-  financing?: FinancingOption | null;
+  financing?: FinancingOption[] | null;
 }
 
 // Definimos los formatos de papel disponibles
@@ -239,9 +239,13 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                 {promotion.title || promotion.discount}
               </div>
             )}
-            {financing && (
-              <div className="mt-2 mb-8 bg-indigo-600 text-white py-1 px-3 rounded text-sm">
-                {financing.plan} - {financing.bank}
+            {financing && financing.length > 0 && (
+              <div className="flex flex-col gap-1">
+                {financing.map((fin, index) => (
+                  <div key={index} className="bg-indigo-600 text-white py-0.5 px-2 rounded text-xs">
+                    {fin.plan} - {fin.bank}
+                  </div>
+                ))}
               </div>
             )}
             <div className="text-2xl text-gray-600 text-center">
@@ -295,9 +299,13 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
           <span className="text-[90px] font-black leading-none">
             ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
           </span>
-          {financing && (
-            <div className="mt-3 bg-indigo-600 text-white py-0.5 px-2 rounded text-xs">
-              {financing.plan} - {financing.bank}
+          {financing && financing.length > 0 && (
+            <div className="flex flex-col gap-1">
+              {financing.map((fin, index) => (
+                <div key={index} className="bg-indigo-600 text-white py-0.5 px-2 rounded text-xs">
+                  {fin.plan} - {fin.bank}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -418,9 +426,13 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                           <div className="text-4xl font-black text-black" style={roundedFontStyle}>
                             ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
                           </div>
-                          {financing && (
-                            <div className="mt-1 bg-indigo-600 text-white px-2 py-0.5 rounded text-xs">
-                              {financing.plan} - {financing.bank}
+                          {financing && financing.length > 0 && (
+                            <div className="flex flex-col gap-1">
+                              {financing.map((fin, index) => (
+                                <div key={index} className="bg-indigo-600 text-white py-0.5 px-2 rounded text-xs">
+                                  {fin.plan} - {fin.bank}
+                                </div>
+                              ))}
                             </div>
                           )}
                           <div className="mt-2 flex items-center gap-4">

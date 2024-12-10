@@ -5,7 +5,7 @@ import { X, Check } from 'lucide-react';
 interface FinancingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (financing: FinancingOption) => void;
+  onSelect: (financing: FinancingOption[]) => void;
 }
 
 interface FinancingOption {
@@ -53,7 +53,7 @@ const FINANCING_OPTIONS = [
 ];
 
 export const FinancingModal: React.FC<FinancingModalProps> = ({ isOpen, onClose, onSelect }) => {
-  const [selectedOption, setSelectedOption] = useState<FinancingOption | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<FinancingOption[]>([]);
 
   const handleSelect = (bank: string, logo: string, card: { name: string, image: string }, plan: string) => {
     const option: FinancingOption = {
@@ -63,12 +63,31 @@ export const FinancingModal: React.FC<FinancingModalProps> = ({ isOpen, onClose,
       cardImage: card.image,
       plan
     };
-    setSelectedOption(option);
+
+    setSelectedOptions(prev => {
+      // Si ya existe una opción similar, la removemos
+      const exists = prev.some(opt => 
+        opt.bank === bank && 
+        opt.cardName === card.name && 
+        opt.plan === plan
+      );
+
+      if (exists) {
+        return prev.filter(opt => 
+          !(opt.bank === bank && 
+            opt.cardName === card.name && 
+            opt.plan === plan)
+        );
+      }
+
+      // Si no existe, la agregamos
+      return [...prev, option];
+    });
   };
 
   const handleConfirm = () => {
-    if (selectedOption) {
-      onSelect(selectedOption);
+    if (selectedOptions.length > 0) {
+      onSelect(selectedOptions);
       onClose();
     }
   };
@@ -100,57 +119,61 @@ export const FinancingModal: React.FC<FinancingModalProps> = ({ isOpen, onClose,
               </div>
 
               <div className="p-6 space-y-8">
-                {FINANCING_OPTIONS.map((option) => (
-                  <div key={option.bank} className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <img 
-                        src={option.logo} 
-                        alt={option.bank}
-                        className="h-8 object-contain"
-                      />
-                      <h3 className="text-lg font-medium text-gray-900">{option.bank}</h3>
-                    </div>
-
-                    {option.cards.map((card) => (
-                      <div key={card.name} className="bg-gray-50 rounded-lg p-4 space-y-3">
-                        <div className="flex items-center gap-4">
-                          <img 
-                            src={card.image} 
-                            alt={card.name}
-                            className="h-12 object-contain"
-                          />
-                          <h4 className="font-medium text-gray-800">{card.name}</h4>
-                        </div>
-
-                        <ul className="space-y-2">
-                          {card.plans.map((plan) => (
-                            <li 
-                              key={plan}
-                              onClick={() => handleSelect(option.bank, option.logo, card, plan)}
-                              className={`flex items-center justify-between p-2 rounded-lg cursor-pointer
-                                ${selectedOption?.bank === option.bank && 
-                                  selectedOption?.cardName === card.name && 
-                                  selectedOption?.plan === plan
-                                  ? 'bg-indigo-50 text-indigo-700'
-                                  : 'hover:bg-gray-100'
-                                }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
-                                {plan}
-                              </div>
-                              {selectedOption?.bank === option.bank && 
-                               selectedOption?.cardName === card.name && 
-                               selectedOption?.plan === plan && (
-                                <Check className="w-5 h-5 text-indigo-600" />
-                              )}
-                            </li>
-                          ))}
-                        </ul>
+                <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-1">
+                  {FINANCING_OPTIONS.map((option) => (
+                    <div key={option.bank} className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <img 
+                          src={option.logo} 
+                          alt={option.bank}
+                          className="h-8 object-contain"
+                        />
+                        <h3 className="text-lg font-medium text-gray-900">{option.bank}</h3>
                       </div>
-                    ))}
-                  </div>
-                ))}
+
+                      {option.cards.map((card) => (
+                        <div key={card.name} className="bg-gray-50 rounded-lg p-4 space-y-3">
+                          <div className="flex items-center gap-4">
+                            <img 
+                              src={card.image} 
+                              alt={card.name}
+                              className="h-12 object-contain"
+                            />
+                            <h4 className="font-medium text-gray-800">{card.name}</h4>
+                          </div>
+
+                          {card.plans.map((plan) => {
+                            const isSelected = selectedOptions.some(opt => 
+                              opt.bank === option.bank && 
+                              opt.cardName === card.name && 
+                              opt.plan === plan
+                            );
+
+                            return (
+                              <li 
+                                key={plan}
+                                onClick={() => handleSelect(option.bank, option.logo, card, plan)}
+                                className={`flex items-center justify-between p-2 rounded-lg cursor-pointer
+                                  ${isSelected 
+                                    ? 'bg-indigo-50 text-indigo-700'
+                                    : 'hover:bg-gray-100'
+                                  }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                                  {plan}
+                                </div>
+                                {isSelected && (
+                                  <Check className="w-5 h-5 text-indigo-600" />
+                                )}
+                              </li>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="p-4 border-t border-gray-200 flex justify-end gap-3">
@@ -162,9 +185,9 @@ export const FinancingModal: React.FC<FinancingModalProps> = ({ isOpen, onClose,
                 </button>
                 <button
                   onClick={handleConfirm}
-                  disabled={!selectedOption}
+                  disabled={selectedOptions.length === 0}
                   className={`px-4 py-2 rounded-lg ${
-                    selectedOption
+                    selectedOptions.length > 0
                       ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                       : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                   }`}

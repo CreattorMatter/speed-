@@ -251,7 +251,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [isFinancingModalOpen, setIsFinancingModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-  const [selectedFinancing, setSelectedFinancing] = useState<FinancingOption | null>(null);
+  const [selectedFinancing, setSelectedFinancing] = useState<FinancingOption[]>([]);
 
   console.log('LOCATIONS imported:', LOCATIONS); // Debug
   console.log('COMPANIES imported:', COMPANIES); // Debug
@@ -530,8 +530,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   >
                     <CreditCard className="w-5 h-5 text-gray-500" />
                     <span>
-                      {selectedFinancing 
-                        ? `${selectedFinancing.bank} - ${selectedFinancing.plan}`
+                      {selectedFinancing.length > 0
+                        ? `${selectedFinancing.length} financiación${selectedFinancing.length > 1 ? 'es' : ''}`
                         : "Ver financiación"
                       }
                     </span>
