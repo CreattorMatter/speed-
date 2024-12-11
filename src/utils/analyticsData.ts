@@ -72,55 +72,122 @@ const COMPANY_PRODUCTS = {
   ]
 };
 
+// Modificar PROMOTION_DATA para incluir más promociones por empresa
+const PROMOTION_DATA = {
+  Easy: [
+    { name: "2x1 Herramientas", conversion: 75, sales: 1200 },
+    { name: "Descuento Pinturas", conversion: 65, sales: 980 },
+    { name: "Oferta Jardín", conversion: 55, sales: 850 },
+    { name: "Black Friday", conversion: 85, sales: 2100 },
+    { name: "Cyber Week", conversion: 70, sales: 1500 },
+    { name: "Liquidación Verano", conversion: 60, sales: 1100 },
+    { name: "Ofertas Invierno", conversion: 72, sales: 1300 },
+    { name: "Hot Sale Mayo", conversion: 68, sales: 1600 }
+  ],
+  Jumbo: [
+    { name: "3x2 Lácteos", conversion: 80, sales: 1500 },
+    { name: "Descuento Bebidas", conversion: 70, sales: 1100 },
+    { name: "2x1 Limpieza", conversion: 60, sales: 900 },
+    { name: "Cyber Monday", conversion: 90, sales: 2500 },
+    { name: "Semana Fresh", conversion: 75, sales: 1800 },
+    { name: "Ofertas Saludables", conversion: 82, sales: 1400 },
+    { name: "Super Ahorro", conversion: 65, sales: 1200 },
+    { name: "Festival Vinos", conversion: 78, sales: 2000 }
+  ],
+  Disco: [
+    { name: "Descuento Carnes", conversion: 72, sales: 1300 },
+    { name: "2x1 Congelados", conversion: 68, sales: 950 },
+    { name: "Oferta Verduras", conversion: 58, sales: 780 },
+    { name: "Hot Sale", conversion: 82, sales: 1900 },
+    { name: "Promo Desayuno", conversion: 76, sales: 1600 },
+    { name: "Semana Italiana", conversion: 70, sales: 1400 },
+    { name: "Festival Quesos", conversion: 74, sales: 1700 },
+    { name: "Mega Descuentos", conversion: 80, sales: 2200 }
+  ],
+  Vea: [
+    { name: "3x2 Almacén", conversion: 70, sales: 1100 },
+    { name: "Descuento Frutas", conversion: 63, sales: 890 },
+    { name: "2x1 Bebidas", conversion: 59, sales: 820 },
+    { name: "Super Ofertas", conversion: 80, sales: 1800 },
+    { name: "Promo Limpieza", conversion: 67, sales: 1300 },
+    { name: "Ofertas Semanales", conversion: 71, sales: 1500 },
+    { name: "Festival Snacks", conversion: 69, sales: 1200 },
+    { name: "Descuentos Express", conversion: 73, sales: 1600 }
+  ]
+};
+
 interface TopProduct {
   name: string;
   value: number;
   company?: string; // Opcional, para cuando mostramos todos los productos
 }
 
+// Modificar la generación de datos de promociones
+const generatePromotionData = (company: string | null, multiplier: number) => {
+  const basePromos = company 
+    ? PROMOTION_DATA[company as keyof typeof PROMOTION_DATA]
+    : Object.entries(PROMOTION_DATA).flatMap(([company, promos]) =>
+        promos.map(promo => ({ ...promo, company }))
+      );
+
+  // Generar variaciones aleatorias de las promociones base
+  return basePromos.flatMap(promo => {
+    const variations = [];
+    // Crear 4 variaciones por cada promoción base
+    for (let i = 0; i < 4; i++) {
+      const salesVariation = (Math.random() * 0.6 - 0.3); // ±30%
+      const conversionVariation = (Math.random() * 30 - 15); // ±15%
+      
+      // Agregar un pequeño retraso aleatorio para la animación
+      const delay = Math.random() * 0.5;
+      
+      variations.push({
+        ...promo,
+        sales: Math.floor(promo.sales * (1 + salesVariation) * multiplier),
+        conversion: Math.max(0, Math.min(100, promo.conversion + conversionVariation)),
+        animationDelay: delay // Agregar delay para animación
+      });
+    }
+    return variations;
+  });
+};
+
 export const generateRandomData = (startDate: Date, endDate: Date) => {
   const multiplier = getMultiplier(startDate, endDate);
-  const baseValues = {
-    easy: 2000,
-    jumbo: 1800,
-    disco: 1500,
-    vea: 1200,
-    products: {
-      cocaCola: 500,
-      cerveza: 400,
-      aceite: 300,
-      papel: 200,
-      arroz: 100
-    }
-  };
-
-  // Generar datos de ventas por empresa primero
+  
+  // Definir salesData primero para poder usarlo después
   const salesData = [
     { 
       name: 'Easy', 
-      value: Math.floor((Math.random() * 1000 + baseValues.easy) * multiplier), 
-      color: '#D64045', // Rojo Easy más oscuro (Pantone-like)
+      value: Math.floor((Math.random() * 1000 + 2000) * multiplier), 
+      color: '#D64045',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Easy-Logo.svg'
     },
     { 
       name: 'Jumbo', 
-      value: Math.floor((Math.random() * 800 + baseValues.jumbo) * multiplier), 
-      color: '#7EC9AC', // Verde Jumbo pastel (Pantone-like)
+      value: Math.floor((Math.random() * 800 + 1800) * multiplier), 
+      color: '#7EC9AC',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Logo_Jumbo_Cencosud.png'
     },
     { 
       name: 'Disco', 
-      value: Math.floor((Math.random() * 600 + baseValues.disco) * multiplier), 
-      color: '#FF9B9B', // Rojo Disco pastel (Pantone-like)
+      value: Math.floor((Math.random() * 600 + 1500) * multiplier), 
+      color: '#FF9B9B',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Disco-Supermarket-Logo.svg/2048px-Disco-Supermarket-Logo.svg.png'
     },
     { 
       name: 'Vea', 
-      value: Math.floor((Math.random() * 400 + baseValues.vea) * multiplier), 
-      color: '#FFE5A5', // Amarillo Vea pastel (Pantone-like)
+      value: Math.floor((Math.random() * 400 + 1200) * multiplier), 
+      color: '#FFE5A5',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/9/94/Logo-VEA-Supermercados.png'
     },
   ];
+
+  // Actualizar la generación de datos de promociones
+  const promotionData = generatePromotionData(
+    salesData.length === 1 ? salesData[0].name : null,
+    multiplier
+  );
 
   // Generar datos regionales basados en las ventas de cada empresa
   const regionData = Object.keys(REGIONAL_DISTRIBUTIONS.Easy).map(region => ({
@@ -173,7 +240,8 @@ export const generateRandomData = (startDate: Date, endDate: Date) => {
         regions: `+${Math.floor(Math.random() * 3 + 2)}`,
         products: `+${Math.floor((Math.random() * 50 + 50) * multiplier)}`
       }
-    }
+    },
+    promotionData,
   };
 };
 

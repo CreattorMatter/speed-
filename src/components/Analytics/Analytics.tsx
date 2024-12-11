@@ -17,12 +17,12 @@ import {
   Line,
   Legend,
   Area,
-  AreaChart,
-  linearGradient
+  AreaChart
 } from 'recharts';
 import { DateRangeSelector } from './DateRangeSelector';
 import { generateRandomData } from '../../utils/analyticsData';
 import { AnimatePresence } from 'framer-motion';
+import { ScatterChart, Scatter, ZAxis } from 'recharts';
 
 interface AnalyticsProps {
   onBack: () => void;
@@ -65,6 +65,12 @@ interface AnalyticsData {
       products: string;
     };
   };
+  promotionData: Array<{
+    name: string;
+    conversion: number;
+    sales: number;
+    company?: string;
+  }>;
 }
 
 const COLORS = [
@@ -152,7 +158,7 @@ const GRADIENTS = {
     id: 'veaGradient',
     colors: ['#FFE5A5', '#FFF2D1']
   }
-};
+} as const;
 
 export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
   const [dateRange, setDateRange] = useState(() => {
@@ -534,6 +540,140 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
     );
   };
 
+  const PromotionConversionChart = ({ 
+    data, 
+    selectedCompany 
+  }: { 
+    data: AnalyticsData; 
+    selectedCompany: string | null;
+  }) => {
+    // Agregar key para forzar re-render y animación
+    const [chartKey, setChartKey] = React.useState(0);
+
+    // Actualizar key cuando cambia la empresa
+    React.useEffect(() => {
+      setChartKey(prev => prev + 1);
+    }, [selectedCompany]);
+
+    return (
+      <ChartCard title="Conversión de Ventas por Promoción">
+        <ResponsiveContainer width="100%" height={400}>
+          <ScatterChart 
+            margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+            key={chartKey} // Agregar key para forzar re-render
+          >
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <XAxis 
+              type="number" 
+              dataKey="sales" 
+              name="Ventas"
+              unit="$"
+              domain={['auto', 'auto']}
+              label={{ value: 'Ventas ($)', position: 'bottom' }}
+            />
+            <YAxis 
+              type="number" 
+              dataKey="conversion" 
+              name="Conversión"
+              unit="%"
+              domain={[0, 100]}
+              label={{ value: 'Conversión (%)', angle: -90, position: 'left' }}
+            />
+            {/* Aumentar el rango para puntos más grandes */}
+            <ZAxis range={[100, 400]} />
+            <Tooltip
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  // Encontrar el logo de la empresa correspondiente
+                  const companyData = filteredData.salesData.find(
+                    company => company.name === (data.company || selectedCompany)
+                  );
+                  
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-white p-4 rounded-lg shadow-lg border border-gray-100 min-w-[200px]"
+                    >
+                      {/* Logo y nombre de la empresa */}
+                      {companyData && (
+                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                          <img 
+                            src={companyData.logo} 
+                            alt={companyData.name}
+                            className="w-6 h-6 object-contain"
+                          />
+                          <span className="font-medium text-gray-700">
+                            {companyData.name}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Nombre de la promoción */}
+                      <p className="font-medium text-gray-900 mb-2">
+                        {data.name}
+                      </p>
+                      
+                      {/* Métricas */}
+                      <div className="space-y-1">
+                        <p className="text-sm text-gray-600 flex justify-between">
+                          <span>Ventas:</span>
+                          <span className="font-medium">
+                            ${data.sales.toLocaleString()}
+                          </span>
+                        </p>
+                        <p className="text-sm text-gray-600 flex justify-between">
+                          <span>Conversión:</span>
+                          <span className="font-medium">
+                            {data.conversion}%
+                          </span>
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Scatter
+              data={data.promotionData}
+              fill={selectedCompany && selectedCompany in GRADIENTS 
+                ? GRADIENTS[selectedCompany as keyof typeof GRADIENTS].colors[0] 
+                : '#8884d8'}
+            >
+              {data.promotionData.map((entry, index) => {
+                const color = selectedCompany && selectedCompany in GRADIENTS
+                  ? GRADIENTS[selectedCompany as keyof typeof GRADIENTS].colors[0]
+                  : entry.company && entry.company in GRADIENTS
+                    ? GRADIENTS[entry.company as keyof typeof GRADIENTS].colors[0]
+                    : '#8884d8';
+                
+                return (
+                  <Cell
+                    key={`cell-${index}-${chartKey}`} // Agregar chartKey al key
+                    fill={color}
+                    opacity={0.8} // Aumentar opacidad
+                  >
+                    {/* Agregar animación al punto */}
+                    <animate
+                      attributeName="r"
+                      from="0"
+                      to="10"
+                      dur="0.8s"
+                      fill="freeze"
+                      begin="0s"
+                    />
+                  </Cell>
+                );
+              })}
+            </Scatter>
+          </ScatterChart>
+        </ResponsiveContainer>
+      </ChartCard>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AnimatePresence>
@@ -568,6 +708,13 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
         </div>
 
         <CompanySelector />
+
+        <div className="mb-6">
+          <PromotionConversionChart 
+            data={filteredData} 
+            selectedCompany={selectedCompany}
+          />
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
