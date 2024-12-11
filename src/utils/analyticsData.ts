@@ -116,6 +116,57 @@ const PROMOTION_DATA = {
   ]
 };
 
+const STORE_SLA_DATA = {
+  Easy: [
+    { store: "Easy San Isidro", sla: 95, printTime: 45 },
+    { store: "Easy Quilmes", sla: 88, printTime: 52 },
+    { store: "Easy Palermo", sla: 92, printTime: 48 },
+    { store: "Easy Caballito", sla: 85, printTime: 55 },
+    { store: "Easy Belgrano", sla: 91, printTime: 49 },
+    { store: "Easy Flores", sla: 87, printTime: 53 },
+    { store: "Easy Núñez", sla: 94, printTime: 46 },
+    { store: "Easy Devoto", sla: 89, printTime: 51 },
+    { store: "Easy Liniers", sla: 86, printTime: 54 },
+    { store: "Easy Pompeya", sla: 90, printTime: 50 }
+  ],
+  Jumbo: [
+    { store: "Jumbo Unicenter", sla: 93, printTime: 47 },
+    { store: "Jumbo Pilar", sla: 89, printTime: 51 },
+    { store: "Jumbo Lomas", sla: 91, printTime: 49 },
+    { store: "Jumbo Nordelta", sla: 96, printTime: 44 },
+    { store: "Jumbo Martinez", sla: 88, printTime: 52 },
+    { store: "Jumbo Escobar", sla: 92, printTime: 48 },
+    { store: "Jumbo Pacheco", sla: 87, printTime: 53 },
+    { store: "Jumbo San Martin", sla: 90, printTime: 50 },
+    { store: "Jumbo Tigre", sla: 94, printTime: 46 },
+    { store: "Jumbo San Miguel", sla: 86, printTime: 54 }
+  ],
+  Disco: [
+    { store: "Disco Recoleta", sla: 94, printTime: 46 },
+    { store: "Disco Barrio Norte", sla: 92, printTime: 48 },
+    { store: "Disco Belgrano", sla: 89, printTime: 51 },
+    { store: "Disco Palermo", sla: 95, printTime: 45 },
+    { store: "Disco Caballito", sla: 88, printTime: 52 },
+    { store: "Disco Almagro", sla: 91, printTime: 49 },
+    { store: "Disco Colegiales", sla: 93, printTime: 47 },
+    { store: "Disco Núñez", sla: 87, printTime: 53 },
+    { store: "Disco Villa Urquiza", sla: 90, printTime: 50 },
+    { store: "Disco Villa Crespo", sla: 86, printTime: 54 }
+  ],
+  Vea: [
+    { store: "Vea Flores", sla: 88, printTime: 52 },
+    { store: "Vea Pompeya", sla: 85, printTime: 55 },
+    { store: "Vea Mataderos", sla: 89, printTime: 51 },
+    { store: "Vea Lugano", sla: 87, printTime: 53 },
+    { store: "Vea Soldati", sla: 86, printTime: 54 },
+    { store: "Vea Liniers", sla: 90, printTime: 50 },
+    { store: "Vea Floresta", sla: 84, printTime: 56 },
+    { store: "Vea Villa Luro", sla: 88, printTime: 52 },
+    { store: "Vea Versalles", sla: 85, printTime: 55 },
+    { store: "Vea Monte Castro", sla: 87, printTime: 53 }
+  ]
+};
+
 interface TopProduct {
   name: string;
   value: number;
@@ -150,6 +201,21 @@ const generatePromotionData = (company: string | null, multiplier: number) => {
     }
     return variations;
   });
+};
+
+// Generar datos de SLA con variaciones aleatorias
+const generateStoreSLAData = (company: string | null) => {
+  const baseStores = company 
+    ? STORE_SLA_DATA[company as keyof typeof STORE_SLA_DATA]
+    : Object.entries(STORE_SLA_DATA).flatMap(([company, stores]) =>
+        stores.map(store => ({ ...store, company }))
+      );
+
+  return baseStores.map(store => ({
+    ...store,
+    sla: Math.max(0, Math.min(100, store.sla + (Math.random() * 10 - 5))), // ±5%
+    printTime: Math.max(0, store.printTime + (Math.random() * 10 - 5)) // ±5 minutos
+  }));
 };
 
 export const generateRandomData = (startDate: Date, endDate: Date) => {
@@ -222,6 +288,11 @@ export const generateRandomData = (startDate: Date, endDate: Date) => {
 
   console.log('Generated topProducts:', topProductsByCompany); // Para debug
 
+  // Generar datos de SLA con variaciones aleatorias
+  const storeSLAData = generateStoreSLAData(
+    salesData.length === 1 ? salesData[0].name : null
+  );
+
   return {
     salesData,
     monthlyData: getMonthlyData(startDate, endDate, multiplier),
@@ -242,6 +313,7 @@ export const generateRandomData = (startDate: Date, endDate: Date) => {
       }
     },
     promotionData,
+    storeSLAData,
   };
 };
 

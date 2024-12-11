@@ -70,6 +70,13 @@ interface AnalyticsData {
     conversion: number;
     sales: number;
     company?: string;
+    animationDelay?: number;
+  }>;
+  storeSLAData: Array<{
+    store: string;
+    sla: number;
+    printTime: number;
+    company?: string;
   }>;
 }
 
@@ -160,6 +167,8 @@ const GRADIENTS = {
   }
 } as const;
 
+type CompanyName = keyof typeof GRADIENTS;
+
 export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
   const [dateRange, setDateRange] = useState(() => {
     const end = new Date();
@@ -192,57 +201,24 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
 
   const filteredData = React.useMemo(() => {
     if (!selectedCompany) {
-      // Cuando no hay empresa seleccionada, combinar todos los productos
-      const allProducts = Object.entries(data.topProducts)
-        .flatMap(([company, products]) => 
-          products.map(product => ({
-            ...product,
-            company
-          }))
-        )
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 5);
-
-      return {
-        ...data,
-        topProducts: allProducts
-      };
+      return data;
     }
 
-    // Cuando hay una empresa seleccionada
     return {
       ...data,
       salesData: data.salesData.filter(item => item.name === selectedCompany),
-      monthlyData: data.monthlyData.map(month => {
-        const filteredMonth = {
-          name: month.name
-        } as any;
-
-        switch(selectedCompany) {
-          case 'Easy':
-            filteredMonth.Easy = month.Easy;
-            break;
-          case 'Jumbo':
-            filteredMonth.Jumbo = month.Jumbo;
-            break;
-          case 'Disco':
-            filteredMonth.Disco = month.Disco;
-            break;
-          case 'Vea':
-            filteredMonth.Vea = month.Vea;
-            break;
-        }
-
-        return filteredMonth;
-      }),
+      monthlyData: data.monthlyData.map(month => ({
+        name: month.name,
+        [selectedCompany]: month[selectedCompany as CompanyName]
+      })),
       regionData: data.regionData.map(region => ({
         name: region.name,
-        value: region.byCompany[selectedCompany] || 0
+        value: region.byCompany[selectedCompany] || 0,
+        byCompany: { [selectedCompany]: region.byCompany[selectedCompany] || 0 }
       })),
-      // Asegurarnos de que topProducts sea siempre un array
-      topProducts: Array.isArray(data.topProducts[selectedCompany]) 
-        ? data.topProducts[selectedCompany] 
-        : []
+      topProducts: {
+        [selectedCompany]: data.topProducts[selectedCompany] || []
+      }
     };
   }, [data, selectedCompany]);
 
@@ -638,15 +614,15 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
             />
             <Scatter
               data={data.promotionData}
-              fill={selectedCompany && selectedCompany in GRADIENTS 
-                ? GRADIENTS[selectedCompany as keyof typeof GRADIENTS].colors[0] 
+              fill={selectedCompany && (selectedCompany in GRADIENTS)
+                ? GRADIENTS[selectedCompany as CompanyName].colors[0]
                 : '#8884d8'}
             >
               {data.promotionData.map((entry, index) => {
-                const color = selectedCompany && selectedCompany in GRADIENTS
-                  ? GRADIENTS[selectedCompany as keyof typeof GRADIENTS].colors[0]
-                  : entry.company && entry.company in GRADIENTS
-                    ? GRADIENTS[entry.company as keyof typeof GRADIENTS].colors[0]
+                const color = selectedCompany && (selectedCompany in GRADIENTS)
+                  ? GRADIENTS[selectedCompany as CompanyName].colors[0]
+                  : entry.company && (entry.company in GRADIENTS)
+                    ? GRADIENTS[entry.company as CompanyName].colors[0]
                     : '#8884d8';
                 
                 return (
@@ -669,6 +645,124 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
               })}
             </Scatter>
           </ScatterChart>
+        </ResponsiveContainer>
+      </ChartCard>
+    );
+  };
+
+  const StoreSLAChart = ({ 
+    data, 
+    selectedCompany 
+  }: { 
+    data: AnalyticsData; 
+    selectedCompany: string | null;
+  }) => {
+    const [chartKey, setChartKey] = React.useState(0);
+
+    React.useEffect(() => {
+      setChartKey(prev => prev + 1);
+    }, [selectedCompany]);
+
+    return (
+      <ChartCard title="Cumplimiento SLA de Impresión por Tienda">
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart
+            data={data.storeSLAData}
+            layout="vertical"
+            margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
+            key={chartKey}
+          >
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <XAxis 
+              type="number" 
+              domain={[0, 100]}
+              unit="%"
+            />
+            <YAxis 
+              dataKey="store" 
+              type="category" 
+              width={90}
+              tick={{ fontSize: 12 }}
+            />
+            <Tooltip
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  const companyData = filteredData.salesData.find(
+                    company => company.name === (data.company || selectedCompany)
+                  );
+                  
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-white p-4 rounded-lg shadow-lg border border-gray-100 min-w-[200px]"
+                    >
+                      {companyData && (
+                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                          <img 
+                            src={companyData.logo} 
+                            alt={companyData.name}
+                            className="w-6 h-6 object-contain"
+                          />
+                          <span className="font-medium text-gray-700">
+                            {companyData.name}
+                          </span>
+                        </div>
+                      )}
+                      <p className="font-medium text-gray-900 mb-2">
+                        {data.store}
+                      </p>
+                      <div className="space-y-1">
+                        <p className="text-sm text-gray-600 flex justify-between">
+                          <span>SLA:</span>
+                          <span className="font-medium">
+                            {data.sla.toFixed(1)}%
+                          </span>
+                        </p>
+                        <p className="text-sm text-gray-600 flex justify-between">
+                          <span>Tiempo promedio:</span>
+                          <span className="font-medium">
+                            {data.printTime.toFixed(1)} min
+                          </span>
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Bar 
+              dataKey="sla" 
+              radius={[0, 4, 4, 0]}
+              animationDuration={1000}
+            >
+              {data.storeSLAData.map((entry, index) => {
+                const color = selectedCompany && (selectedCompany in GRADIENTS)
+                  ? GRADIENTS[selectedCompany as CompanyName].colors[0]
+                  : entry.company && (entry.company in GRADIENTS)
+                    ? GRADIENTS[entry.company as CompanyName].colors[0]
+                    : '#8884d8';
+                
+                return (
+                  <Cell
+                    key={`cell-${index}-${chartKey}`}
+                    fill={color}
+                    opacity={0.8}
+                  >
+                    <animate
+                      attributeName="width"
+                      from="0"
+                      to="100%"
+                      dur="1s"
+                      fill="freeze"
+                    />
+                  </Cell>
+                );
+              })}
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
       </ChartCard>
     );
@@ -711,6 +805,13 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
 
         <div className="mb-6">
           <PromotionConversionChart 
+            data={filteredData} 
+            selectedCompany={selectedCompany}
+          />
+        </div>
+
+        <div className="mb-6">
+          <StoreSLAChart 
             data={filteredData} 
             selectedCompany={selectedCompany}
           />
