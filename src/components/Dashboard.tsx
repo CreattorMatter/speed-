@@ -1055,6 +1055,11 @@ const ActivityItem: React.FC<{
   );
 };
 
+// Primero, agregar una función de utilidad para verificar si es usuario Pilar
+const isPilarUser = (email?: string) => {
+  return email?.toLowerCase().includes('pilar');
+};
+
 export default function Dashboard({ 
   onLogout, 
   onNewTemplate, 
@@ -1096,16 +1101,30 @@ export default function Dashboard({
     name: string;
   } | null>(null);
 
-  // Actualizar el filtrado para usar el estado local
-  const filteredPlantillasRecientes = React.useMemo(() => {
-    if (userRole === 'admin') {
-      return plantillas;
+  // Filtrar las actividades basado en el usuario
+  const filteredActivities = React.useMemo(() => {
+    if (!isPilarUser(userEmail)) {
+      return activities;
     }
-    
-    return plantillas.filter(plantilla => 
+
+    return activities.filter(activity => {
+      // Verificar si alguna ubicación contiene "Pilar"
+      return activity.locations.some(location => 
+        location.name.toLowerCase().includes('pilar')
+      );
+    });
+  }, [activities, userEmail]);
+
+  // Filtrar las plantillas recientes
+  const filteredPlantillas = React.useMemo(() => {
+    if (!isPilarUser(userEmail)) {
+      return plantillasRecientes;
+    }
+
+    return plantillasRecientes.filter(plantilla => 
       plantilla.sucursal?.toLowerCase().includes('pilar')
     );
-  }, [userRole, plantillas]);
+  }, [userEmail]);
 
   const handlePrint = (id: string, locationName: string) => {
     setPrintingLocation({ id, name: locationName });
@@ -1468,18 +1487,20 @@ export default function Dashboard({
                 <Clock className="w-5 h-5 text-indigo-500" />
                 <h3 className="text-xl font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 
                                bg-clip-text text-transparent">
-                  Actividad Reciente
+                  {isPilarUser(userEmail) ? 'Actividad Reciente - Pilar' : 'Actividad Reciente'}
                 </h3>
                 <div className={`px-2 py-1 rounded-full text-sm font-medium
                   ${userRole === 'admin' 
                     ? 'bg-indigo-100 text-indigo-800' 
                     : 'bg-yellow-100 text-yellow-800'}`}
                 >
-                  {filteredPlantillasRecientes.filter(p => p.estado === 'no_impreso').length} pendientes
+                  {filteredPlantillas.filter(p => p.estado === 'no_impreso').length} pendientes
                 </div>
               </div>
               <p className="text-sm text-gray-500">
-                Seguimiento de las últimas actualizaciones y cambios
+                {isPilarUser(userEmail) 
+                  ? 'Seguimiento de las últimas actualizaciones en sucursales de Pilar'
+                  : 'Seguimiento de las últimas actualizaciones y cambios'}
               </p>
               <div className="mt-4">
                 <button className="text-sm text-indigo-500 hover:text-indigo-600 font-medium 
@@ -1491,13 +1512,19 @@ export default function Dashboard({
             </div>
             <div className={`rounded-xl border overflow-hidden
               bg-white border-gray-200`}>
-              {activities.map((activity) => (
+              {filteredActivities.map((activity) => (
                 <ActivityItem 
                   key={activity.id} 
                   activity={activity}
                   onPrint={handlePrint}
                 />
               ))}
+              
+              {filteredActivities.length === 0 && (
+                <div className="p-8 text-center text-gray-500">
+                  No hay actividades recientes para mostrar
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
@@ -1625,7 +1652,7 @@ export default function Dashboard({
           <NotificationModal
             isOpen={showNotificationModal}
             onClose={() => setShowNotificationModal(false)}
-            activities={filteredPlantillasRecientes}
+            activities={filteredPlantillas}
             onPrint={handlePrintFromNotification}
           />
         )}
