@@ -6,8 +6,8 @@ import { PlantillaReciente } from '../types/plantilla';
 interface PrintModalProps {
   isOpen: boolean;
   onClose: () => void;
-  activity: PlantillaReciente;
-  onPrint: (id: string) => void;
+  activity: Activity;
+  onPrint: (id: string, locationName: string) => void;
 }
 
 export const PrintModal: React.FC<PrintModalProps> = ({
@@ -29,7 +29,7 @@ export const PrintModal: React.FC<PrintModalProps> = ({
     setShowSuccess(true);
     
     // Llamar a onPrint para actualizar el estado
-    onPrint(activity.id);
+    onPrint(activity.id, activity.sucursal);
     
     // Cerrar el modal después de mostrar el mensaje de éxito
     setTimeout(() => {

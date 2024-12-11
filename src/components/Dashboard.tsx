@@ -5,6 +5,10 @@ import { Header } from './shared/Header';
 import { COMPANIES } from '../data/companies';
 import { PrintModal } from './PrintModal';
 import { NotificationModal } from './NotificationModal';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { PrintAnimation } from './Dashboard/PrintAnimation';
+import { PrintDetailsModal } from './Dashboard/PrintDetailsModal';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -49,6 +53,26 @@ interface DashboardStats {
     recentlyUsed: number;
     mostUsed: string;
   };
+}
+
+interface Activity {
+  id: string;
+  type: 'poster' | 'template' | 'promotion';
+  title: string;
+  description: string;
+  timestamp: Date;
+  status: 'success' | 'pending' | 'error';
+  locations: Array<{
+    name: string;
+    printed: boolean;
+    timestamp?: Date;
+    printer?: string;
+  }>;
+  company: string;
+  companyLogo?: string;
+  printStatus: 'printed' | 'not_printed';
+  printerName?: string;
+  onPrint?: (id: string, locationName: string) => void;
 }
 
 const easyLogo = COMPANIES.find(c => c.id === 'easy-mdh')?.logo;
@@ -453,6 +477,584 @@ const getTextByType = (template: PlantillaReciente) => {
   }
 };
 
+// Datos de ejemplo
+const recentActivity: Activity[] = [
+  {
+    id: '1',
+    type: 'poster',
+    title: 'Cartel Promoción Banco Santander',
+    description: 'Enviado a 5 sucursales',
+    timestamp: new Date('2024-01-15T14:30:00'),
+    status: 'success',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Palermo', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Belgrano', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Recoleta', printed: false },
+      { name: 'San Isidro', printed: false },
+      { name: 'Vicente López', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' }
+    ],
+    company: 'Jumbo',
+    companyLogo: LOGOS.jumbo
+  },
+  {
+    id: '2',
+    type: 'template',
+    title: 'Plantilla Ofertas Semanales',
+    description: 'Enviado a 8 sucursales',
+    timestamp: new Date('2024-01-15T13:45:00'),
+    status: 'pending',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Caballito', printed: false },
+      { name: 'Flores', printed: false },
+      { name: 'Floresta', printed: false },
+      { name: 'Villa Devoto', printed: false },
+      { name: 'Villa del Parque', printed: false },
+      { name: 'Villa Urquiza', printed: false },
+      { name: 'Saavedra', printed: false },
+      { name: 'Núñez', printed: false }
+    ],
+    company: 'Disco',
+    companyLogo: LOGOS.disco
+  },
+  {
+    id: '3',
+    type: 'promotion',
+    title: 'Promoción 3x2 Limpieza',
+    description: 'Enviado a 3 sucursales',
+    timestamp: new Date('2024-01-15T12:15:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Martínez', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'San Isidro', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Vicente López', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' }
+    ],
+    company: 'Vea',
+    companyLogo: LOGOS.vea
+  },
+  {
+    id: '4',
+    type: 'poster',
+    title: 'Carteles Herramientas',
+    description: 'Enviado a 4 sucursales',
+    timestamp: new Date('2024-01-15T11:30:00'),
+    status: 'error',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'San Martín', printed: false },
+      { name: 'Villa Lynch', printed: false },
+      { name: 'Villa Ballester', printed: false },
+      { name: 'San Andrés', printed: false }
+    ],
+    company: 'Easy',
+    companyLogo: LOGOS.easy
+  },
+  {
+    id: '5',
+    type: 'template',
+    title: 'Plantilla Productos Frescos',
+    description: 'Enviado a 6 sucursales',
+    timestamp: new Date('2024-01-15T10:45:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Belgrano', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Núñez', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Saavedra', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Villa Urquiza', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Villa Pueyrredón', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' },
+      { name: 'Villa Devoto', printed: true, timestamp: new Date(), printer: 'HP LaserJet Pro M404n' }
+    ],
+    company: 'Jumbo',
+    companyLogo: LOGOS.jumbo
+  },
+  {
+    id: '6',
+    type: 'poster',
+    title: 'Carteles Ofertas Semanales',
+    description: 'Enviado a 6 sucursales',
+    timestamp: new Date('2024-01-15T10:15:00'),
+    status: 'success',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Pilar Centro', printed: false },
+      { name: 'Pilar Este', printed: false },
+      { name: 'Pilar Oeste', printed: false },
+      { name: 'Pilar Norte', printed: false },
+      { name: 'Pilar Sur', printed: false },
+      { name: 'Pilar Shopping', printed: false }
+    ],
+    company: 'Jumbo',
+    companyLogo: LOGOS.jumbo
+  },
+  {
+    id: '7',
+    type: 'promotion',
+    title: 'Promoción Banco Galicia',
+    description: 'Enviado a 4 sucursales',
+    timestamp: new Date('2024-01-15T09:45:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Pilar Centro', printed: true, timestamp: new Date() },
+      { name: 'Pilar Shopping', printed: true, timestamp: new Date() },
+      { name: 'San Isidro', printed: true, timestamp: new Date() },
+      { name: 'Vicente López', printed: true, timestamp: new Date() }
+    ],
+    company: 'Disco',
+    companyLogo: LOGOS.disco
+  },
+  {
+    id: '8',
+    type: 'template',
+    title: 'Carteles Black Friday',
+    description: 'Enviado a 5 sucursales',
+    timestamp: new Date('2024-01-15T09:30:00'),
+    status: 'pending',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Pilar', printed: false },
+      { name: 'Belgrano', printed: false },
+      { name: 'Palermo', printed: false },
+      { name: 'Recoleta', printed: false },
+      { name: 'Núñez', printed: false }
+    ],
+    company: 'Easy',
+    companyLogo: LOGOS.easy
+  },
+  {
+    id: '9',
+    type: 'poster',
+    title: 'Carteles Electro',
+    description: 'Enviado a 3 sucursales',
+    timestamp: new Date('2024-01-15T09:15:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Pilar', printed: true, timestamp: new Date() },
+      { name: 'San Isidro', printed: true, timestamp: new Date() },
+      { name: 'Vicente López', printed: true, timestamp: new Date() }
+    ],
+    company: 'Easy',
+    companyLogo: LOGOS.easy
+  },
+  {
+    id: '10',
+    type: 'promotion',
+    title: 'Promoción 3x2 Limpieza',
+    description: 'Enviado a 7 sucursales',
+    timestamp: new Date('2024-01-15T09:00:00'),
+    status: 'success',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Pilar Centro', printed: false },
+      { name: 'Pilar Este', printed: false },
+      { name: 'Belgrano', printed: false },
+      { name: 'Palermo', printed: false },
+      { name: 'Recoleta', printed: false },
+      { name: 'Núñez', printed: false },
+      { name: 'Caballito', printed: false }
+    ],
+    company: 'Vea',
+    companyLogo: LOGOS.vea
+  },
+  {
+    id: '11',
+    type: 'poster',
+    title: 'Carteles Navidad',
+    description: 'Enviado a 4 sucursales',
+    timestamp: new Date('2024-01-15T08:45:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Pilar Shopping', printed: true, timestamp: new Date() },
+      { name: 'Unicenter', printed: true, timestamp: new Date() },
+      { name: 'Alto Palermo', printed: true, timestamp: new Date() },
+      { name: 'Abasto', printed: true, timestamp: new Date() }
+    ],
+    company: 'Jumbo',
+    companyLogo: LOGOS.jumbo
+  },
+  {
+    id: '12',
+    type: 'template',
+    title: 'Carteles Año Nuevo',
+    description: 'Enviado a 5 sucursales',
+    timestamp: new Date('2024-01-15T08:30:00'),
+    status: 'success',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Pilar', printed: false },
+      { name: 'Martinez', printed: false },
+      { name: 'San Isidro', printed: false },
+      { name: 'Olivos', printed: false },
+      { name: 'Vicente López', printed: false }
+    ],
+    company: 'Disco',
+    companyLogo: LOGOS.disco
+  },
+  {
+    id: '13',
+    type: 'promotion',
+    title: 'Promoción Banco Provincia',
+    description: 'Enviado a 6 sucursales',
+    timestamp: new Date('2024-01-15T08:15:00'),
+    status: 'success',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Pilar Centro', printed: false },
+      { name: 'Pilar Este', printed: false },
+      { name: 'Pilar Oeste', printed: false },
+      { name: 'San Fernando', printed: false },
+      { name: 'Tigre', printed: false },
+      { name: 'Pacheco', printed: false }
+    ],
+    company: 'Vea',
+    companyLogo: LOGOS.vea
+  },
+  {
+    id: '14',
+    type: 'poster',
+    title: 'Carteles Verano',
+    description: 'Enviado a 3 sucursales',
+    timestamp: new Date('2024-01-15T08:00:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Pilar', printed: true, timestamp: new Date() },
+      { name: 'Nordelta', printed: true, timestamp: new Date() },
+      { name: 'San Isidro', printed: true, timestamp: new Date() }
+    ],
+    company: 'Easy',
+    companyLogo: LOGOS.easy
+  },
+  {
+    id: '15',
+    type: 'template',
+    title: 'Carteles Back to School',
+    description: 'Enviado a 5 sucursales',
+    timestamp: new Date('2024-01-15T07:45:00'),
+    status: 'pending',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Pilar Shopping', printed: false },
+      { name: 'Unicenter', printed: false },
+      { name: 'Plaza Oeste', printed: false },
+      { name: 'Alto Avellaneda', printed: false },
+      { name: 'Soleil', printed: false }
+    ],
+    company: 'Jumbo',
+    companyLogo: LOGOS.jumbo
+  },
+  {
+    id: '16',
+    type: 'poster',
+    title: 'Carteles Tecnología',
+    description: 'Enviado a 5 sucursales',
+    timestamp: new Date('2024-01-15T07:30:00'),
+    status: 'success',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Pilar Shopping', printed: false },
+      { name: 'Pilar Centro', printed: false },
+      { name: 'San Isidro', printed: false },
+      { name: 'Unicenter', printed: false },
+      { name: 'Alto Palermo', printed: false }
+    ],
+    company: 'Easy',
+    companyLogo: LOGOS.easy
+  },
+  {
+    id: '17',
+    type: 'promotion',
+    title: 'Promoción Banco ICBC',
+    description: 'Enviado a 4 sucursales',
+    timestamp: new Date('2024-01-15T07:15:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Pilar Shopping', printed: true, timestamp: new Date() },
+      { name: 'Nordelta', printed: true, timestamp: new Date() },
+      { name: 'San Isidro', printed: true, timestamp: new Date() },
+      { name: 'Vicente López', printed: true, timestamp: new Date() }
+    ],
+    company: 'Jumbo',
+    companyLogo: LOGOS.jumbo
+  },
+  {
+    id: '18',
+    type: 'template',
+    title: 'Carteles Hogar',
+    description: 'Enviado a 6 sucursales',
+    timestamp: new Date('2024-01-15T07:00:00'),
+    status: 'success',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Pilar Este', printed: false },
+      { name: 'Pilar Oeste', printed: false },
+      { name: 'Pilar Norte', printed: false },
+      { name: 'Pilar Sur', printed: false },
+      { name: 'Pilar Centro', printed: false },
+      { name: 'Pilar Shopping', printed: false }
+    ],
+    company: 'Easy',
+    companyLogo: LOGOS.easy
+  },
+  {
+    id: '19',
+    type: 'poster',
+    title: 'Carteles Panadería',
+    description: 'Enviado a 3 sucursales',
+    timestamp: new Date('2024-01-15T06:45:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Pilar Centro', printed: true, timestamp: new Date() },
+      { name: 'San Fernando', printed: true, timestamp: new Date() },
+      { name: 'Tigre', printed: true, timestamp: new Date() }
+    ],
+    company: 'Disco',
+    companyLogo: LOGOS.disco
+  },
+  {
+    id: '20',
+    type: 'promotion',
+    title: 'Promoción 2x1 Bebidas',
+    description: 'Enviado a 5 sucursales',
+    timestamp: new Date('2024-01-15T06:30:00'),
+    status: 'pending',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Pilar Shopping', printed: false },
+      { name: 'Pilar Centro', printed: false },
+      { name: 'Pilar Este', printed: false },
+      { name: 'Pilar Oeste', printed: false },
+      { name: 'Pilar Norte', printed: false }
+    ],
+    company: 'Vea',
+    companyLogo: LOGOS.vea
+  },
+  {
+    id: '21',
+    type: 'template',
+    title: 'Carteles Mascotas',
+    description: 'Enviado a 4 sucursales',
+    timestamp: new Date('2024-01-15T06:15:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Pilar', printed: true, timestamp: new Date() },
+      { name: 'San Isidro', printed: true, timestamp: new Date() },
+      { name: 'Vicente López', printed: true, timestamp: new Date() },
+      { name: 'Olivos', printed: true, timestamp: new Date() }
+    ],
+    company: 'Jumbo',
+    companyLogo: LOGOS.jumbo
+  },
+  {
+    id: '22',
+    type: 'poster',
+    title: 'Carteles Deportes',
+    description: 'Enviado a 7 sucursales',
+    timestamp: new Date('2024-01-15T06:00:00'),
+    status: 'success',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Pilar Shopping', printed: false },
+      { name: 'Pilar Centro', printed: false },
+      { name: 'Unicenter', printed: false },
+      { name: 'Alto Palermo', printed: false },
+      { name: 'Abasto', printed: false },
+      { name: 'Soleil', printed: false },
+      { name: 'Plaza Oeste', printed: false }
+    ],
+    company: 'Easy',
+    companyLogo: LOGOS.easy
+  },
+  {
+    id: '23',
+    type: 'promotion',
+    title: 'Promoción Banco Macro',
+    description: 'Enviado a 5 sucursales',
+    timestamp: new Date('2024-01-15T05:45:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Pilar', printed: true, timestamp: new Date() },
+      { name: 'San Fernando', printed: true, timestamp: new Date() },
+      { name: 'Tigre', printed: true, timestamp: new Date() },
+      { name: 'Pacheco', printed: true, timestamp: new Date() },
+      { name: 'Nordelta', printed: true, timestamp: new Date() }
+    ],
+    company: 'Disco',
+    companyLogo: LOGOS.disco
+  },
+  {
+    id: '24',
+    type: 'template',
+    title: 'Carteles Juguetería',
+    description: 'Enviado a 6 sucursales',
+    timestamp: new Date('2024-01-15T05:30:00'),
+    status: 'pending',
+    printStatus: 'not_printed',
+    locations: [
+      { name: 'Pilar Shopping', printed: false },
+      { name: 'Pilar Centro', printed: false },
+      { name: 'Pilar Este', printed: false },
+      { name: 'Pilar Oeste', printed: false },
+      { name: 'Pilar Norte', printed: false },
+      { name: 'Pilar Sur', printed: false }
+    ],
+    company: 'Jumbo',
+    companyLogo: LOGOS.jumbo
+  },
+  {
+    id: '25',
+    type: 'poster',
+    title: 'Carteles Ferretería',
+    description: 'Enviado a 4 sucursales',
+    timestamp: new Date('2024-01-15T05:15:00'),
+    status: 'success',
+    printStatus: 'printed',
+    locations: [
+      { name: 'Pilar', printed: true, timestamp: new Date() },
+      { name: 'San Isidro', printed: true, timestamp: new Date() },
+      { name: 'Vicente López', printed: true, timestamp: new Date() },
+      { name: 'Olivos', printed: true, timestamp: new Date() }
+    ],
+    company: 'Easy',
+    companyLogo: LOGOS.easy
+  }
+];
+
+// Componente de Actividad
+const ActivityItem: React.FC<{ 
+  activity: Activity;
+  onPrint: (id: string, locationName: string) => void;
+}> = ({ activity, onPrint }) => {
+  const [selectedLocation, setSelectedLocation] = useState<{
+    name: string;
+    timestamp: Date;
+  } | null>(null);
+
+  const allPrinted = activity.locations.every(loc => loc.printed);
+  const somePrinted = activity.locations.some(loc => loc.printed);
+  const printedCount = activity.locations.filter(loc => loc.printed).length;
+
+  return (
+    <>
+      <div className="flex items-start gap-4 p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+        {/* Icono o Logo */}
+        <div className="flex-shrink-0">
+          {activity.companyLogo ? (
+            <img 
+              src={activity.companyLogo} 
+              alt={activity.company}
+              className="w-10 h-10 rounded-lg object-contain"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <FileText className="w-5 h-5 text-indigo-600" />
+            </div>
+          )}
+        </div>
+
+        {/* Contenido */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 truncate">
+                {activity.title}
+              </h4>
+              <p className="text-sm text-gray-500">
+                {activity.description}
+              </p>
+            </div>
+            <div className="flex flex-col items-end">
+              {/* Fecha formateada */}
+              <time className="text-xs text-gray-500">
+                {format(activity.timestamp, "d 'de' MMMM", { locale: es })}
+              </time>
+              {/* Hora formateada */}
+              <time className="text-xs font-medium text-gray-900">
+                {format(activity.timestamp, "HH:mm 'hs'")}
+              </time>
+            </div>
+          </div>
+
+          {/* Detalles adicionales */}
+          <div className="mt-2 flex items-center gap-2 flex-wrap">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+              ${allPrinted ? 'bg-green-100 text-green-800' : 
+                somePrinted ? 'bg-yellow-100 text-yellow-800' : 
+                'bg-red-100 text-red-800'}`}
+            >
+              <Printer className="w-3 h-3 mr-1" />
+              {allPrinted ? 'Todo impreso' : 
+               somePrinted ? `${printedCount}/${activity.locations.length} impresos` : 
+               'Pendiente de impresión'}
+            </span>
+
+            {/* Cantidad de sucursales */}
+            <span className="text-xs text-gray-500">
+              {activity.locations.length} sucursales
+            </span>
+          </div>
+
+          {/* Lista de sucursales con estado de impresión */}
+          <div className="mt-2 flex flex-wrap gap-1">
+            {activity.locations.map((location, index) => (
+              <div key={index} className="flex items-center gap-1">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                  ${location.printed 
+                    ? 'bg-green-100 text-green-800 border border-green-200' 
+                    : 'bg-red-100 text-red-800 border border-red-200'}`}
+                >
+                  {location.name}
+                  {location.printed ? (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => location.timestamp && setSelectedLocation({
+                        name: location.name,
+                        timestamp: location.timestamp
+                      })}
+                      className="ml-1 p-1 hover:bg-green-200 rounded-full"
+                    >
+                      <Printer className="w-3 h-3" />
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => onPrint(activity.id, location.name)}
+                      className="ml-1 p-1 hover:bg-red-200 rounded-full"
+                    >
+                      <Printer className="w-3 h-3" />
+                    </motion.button>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de detalles de impresión */}
+      {selectedLocation && (
+        <PrintDetailsModal
+          isOpen={!!selectedLocation}
+          onClose={() => setSelectedLocation(null)}
+          locationName={selectedLocation.name}
+          timestamp={selectedLocation.timestamp}
+        />
+      )}
+    </>
+  );
+};
+
 export default function Dashboard({ 
   onLogout, 
   onNewTemplate, 
@@ -488,6 +1090,11 @@ export default function Dashboard({
   const [printModalActivity, setPrintModalActivity] = useState<PlantillaReciente | null>(null);
   const [showNotificationModal, setShowNotificationModal] = useState(true);
   const [plantillas, setPlantillas] = useState(plantillasRecientes);
+  const [activities, setActivities] = useState(recentActivity);
+  const [printingLocation, setPrintingLocation] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Actualizar el filtrado para usar el estado local
   const filteredPlantillasRecientes = React.useMemo(() => {
@@ -500,18 +1107,38 @@ export default function Dashboard({
     );
   }, [userRole, plantillas]);
 
-  const handlePrint = (id: string) => {
-    // Actualizar el estado de la actividad a 'impreso'
-    setPlantillas(prevPlantillas => 
-      prevPlantillas.map(plantilla => 
-        plantilla.id === id 
-          ? { ...plantilla, estado: 'impreso' as const }
-          : plantilla
-      )
-    );
+  const handlePrint = (id: string, locationName: string) => {
+    setPrintingLocation({ id, name: locationName });
     
-    // Cerrar el modal de impresión
-    setPrintModalActivity(null);
+    // La actualización real se hará cuando la animación termine
+  };
+
+  const handlePrintAnimationComplete = () => {
+    if (!printingLocation) return;
+
+    setActivities(prev => prev.map(activity => {
+      if (activity.id !== printingLocation.id) return activity;
+
+      const updatedLocations = activity.locations.map(loc => 
+        loc.name === printingLocation.name
+          ? { 
+              ...loc, 
+              printed: true, 
+              timestamp: new Date()
+            }
+          : loc
+      );
+
+      const allPrinted = updatedLocations.every(loc => loc.printed);
+
+      return {
+        ...activity,
+        locations: updatedLocations,
+        printStatus: allPrinted ? 'printed' : 'not_printed'
+      };
+    }));
+
+    setPrintingLocation(null);
   };
 
   const handlePrintFromNotification = (activity: PlantillaReciente) => {
@@ -864,75 +1491,12 @@ export default function Dashboard({
             </div>
             <div className={`rounded-xl border overflow-hidden
               bg-white border-gray-200`}>
-              {filteredPlantillasRecientes.map((template, index) => (
-                <motion.div 
-                  key={template.id}
-                  initial={{ opacity: 0.9, x: 0 }}
-                  whileHover={{ 
-                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                    scale: 1.01,
-                    x: 4,
-                    transition: {
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 20
-                    }
-                  }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setSelectedActivity(template)}
-                  className={`flex items-center justify-between p-4 transition-all duration-200 cursor-pointer
-                            ${index !== filteredPlantillasRecientes.length - 1 ? 'border-b border-indigo-500/10' : ''}
-                            hover:shadow-lg hover:shadow-indigo-500/10`}
-                >
-                  <div className="flex items-center gap-4">
-                    <motion.div 
-                      whileHover={{ rotate: [0, -10, 10, -10, 0] }}
-                      transition={{ duration: 0.5 }}
-                      className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 
-                                flex items-center justify-center shadow-lg shadow-indigo-500/20"
-                    >
-                      {getIconByType(template.tipo)}
-                    </motion.div>
-                    <img 
-                      src={template.empresa.logo}
-                      alt={template.empresa.nombre}
-                      className="w-6 h-6 object-contain"
-                    />
-                    <div>
-                      <p className="font-medium text-indigo-300">{template.nombre}</p>
-                      <p className="text-sm text-indigo-300/40">{getTextByType(template)}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {template.estado === 'no_impreso' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPrintModalActivity(template);
-                        }}
-                        className="p-2 rounded-lg hover:bg-indigo-50 transition-colors"
-                      >
-                        <Printer className="w-4 h-4 text-indigo-600" />
-                      </button>
-                    )}
-                    <motion.div className={`px-2 py-1 rounded-full text-xs ${
-                      template.estado === 'impreso' 
-                        ? 'bg-green-100 text-green-800 border border-green-200' 
-                        : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                    }`}>
-                      {template.estado === 'impreso' ? (
-                        <div className="flex items-center gap-1">
-                          <span>✓</span>
-                          <span>Impreso</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <span>No impreso</span>
-                        </div>
-                      )}
-                    </motion.div>
-                  </div>
-                </motion.div>
+              {activities.map((activity) => (
+                <ActivityItem 
+                  key={activity.id} 
+                  activity={activity}
+                  onPrint={handlePrint}
+                />
               ))}
             </div>
           </motion.div>
@@ -1065,6 +1629,12 @@ export default function Dashboard({
             onPrint={handlePrintFromNotification}
           />
         )}
+
+        <PrintAnimation 
+          isVisible={!!printingLocation}
+          onComplete={handlePrintAnimationComplete}
+          locationName={printingLocation?.name || ''}
+        />
       </motion.div>
     </div>
   );
