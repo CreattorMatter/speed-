@@ -618,7 +618,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
                         <p className="text-sm text-gray-600 flex justify-between">
                           <span>Conversión:</span>
                           <span className="font-medium">
-                            {data.conversion}%
+                            {data.conversion.toFixed(3)}%
                           </span>
                         </p>
                       </div>
