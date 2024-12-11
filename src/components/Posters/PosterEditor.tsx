@@ -221,6 +221,27 @@ console.log('Importación de productos:', { products });
 const CATEGORIES = Array.from(new Set(products.map(p => p.category)));
 console.log('Categorías encontradas:', CATEGORIES);
 
+const FINANCING_OPTIONS: FinancingOption[] = [
+  {
+    bank: 'Visa',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png',
+    cardName: 'Visa',
+    plan: 'Hasta 12 cuotas sin interés'
+  },
+  {
+    bank: 'Mastercard',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png',
+    cardName: 'Mastercard',
+    plan: 'Hasta 6 cuotas sin interés'
+  },
+  {
+    bank: 'American Express',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/American_Express_logo.svg/1200px-American_Express_logo.svg.png',
+    cardName: 'American Express',
+    plan: '25% OFF'
+  }
+];
+
 export const PosterEditor: React.FC<PosterEditorProps> = ({ 
   onBack, 
   onLogout, 

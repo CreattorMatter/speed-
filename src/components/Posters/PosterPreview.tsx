@@ -285,25 +285,57 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
   // Función para renderizar la sección de precios
   const renderPriceSection = () => {
-    if (!product) return null; // No mostrar precios si no hay producto
+    if (!product) return null;
 
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[160px]">
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[160px] relative">
         <div className="flex items-center gap-4 mb-4">
           <span className="text-[50px] text-gray-400 line-through">
             ${product.price.toLocaleString('es-AR')}
           </span>
         </div>
 
-        <div className="text-center flex flex-col items-center">
-          <span className="text-[90px] font-black leading-none">
+        <div className="text-center">
+          <span className="text-[90px] font-black leading-none block">
             ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
           </span>
+
           {financing && financing.length > 0 && (
-            <div className="flex flex-col gap-1">
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 flex items-center gap-3">
               {financing.map((fin, index) => (
-                <div key={index} className="bg-indigo-600 text-white py-0.5 px-2 rounded text-xs">
-                  {fin.plan} - {fin.bank}
+                <div 
+                  key={index} 
+                  className="flex items-center bg-white rounded-lg p-0 shadow-sm"
+                  style={{
+                    minWidth: '130px',
+                    height: '90px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                >
+                  <img 
+                    src={fin.logo} 
+                    alt={fin.bank} 
+                    className="w-full h-full object-contain p-2"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '100%'
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {financing && financing.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-2 mt-4">
+              {financing.map((fin, index) => (
+                <div 
+                  key={index} 
+                  className="bg-indigo-600 text-white py-1.5 px-4 rounded-full text-sm font-medium"
+                >
+                  {fin.plan}
                 </div>
               ))}
             </div>
