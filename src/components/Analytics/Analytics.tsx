@@ -17,7 +17,8 @@ import {
   Line,
   Legend,
   Area,
-  AreaChart
+  AreaChart,
+  ReferenceLine
 } from 'recharts';
 import { DateRangeSelector } from './DateRangeSelector';
 import { generateRandomData } from '../../utils/analyticsData';
@@ -687,7 +688,49 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
             margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
             key={chartKey}
           >
+            {/* Zonas de colores para los niveles de SLA */}
+            <defs>
+              <linearGradient id="slaZones" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="rgba(239, 68, 68, 0.1)" /> {/* Rojo para crítico */}
+                <stop offset="80%" stopColor="rgba(239, 68, 68, 0.1)" />
+                <stop offset="80%" stopColor="rgba(251, 191, 36, 0.1)" /> {/* Amarillo para warning */}
+                <stop offset="90%" stopColor="rgba(251, 191, 36, 0.1)" />
+                <stop offset="90%" stopColor="rgba(34, 197, 94, 0.1)" /> {/* Verde para ok */}
+                <stop offset="100%" stopColor="rgba(34, 197, 94, 0.1)" />
+              </linearGradient>
+            </defs>
+
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            
+            {/* Fondo con zonas coloreadas */}
+            <rect x="0" y="0" width="100%" height="100%" fill="url(#slaZones)" />
+
+            {/* Líneas de referencia */}
+            <ReferenceLine
+              x={80}
+              stroke="#EF4444"
+              strokeWidth={2}
+              strokeDasharray="3 3"
+              label={{
+                value: "Crítico < 80%",
+                position: 'right',
+                fill: '#EF4444',
+                fontSize: 12
+              }}
+            />
+            <ReferenceLine
+              x={90}
+              stroke="#FBB224"
+              strokeWidth={2}
+              strokeDasharray="3 3"
+              label={{
+                value: "Warning < 90%",
+                position: 'right',
+                fill: '#FBB224',
+                fontSize: 12
+              }}
+            />
+
             <XAxis 
               type="number" 
               domain={[0, 100]}
@@ -706,6 +749,17 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
                   const companyData = filteredData.salesData.find(
                     company => company.name === (data.company || selectedCompany)
                   );
+                  
+                  // Determinar el estado del SLA
+                  let slaStatus = 'success';
+                  let statusColor = 'text-green-600';
+                  if (data.sla < 80) {
+                    slaStatus = 'crítico';
+                    statusColor = 'text-red-600';
+                  } else if (data.sla < 90) {
+                    slaStatus = 'warning';
+                    statusColor = 'text-yellow-600';
+                  }
                   
                   return (
                     <motion.div
@@ -729,10 +783,10 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
                         {data.store}
                       </p>
                       <div className="space-y-1">
-                        <p className="text-sm text-gray-600 flex justify-between">
+                        <p className="text-sm text-gray-600 flex justify-between items-center">
                           <span>SLA:</span>
-                          <span className="font-medium">
-                            {data.sla.toFixed(1)}%
+                          <span className={`font-medium ${statusColor}`}>
+                            {data.sla.toFixed(1)}% ({slaStatus})
                           </span>
                         </p>
                         <p className="text-sm text-gray-600 flex justify-between">
@@ -754,16 +808,18 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
               animationDuration={1000}
             >
               {data.storeSLAData.map((entry, index) => {
-                const color = selectedCompany && (selectedCompany in GRADIENTS)
-                  ? GRADIENTS[selectedCompany as CompanyName].colors[0]
-                  : entry.company && (entry.company in GRADIENTS)
-                    ? GRADIENTS[entry.company as CompanyName].colors[0]
-                    : '#8884d8';
-                
+                // Determinar el color base según el SLA
+                let baseColor = '#22C55E'; // Verde para OK
+                if (entry.sla < 80) {
+                  baseColor = '#EF4444'; // Rojo para crítico
+                } else if (entry.sla < 90) {
+                  baseColor = '#FBB224'; // Amarillo para warning
+                }
+
                 return (
                   <Cell
                     key={`cell-${index}-${chartKey}`}
-                    fill={color}
+                    fill={baseColor}
                     opacity={0.8}
                   >
                     <animate
