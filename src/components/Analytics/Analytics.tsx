@@ -201,7 +201,21 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
 
   const filteredData = React.useMemo(() => {
     if (!selectedCompany) {
-      return data;
+      // Cuando no hay empresa seleccionada, combinar todos los productos
+      const allProducts = Object.entries(data.topProducts)
+        .flatMap(([company, products]) => 
+          products.map(product => ({
+            ...product,
+            company
+          }))
+        )
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5);
+
+      return {
+        ...data,
+        topProducts: allProducts
+      };
     }
 
     return {
@@ -209,16 +223,17 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
       salesData: data.salesData.filter(item => item.name === selectedCompany),
       monthlyData: data.monthlyData.map(month => ({
         name: month.name,
-        [selectedCompany]: month[selectedCompany as CompanyName]
+        Easy: selectedCompany === 'Easy' ? month.Easy : 0,
+        Jumbo: selectedCompany === 'Jumbo' ? month.Jumbo : 0,
+        Disco: selectedCompany === 'Disco' ? month.Disco : 0,
+        Vea: selectedCompany === 'Vea' ? month.Vea : 0
       })),
       regionData: data.regionData.map(region => ({
         name: region.name,
         value: region.byCompany[selectedCompany] || 0,
         byCompany: { [selectedCompany]: region.byCompany[selectedCompany] || 0 }
       })),
-      topProducts: {
-        [selectedCompany]: data.topProducts[selectedCompany] || []
-      }
+      topProducts: data.topProducts[selectedCompany] || []
     };
   }, [data, selectedCompany]);
 
@@ -768,6 +783,92 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
     );
   };
 
+  const renderTopProductsChart = () => (
+    <ChartCard title={`Top Productos ${selectedCompany ? `- ${selectedCompany}` : ''}`}>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart
+          data={Array.isArray(filteredData.topProducts) ? filteredData.topProducts : []}
+          layout="vertical"
+          margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+          <XAxis type="number" />
+          <YAxis 
+            dataKey="name" 
+            type="category" 
+            width={150}
+            tick={{ fontSize: 12 }}
+          />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (active && payload && payload.length) {
+                const data = payload[0].payload;
+                const companyData = filteredData.salesData.find(
+                  c => c.name === (data.company || selectedCompany)
+                );
+
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-white p-4 rounded-lg shadow-lg border border-gray-100"
+                  >
+                    {companyData && (
+                      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                        <img 
+                          src={companyData.logo} 
+                          alt={companyData.name}
+                          className="w-6 h-6 object-contain"
+                        />
+                        <span className="font-medium text-gray-700">
+                          {companyData.name}
+                        </span>
+                      </div>
+                    )}
+                    <p className="font-medium text-gray-900">{data.name}</p>
+                    <p className="text-sm text-gray-600">
+                      Ventas: ${data.value.toLocaleString()}
+                    </p>
+                  </motion.div>
+                );
+              }
+              return null;
+            }}
+          />
+          <Bar 
+            dataKey="value" 
+            radius={[0, 4, 4, 0]}
+            animationDuration={1000}
+          >
+            {(Array.isArray(filteredData.topProducts) ? filteredData.topProducts : []).map((entry, index) => {
+              const color = selectedCompany && (selectedCompany in GRADIENTS)
+                ? GRADIENTS[selectedCompany as CompanyName].colors[0]
+                : entry.company && (entry.company in GRADIENTS)
+                  ? GRADIENTS[entry.company as CompanyName].colors[0]
+                  : '#8884d8';
+              
+              return (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={color}
+                  opacity={0.8}
+                >
+                  <animate
+                    attributeName="width"
+                    from="0"
+                    to="100%"
+                    dur="1s"
+                    fill="freeze"
+                  />
+                </Cell>
+              );
+            })}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </ChartCard>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AnimatePresence>
@@ -918,95 +1019,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
             </ResponsiveContainer>
           </ChartCard>
 
-          <ChartCard title={`Top Productos ${selectedCompany ? `- ${selectedCompany}` : ''}`}>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={Array.isArray(filteredData.topProducts) ? filteredData.topProducts : []}
-                layout="vertical"
-              >
-                <defs>
-                  {Object.entries(GRADIENTS).map(([_, gradient]) => (
-                    <linearGradient key={gradient.id} id={gradient.id} x1="1" y1="0" x2="0" y2="0">
-                      <stop offset="5%" stopColor={gradient.colors[0]} stopOpacity={0.9}/>
-                      <stop offset="95%" stopColor={gradient.colors[1]} stopOpacity={0.9}/>
-                    </linearGradient>
-                  ))}
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis 
-                  type="number"
-                  axisLine={{ stroke: '#E5E7EB' }}
-                  tick={{ fill: '#666' }}
-                />
-                <YAxis 
-                  dataKey="name" 
-                  type="category" 
-                  width={150}
-                  axisLine={{ stroke: '#E5E7EB' }}
-                  tick={{ fill: '#666' }}
-                />
-                <Tooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length > 0) {
-                      const item = payload[0].payload as TopProduct;
-                      let color: string;
-
-                      if (selectedCompany) {
-                        color = filteredData.salesData[0]?.color || COLORS[0];
-                      } else {
-                        color = item.company 
-                          ? data.salesData.find(c => c.name === item.company)?.color || COLORS[0]
-                          : COLORS[0];
-                      }
-
-                      return (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="bg-white p-3 rounded-lg shadow-lg border border-gray-100"
-                          style={{ 
-                            borderLeftColor: color,
-                            borderLeftWidth: 4 
-                          }}
-                        >
-                          <p className="font-medium text-gray-900">{item.name}</p>
-                          <p className="text-sm text-gray-600">
-                            Ventas: ${item.value.toLocaleString()}
-                          </p>
-                          {!selectedCompany && item.company && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              {item.company}
-                            </p>
-                          )}
-                        </motion.div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Bar 
-                  dataKey="value" 
-                  radius={[0, 10, 10, 0]}
-                  animationDuration={1000}
-                >
-                  {(Array.isArray(filteredData.topProducts) ? filteredData.topProducts : []).map((entry, index) => {
-                    const gradientId = selectedCompany 
-                      ? GRADIENTS[selectedCompany].id
-                      : entry.company 
-                        ? GRADIENTS[entry.company as keyof typeof GRADIENTS].id
-                        : GRADIENTS.Easy.id;
-
-                    return (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={`url(#${gradientId})`}
-                      />
-                    );
-                  })}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
+          {renderTopProductsChart()}
         </div>
       </div>
     </div>
