@@ -122,6 +122,20 @@ const LOGOS = {
   vea: 'https://upload.wikimedia.org/wikipedia/commons/9/94/Logo-VEA-Supermercados.png'
 };
 
+// Agregar después de la definición de LOGOS y antes de cualquier componente
+// Funciones auxiliares para colores
+const getComplianceColor = (compliance: number) => {
+  if (compliance >= 90) return 'bg-green-50 text-green-700';
+  if (compliance >= 80) return 'bg-yellow-50 text-yellow-700';
+  return 'bg-red-50 text-red-700';
+};
+
+const getComplianceColorHex = (compliance: number) => {
+  if (compliance >= 90) return '#22C55E';
+  if (compliance >= 80) return '#FBB224';
+  return '#EF4444';
+};
+
 const plantillasRecientes: PlantillaReciente[] = [
   // Easy
   {
@@ -967,9 +981,9 @@ const recentActivity: Activity[] = [
 ];
 
 // Componente de Actividad
-const ActivityItem: React.FC<{ 
+const ActivityItem: React.FC<{
   activity: Activity;
-  onPrint: (id: string, locationName: string) => void;
+  onPrint?: (id: string, locationName: string) => void;
 }> = ({ activity, onPrint }) => {
   const [selectedLocation, setSelectedLocation] = useState<{
     name: string;
@@ -1100,7 +1114,7 @@ const isPilarUser = (email?: string) => {
 // Primero, agreguemos un componente para agrupar actividades por fecha
 const ActivityGroup: React.FC<{
   date: string;
-  activities: typeof filteredActivities;
+  activities: Activity[];
   onPrint: (id: string, locationName: string) => void;
 }> = ({ date, activities, onPrint }) => (
   <div className="mb-6 last:mb-0">
@@ -1331,25 +1345,145 @@ const STORE_COMPLIANCE_DATA = {
   }
 };
 
-// Agregar después de STORE_COMPLIANCE_DATA y antes de PrintComplianceChart
-// Funciones auxiliares para colores
-const getComplianceColor = (compliance: number) => {
-  if (compliance >= 90) return 'bg-green-50 text-green-700';
-  if (compliance >= 80) return 'bg-yellow-50 text-yellow-700';
-  return 'bg-red-50 text-red-700';
+// Modificar el componente GaugeChart
+const GaugeChart: React.FC<{
+  value: number;
+  total: number;
+  printed: number;
+  size?: number;
+}> = ({ value, total, printed, size = 300 }) => {
+  const data = [{ value: value }, { value: 100 - value }];
+  const color = getComplianceColorHex(value);
+
+  return (
+    <div className="relative flex flex-col items-center">
+      {/* Fondo decorativo */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl"
+        style={{ filter: 'blur(20px)' }}
+      />
+
+      {/* Contenedor principal */}
+      <div className="relative">
+        <PieChart width={size} height={size/1.6}>
+          {/* Círculos decorativos de fondo */}
+          <circle
+            cx={size/2}
+            cy={size/1.6}
+            r={size*0.45}
+            fill="none"
+            stroke="#f3f4f6"
+            strokeWidth={2}
+            strokeDasharray="4 4"
+          />
+          <circle
+            cx={size/2}
+            cy={size/1.6}
+            r={size*0.35}
+            fill="none"
+            stroke="#f3f4f6"
+            strokeWidth={1}
+          />
+
+          {/* Gauge principal */}
+          <Pie
+            data={data}
+            cx={size/2}
+            cy={size/1.6}
+            startAngle={180}
+            endAngle={0}
+            innerRadius={size*0.38}
+            outerRadius={size*0.42}
+            cornerRadius={6}
+            paddingAngle={0}
+            dataKey="value"
+            stroke="none"
+          >
+            <Cell fill={color} />
+            <Cell fill="#f3f4f6" />
+          </Pie>
+
+          {/* Líneas de referencia */}
+          <text
+            x={size*0.15}
+            y={size/1.6 - 10}
+            textAnchor="middle"
+            fill="#9CA3AF"
+            className="text-xs font-medium"
+          >
+            0%
+          </text>
+          <text
+            x={size*0.85}
+            y={size/1.6 - 10}
+            textAnchor="middle"
+            fill="#9CA3AF"
+            className="text-xs font-medium"
+          >
+            100%
+          </text>
+
+          {/* Valor central */}
+          <text
+            x={size/2}
+            y={size/1.6 - size*0.08}
+            textAnchor="middle"
+            fill={color}
+            className="text-5xl font-bold"
+          >
+            {value}%
+          </text>
+
+          {/* Línea separadora */}
+          <line
+            x1={size/2 - 30}
+            y1={size/1.6 + size*0.02}
+            x2={size/2 + 30}
+            y2={size/1.6 + size*0.02}
+            stroke="#E5E7EB"
+            strokeWidth={2}
+          />
+
+          {/* Texto de impresos */}
+          <text
+            x={size/2}
+            y={size/1.6 + size*0.08}
+            textAnchor="middle"
+            fill="#6B7280"
+            className="text-sm"
+          >
+            {printed} de {total} impresos
+          </text>
+        </PieChart>
+
+        {/* Indicadores laterales */}
+        <div className="absolute top-1/2 -left-4 w-2 h-8 rounded-full bg-gradient-to-b from-indigo-500 to-purple-500 opacity-20" />
+        <div className="absolute top-1/2 -right-4 w-2 h-8 rounded-full bg-gradient-to-b from-indigo-500 to-purple-500 opacity-20" />
+      </div>
+
+      {/* Detalles adicionales */}
+      <div className="mt-8 flex items-center gap-8">
+        <div className="text-center">
+          <p className="text-sm font-medium text-gray-600">Meta</p>
+          <p className="text-lg font-semibold text-gray-900">90%</p>
+        </div>
+        <div className="h-8 w-px bg-gray-200" />
+        <div className="text-center">
+          <p className="text-sm font-medium text-gray-600">Promedio</p>
+          <p className={`text-lg font-semibold`} style={{ color }}>
+            {value}%
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 };
 
-const getComplianceColorHex = (compliance: number) => {
-  if (compliance >= 90) return '#22C55E';
-  if (compliance >= 80) return '#FBB224';
-  return '#EF4444';
-};
-
-// Modificar el componente PrintComplianceChart para recibir selectedCompany
+// Modificar el PrintComplianceChart
 const PrintComplianceChart: React.FC<{
   locationId: string;
   selectedPromotion: string;
-  selectedCompany: string;  // Agregar esta prop
+  selectedCompany: string;
   className?: string;
 }> = ({ locationId, selectedPromotion, selectedCompany, className }) => {
   const location = locationId === 'all' ? null : LOCATIONS.find(loc => loc.id === locationId);
@@ -1395,6 +1529,14 @@ const PrintComplianceChart: React.FC<{
     complianceData.reduce((acc, store) => acc + store.compliance, 0) / complianceData.length
   );
 
+  // Calcular totales para el gauge
+  const totals = React.useMemo(() => {
+    const total = complianceData.reduce((acc, store) => acc + store.total, 0);
+    const printed = complianceData.reduce((acc, store) => acc + store.printed, 0);
+    const compliance = Math.round((printed / total) * 100);
+    return { total, printed, compliance };
+  }, [complianceData]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -1419,96 +1561,191 @@ const PrintComplianceChart: React.FC<{
         </div>
       </div>
 
-      <div className="h-[400px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={complianceData}
-            layout="vertical"
-            margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-            <XAxis 
-              type="number" 
-              domain={[0, 100]} 
-              unit="%" 
-            />
-            <YAxis 
-              dataKey="name" 
-              type="category" 
-              width={100}
-              tick={{ fontSize: 12 }}
-            />
-            <Tooltip
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  const data = payload[0].payload;
-                  // Encontrar la ubicación y su empresa correspondiente
-                  const storeLocation = LOCATIONS.find(loc => 
-                    loc.name.toLowerCase() === data.name.toLowerCase()
-                  );
-                  const companyLogo = storeLocation ? LOGOS[storeLocation.company.toLowerCase() as keyof typeof LOGOS] : '';
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {selectedPromotion !== 'all' ? (
+          <>
+            {/* Gráfico de gauge para promoción específica */}
+            <div className="flex items-center justify-center">
+              <GaugeChart 
+                value={totals.compliance}
+                total={totals.total}
+                printed={totals.printed}
+                size={300}
+              />
+            </div>
 
-                  return (
-                    <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
-                      <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-100">
-                        {companyLogo && (
-                          <img 
-                            src={companyLogo}
-                            alt={storeLocation?.company}
-                            className="w-8 h-8 object-contain"
-                          />
-                        )}
-                        <div>
-                          <p className="font-medium text-gray-900">{data.name}</p>
-                          <p className="text-sm text-gray-500">{storeLocation?.company}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-gray-600 flex justify-between gap-4">
-                          <span>Cumplimiento:</span>
-                          <span className={`font-medium ${
-                            data.compliance >= 90 ? 'text-green-600' :
-                            data.compliance >= 80 ? 'text-yellow-600' :
-                            'text-red-600'
-                          }`}>
-                            {data.compliance}%
-                          </span>
-                        </p>
-                        <p className="text-sm text-gray-600 flex justify-between gap-4">
-                          <span>Impresos:</span>
-                          <span className="font-medium">{data.printed}/{data.total}</span>
-                        </p>
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <ReferenceLine 
-              x={90} 
-              stroke="#FBB224" 
-              strokeDasharray="3 3"
-              label={{ 
-                value: 'Meta 90%', 
-                position: 'right',
-                fill: '#FBB224'
-              }}
-            />
-            <Bar 
-              dataKey="compliance" 
-              radius={[0, 4, 4, 0]}
-              animationDuration={1000}
-            >
-              {complianceData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={getComplianceColorHex(entry.compliance)}
+            {/* Gráfico de barras pequeño */}
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={complianceData}
+                  layout="vertical"
+                  margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                  <XAxis type="number" domain={[0, 100]} unit="%" />
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    width={100}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        const storeLocation = LOCATIONS.find(loc => 
+                          loc.name.toLowerCase() === data.name.toLowerCase()
+                        );
+                        const companyLogo = storeLocation ? LOGOS[storeLocation.company.toLowerCase() as keyof typeof LOGOS] : '';
+
+                        return (
+                          <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
+                            <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-100">
+                              {companyLogo && (
+                                <img 
+                                  src={companyLogo}
+                                  alt={storeLocation?.company}
+                                  className="w-8 h-8 object-contain"
+                                />
+                              )}
+                              <div>
+                                <p className="font-medium text-gray-900">{data.name}</p>
+                                <p className="text-sm text-gray-500">{storeLocation?.company}</p>
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-sm text-gray-600 flex justify-between gap-4">
+                                <span>Estado:</span>
+                                <span className={`font-medium ${
+                                  data.printed === data.total 
+                                    ? 'text-green-600' 
+                                    : 'text-yellow-600'
+                                }`}>
+                                  {data.printed === data.total ? 'Completado' : 'Pendiente'}
+                                </span>
+                              </p>
+                              <p className="text-sm text-gray-600 flex justify-between gap-4">
+                                <span>Impresos:</span>
+                                <span className="font-medium">{data.printed}/{data.total}</span>
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar 
+                    dataKey="compliance" 
+                    radius={[0, 4, 4, 0]}
+                    animationDuration={1000}
+                  >
+                    {complianceData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.printed === entry.total ? '#22C55E' : '#FBB224'}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </>
+        ) : (
+          // Gráfico original para vista general
+          <div className="h-[400px] col-span-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={complianceData}
+                layout="vertical"
+                margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis 
+                  type="number" 
+                  domain={[0, 100]} 
+                  unit="%" 
                 />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={100}
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      // Encontrar la ubicación y su empresa correspondiente
+                      const storeLocation = LOCATIONS.find(loc => 
+                        loc.name.toLowerCase() === data.name.toLowerCase()
+                      );
+                      const companyLogo = storeLocation ? LOGOS[storeLocation.company.toLowerCase() as keyof typeof LOGOS] : '';
+
+                      return (
+                        <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
+                          <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-100">
+                            {companyLogo && (
+                              <img 
+                                src={companyLogo}
+                                alt={storeLocation?.company}
+                                className="w-8 h-8 object-contain"
+                              />
+                            )}
+                            <div>
+                              <p className="font-medium text-gray-900">{data.name}</p>
+                              <p className="text-sm text-gray-500">{storeLocation?.company}</p>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm text-gray-600 flex justify-between gap-4">
+                              <span>Cumplimiento:</span>
+                              <span className={`font-medium ${
+                                data.compliance >= 90 ? 'text-green-600' :
+                                data.compliance >= 80 ? 'text-yellow-600' :
+                                'text-red-600'
+                              }`}>
+                                {data.compliance}%
+                              </span>
+                            </p>
+                            <p className="text-sm text-gray-600 flex justify-between gap-4">
+                              <span>Impresos:</span>
+                              <span className="font-medium">{data.printed}/{data.total}</span>
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <ReferenceLine 
+                  x={90} 
+                  stroke="#FBB224" 
+                  strokeDasharray="3 3"
+                  label={{ 
+                    value: 'Meta 90%', 
+                    position: 'right',
+                    fill: '#FBB224'
+                  }}
+                />
+                <Bar 
+                  dataKey="compliance" 
+                  radius={[0, 4, 4, 0]}
+                  animationDuration={1000}
+                >
+                  {complianceData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={getComplianceColorHex(entry.compliance)}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -1658,10 +1895,7 @@ export default function Dashboard({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-pink-500/5
-        animate-gradient-xy pointer-events-none" />
-      
+    <div className="min-h-screen flex flex-col bg-white">
       <Header onBack={onBack} onLogout={onLogout} onSettings={onSettings} />
       
       <motion.div
