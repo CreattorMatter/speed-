@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, LogOut, Plus, Package2, Tags, Star, Clock, FileText, Sun, Moon, LayoutTemplate, Settings, Send, FileEdit, Printer, X, BarChart3 } from 'lucide-react';
+import { ArrowLeft, LogOut, Plus, Package2, Tags, Star, Clock, FileText, Sun, Moon, LayoutTemplate, Settings, Send, FileEdit, Printer, X, BarChart3, Search, InboxIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Header } from './shared/Header';
 import { COMPANIES } from '../data/companies';
@@ -9,6 +9,10 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PrintAnimation } from './Dashboard/PrintAnimation';
 import { PrintDetailsModal } from './Dashboard/PrintDetailsModal';
+import { 
+  LineChart, CartesianGrid, XAxis, YAxis, Tooltip, ReferenceLine, Line, 
+  ResponsiveContainer, BarChart, Bar, Cell, RadialBarChart, RadialBar 
+} from 'recharts';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -74,6 +78,31 @@ interface Activity {
   printerName?: string;
   onPrint?: (id: string, locationName: string) => void;
 }
+
+interface Location {
+  id: string;
+  name: string;
+  type: 'CC' | 'Region';
+  company: string;
+}
+
+const LOCATIONS: Location[] = [
+  // Centros Comerciales
+  { id: 'uni', name: 'Unicenter', type: 'CC', company: 'Jumbo' },
+  { id: 'dot', name: 'DOT Baires', type: 'CC', company: 'Jumbo' },
+  { id: 'abasto', name: 'Abasto', type: 'CC', company: 'Jumbo' },
+  { id: 'plaza', name: 'Plaza Oeste', type: 'CC', company: 'Jumbo' },
+  { id: 'soleil', name: 'Soleil', type: 'CC', company: 'Easy' },
+  { id: 'san_justo', name: 'San Justo', type: 'CC', company: 'Easy' },
+  
+  // Regiones
+  { id: 'norte', name: 'Zona Norte', type: 'Region', company: 'Disco' },
+  { id: 'sur', name: 'Zona Sur', type: 'Region', company: 'Disco' },
+  { id: 'oeste', name: 'Zona Oeste', type: 'Region', company: 'Vea' },
+  { id: 'caba', name: 'CABA', type: 'Region', company: 'Vea' },
+  { id: 'pilar', name: 'Pilar', type: 'Region', company: 'Jumbo' },
+  { id: 'escobar', name: 'Escobar', type: 'Region', company: 'Easy' },
+];
 
 const easyLogo = COMPANIES.find(c => c.id === 'easy-mdh')?.logo;
 
@@ -1060,6 +1089,223 @@ const isPilarUser = (email?: string) => {
   return email?.toLowerCase().includes('pilar');
 };
 
+// Primero, agreguemos un componente para agrupar actividades por fecha
+const ActivityGroup: React.FC<{
+  date: string;
+  activities: typeof filteredActivities;
+  onPrint: (id: string, locationName: string) => void;
+}> = ({ date, activities, onPrint }) => (
+  <div className="mb-6 last:mb-0">
+    <div className="px-6 py-2 bg-gray-50 border-y border-gray-200">
+      <h4 className="text-sm font-medium text-gray-600">{date}</h4>
+    </div>
+    {activities.map((activity) => (
+      <ActivityItem 
+        key={activity.id} 
+        activity={activity}
+        onPrint={onPrint}
+      />
+    ))}
+  </div>
+);
+
+// Modificar los datos de cumplimiento para incluir datos agregados
+const PRINT_COMPLIANCE_DATA = {
+  all: {
+    daily: [
+      { date: '2024-01-15', compliance: 92, total: 480, printed: 442 },
+      { date: '2024-01-16', compliance: 88, total: 520, printed: 458 },
+      { date: '2024-01-17', compliance: 91, total: 600, printed: 546 },
+      { date: '2024-01-18', compliance: 94, total: 450, printed: 423 },
+      { date: '2024-01-19', compliance: 87, total: 550, printed: 479 },
+    ],
+    locations: [
+      { name: 'Unicenter', compliance: 95, pending: 8 },
+      { name: 'DOT Baires', compliance: 88, pending: 12 },
+      { name: 'Abasto', compliance: 92, pending: 5 },
+      { name: 'Plaza Oeste', compliance: 85, pending: 15 },
+      { name: 'Soleil', compliance: 91, pending: 7 },
+      { name: 'San Justo', compliance: 89, pending: 10 },
+    ]
+  },
+  uni: {
+    daily: [
+      { date: '2024-01-15', compliance: 95, total: 120, printed: 114 },
+      { date: '2024-01-16', compliance: 88, total: 95, printed: 84 },
+      { date: '2024-01-17', compliance: 92, total: 150, printed: 138 },
+      { date: '2024-01-18', compliance: 97, total: 80, printed: 78 },
+      { date: '2024-01-19', compliance: 85, total: 200, printed: 170 },
+    ],
+    pendingPosters: [
+      { id: 'P1', name: 'Cartel Ofertas', date: '2024-01-19', priority: 'alta' },
+      { id: 'P2', name: 'Promoción Bancaria', date: '2024-01-19', priority: 'media' },
+      { id: 'P3', name: 'Descuentos Semanales', date: '2024-01-18', priority: 'baja' },
+    ]
+  },
+  // Agregar datos para otras sucursales...
+};
+
+// Mantener ambas funciones auxiliares para colores
+const getComplianceColor = (compliance: number) => {
+  if (compliance >= 90) return 'bg-green-50 text-green-700';
+  if (compliance >= 80) return 'bg-yellow-50 text-yellow-700';
+  return 'bg-red-50 text-red-700';
+};
+
+const getComplianceColorHex = (compliance: number) => {
+  if (compliance >= 90) return '#22C55E';
+  if (compliance >= 80) return '#FBB224';
+  return '#EF4444';
+};
+
+// Mover la definición del componente PrintComplianceChart antes de su uso
+const PrintComplianceChart: React.FC<{
+  locationId: string;
+  className?: string;
+}> = ({ locationId, className }) => {
+  const location = locationId === 'all' ? null : LOCATIONS.find(loc => loc.id === locationId);
+  const data = PRINT_COMPLIANCE_DATA[locationId as keyof typeof PRINT_COMPLIANCE_DATA] || PRINT_COMPLIANCE_DATA.all;
+
+  // Preparar datos para el gráfico radial
+  const radialData = data.locations?.map((loc, index) => ({
+    name: loc.name,
+    value: loc.compliance,
+    fill: getComplianceColorHex(loc.compliance),
+    pending: loc.pending
+  })) || [];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`bg-white rounded-xl p-6 shadow-sm border border-gray-100 ${className}`}
+    >
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900">
+            Cumplimiento de Impresión
+          </h3>
+          <p className="text-sm text-gray-500">
+            {location ? location.name : 'Todas las sucursales'}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className={`px-3 py-1 rounded-full ${
+            getComplianceColor(data.daily.reduce((acc, day) => acc + day.compliance, 0) / data.daily.length)
+          }`}>
+            <span className="text-sm font-medium">
+              {Math.round(data.daily.reduce((acc, day) => acc + day.compliance, 0) / data.daily.length)}% promedio
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gráfico principal */}
+        <div className="h-[400px]">
+          {locationId === 'all' ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <RadialBarChart 
+                cx="50%" 
+                cy="50%" 
+                innerRadius="30%" 
+                outerRadius="100%" 
+                data={radialData} 
+                startAngle={180} 
+                endAngle={-180}
+              >
+                <RadialBar
+                  minAngle={15}
+                  background
+                  clockWise={true}
+                  dataKey="value"
+                  cornerRadius={12}
+                  label={{
+                    position: 'insideStart',
+                    fill: '#fff',
+                    formatter: (value: number) => `${value}%`,
+                  }}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: data.fill }}
+                            />
+                            <p className="font-medium text-gray-900">{data.name}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm text-gray-600">
+                              Cumplimiento: <span className="font-medium">{data.value}%</span>
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Pendientes: <span className="font-medium">{data.pending}</span>
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+              </RadialBarChart>
+            </ResponsiveContainer>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data.daily}>
+                {/* ... resto del código del LineChart ... */}
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Lista de sucursales con cumplimiento */}
+        {locationId === 'all' && (
+          <div className="space-y-4">
+            {radialData.map((item, index) => (
+              <div 
+                key={item.name}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"
+              >
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-2 h-8 rounded-full" 
+                    style={{ backgroundColor: item.fill }}
+                  />
+                  <div>
+                    <p className="font-medium text-gray-900">{item.name}</p>
+                    <p className="text-sm text-gray-500">
+                      {item.pending} carteles pendientes
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-semibold" style={{ color: item.fill }}>
+                    {item.value}%
+                  </p>
+                  <p className="text-xs text-gray-500">cumplimiento</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Panel de carteles pendientes */}
+        {locationId !== 'all' && data.pendingPosters && (
+          <div className="border-l border-gray-200 pl-6">
+            {/* ... resto del código del panel de pendientes ... */}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
 export default function Dashboard({ 
   onLogout, 
   onNewTemplate, 
@@ -1101,19 +1347,51 @@ export default function Dashboard({
     name: string;
   } | null>(null);
 
+  // Agregar estados para los filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedLocation, setSelectedLocation] = useState('all');
+
   // Filtrar las actividades basado en el usuario
   const filteredActivities = React.useMemo(() => {
-    if (!isPilarUser(userEmail)) {
-      return activities;
-    }
-
     return activities.filter(activity => {
-      // Verificar si alguna ubicación contiene "Pilar"
-      return activity.locations.some(location => 
-        location.name.toLowerCase().includes('pilar')
-      );
+      // Filtro por usuario Pilar
+      if (isPilarUser(userEmail) && !activity.locations.some(loc => 
+        loc.name.toLowerCase().includes('pilar'))) {
+        return false;
+      }
+
+      // Filtro por búsqueda
+      if (searchTerm && !activity.title.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+
+      // Filtro por empresa
+      if (selectedCompany !== 'all' && activity.company.toLowerCase() !== selectedCompany) {
+        return false;
+      }
+
+      // Filtro por sucursal
+      if (selectedLocation !== 'all') {
+        const location = LOCATIONS.find(loc => loc.id === selectedLocation);
+        if (!location) return false;
+        
+        const matchesLocation = activity.locations.some(loc => 
+          loc.name.toLowerCase().includes(location.name.toLowerCase())
+        );
+        if (!matchesLocation) return false;
+      }
+
+      // Filtro por estado
+      if (selectedStatus !== 'all') {
+        if (selectedStatus === 'printed' && activity.printStatus !== 'printed') return false;
+        if (selectedStatus === 'pending' && activity.printStatus !== 'not_printed') return false;
+      }
+
+      return true;
     });
-  }, [activities, userEmail]);
+  }, [activities, userEmail, searchTerm, selectedCompany, selectedLocation, selectedStatus]);
 
   // Filtrar las plantillas recientes
   const filteredPlantillas = React.useMemo(() => {
@@ -1482,6 +1760,87 @@ export default function Dashboard({
           </motion.div>
         </motion.div>
 
+        {/* Filtros y búsqueda */}
+        <div className="px-6 py-3 border-b border-gray-200 bg-gray-50/50">
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Búsqueda */}
+            <div className="flex-1 min-w-[200px] relative">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar actividad..."
+                className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg
+                         focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              />
+              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            </div>
+
+            {/* Filtro de Empresas */}
+            <select 
+              value={selectedCompany}
+              onChange={(e) => setSelectedCompany(e.target.value)}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600"
+            >
+              <option value="all">Todas las empresas</option>
+              <option value="easy">Easy</option>
+              <option value="jumbo">Jumbo</option>
+              <option value="disco">Disco</option>
+              <option value="vea">Vea</option>
+            </select>
+
+            {/* Filtro de Sucursales */}
+            <select 
+              value={selectedLocation}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 min-w-[200px]"
+            >
+              <option value="all">Todas las sucursales</option>
+              <optgroup label="Centros Comerciales">
+                {LOCATIONS
+                  .filter(loc => loc.type === 'CC')
+                  .filter(loc => selectedCompany === 'all' || loc.company.toLowerCase() === selectedCompany)
+                  .map(location => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} ({location.company})
+                    </option>
+                  ))
+                }
+              </optgroup>
+              <optgroup label="Regiones">
+                {LOCATIONS
+                  .filter(loc => loc.type === 'Region')
+                  .filter(loc => selectedCompany === 'all' || loc.company.toLowerCase() === selectedCompany)
+                  .map(location => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} ({location.company})
+                    </option>
+                  ))
+                }
+              </optgroup>
+            </select>
+
+            {/* Filtro de Estado */}
+            <select 
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600"
+            >
+              <option value="all">Todos los estados</option>
+              <option value="printed">Impreso</option>
+              <option value="pending">Pendiente</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Gráfico de cumplimiento siempre visible */}
+        <div className="mb-6">
+          <PrintComplianceChart 
+            locationId={selectedLocation}
+            className="mx-2 md:mx-0"
+          />
+        </div>
+
         {/* Recent Activity */}
         <div className="mt-12">
           <motion.div
@@ -1490,47 +1849,60 @@ export default function Dashboard({
             transition={{ delay: 0.6 }}
             className="rounded-xl border overflow-hidden backdrop-blur-sm bg-white/50 border-gray-200 mx-2 md:mx-0"
           >
-            <div className="flex flex-col items-center mb-8">
-              <div className="flex items-center gap-3 mb-2">
-                <Clock className="w-5 h-5 text-indigo-500" />
-                <h3 className="text-xl font-semibold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 
-                               bg-clip-text text-transparent">
-                  {isPilarUser(userEmail) ? 'Actividad Reciente - Pilar' : 'Actividad Reciente'}
-                </h3>
-                <div className={`px-2 py-1 rounded-full text-sm font-medium
+            {/* Header de la sección */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                  <Clock className="w-5 h-5 text-indigo-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {isPilarUser(userEmail) ? 'Actividad Reciente - Pilar' : 'Actividad Reciente'}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {isPilarUser(userEmail) 
+                      ? 'Seguimiento de las últimas actualizaciones en sucursales de Pilar'
+                      : 'Seguimiento de las últimas actualizaciones y cambios'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className={`px-3 py-1.5 rounded-full text-sm font-medium
                   ${userRole === 'admin' 
                     ? 'bg-indigo-100 text-indigo-800' 
                     : 'bg-yellow-100 text-yellow-800'}`}
                 >
                   {filteredPlantillas.filter(p => p.estado === 'no_impreso').length} pendientes
                 </div>
-              </div>
-              <p className="text-sm text-gray-500">
-                {isPilarUser(userEmail) 
-                  ? 'Seguimiento de las últimas actualizaciones en sucursales de Pilar'
-                  : 'Seguimiento de las últimas actualizaciones y cambios'}
-              </p>
-              <div className="mt-4">
-                <button className="text-sm text-indigo-500 hover:text-indigo-600 font-medium 
-                                  transition-colors duration-200 flex items-center gap-2">
-                  Ver historial completo
+                
+                <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium 
+                        transition-colors duration-200 flex items-center gap-2">
+                  Ver todo
                   <ArrowLeft className="w-4 h-4 rotate-180" />
                 </button>
               </div>
             </div>
-            <div className={`rounded-xl border overflow-hidden
-              bg-white border-gray-200`}>
-              {filteredActivities.map((activity) => (
-                <ActivityItem 
-                  key={activity.id} 
-                  activity={activity}
+
+            {/* Lista de actividades */}
+            <div className="divide-y divide-gray-200">
+              {filteredActivities.length > 0 ? (
+                <ActivityGroup 
+                  date="Hoy"
+                  activities={filteredActivities}
                   onPrint={handlePrint}
                 />
-              ))}
-              
-              {filteredActivities.length === 0 && (
-                <div className="p-8 text-center text-gray-500">
-                  No hay actividades recientes para mostrar
+              ) : (
+                <div className="p-12 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <InboxIcon className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">
+                    No hay actividades recientes
+                  </h3>
+                  <p className="text-gray-500">
+                    Las nuevas actividades aparecerán aquí
+                  </p>
                 </div>
               )}
             </div>
