@@ -1630,7 +1630,7 @@ const COMPANY_OPTIONS = [
   { value: 'vea', label: 'Vea', logo: LOGOS.vea },
 ];
 
-// Modificar el componente CompanyButton para incluir la animación de rotación
+// Modificar el componente CompanyButton
 const CompanyButton: React.FC<{
   company: { value: string; label: string; logo: string | null };
   isSelected: boolean;
@@ -1641,16 +1641,15 @@ const CompanyButton: React.FC<{
   const handleClick = () => {
     setIsSpinning(true);
     onClick();
-    // Resetear el estado después de la animación
     setTimeout(() => setIsSpinning(false), 500);
   };
 
   return (
     <button
       onClick={handleClick}
-      className={`relative flex items-center justify-center p-2 rounded-xl transition-all duration-200
+      className={`relative flex items-center justify-center p-5 rounded-xl transition-all duration-200
         ${isSelected 
-          ? 'bg-white/20 shadow-lg scale-105 ring-2 ring-white/50' 
+          ? 'bg-white/30 shadow-lg scale-105 ring-2 ring-indigo-500/50 after:absolute after:inset-0 after:rounded-xl after:shadow-[0_0_15px_rgba(99,102,241,0.5)] after:animate-pulse' 
           : 'bg-white/10 hover:bg-white/15 hover:scale-105'
         }
       `}
@@ -1672,7 +1671,7 @@ const CompanyButton: React.FC<{
         </div>
       )}
       <span className={`absolute -bottom-5 text-xs font-medium
-        ${isSelected ? 'text-gray-800' : 'text-gray-600'}`}>
+        ${isSelected ? 'text-indigo-600 font-semibold' : 'text-gray-600'}`}>
         {company.label}
       </span>
     </button>
