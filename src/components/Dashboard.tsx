@@ -13,6 +13,7 @@ import {
   LineChart, CartesianGrid, XAxis, YAxis, Tooltip, ReferenceLine, Line, 
   ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Sector 
 } from 'recharts';
+import Select from 'react-select';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -125,15 +126,15 @@ const LOGOS = {
 // Agregar después de la definición de LOGOS y antes de cualquier componente
 // Funciones auxiliares para colores
 const getComplianceColor = (compliance: number) => {
-  if (compliance >= 90) return 'bg-green-50 text-green-700';
-  if (compliance >= 80) return 'bg-yellow-50 text-yellow-700';
-  return 'bg-red-50 text-red-700';
+  if (compliance >= 90) return 'bg-green-100 text-green-600';
+  if (compliance >= 80) return 'bg-yellow-100 text-yellow-600';
+  return 'bg-red-100 text-red-600';
 };
 
 const getComplianceColorHex = (compliance: number) => {
-  if (compliance >= 90) return '#22C55E';
-  if (compliance >= 80) return '#FBB224';
-  return '#EF4444';
+  if (compliance >= 90) return '#86efac';  // Verde pastel
+  if (compliance >= 80) return '#fde047';  // Amarillo pastel
+  return '#fca5a5';  // Rojo pastel
 };
 
 const plantillasRecientes: PlantillaReciente[] = [
@@ -1038,9 +1039,9 @@ const ActivityItem: React.FC<{
           {/* Detalles adicionales */}
           <div className="mt-2 flex items-center gap-2 flex-wrap">
             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
-              ${allPrinted ? 'bg-green-100 text-green-800' : 
-                somePrinted ? 'bg-yellow-100 text-yellow-800' : 
-                'bg-red-100 text-red-800'}`}
+              ${allPrinted ? 'bg-green-100 text-green-600' : 
+                somePrinted ? 'bg-yellow-100 text-yellow-600' : 
+                'bg-red-100 text-red-600'}`}
             >
               <Printer className="w-3 h-3 mr-1" />
               {allPrinted ? 'Todo impreso' : 
@@ -1060,8 +1061,8 @@ const ActivityItem: React.FC<{
               <div key={index} className="flex items-center gap-1">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
                   ${location.printed 
-                    ? 'bg-green-100 text-green-800 border border-green-200' 
-                    : 'bg-red-100 text-red-800 border border-red-200'}`}
+                    ? 'bg-green-100 text-green-600 border border-green-200' 
+                    : 'bg-red-100 text-red-600 border border-red-200'}`}
                 >
                   {location.name}
                   {location.printed ? (
@@ -1345,136 +1346,58 @@ const STORE_COMPLIANCE_DATA = {
   }
 };
 
-// Modificar el componente GaugeChart
-const GaugeChart: React.FC<{
+// Primero, definir el componente GaugeChart
+interface GaugeChartProps {
   value: number;
   total: number;
   printed: number;
   size?: number;
-}> = ({ value, total, printed, size = 300 }) => {
+}
+
+const GaugeChart: React.FC<GaugeChartProps> = ({ value, total, printed, size = 300 }) => {
   const data = [{ value: value }, { value: 100 - value }];
   const color = getComplianceColorHex(value);
 
   return (
     <div className="relative flex flex-col items-center">
-      {/* Fondo decorativo */}
-      <div 
-        className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl"
-        style={{ filter: 'blur(20px)' }}
-      />
-
-      {/* Contenedor principal */}
-      <div className="relative">
-        <PieChart width={size} height={size/1.6}>
-          {/* Círculos decorativos de fondo */}
-          <circle
-            cx={size/2}
-            cy={size/1.6}
-            r={size*0.45}
-            fill="none"
-            stroke="#f3f4f6"
-            strokeWidth={2}
-            strokeDasharray="4 4"
-          />
-          <circle
-            cx={size/2}
-            cy={size/1.6}
-            r={size*0.35}
-            fill="none"
-            stroke="#f3f4f6"
-            strokeWidth={1}
-          />
-
-          {/* Gauge principal */}
-          <Pie
-            data={data}
-            cx={size/2}
-            cy={size/1.6}
-            startAngle={180}
-            endAngle={0}
-            innerRadius={size*0.38}
-            outerRadius={size*0.42}
-            cornerRadius={6}
-            paddingAngle={0}
-            dataKey="value"
-            stroke="none"
-          >
-            <Cell fill={color} />
-            <Cell fill="#f3f4f6" />
-          </Pie>
-
-          {/* Líneas de referencia */}
-          <text
-            x={size*0.15}
-            y={size/1.6 - 10}
-            textAnchor="middle"
-            fill="#9CA3AF"
-            className="text-xs font-medium"
-          >
-            0%
-          </text>
-          <text
-            x={size*0.85}
-            y={size/1.6 - 10}
-            textAnchor="middle"
-            fill="#9CA3AF"
-            className="text-xs font-medium"
-          >
-            100%
-          </text>
-
-          {/* Valor central */}
-          <text
-            x={size/2}
-            y={size/1.6 - size*0.08}
-            textAnchor="middle"
-            fill={color}
-            className="text-5xl font-bold"
-          >
-            {value}%
-          </text>
-
-          {/* Línea separadora */}
-          <line
-            x1={size/2 - 30}
-            y1={size/1.6 + size*0.02}
-            x2={size/2 + 30}
-            y2={size/1.6 + size*0.02}
-            stroke="#E5E7EB"
-            strokeWidth={2}
-          />
-
-          {/* Texto de impresos */}
-          <text
-            x={size/2}
-            y={size/1.6 + size*0.08}
-            textAnchor="middle"
-            fill="#6B7280"
-            className="text-sm"
-          >
-            {printed} de {total} impresos
-          </text>
-        </PieChart>
-
-        {/* Indicadores laterales */}
-        <div className="absolute top-1/2 -left-4 w-2 h-8 rounded-full bg-gradient-to-b from-indigo-500 to-purple-500 opacity-20" />
-        <div className="absolute top-1/2 -right-4 w-2 h-8 rounded-full bg-gradient-to-b from-indigo-500 to-purple-500 opacity-20" />
-      </div>
-
-      {/* Detalles adicionales */}
-      <div className="mt-8 flex items-center gap-8">
-        <div className="text-center">
-          <p className="text-sm font-medium text-gray-600">Meta</p>
-          <p className="text-lg font-semibold text-gray-900">90%</p>
-        </div>
-        <div className="h-8 w-px bg-gray-200" />
-        <div className="text-center">
-          <p className="text-sm font-medium text-gray-600">Promedio</p>
-          <p className={`text-lg font-semibold`} style={{ color }}>
-            {value}%
-          </p>
-        </div>
-      </div>
+      <PieChart width={size} height={size/1.6}>
+        <Pie
+          data={data}
+          cx={size/2}
+          cy={size/1.6}
+          startAngle={180}
+          endAngle={0}
+          innerRadius={size*0.38}
+          outerRadius={size*0.42}
+          cornerRadius={6}
+          paddingAngle={0}
+          dataKey="value"
+          stroke="none"
+          isAnimationActive={true}
+          animationDuration={1000}
+        >
+          <Cell fill={color} />
+          <Cell fill="#f3f4f6" />
+        </Pie>
+        <text
+          x={size/2}
+          y={size/1.6 - size*0.08}
+          textAnchor="middle"
+          fill={color}
+          className="text-5xl font-bold"
+        >
+          {value}%
+        </text>
+        <text
+          x={size/2}
+          y={size/1.6 + size*0.08}
+          textAnchor="middle"
+          fill="#6B7280"
+          className="text-sm"
+        >
+          {printed} de {total} impresos
+        </text>
+      </PieChart>
     </div>
   );
 };
@@ -1484,15 +1407,28 @@ const PrintComplianceChart: React.FC<{
   locationId: string;
   selectedPromotion: string;
   selectedCompany: string;
+  userEmail?: string;
   className?: string;
-}> = ({ locationId, selectedPromotion, selectedCompany, className }) => {
+}> = ({ locationId, selectedPromotion, selectedCompany, userEmail, className }) => {
   const location = locationId === 'all' ? null : LOCATIONS.find(loc => loc.id === locationId);
+  const isPilar = isPilarUser(userEmail);
 
-  // Modificar el filtrado de datos para incluir el filtro por empresa
+  // Obtener datos según la promoción y ubicación seleccionada
   const complianceData = React.useMemo(() => {
     let data = selectedPromotion === 'all' 
       ? STORE_COMPLIANCE_DATA.all.stores
       : STORE_COMPLIANCE_DATA.promotions[selectedPromotion as keyof typeof STORE_COMPLIANCE_DATA.promotions].stores;
+
+    // Si es usuario de Pilar, filtrar solo datos de Pilar
+    if (isPilar) {
+      data = data.filter(store => 
+        store.name.toLowerCase().includes('pilar') ||
+        LOCATIONS.find(loc => 
+          loc.name === store.name && 
+          loc.company.toLowerCase().includes('pilar')
+        )
+      );
+    }
 
     // Filtrar por empresa
     if (selectedCompany !== 'all') {
@@ -1504,30 +1440,8 @@ const PrintComplianceChart: React.FC<{
       });
     }
 
-    // Filtrar por ubicación si está seleccionada
-    if (locationId !== 'all' && location) {
-      data = data.filter(store => 
-        store.name.toLowerCase() === location.name.toLowerCase()
-      );
-    }
-
-    // Si no hay datos después del filtrado, mostrar mensaje
-    if (data.length === 0) {
-      return [{
-        name: location?.name || 'Sin datos',
-        compliance: 0,
-        total: 0,
-        printed: 0
-      }];
-    }
-
     return data;
-  }, [selectedPromotion, selectedCompany, locationId, location]);
-
-  // Calcular promedio general
-  const averageCompliance = Math.round(
-    complianceData.reduce((acc, store) => acc + store.compliance, 0) / complianceData.length
-  );
+  }, [selectedPromotion, selectedCompany, locationId, isPilar]);
 
   // Calcular totales para el gauge
   const totals = React.useMemo(() => {
@@ -1538,11 +1452,7 @@ const PrintComplianceChart: React.FC<{
   }, [complianceData]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`bg-white rounded-xl p-6 shadow-sm border border-gray-100 ${className}`}
-    >
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-medium text-gray-900">
@@ -1552,19 +1462,12 @@ const PrintComplianceChart: React.FC<{
             {location ? location.name : 'Todas las sucursales'} - {selectedPromotion === 'all' ? 'General' : selectedPromotion}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className={`px-3 py-1 rounded-full ${getComplianceColor(averageCompliance)}`}>
-            <span className="text-sm font-medium">
-              {averageCompliance}% promedio
-            </span>
-          </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {selectedPromotion !== 'all' ? (
           <>
-            {/* Gráfico de gauge para promoción específica */}
+            {/* Gráfico gauge para promoción específica */}
             <div className="flex items-center justify-center">
               <GaugeChart 
                 value={totals.compliance}
@@ -1594,13 +1497,14 @@ const PrintComplianceChart: React.FC<{
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
+                        // Encontrar la ubicación y su empresa correspondiente
                         const storeLocation = LOCATIONS.find(loc => 
                           loc.name.toLowerCase() === data.name.toLowerCase()
                         );
                         const companyLogo = storeLocation ? LOGOS[storeLocation.company.toLowerCase() as keyof typeof LOGOS] : '';
 
                         return (
-                          <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
+                          <div className="bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-lg border border-gray-100">
                             <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-100">
                               {companyLogo && (
                                 <img 
@@ -1614,37 +1518,42 @@ const PrintComplianceChart: React.FC<{
                                 <p className="text-sm text-gray-500">{storeLocation?.company}</p>
                               </div>
                             </div>
-                            <div className="space-y-1">
-                              <p className="text-sm text-gray-600 flex justify-between gap-4">
-                                <span>Estado:</span>
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">Cumplimiento:</span>
                                 <span className={`font-medium ${
-                                  data.printed === data.total 
-                                    ? 'text-green-600' 
-                                    : 'text-yellow-600'
+                                  data.compliance >= 90 ? 'text-green-600' :
+                                  data.compliance >= 80 ? 'text-yellow-600' :
+                                  'text-red-600'
                                 }`}>
-                                  {data.printed === data.total ? 'Completado' : 'Pendiente'}
+                                  {data.compliance}%
                                 </span>
-                              </p>
-                              <p className="text-sm text-gray-600 flex justify-between gap-4">
-                                <span>Impresos:</span>
-                                <span className="font-medium">{data.printed}/{data.total}</span>
-                              </p>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">Impresos:</span>
+                                <span className="font-medium text-gray-900">
+                                  {data.printed} de {data.total}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         );
                       }
                       return null;
                     }}
+                    cursor={{ stroke: '#9CA3AF', strokeWidth: 1 }}
+                    wrapperStyle={{ outline: 'none' }}
                   />
                   <Bar 
                     dataKey="compliance" 
                     radius={[0, 4, 4, 0]}
                     animationDuration={1000}
+                    isAnimationActive={true}
                   >
                     {complianceData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={entry.printed === entry.total ? '#22C55E' : '#FBB224'}
+                        fill={entry.printed === entry.total ? '#86efac' : '#fde047'}  // Verde pastel para completado, amarillo pastel para pendiente
                       />
                     ))}
                   </Bar>
@@ -1662,11 +1571,7 @@ const PrintComplianceChart: React.FC<{
                 margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
               >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis 
-                  type="number" 
-                  domain={[0, 100]} 
-                  unit="%" 
-                />
+                <XAxis type="number" domain={[0, 100]} unit="%" />
                 <YAxis 
                   dataKey="name" 
                   type="category" 
@@ -1677,41 +1582,15 @@ const PrintComplianceChart: React.FC<{
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
-                      // Encontrar la ubicación y su empresa correspondiente
-                      const storeLocation = LOCATIONS.find(loc => 
-                        loc.name.toLowerCase() === data.name.toLowerCase()
-                      );
-                      const companyLogo = storeLocation ? LOGOS[storeLocation.company.toLowerCase() as keyof typeof LOGOS] : '';
-
                       return (
                         <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
-                          <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-100">
-                            {companyLogo && (
-                              <img 
-                                src={companyLogo}
-                                alt={storeLocation?.company}
-                                className="w-8 h-8 object-contain"
-                              />
-                            )}
-                            <div>
-                              <p className="font-medium text-gray-900">{data.name}</p>
-                              <p className="text-sm text-gray-500">{storeLocation?.company}</p>
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm text-gray-600 flex justify-between gap-4">
-                              <span>Cumplimiento:</span>
-                              <span className={`font-medium ${
-                                data.compliance >= 90 ? 'text-green-600' :
-                                data.compliance >= 80 ? 'text-yellow-600' :
-                                'text-red-600'
-                              }`}>
-                                {data.compliance}%
-                              </span>
+                          <p className="font-medium text-gray-900">{data.name}</p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-sm text-gray-600">
+                              Cumplimiento: <span className="font-medium">{data.compliance}%</span>
                             </p>
-                            <p className="text-sm text-gray-600 flex justify-between gap-4">
-                              <span>Impresos:</span>
-                              <span className="font-medium">{data.printed}/{data.total}</span>
+                            <p className="text-sm text-gray-600">
+                              Impresos: <span className="font-medium">{data.printed}/{data.total}</span>
                             </p>
                           </div>
                         </div>
@@ -1720,20 +1599,11 @@ const PrintComplianceChart: React.FC<{
                     return null;
                   }}
                 />
-                <ReferenceLine 
-                  x={90} 
-                  stroke="#FBB224" 
-                  strokeDasharray="3 3"
-                  label={{ 
-                    value: 'Meta 90%', 
-                    position: 'right',
-                    fill: '#FBB224'
-                  }}
-                />
                 <Bar 
                   dataKey="compliance" 
                   radius={[0, 4, 4, 0]}
                   animationDuration={1000}
+                  isAnimationActive={true}
                 >
                   {complianceData.map((entry, index) => (
                     <Cell
@@ -1747,7 +1617,65 @@ const PrintComplianceChart: React.FC<{
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
+  );
+};
+
+// Definir la estructura de las opciones de empresa
+const COMPANY_OPTIONS = [
+  { value: 'all', label: '', logo: null },
+  { value: 'easy', label: 'Easy', logo: LOGOS.easy },
+  { value: 'jumbo', label: 'Jumbo', logo: LOGOS.jumbo },
+  { value: 'disco', label: 'Disco', logo: LOGOS.disco },
+  { value: 'vea', label: 'Vea', logo: LOGOS.vea },
+];
+
+// Modificar el componente CompanyButton para incluir la animación de rotación
+const CompanyButton: React.FC<{
+  company: { value: string; label: string; logo: string | null };
+  isSelected: boolean;
+  onClick: () => void;
+}> = ({ company, isSelected, onClick }) => {
+  const [isSpinning, setIsSpinning] = useState(false);
+
+  const handleClick = () => {
+    setIsSpinning(true);
+    onClick();
+    // Resetear el estado después de la animación
+    setTimeout(() => setIsSpinning(false), 500);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`relative flex items-center justify-center p-2 rounded-xl transition-all duration-200
+        ${isSelected 
+          ? 'bg-white/20 shadow-lg scale-105 ring-2 ring-white/50' 
+          : 'bg-white/10 hover:bg-white/15 hover:scale-105'
+        }
+      `}
+    >
+      {company.logo ? (
+        <img 
+          src={company.logo}
+          alt={company.label}
+          className={`w-10 h-10 object-contain transition-transform duration-500
+            ${isSpinning ? 'rotate-360' : ''}
+          `}
+          style={{
+            transform: isSpinning ? 'rotate(360deg)' : 'rotate(0deg)'
+          }}
+        />
+      ) : (
+        <div className="w-10 h-10 flex items-center justify-center text-gray-600 font-medium">
+          Todas
+        </div>
+      )}
+      <span className={`absolute -bottom-5 text-xs font-medium
+        ${isSelected ? 'text-gray-800' : 'text-gray-600'}`}>
+        {company.label}
+      </span>
+    </button>
   );
 };
 
@@ -1917,38 +1845,15 @@ export default function Dashboard({
     [&>optgroup]:bg-white
     [&>optgroup]:text-gray-700
     [&>optgroup>option]:pl-6
+    [&>option]:flex
+    [&>option]:items-center
+    [&>option]:gap-2
+    [&>option]:py-2
+    [&>option]:px-4
+    [&>option]:bg-no-repeat
+    [&>option]:bg-[length:20px]
+    [&>option]:bg-[12px_center]
   `;
-
-  // Agregar estilos para el menú desplegado
-  const selectStyles = {
-    option: (provided: any, state: any) => ({
-      ...provided,
-      backgroundColor: state.isFocused ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-      color: 'rgb(55, 65, 81)',
-      padding: '8px 16px',
-      cursor: 'pointer',
-      ':active': {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-      }
-    }),
-    menu: (provided: any) => ({
-      ...provided,
-      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-      backdropFilter: 'blur(10px)',
-      border: '1px solid rgba(255, 255, 255, 0.2)',
-      borderRadius: '12px',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-      overflow: 'hidden',
-      marginTop: '4px',
-    }),
-    optgroup: (provided: any) => ({
-      ...provided,
-      padding: '8px 0',
-      ':not(:first-child)': {
-        borderTop: '1px solid rgba(229, 231, 235, 0.5)'
-      }
-    })
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -2271,88 +2176,90 @@ export default function Dashboard({
           </div>
 
           <div className="p-4">
-            <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-hide">
-              {/* Búsqueda */}
-              <div className="relative group flex-1">
-                <Search className="w-5 h-5 text-gray-400/70 absolute left-3 top-1/2 -translate-y-1/2 
-                         transition-colors group-hover:text-indigo-500" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Buscar actividad..."
-                  className={`w-full pl-10 pr-4 ${filterBaseStyle}`}
-                />
+            <div className="flex flex-col gap-4">
+              {/* Fila de botones de empresas */}
+              <div className="flex items-center gap-4 pb-6 pt-2">
+                {COMPANY_OPTIONS.map(company => (
+                  <CompanyButton
+                    key={company.value}
+                    company={company}
+                    isSelected={selectedCompany === company.value}
+                    onClick={() => setSelectedCompany(company.value)}
+                  />
+                ))}
               </div>
 
-              {/* Empresas */}
-              <select 
-                value={selectedCompany}
-                onChange={(e) => setSelectedCompany(e.target.value)}
-                className={filterBaseStyle}
-              >
-                <option value="all">Todas las empresas</option>
-                <option value="easy">Easy</option>
-                <option value="jumbo">Jumbo</option>
-                <option value="disco">Disco</option>
-                <option value="vea">Vea</option>
-              </select>
+              {/* Resto de los filtros */}
+              <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                {/* Búsqueda */}
+                <div className="relative group flex-1">
+                  <Search className="w-5 h-5 text-gray-400/70 absolute left-3 top-1/2 -translate-y-1/2 
+                           transition-colors group-hover:text-indigo-500" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Buscar actividad..."
+                    className={`w-full pl-10 pr-4 ${filterBaseStyle}`}
+                  />
+                </div>
 
-              {/* Promociones */}
-              <select
-                value={selectedPromotion}
-                onChange={(e) => setSelectedPromotion(e.target.value)}
-                className={`${filterBaseStyle} [&>*]:!bg-white/90 [&>*]:backdrop-blur-xl`}
-              >
-                <option value="all" className="py-2 px-4 hover:bg-white/20">Todas las promociones</option>
-                {Object.keys(STORE_COMPLIANCE_DATA.promotions).map(promo => (
-                  <option key={promo} value={promo} className="py-2 px-4 hover:bg-white/20">
-                    {promo}
-                  </option>
-                ))}
-              </select>
+                {/* Promociones */}
+                <select
+                  value={selectedPromotion}
+                  onChange={(e) => setSelectedPromotion(e.target.value)}
+                  className={filterBaseStyle}
+                >
+                  <option value="all" className="py-2 px-4 hover:bg-white/20">Todas las promociones</option>
+                  {Object.keys(STORE_COMPLIANCE_DATA.promotions).map(promo => (
+                    <option key={promo} value={promo} className="py-2 px-4 hover:bg-white/20">
+                      {promo}
+                    </option>
+                  ))}
+                </select>
 
-              {/* Sucursales */}
-              <select 
-                value={selectedLocation}
-                onChange={(e) => setSelectedLocation(e.target.value)}
-                className={filterBaseStyle}
-              >
-                <option value="all">Todas las sucursales</option>
-                <optgroup label="Centros Comerciales">
-                  {LOCATIONS
-                    .filter(loc => loc.type === 'CC')
-                    .filter(loc => selectedCompany === 'all' || loc.company.toLowerCase() === selectedCompany)
-                    .map(location => (
-                      <option key={location.id} value={location.id}>
-                        {location.name} ({location.company})
-                      </option>
-                    ))
-                  }
-                </optgroup>
-                <optgroup label="Regiones">
-                  {LOCATIONS
-                    .filter(loc => loc.type === 'Region')
-                    .filter(loc => selectedCompany === 'all' || loc.company.toLowerCase() === selectedCompany)
-                    .map(location => (
-                      <option key={location.id} value={location.id}>
-                        {location.name} ({location.company})
-                      </option>
-                    ))
-                  }
-                </optgroup>
-              </select>
+                {/* Sucursales */}
+                <select 
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                  className={filterBaseStyle}
+                >
+                  <option value="all">Todas las sucursales</option>
+                  <optgroup label="Centros Comerciales">
+                    {LOCATIONS
+                      .filter(loc => loc.type === 'CC')
+                      .filter(loc => selectedCompany === 'all' || loc.company.toLowerCase() === selectedCompany)
+                      .map(location => (
+                        <option key={location.id} value={location.id}>
+                          {location.name} ({location.company})
+                        </option>
+                      ))
+                    }
+                  </optgroup>
+                  <optgroup label="Regiones">
+                    {LOCATIONS
+                      .filter(loc => loc.type === 'Region')
+                      .filter(loc => selectedCompany === 'all' || loc.company.toLowerCase() === selectedCompany)
+                      .map(location => (
+                        <option key={location.id} value={location.id}>
+                          {location.name} ({location.company})
+                        </option>
+                      ))
+                    }
+                  </optgroup>
+                </select>
 
-              {/* Estado */}
-              <select 
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className={filterBaseStyle}
-              >
-                <option value="all">Todos los estados</option>
-                <option value="printed">Impreso</option>
-                <option value="pending">Pendiente</option>
-              </select>
+                {/* Estado */}
+                <select 
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className={filterBaseStyle}
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="printed">Impreso</option>
+                  <option value="pending">Pendiente</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -2363,6 +2270,7 @@ export default function Dashboard({
             locationId={selectedLocation}
             selectedPromotion={selectedPromotion}
             selectedCompany={selectedCompany}
+            userEmail={userEmail}
             className="mx-2 md:mx-0"
           />
         </div>
@@ -2526,8 +2434,8 @@ export default function Dashboard({
                   <motion.div 
                     className={`px-2 py-1 rounded-full text-xs ${
                       selectedActivity.estado === 'impreso' 
-                        ? 'bg-green-100 text-green-800 border border-green-200' 
-                        : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                        ? 'bg-green-100 text-green-600 border border-green-200' 
+                        : 'bg-yellow-100 text-yellow-600 border border-yellow-200'
                     }`}
                   >
                     {selectedActivity.estado === 'impreso' ? (
