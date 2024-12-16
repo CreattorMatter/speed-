@@ -1,20 +1,22 @@
 import React from 'react';
 import { Edit2, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
   role: string;
   status: 'active' | 'inactive';
-  lastLogin?: string;
+  created_at?: string;
 }
 
 interface UsersTableProps {
   users: User[];
   onEdit: (user: User) => void;
-  onDelete: (userId: string) => void;
-  onStatusChange: (userId: string, newStatus: 'active' | 'inactive') => void;
+  onDelete: (userId: number) => void;
+  onStatusChange: (userId: number, newStatus: 'active' | 'inactive') => void;
 }
 
 export function UsersTable({ users, onEdit, onDelete, onStatusChange }: UsersTableProps) {
@@ -27,7 +29,7 @@ export function UsersTable({ users, onEdit, onDelete, onStatusChange }: UsersTab
             <th className="px-6 py-3">Email</th>
             <th className="px-6 py-3">Rol</th>
             <th className="px-6 py-3">Estado</th>
-            <th className="px-6 py-3">Último acceso</th>
+            <th className="px-6 py-3">Creado</th>
             <th className="px-6 py-3">Acciones</th>
           </tr>
         </thead>
@@ -49,11 +51,20 @@ export function UsersTable({ users, onEdit, onDelete, onStatusChange }: UsersTab
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-red-100 text-red-800'}`}
                 >
-                  {user.status === 'active' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                  {user.status === 'active' ? (
+                    <CheckCircle className="w-3 h-3" />
+                  ) : (
+                    <XCircle className="w-3 h-3" />
+                  )}
                   {user.status === 'active' ? 'Activo' : 'Inactivo'}
                 </button>
               </td>
-              <td className="px-6 py-4 text-gray-500">{user.lastLogin || 'Nunca'}</td>
+              <td className="px-6 py-4 text-gray-500">
+                {user.created_at && formatDistanceToNow(new Date(user.created_at), { 
+                  addSuffix: true,
+                  locale: es 
+                })}
+              </td>
               <td className="px-6 py-4">
                 <div className="flex items-center gap-2">
                   <button

@@ -1,32 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Shield, X, UserPlus, Settings, Plus } from 'lucide-react';
 import { UsersTable } from './UsersTable';
 import { RolesTable } from './RolesTable';
+import { NewUserModal } from './NewUserModal';
+import { EditUserModal } from './EditUserModal';
+import { supabase } from '../../lib/supabaseClient';
 
 interface ConfigurationPortalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const mockUsers = [
-  {
-    id: '1',
-    name: 'Usuario Administrador',
-    email: 'admin@admin.com',
-    role: 'Administrador',
-    status: 'active' as const,
-    lastLogin: 'Hace 2 horas'
-  },
-  {
-    id: '2',
-    name: 'Usuario Sucursal Pilar',
-    email: 'pilar@cenco.com',
-    role: 'Usuario',
-    status: 'active' as const,
-    lastLogin: 'Hace 1 día'
-  }
-];
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  status: 'active' | 'inactive';
+  created_at?: string;
+}
 
 const mockRoles = [
   {
@@ -60,17 +53,124 @@ const mockRoles = [
 
 export function ConfigurationPortal({ isOpen, onClose }: ConfigurationPortalProps) {
   const [activeTab, setActiveTab] = useState<'users' | 'roles' | 'general'>('users');
+  const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const handleEditUser = (user: any) => {
-    console.log('Editar usuario:', user);
+  // Función para cargar usuarios
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setUsers(data || []);
+    } catch (err) {
+      console.error('Error al cargar usuarios:', err);
+      setError('Error al cargar usuarios');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteUser = (userId: string) => {
-    console.log('Eliminar usuario:', userId);
+  // Cargar usuarios al montar el componente y cuando se crea uno nuevo
+  useEffect(() => {
+    if (isOpen) {
+      fetchUsers();
+    }
+  }, [isOpen]);
+
+  const handleUserCreated = () => {
+    fetchUsers(); // Recargar la lista después de crear un usuario
   };
 
-  const handleStatusChange = (userId: string, newStatus: 'active' | 'inactive') => {
-    console.log('Cambiar estado:', userId, newStatus);
+  // Función para eliminar usuario
+  const handleDeleteUser = async (userId: number) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Actualizar la lista de usuarios
+      fetchUsers();
+      
+      // Mostrar notificación de éxito (puedes usar el componente Toast)
+      alert('Usuario eliminado correctamente');
+    } catch (err) {
+      console.error('Error al eliminar usuario:', err);
+      alert('Error al eliminar el usuario');
+    }
+  };
+
+  // Función para cambiar el estado del usuario
+  const handleStatusChange = async (userId: number, newStatus: 'active' | 'inactive') => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ status: newStatus })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Actualizar la lista de usuarios
+      fetchUsers();
+    } catch (err) {
+      console.error('Error al actualizar estado:', err);
+      alert('Error al actualizar el estado del usuario');
+    }
+  };
+
+  // Función para editar usuario
+  const handleEditUser = async (user: User) => {
+    try {
+      // Mostrar modal de edición con los datos actuales
+      setEditingUser(user);
+      setIsEditModalOpen(true);
+    } catch (err) {
+      console.error('Error al editar usuario:', err);
+      alert('Error al editar el usuario');
+    }
+  };
+
+  // Función para guardar cambios de edición
+  const handleSaveEdit = async (updatedUser: User) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          status: updatedUser.status
+        })
+        .eq('id', updatedUser.id);
+
+      if (error) throw error;
+
+      // Actualizar la lista de usuarios
+      fetchUsers();
+      setIsEditModalOpen(false);
+      setEditingUser(null);
+      
+      // Mostrar notificación de éxito
+      alert('Usuario actualizado correctamente');
+    } catch (err) {
+      console.error('Error al guardar cambios:', err);
+      alert('Error al actualizar el usuario');
+    }
   };
 
   const handleEditRole = (role: any) => {
@@ -139,17 +239,30 @@ export function ConfigurationPortal({ isOpen, onClose }: ConfigurationPortalProp
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium text-gray-900">Gestión de Usuarios</h3>
-                <button className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors">
+                <button 
+                  onClick={() => setIsNewUserModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+                >
                   <UserPlus className="w-4 h-4" />
                   Nuevo Usuario
                 </button>
               </div>
-              <UsersTable
-                users={mockUsers}
-                onEdit={handleEditUser}
-                onDelete={handleDeleteUser}
-                onStatusChange={handleStatusChange}
-              />
+              {loading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600" />
+                </div>
+              ) : error ? (
+                <div className="text-center py-8 text-red-600">
+                  {error}
+                </div>
+              ) : (
+                <UsersTable
+                  users={users}
+                  onEdit={handleEditUser}
+                  onDelete={handleDeleteUser}
+                  onStatusChange={handleStatusChange}
+                />
+              )}
             </div>
           )}
           
@@ -178,6 +291,26 @@ export function ConfigurationPortal({ isOpen, onClose }: ConfigurationPortalProp
           )}
         </div>
       </motion.div>
+
+      {/* Modal de edición */}
+      {editingUser && (
+        <EditUserModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingUser(null);
+          }}
+          user={editingUser}
+          onSave={handleSaveEdit}
+        />
+      )}
+
+      {/* Modal de nuevo usuario */}
+      <NewUserModal
+        isOpen={isNewUserModalOpen}
+        onClose={() => setIsNewUserModalOpen(false)}
+        onSuccess={handleUserCreated}
+      />
     </motion.div>
   );
 } 
