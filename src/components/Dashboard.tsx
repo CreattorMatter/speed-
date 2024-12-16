@@ -1417,7 +1417,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({ value, total, printed, size = 3
   );
 };
 
-// Modificar el PrintComplianceChart
+// Modificar el PrintComplianceChart para manejar datos por sucursal
 const PrintComplianceChart: React.FC<{
   locationId: string;
   selectedPromotion: string;
@@ -1434,18 +1434,7 @@ const PrintComplianceChart: React.FC<{
       ? STORE_COMPLIANCE_DATA.all.stores
       : STORE_COMPLIANCE_DATA.promotions[selectedPromotion as keyof typeof STORE_COMPLIANCE_DATA.promotions].stores;
 
-    // Si es usuario de Pilar, filtrar solo datos de Pilar
-    if (isPilar) {
-      data = data.filter(store => 
-        store.name.toLowerCase().includes('pilar') ||
-        LOCATIONS.find(loc => 
-          loc.name === store.name && 
-          loc.company.toLowerCase().includes('pilar')
-        )
-      );
-    }
-
-    // Filtrar por empresa
+    // Filtrar por empresa si está seleccionada
     if (selectedCompany !== 'all') {
       data = data.filter(store => {
         const storeLocation = LOCATIONS.find(loc => 
@@ -1455,14 +1444,31 @@ const PrintComplianceChart: React.FC<{
       });
     }
 
+    // Filtrar por ubicación específica si está seleccionada
+    if (locationId !== 'all' && location) {
+      data = data.filter(store => 
+        store.name.toLowerCase() === location.name.toLowerCase()
+      );
+      
+      // Si no hay datos para esta ubicación, crear un registro vacío
+      if (data.length === 0) {
+        return [{
+          name: location.name,
+          compliance: 0,
+          total: 0,
+          printed: 0
+        }];
+      }
+    }
+
     return data;
-  }, [selectedPromotion, selectedCompany, locationId, isPilar]);
+  }, [selectedPromotion, selectedCompany, locationId, location, isPilar]);
 
   // Calcular totales para el gauge
   const totals = React.useMemo(() => {
     const total = complianceData.reduce((acc, store) => acc + store.total, 0);
     const printed = complianceData.reduce((acc, store) => acc + store.printed, 0);
-    const compliance = Math.round((printed / total) * 100);
+    const compliance = total > 0 ? Math.round((printed / total) * 100) : 0;
     return { total, printed, compliance };
   }, [complianceData]);
 
