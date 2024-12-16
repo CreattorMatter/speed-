@@ -223,6 +223,27 @@ const currentPromotions: PromotionType[] = [
   }
 ];
 
+// Primero, agregar el componente DisabledTooltip
+const DisabledTooltip: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <div className="group relative">
+      {children}
+      <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 
+                    bg-gray-900 text-white text-xs rounded-lg p-2 
+                    shadow-lg pointer-events-none
+                    transform -translate-x-1/2 left-1/2">
+        <div className="text-center">
+          Función no disponible
+          <br />
+          Contacte al administrador
+        </div>
+        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 
+                      border-4 border-transparent border-t-gray-900" />
+      </div>
+    </div>
+  );
+};
+
 export default function Promotions({ onBack }: PromotionsProps) {
   const [promotions, setPromotions] = useState<PromotionType[]>(currentPromotions);
   const [searchTerm, setSearchTerm] = useState('');
@@ -451,17 +472,18 @@ export default function Promotions({ onBack }: PromotionsProps) {
               )}
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-500
-                       text-white rounded-lg hover:from-rose-600 hover:to-pink-600 shadow-lg
-                       hover:shadow-rose-500/25 transition-all duration-200"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Nueva Promoción</span>
-            </motion.button>
+            <DisabledTooltip>
+              <motion.button
+                whileHover={{ scale: 1 }}  // Eliminar el efecto de escala al hover
+                className="flex items-center gap-2 px-4 py-2 bg-gray-500/50 
+                         text-gray-400 rounded-lg cursor-not-allowed
+                         border border-gray-600/30 transition-colors"
+                disabled={true}
+              >
+                <Plus className="w-5 h-5" />
+                <span>Nueva Promoción</span>
+              </motion.button>
+            </DisabledTooltip>
           </div>
         </div>
 
