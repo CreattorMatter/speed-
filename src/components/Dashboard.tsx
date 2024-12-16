@@ -94,6 +94,10 @@ const LOCATIONS: Location[] = [
   { id: 'plaza', name: 'Plaza Oeste', type: 'CC', company: 'Jumbo' },
   { id: 'soleil', name: 'Soleil', type: 'CC', company: 'Easy' },
   { id: 'san_justo', name: 'San Justo', type: 'CC', company: 'Easy' },
+  { id: 'alto_avellaneda', name: 'Alto Avellaneda', type: 'CC', company: 'Jumbo' },
+  { id: 'plaza_oeste', name: 'Plaza Oeste', type: 'CC', company: 'Easy' },
+  { id: 'portal_palermo', name: 'Portal Palermo', type: 'CC', company: 'Disco' },
+  { id: 'plaza_liniers', name: 'Plaza Liniers', type: 'CC', company: 'Vea' },
   
   // Regiones
   { id: 'norte', name: 'Zona Norte', type: 'Region', company: 'Disco' },
@@ -102,6 +106,10 @@ const LOCATIONS: Location[] = [
   { id: 'caba', name: 'CABA', type: 'Region', company: 'Vea' },
   { id: 'pilar', name: 'Pilar', type: 'Region', company: 'Jumbo' },
   { id: 'escobar', name: 'Escobar', type: 'Region', company: 'Easy' },
+  { id: 'tigre', name: 'Tigre', type: 'Region', company: 'Jumbo' },
+  { id: 'moreno', name: 'Moreno', type: 'Region', company: 'Easy' },
+  { id: 'lomas', name: 'Lomas de Zamora', type: 'Region', company: 'Disco' },
+  { id: 'quilmes', name: 'Quilmes', type: 'Region', company: 'Vea' },
 ];
 
 const easyLogo = COMPANIES.find(c => c.id === 'easy-mdh')?.logo;
@@ -1113,33 +1121,211 @@ const ActivityGroup: React.FC<{
 const STORE_COMPLIANCE_DATA = {
   all: {
     stores: [
+      // Centros Comerciales
       { name: 'Unicenter', compliance: 95, total: 450, printed: 427 },
       { name: 'DOT Baires', compliance: 88, total: 380, printed: 334 },
       { name: 'Abasto', compliance: 92, total: 420, printed: 386 },
       { name: 'Plaza Oeste', compliance: 85, total: 320, printed: 272 },
       { name: 'Soleil', compliance: 91, total: 290, printed: 264 },
       { name: 'San Justo', compliance: 89, total: 310, printed: 276 },
+      { name: 'Alto Avellaneda', compliance: 93, total: 280, printed: 260 },
+      { name: 'Portal Palermo', compliance: 87, total: 340, printed: 296 },
+      { name: 'Plaza Liniers', compliance: 90, total: 260, printed: 234 },
+      
+      // Regiones
+      { name: 'Zona Norte', compliance: 94, total: 850, printed: 799 },
+      { name: 'Zona Sur', compliance: 89, total: 780, printed: 694 },
+      { name: 'Zona Oeste', compliance: 91, total: 720, printed: 655 },
+      { name: 'CABA', compliance: 93, total: 920, printed: 856 },
+      { name: 'Pilar', compliance: 88, total: 480, printed: 422 },
+      { name: 'Escobar', compliance: 90, total: 380, printed: 342 },
+      { name: 'Tigre', compliance: 92, total: 420, printed: 386 },
+      { name: 'Moreno', compliance: 86, total: 340, printed: 292 },
+      { name: 'Lomas de Zamora', compliance: 89, total: 560, printed: 498 },
+      { name: 'Quilmes', compliance: 87, total: 490, printed: 426 }
     ]
   },
   promotions: {
     'Promo Banco Santander': {
       stores: [
+        // Centros Comerciales
         { name: 'Unicenter', compliance: 100, total: 20, printed: 20 },
         { name: 'DOT Baires', compliance: 75, total: 20, printed: 15 },
         { name: 'Abasto', compliance: 90, total: 20, printed: 18 },
         { name: 'Plaza Oeste', compliance: 80, total: 20, printed: 16 },
         { name: 'Soleil', compliance: 85, total: 20, printed: 17 },
         { name: 'San Justo', compliance: 95, total: 20, printed: 19 },
+        { name: 'Alto Avellaneda', compliance: 88, total: 20, printed: 18 },
+        { name: 'Portal Palermo', compliance: 92, total: 20, printed: 18 },
+        { name: 'Plaza Liniers', compliance: 85, total: 20, printed: 17 },
+        
+        // Regiones
+        { name: 'Zona Norte', compliance: 93, total: 45, printed: 42 },
+        { name: 'Zona Sur', compliance: 88, total: 40, printed: 35 },
+        { name: 'Zona Oeste', compliance: 91, total: 35, printed: 32 },
+        { name: 'CABA', compliance: 94, total: 50, printed: 47 },
+        { name: 'Pilar', compliance: 89, total: 25, printed: 22 },
+        { name: 'Escobar', compliance: 87, total: 20, printed: 17 },
+        { name: 'Tigre', compliance: 90, total: 25, printed: 23 },
+        { name: 'Moreno', compliance: 85, total: 20, printed: 17 },
+        { name: 'Lomas de Zamora', compliance: 92, total: 30, printed: 28 },
+        { name: 'Quilmes', compliance: 86, total: 25, printed: 22 }
       ]
     },
     'Black Friday': {
       stores: [
+        // Centros Comerciales
         { name: 'Unicenter', compliance: 93, total: 15, printed: 14 },
         { name: 'DOT Baires', compliance: 87, total: 15, printed: 13 },
         { name: 'Abasto', compliance: 100, total: 15, printed: 15 },
         { name: 'Plaza Oeste', compliance: 80, total: 15, printed: 12 },
         { name: 'Soleil', compliance: 93, total: 15, printed: 14 },
         { name: 'San Justo', compliance: 87, total: 15, printed: 13 },
+        { name: 'Alto Avellaneda', compliance: 91, total: 15, printed: 14 },
+        { name: 'Portal Palermo', compliance: 89, total: 15, printed: 13 },
+        { name: 'Plaza Liniers', compliance: 86, total: 15, printed: 13 },
+        
+        // Regiones
+        { name: 'Zona Norte', compliance: 95, total: 35, printed: 33 },
+        { name: 'Zona Sur', compliance: 91, total: 35, printed: 32 },
+        { name: 'Zona Oeste', compliance: 89, total: 35, printed: 31 },
+        { name: 'CABA', compliance: 97, total: 35, printed: 34 },
+        { name: 'Pilar', compliance: 86, total: 35, printed: 30 },
+        { name: 'Escobar', compliance: 89, total: 35, printed: 31 },
+        { name: 'Tigre', compliance: 91, total: 35, printed: 32 },
+        { name: 'Moreno', compliance: 83, total: 35, printed: 29 },
+        { name: 'Lomas de Zamora', compliance: 94, total: 35, printed: 33 },
+        { name: 'Quilmes', compliance: 89, total: 35, printed: 31 }
+      ]
+    },
+    'Cyber Monday': {
+      stores: [
+        // Centros Comerciales
+        { name: 'Unicenter', compliance: 96, total: 25, printed: 24 },
+        { name: 'DOT Baires', compliance: 92, total: 25, printed: 23 },
+        { name: 'Abasto', compliance: 88, total: 25, printed: 22 },
+        { name: 'Plaza Oeste', compliance: 84, total: 25, printed: 21 },
+        { name: 'Soleil', compliance: 96, total: 25, printed: 24 },
+        { name: 'San Justo', compliance: 92, total: 25, printed: 23 },
+        { name: 'Alto Avellaneda', compliance: 94, total: 25, printed: 24 },
+        { name: 'Portal Palermo', compliance: 90, total: 25, printed: 23 },
+        { name: 'Plaza Liniers', compliance: 88, total: 25, printed: 22 },
+        
+        // Regiones
+        { name: 'Zona Norte', compliance: 97, total: 40, printed: 39 },
+        { name: 'Zona Sur', compliance: 93, total: 40, printed: 37 },
+        { name: 'Zona Oeste', compliance: 90, total: 40, printed: 36 },
+        { name: 'CABA', compliance: 95, total: 40, printed: 38 },
+        { name: 'Pilar', compliance: 88, total: 40, printed: 35 },
+        { name: 'Escobar', compliance: 91, total: 40, printed: 36 },
+        { name: 'Tigre', compliance: 93, total: 40, printed: 37 },
+        { name: 'Moreno', compliance: 85, total: 40, printed: 34 },
+        { name: 'Lomas de Zamora', compliance: 92, total: 40, printed: 37 },
+        { name: 'Quilmes', compliance: 89, total: 40, printed: 36 }
+      ]
+    },
+    'Hot Sale': {
+      stores: [
+        // Centros Comerciales
+        { name: 'Unicenter', compliance: 89, total: 30, printed: 27 },
+        { name: 'DOT Baires', compliance: 93, total: 30, printed: 28 },
+        { name: 'Abasto', compliance: 87, total: 30, printed: 26 },
+        { name: 'Plaza Oeste', compliance: 90, total: 30, printed: 27 },
+        { name: 'Soleil', compliance: 87, total: 30, printed: 26 },
+        { name: 'San Justo', compliance: 93, total: 30, printed: 28 },
+        { name: 'Alto Avellaneda', compliance: 91, total: 30, printed: 27 },
+        { name: 'Portal Palermo', compliance: 88, total: 30, printed: 26 },
+        { name: 'Plaza Liniers', compliance: 85, total: 30, printed: 26 },
+        
+        // Regiones
+        { name: 'Zona Norte', compliance: 94, total: 45, printed: 42 },
+        { name: 'Zona Sur', compliance: 90, total: 45, printed: 41 },
+        { name: 'Zona Oeste', compliance: 88, total: 45, printed: 40 },
+        { name: 'CABA', compliance: 96, total: 45, printed: 43 },
+        { name: 'Pilar', compliance: 87, total: 45, printed: 39 },
+        { name: 'Escobar', compliance: 89, total: 45, printed: 40 },
+        { name: 'Tigre', compliance: 92, total: 45, printed: 41 },
+        { name: 'Moreno', compliance: 84, total: 45, printed: 38 },
+        { name: 'Lomas de Zamora', compliance: 91, total: 45, printed: 41 },
+        { name: 'Quilmes', compliance: 88, total: 45, printed: 40 }
+      ]
+    },
+    'Descuentos Bancarios': {
+      stores: [
+        // Centros Comerciales
+        { name: 'Unicenter', compliance: 91, total: 18, printed: 16 },
+        { name: 'DOT Baires', compliance: 89, total: 18, printed: 16 },
+        { name: 'Abasto', compliance: 94, total: 18, printed: 17 },
+        { name: 'Plaza Oeste', compliance: 83, total: 18, printed: 15 },
+        { name: 'Soleil', compliance: 89, total: 18, printed: 16 },
+        { name: 'San Justo', compliance: 94, total: 18, printed: 17 },
+        { name: 'Alto Avellaneda', compliance: 92, total: 18, printed: 17 },
+        { name: 'Portal Palermo', compliance: 88, total: 18, printed: 16 },
+        { name: 'Plaza Liniers', compliance: 86, total: 18, printed: 15 },
+        
+        // Regiones
+        { name: 'Zona Norte', compliance: 95, total: 25, printed: 24 },
+        { name: 'Zona Sur', compliance: 92, total: 25, printed: 23 },
+        { name: 'Zona Oeste', compliance: 89, total: 25, printed: 22 },
+        { name: 'CABA', compliance: 96, total: 25, printed: 24 },
+        { name: 'Pilar', compliance: 88, total: 25, printed: 22 },
+        { name: 'Escobar', compliance: 90, total: 25, printed: 23 },
+        { name: 'Tigre', compliance: 93, total: 25, printed: 23 },
+        { name: 'Moreno', compliance: 85, total: 25, printed: 21 },
+        { name: 'Lomas de Zamora', compliance: 91, total: 25, printed: 23 },
+        { name: 'Quilmes', compliance: 87, total: 25, printed: 22 }
+      ]
+    },
+    'Ofertas Semanales': {
+      stores: [
+        // Centros Comerciales
+        { name: 'Unicenter', compliance: 95, total: 40, printed: 38 },
+        { name: 'DOT Baires', compliance: 88, total: 40, printed: 35 },
+        { name: 'Abasto', compliance: 93, total: 40, printed: 37 },
+        { name: 'Plaza Oeste', compliance: 85, total: 40, printed: 34 },
+        { name: 'Soleil', compliance: 90, total: 40, printed: 36 },
+        { name: 'San Justo', compliance: 93, total: 40, printed: 37 },
+        { name: 'Alto Avellaneda', compliance: 91, total: 40, printed: 36 },
+        { name: 'Portal Palermo', compliance: 89, total: 40, printed: 36 },
+        { name: 'Plaza Liniers', compliance: 87, total: 40, printed: 35 },
+        
+        // Regiones
+        { name: 'Zona Norte', compliance: 96, total: 55, printed: 53 },
+        { name: 'Zona Sur', compliance: 93, total: 55, printed: 51 },
+        { name: 'Zona Oeste', compliance: 91, total: 55, printed: 50 },
+        { name: 'CABA', compliance: 97, total: 55, printed: 53 },
+        { name: 'Pilar', compliance: 89, total: 55, printed: 49 },
+        { name: 'Escobar', compliance: 92, total: 55, printed: 51 },
+        { name: 'Tigre', compliance: 94, total: 55, printed: 52 },
+        { name: 'Moreno', compliance: 86, total: 55, printed: 47 },
+        { name: 'Lomas de Zamora', compliance: 93, total: 55, printed: 51 },
+        { name: 'Quilmes', compliance: 90, total: 55, printed: 50 }
+      ]
+    },
+    'Promociones 3x2': {
+      stores: [
+        // Centros Comerciales
+        { name: 'Unicenter', compliance: 92, total: 22, printed: 20 },
+        { name: 'DOT Baires', compliance: 86, total: 22, printed: 19 },
+        { name: 'Abasto', compliance: 95, total: 22, printed: 21 },
+        { name: 'Plaza Oeste', compliance: 82, total: 22, printed: 18 },
+        { name: 'Soleil', compliance: 91, total: 22, printed: 20 },
+        { name: 'San Justo', compliance: 95, total: 22, printed: 21 },
+        { name: 'Alto Avellaneda', compliance: 89, total: 22, printed: 20 },
+        { name: 'Portal Palermo', compliance: 86, total: 22, printed: 19 },
+        { name: 'Plaza Liniers', compliance: 84, total: 22, printed: 18 },
+        
+        // Regiones
+        { name: 'Zona Norte', compliance: 94, total: 35, printed: 33 },
+        { name: 'Zona Sur', compliance: 90, total: 35, printed: 32 },
+        { name: 'Zona Oeste', compliance: 87, total: 35, printed: 30 },
+        { name: 'CABA', compliance: 95, total: 35, printed: 33 },
+        { name: 'Pilar', compliance: 85, total: 35, printed: 30 },
+        { name: 'Escobar', compliance: 88, total: 35, printed: 31 },
+        { name: 'Tigre', compliance: 91, total: 35, printed: 32 },
+        { name: 'Moreno', compliance: 83, total: 35, printed: 29 },
+        { name: 'Lomas de Zamora', compliance: 89, total: 35, printed: 31 },
+        { name: 'Quilmes', compliance: 86, total: 35, printed: 30 }
       ]
     }
   }
@@ -1159,21 +1345,50 @@ const getComplianceColorHex = (compliance: number) => {
   return '#EF4444';
 };
 
-// Modificar el componente PrintComplianceChart
+// Modificar el componente PrintComplianceChart para recibir selectedCompany
 const PrintComplianceChart: React.FC<{
   locationId: string;
+  selectedPromotion: string;
+  selectedCompany: string;  // Agregar esta prop
   className?: string;
-}> = ({ locationId, className }) => {
-  const [selectedPromotion, setSelectedPromotion] = useState<string>('all');
+}> = ({ locationId, selectedPromotion, selectedCompany, className }) => {
   const location = locationId === 'all' ? null : LOCATIONS.find(loc => loc.id === locationId);
 
-  // Obtener datos según la promoción seleccionada
+  // Modificar el filtrado de datos para incluir el filtro por empresa
   const complianceData = React.useMemo(() => {
-    if (selectedPromotion === 'all') {
-      return STORE_COMPLIANCE_DATA.all.stores;
+    let data = selectedPromotion === 'all' 
+      ? STORE_COMPLIANCE_DATA.all.stores
+      : STORE_COMPLIANCE_DATA.promotions[selectedPromotion as keyof typeof STORE_COMPLIANCE_DATA.promotions].stores;
+
+    // Filtrar por empresa
+    if (selectedCompany !== 'all') {
+      data = data.filter(store => {
+        const storeLocation = LOCATIONS.find(loc => 
+          loc.name.toLowerCase() === store.name.toLowerCase()
+        );
+        return storeLocation?.company.toLowerCase() === selectedCompany.toLowerCase();
+      });
     }
-    return STORE_COMPLIANCE_DATA.promotions[selectedPromotion as keyof typeof STORE_COMPLIANCE_DATA.promotions].stores;
-  }, [selectedPromotion]);
+
+    // Filtrar por ubicación si está seleccionada
+    if (locationId !== 'all' && location) {
+      data = data.filter(store => 
+        store.name.toLowerCase() === location.name.toLowerCase()
+      );
+    }
+
+    // Si no hay datos después del filtrado, mostrar mensaje
+    if (data.length === 0) {
+      return [{
+        name: location?.name || 'Sin datos',
+        compliance: 0,
+        total: 0,
+        printed: 0
+      }];
+    }
+
+    return data;
+  }, [selectedPromotion, selectedCompany, locationId, location]);
 
   // Calcular promedio general
   const averageCompliance = Math.round(
@@ -1192,25 +1407,15 @@ const PrintComplianceChart: React.FC<{
             Cumplimiento de Impresión por Sucursal
           </h3>
           <p className="text-sm text-gray-500">
-            {selectedPromotion === 'all' ? 'General' : selectedPromotion}
+            {location ? location.name : 'Todas las sucursales'} - {selectedPromotion === 'all' ? 'General' : selectedPromotion}
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <div className={`px-3 py-1 rounded-full ${getComplianceColor(averageCompliance)}`}>
             <span className="text-sm font-medium">
               {averageCompliance}% promedio
             </span>
           </div>
-          <select
-            value={selectedPromotion}
-            onChange={(e) => setSelectedPromotion(e.target.value)}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600"
-          >
-            <option value="all">Todas las promociones</option>
-            {Object.keys(STORE_COMPLIANCE_DATA.promotions).map(promo => (
-              <option key={promo} value={promo}>{promo}</option>
-            ))}
-          </select>
         </div>
       </div>
 
@@ -1237,13 +1442,37 @@ const PrintComplianceChart: React.FC<{
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {
                   const data = payload[0].payload;
+                  // Encontrar la ubicación y su empresa correspondiente
+                  const storeLocation = LOCATIONS.find(loc => 
+                    loc.name.toLowerCase() === data.name.toLowerCase()
+                  );
+                  const companyLogo = storeLocation ? LOGOS[storeLocation.company.toLowerCase() as keyof typeof LOGOS] : '';
+
                   return (
                     <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
-                      <p className="font-medium text-gray-900 mb-2">{data.name}</p>
+                      <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-100">
+                        {companyLogo && (
+                          <img 
+                            src={companyLogo}
+                            alt={storeLocation?.company}
+                            className="w-8 h-8 object-contain"
+                          />
+                        )}
+                        <div>
+                          <p className="font-medium text-gray-900">{data.name}</p>
+                          <p className="text-sm text-gray-500">{storeLocation?.company}</p>
+                        </div>
+                      </div>
                       <div className="space-y-1">
                         <p className="text-sm text-gray-600 flex justify-between gap-4">
                           <span>Cumplimiento:</span>
-                          <span className="font-medium">{data.compliance}%</span>
+                          <span className={`font-medium ${
+                            data.compliance >= 90 ? 'text-green-600' :
+                            data.compliance >= 80 ? 'text-yellow-600' :
+                            'text-red-600'
+                          }`}>
+                            {data.compliance}%
+                          </span>
                         </p>
                         <p className="text-sm text-gray-600 flex justify-between gap-4">
                           <span>Impresos:</span>
@@ -1331,6 +1560,7 @@ export default function Dashboard({
   const [selectedCompany, setSelectedCompany] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
+  const [selectedPromotion, setSelectedPromotion] = useState('all');
 
   // Filtrar las actividades basado en el usuario
   const filteredActivities = React.useMemo(() => {
@@ -1348,6 +1578,11 @@ export default function Dashboard({
 
       // Filtro por empresa
       if (selectedCompany !== 'all' && activity.company.toLowerCase() !== selectedCompany) {
+        return false;
+      }
+
+      // Filtro por promoción
+      if (selectedPromotion !== 'all' && !activity.title.includes(selectedPromotion)) {
         return false;
       }
 
@@ -1370,7 +1605,7 @@ export default function Dashboard({
 
       return true;
     });
-  }, [activities, userEmail, searchTerm, selectedCompany, selectedLocation, selectedStatus]);
+  }, [activities, userEmail, searchTerm, selectedCompany, selectedPromotion, selectedLocation, selectedStatus]);
 
   // Filtrar las plantillas recientes
   const filteredPlantillas = React.useMemo(() => {
@@ -1423,7 +1658,7 @@ export default function Dashboard({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-pink-500/5
         animate-gradient-xy pointer-events-none" />
       
@@ -1768,6 +2003,18 @@ export default function Dashboard({
               <option value="vea">Vea</option>
             </select>
 
+            {/* Filtro de Promociones */}
+            <select
+              value={selectedPromotion}
+              onChange={(e) => setSelectedPromotion(e.target.value)}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600"
+            >
+              <option value="all">Todas las promociones</option>
+              {Object.keys(STORE_COMPLIANCE_DATA.promotions).map(promo => (
+                <option key={promo} value={promo}>{promo}</option>
+              ))}
+            </select>
+
             {/* Filtro de Sucursales */}
             <select 
               value={selectedLocation}
@@ -1816,6 +2063,8 @@ export default function Dashboard({
         <div className="mb-6">
           <PrintComplianceChart 
             locationId={selectedLocation}
+            selectedPromotion={selectedPromotion}
+            selectedCompany={selectedCompany}
             className="mx-2 md:mx-0"
           />
         </div>
