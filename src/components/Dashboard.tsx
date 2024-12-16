@@ -1538,14 +1538,17 @@ const PrintComplianceChart: React.FC<{
                         const companyLogo = storeLocation ? LOGOS[storeLocation.company.toLowerCase() as keyof typeof LOGOS] : '';
 
                         return (
-                          <div className="bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-lg border border-gray-100">
-                            <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-100">
+                          <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-gray-100/50">
+                            <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-100/50">
                               {companyLogo && (
-                                <img 
-                                  src={companyLogo}
-                                  alt={storeLocation?.company}
-                                  className="w-8 h-8 object-contain"
-                                />
+                                <div className="relative w-12 h-12 flex items-center justify-center">
+                                  <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-gray-50/80 rounded-lg" />
+                                  <img 
+                                    src={companyLogo}
+                                    alt={storeLocation?.company}
+                                    className="w-10 h-10 object-contain relative z-10"
+                                  />
+                                </div>
                               )}
                               <div>
                                 <p className="font-medium text-gray-900">{data.name}</p>
@@ -1575,8 +1578,15 @@ const PrintComplianceChart: React.FC<{
                       }
                       return null;
                     }}
-                    cursor={{ stroke: '#9CA3AF', strokeWidth: 1 }}
-                    wrapperStyle={{ outline: 'none' }}
+                    cursor={{ 
+                      stroke: '#9CA3AF', 
+                      strokeWidth: 1,
+                      strokeDasharray: '5 5'
+                    }}
+                    wrapperStyle={{ 
+                      outline: 'none',
+                      filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))'
+                    }}
                   />
                   <Bar 
                     dataKey="compliance" 
@@ -1635,21 +1645,61 @@ const PrintComplianceChart: React.FC<{
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
+                      // Encontrar la ubicación y su empresa correspondiente
+                      const storeLocation = LOCATIONS.find(loc => 
+                        loc.name.toLowerCase() === data.name.toLowerCase()
+                      );
+                      const companyLogo = storeLocation ? LOGOS[storeLocation.company.toLowerCase() as keyof typeof LOGOS] : '';
+
                       return (
-                        <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
-                          <p className="font-medium text-gray-900">{data.name}</p>
-                          <div className="mt-2 space-y-1">
-                            <p className="text-sm text-gray-600">
-                              Cumplimiento: <span className="font-medium">{data.compliance}%</span>
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              Impresos: <span className="font-medium">{data.printed}/{data.total}</span>
-                            </p>
+                        <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-gray-100/50">
+                          <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-100/50">
+                            {companyLogo && (
+                              <div className="relative w-12 h-12 flex items-center justify-center">
+                                <div className="absolute inset-0 bg-gradient-to-br from-white/80 to-gray-50/80 rounded-lg" />
+                                <img 
+                                  src={companyLogo}
+                                  alt={storeLocation?.company}
+                                  className="w-10 h-10 object-contain relative z-10"
+                                />
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium text-gray-900">{data.name}</p>
+                              <p className="text-sm text-gray-500">{storeLocation?.company}</p>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Cumplimiento:</span>
+                              <span className={`font-medium ${
+                                data.compliance >= 90 ? 'text-indigo-600' :
+                                data.compliance >= 80 ? 'text-violet-600' :
+                                'text-red-600'
+                              }`}>
+                                {data.compliance}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Impresos:</span>
+                              <span className="font-medium text-gray-900">
+                                {data.printed} de {data.total}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       );
                     }
                     return null;
+                  }}
+                  cursor={{ 
+                    stroke: '#9CA3AF', 
+                    strokeWidth: 1,
+                    strokeDasharray: '5 5'
+                  }}
+                  wrapperStyle={{ 
+                    outline: 'none',
+                    filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))'
                   }}
                 />
                 <Bar 
@@ -1711,7 +1761,7 @@ const CompanyButton: React.FC<{
         <img 
           src={company.logo}
           alt={company.label}
-          className={`w-10 h-10 object-contain transition-transform duration-500
+          className={`w-12 h-12 object-contain transition-transform duration-500
             ${isSpinning ? 'rotate-360' : ''}
           `}
           style={{
