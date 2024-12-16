@@ -11,7 +11,7 @@ import { PrintAnimation } from './Dashboard/PrintAnimation';
 import { PrintDetailsModal } from './Dashboard/PrintDetailsModal';
 import { 
   LineChart, CartesianGrid, XAxis, YAxis, Tooltip, ReferenceLine, Line, 
-  ResponsiveContainer, BarChart, Bar, Cell, RadialBarChart, RadialBar 
+  ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Sector 
 } from 'recharts';
 
 interface DashboardProps {
@@ -1109,43 +1109,44 @@ const ActivityGroup: React.FC<{
   </div>
 );
 
-// Modificar los datos de cumplimiento para incluir datos agregados
-const PRINT_COMPLIANCE_DATA = {
+// Agregar más datos de ejemplo para el cumplimiento por sucursal
+const STORE_COMPLIANCE_DATA = {
   all: {
-    daily: [
-      { date: '2024-01-15', compliance: 92, total: 480, printed: 442 },
-      { date: '2024-01-16', compliance: 88, total: 520, printed: 458 },
-      { date: '2024-01-17', compliance: 91, total: 600, printed: 546 },
-      { date: '2024-01-18', compliance: 94, total: 450, printed: 423 },
-      { date: '2024-01-19', compliance: 87, total: 550, printed: 479 },
-    ],
-    locations: [
-      { name: 'Unicenter', compliance: 95, pending: 8 },
-      { name: 'DOT Baires', compliance: 88, pending: 12 },
-      { name: 'Abasto', compliance: 92, pending: 5 },
-      { name: 'Plaza Oeste', compliance: 85, pending: 15 },
-      { name: 'Soleil', compliance: 91, pending: 7 },
-      { name: 'San Justo', compliance: 89, pending: 10 },
+    stores: [
+      { name: 'Unicenter', compliance: 95, total: 450, printed: 427 },
+      { name: 'DOT Baires', compliance: 88, total: 380, printed: 334 },
+      { name: 'Abasto', compliance: 92, total: 420, printed: 386 },
+      { name: 'Plaza Oeste', compliance: 85, total: 320, printed: 272 },
+      { name: 'Soleil', compliance: 91, total: 290, printed: 264 },
+      { name: 'San Justo', compliance: 89, total: 310, printed: 276 },
     ]
   },
-  uni: {
-    daily: [
-      { date: '2024-01-15', compliance: 95, total: 120, printed: 114 },
-      { date: '2024-01-16', compliance: 88, total: 95, printed: 84 },
-      { date: '2024-01-17', compliance: 92, total: 150, printed: 138 },
-      { date: '2024-01-18', compliance: 97, total: 80, printed: 78 },
-      { date: '2024-01-19', compliance: 85, total: 200, printed: 170 },
-    ],
-    pendingPosters: [
-      { id: 'P1', name: 'Cartel Ofertas', date: '2024-01-19', priority: 'alta' },
-      { id: 'P2', name: 'Promoción Bancaria', date: '2024-01-19', priority: 'media' },
-      { id: 'P3', name: 'Descuentos Semanales', date: '2024-01-18', priority: 'baja' },
-    ]
-  },
-  // Agregar datos para otras sucursales...
+  promotions: {
+    'Promo Banco Santander': {
+      stores: [
+        { name: 'Unicenter', compliance: 100, total: 20, printed: 20 },
+        { name: 'DOT Baires', compliance: 75, total: 20, printed: 15 },
+        { name: 'Abasto', compliance: 90, total: 20, printed: 18 },
+        { name: 'Plaza Oeste', compliance: 80, total: 20, printed: 16 },
+        { name: 'Soleil', compliance: 85, total: 20, printed: 17 },
+        { name: 'San Justo', compliance: 95, total: 20, printed: 19 },
+      ]
+    },
+    'Black Friday': {
+      stores: [
+        { name: 'Unicenter', compliance: 93, total: 15, printed: 14 },
+        { name: 'DOT Baires', compliance: 87, total: 15, printed: 13 },
+        { name: 'Abasto', compliance: 100, total: 15, printed: 15 },
+        { name: 'Plaza Oeste', compliance: 80, total: 15, printed: 12 },
+        { name: 'Soleil', compliance: 93, total: 15, printed: 14 },
+        { name: 'San Justo', compliance: 87, total: 15, printed: 13 },
+      ]
+    }
+  }
 };
 
-// Mantener ambas funciones auxiliares para colores
+// Agregar después de STORE_COMPLIANCE_DATA y antes de PrintComplianceChart
+// Funciones auxiliares para colores
 const getComplianceColor = (compliance: number) => {
   if (compliance >= 90) return 'bg-green-50 text-green-700';
   if (compliance >= 80) return 'bg-yellow-50 text-yellow-700';
@@ -1158,21 +1159,26 @@ const getComplianceColorHex = (compliance: number) => {
   return '#EF4444';
 };
 
-// Mover la definición del componente PrintComplianceChart antes de su uso
+// Modificar el componente PrintComplianceChart
 const PrintComplianceChart: React.FC<{
   locationId: string;
   className?: string;
 }> = ({ locationId, className }) => {
+  const [selectedPromotion, setSelectedPromotion] = useState<string>('all');
   const location = locationId === 'all' ? null : LOCATIONS.find(loc => loc.id === locationId);
-  const data = PRINT_COMPLIANCE_DATA[locationId as keyof typeof PRINT_COMPLIANCE_DATA] || PRINT_COMPLIANCE_DATA.all;
 
-  // Preparar datos para el gráfico radial
-  const radialData = data.locations?.map((loc, index) => ({
-    name: loc.name,
-    value: loc.compliance,
-    fill: getComplianceColorHex(loc.compliance),
-    pending: loc.pending
-  })) || [];
+  // Obtener datos según la promoción seleccionada
+  const complianceData = React.useMemo(() => {
+    if (selectedPromotion === 'all') {
+      return STORE_COMPLIANCE_DATA.all.stores;
+    }
+    return STORE_COMPLIANCE_DATA.promotions[selectedPromotion as keyof typeof STORE_COMPLIANCE_DATA.promotions].stores;
+  }, [selectedPromotion]);
+
+  // Calcular promedio general
+  const averageCompliance = Math.round(
+    complianceData.reduce((acc, store) => acc + store.compliance, 0) / complianceData.length
+  );
 
   return (
     <motion.div
@@ -1183,124 +1189,97 @@ const PrintComplianceChart: React.FC<{
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-medium text-gray-900">
-            Cumplimiento de Impresión
+            Cumplimiento de Impresión por Sucursal
           </h3>
           <p className="text-sm text-gray-500">
-            {location ? location.name : 'Todas las sucursales'}
+            {selectedPromotion === 'all' ? 'General' : selectedPromotion}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className={`px-3 py-1 rounded-full ${
-            getComplianceColor(data.daily.reduce((acc, day) => acc + day.compliance, 0) / data.daily.length)
-          }`}>
+        <div className="flex items-center gap-4">
+          <div className={`px-3 py-1 rounded-full ${getComplianceColor(averageCompliance)}`}>
             <span className="text-sm font-medium">
-              {Math.round(data.daily.reduce((acc, day) => acc + day.compliance, 0) / data.daily.length)}% promedio
+              {averageCompliance}% promedio
             </span>
           </div>
+          <select
+            value={selectedPromotion}
+            onChange={(e) => setSelectedPromotion(e.target.value)}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600"
+          >
+            <option value="all">Todas las promociones</option>
+            {Object.keys(STORE_COMPLIANCE_DATA.promotions).map(promo => (
+              <option key={promo} value={promo}>{promo}</option>
+            ))}
+          </select>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gráfico principal */}
-        <div className="h-[400px]">
-          {locationId === 'all' ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <RadialBarChart 
-                cx="50%" 
-                cy="50%" 
-                innerRadius="30%" 
-                outerRadius="100%" 
-                data={radialData} 
-                startAngle={180} 
-                endAngle={-180}
-              >
-                <RadialBar
-                  minAngle={15}
-                  background
-                  clockWise={true}
-                  dataKey="value"
-                  cornerRadius={12}
-                  label={{
-                    position: 'insideStart',
-                    fill: '#fff',
-                    formatter: (value: number) => `${value}%`,
-                  }}
+      <div className="h-[400px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={complianceData}
+            layout="vertical"
+            margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <XAxis 
+              type="number" 
+              domain={[0, 100]} 
+              unit="%" 
+            />
+            <YAxis 
+              dataKey="name" 
+              type="category" 
+              width={100}
+              tick={{ fontSize: 12 }}
+            />
+            <Tooltip
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
+                      <p className="font-medium text-gray-900 mb-2">{data.name}</p>
+                      <div className="space-y-1">
+                        <p className="text-sm text-gray-600 flex justify-between gap-4">
+                          <span>Cumplimiento:</span>
+                          <span className="font-medium">{data.compliance}%</span>
+                        </p>
+                        <p className="text-sm text-gray-600 flex justify-between gap-4">
+                          <span>Impresos:</span>
+                          <span className="font-medium">{data.printed}/{data.total}</span>
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <ReferenceLine 
+              x={90} 
+              stroke="#FBB224" 
+              strokeDasharray="3 3"
+              label={{ 
+                value: 'Meta 90%', 
+                position: 'right',
+                fill: '#FBB224'
+              }}
+            />
+            <Bar 
+              dataKey="compliance" 
+              radius={[0, 4, 4, 0]}
+              animationDuration={1000}
+            >
+              {complianceData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={getComplianceColorHex(entry.compliance)}
                 />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: data.fill }}
-                            />
-                            <p className="font-medium text-gray-900">{data.name}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm text-gray-600">
-                              Cumplimiento: <span className="font-medium">{data.value}%</span>
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              Pendientes: <span className="font-medium">{data.pending}</span>
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-              </RadialBarChart>
-            </ResponsiveContainer>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.daily}>
-                {/* ... resto del código del LineChart ... */}
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-
-        {/* Lista de sucursales con cumplimiento */}
-        {locationId === 'all' && (
-          <div className="space-y-4">
-            {radialData.map((item, index) => (
-              <div 
-                key={item.name}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"
-              >
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-2 h-8 rounded-full" 
-                    style={{ backgroundColor: item.fill }}
-                  />
-                  <div>
-                    <p className="font-medium text-gray-900">{item.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {item.pending} carteles pendientes
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-semibold" style={{ color: item.fill }}>
-                    {item.value}%
-                  </p>
-                  <p className="text-xs text-gray-500">cumplimiento</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Panel de carteles pendientes */}
-        {locationId !== 'all' && data.pendingPosters && (
-          <div className="border-l border-gray-200 pl-6">
-            {/* ... resto del código del panel de pendientes ... */}
-          </div>
-        )}
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </motion.div>
   );
