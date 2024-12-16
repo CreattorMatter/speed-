@@ -1185,8 +1185,16 @@ export default function Dashboard({
           transition={{ delay: 0.2 }}
           className="mb-8 flex items-center gap-3"
         >
-          <h2 className="text-3xl font-medium text-slate-900">
-            Bienvenido de nuevo, <span className="text-violet-400">{userEmail?.split('@')[0]}</span>
+          <h2 className="text-3xl font-medium">
+            <span className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 bg-clip-text text-transparent">
+              Bienvenido a{' '}
+            </span>
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 bg-clip-text text-transparent">
+              SPID
+            </span>
+            <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+              {' '}Plus
+            </span>
           </h2>
           <motion.span
             animate={{

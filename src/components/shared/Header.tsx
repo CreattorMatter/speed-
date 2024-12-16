@@ -24,9 +24,16 @@ export function Header({ onBack, onLogout }: HeaderProps) {
             </motion.button>
           )}
 
-          <span className="absolute left-1/2 -translate-x-1/2 text-white font-light text-xl sm:text-2xl tracking-tight">
-            Speed<span className="text-violet-400">+</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold">
+              <span className="bg-gradient-to-r from-white via-white to-violet-200 bg-clip-text text-transparent">
+                SPID
+              </span>
+              <span className="bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">
+                {' '}Plus
+              </span>
+            </h1>
+          </div>
 
           <div className="flex items-center gap-4">
             <motion.button

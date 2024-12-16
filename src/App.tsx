@@ -179,8 +179,13 @@ function AppContent() {
                         rounded-full bg-white/10 backdrop-blur-lg">
             <LogIn className="w-8 sm:w-10 h-8 sm:h-10" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-            Speed<span className="text-violet-400">+</span>
+          <h1 className="text-3xl sm:text-4xl font-bold mb-2">
+            <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-400 bg-clip-text text-transparent">
+              SPID
+            </span>
+            <span className="bg-gradient-to-r from-violet-400 to-fuchsia-500 bg-clip-text text-transparent">
+              {' '}Plus
+            </span>
           </h1>
           <p className="text-white/70 text-lg">Inicia sesión en tu cuenta</p>
         </div>
