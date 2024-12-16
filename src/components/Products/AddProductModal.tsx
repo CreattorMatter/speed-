@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, FileText, Upload, Smartphone, Plus, ArrowLeft } from 'lucide-react';
+import { X, FileText, Upload, Smartphone, Plus, ArrowLeft, AlertCircle } from 'lucide-react';
 import { ManualForm } from './ManualForm';
 import { Product } from '../../types/product';
 import { BulkUpload } from './BulkUpload';
@@ -23,6 +23,52 @@ interface BulkMethodProps {
 }
 
 type AddMethod = 'manual' | 'bulk' | 'mobile' | null;
+
+const WarningBanner: React.FC = () => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="absolute -top-20 left-1/2 -translate-x-1/2 w-full max-w-md"
+    >
+      <motion.div
+        animate={{
+          backgroundColor: ['#fef2f2', '#fee2e2', '#fef2f2'],
+          scale: [1, 1.02, 1],
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+        className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow-lg"
+      >
+        <div className="flex items-center gap-3">
+          <motion.div
+            animate={{ rotate: [0, 5, -5, 5, 0] }}
+            transition={{
+              duration: 1,
+              repeat: Infinity,
+              repeatDelay: 1
+            }}
+            className="flex-shrink-0"
+          >
+            <AlertCircle className="h-5 w-5 text-red-400" />
+          </motion.div>
+          <div>
+            <p className="text-sm font-medium text-red-800">
+              No se pueden agregar productos
+            </p>
+            <p className="text-sm text-red-600 mt-1">
+              Por favor, contacte al administrador del sistema
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onAddProduct }) => {
   const [selectedMethod, setSelectedMethod] = useState<AddMethod>(null);
@@ -89,6 +135,11 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onAd
             onClick={onClose}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
+
+          <AnimatePresence>
+            <WarningBanner />
+          </AnimatePresence>
+
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}

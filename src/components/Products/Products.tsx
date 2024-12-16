@@ -18,6 +18,27 @@ const normalizeText = (text: string): string => {
     .trim();
 };
 
+// Agregar un componente Tooltip
+const DisabledTooltip: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <div className="group relative">
+      {children}
+      <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 
+                    bg-gray-900 text-white text-xs rounded-lg p-2 
+                    shadow-lg pointer-events-none
+                    transform -translate-x-1/2 left-1/2">
+        <div className="text-center">
+          Función no disponible
+          <br />
+          Contacte al administrador
+        </div>
+        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 
+                      border-4 border-transparent border-t-gray-900" />
+      </div>
+    </div>
+  );
+};
+
 export default function Products({ onBack }: ProductsProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -196,6 +217,10 @@ export default function Products({ onBack }: ProductsProps) {
     URL.revokeObjectURL(url); // Liberar memoria
   };
 
+  const handleAddProductClick = () => {
+    // No hacer nada - botón deshabilitado
+  };
+
   return (
     <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
@@ -292,17 +317,18 @@ export default function Products({ onBack }: ProductsProps) {
               )}
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 
-                       to-indigo-500 text-white rounded-lg hover:from-purple-600 
-                       hover:to-indigo-600 transition-all duration-200"
-            >
-              <Plus className="w-5 h-5" />
-              <span className="hidden sm:inline">Nuevo Producto</span>
-            </motion.button>
+            <DisabledTooltip>
+              <motion.button
+                whileHover={{ scale: 1 }}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-500/50 
+                         text-gray-400 rounded-lg cursor-not-allowed
+                         border border-gray-600/30 transition-colors"
+                disabled={true}
+              >
+                <Plus className="w-5 h-5" />
+                <span className="hidden sm:inline">Nuevo Producto</span>
+              </motion.button>
+            </DisabledTooltip>
           </div>
         </div>
 
