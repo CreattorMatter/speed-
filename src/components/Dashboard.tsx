@@ -1894,6 +1894,62 @@ export default function Dashboard({
     setShowNotificationModal(false);
   };
 
+  // Modificar el estilo base de los filtros
+  const filterBaseStyle = `
+    flex-1 px-4 py-2.5
+    bg-white/10 backdrop-blur-md
+    border border-white/20
+    rounded-xl
+    text-sm text-gray-700
+    transition-all duration-200
+    hover:bg-white/20
+    focus:outline-none
+    focus:ring-2 focus:ring-white/30
+    focus:border-transparent
+    appearance-none
+    bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNy40MSA4LjU5TDEyIDEzLjE3bDQuNTktNC41OEwxOCAxMGwtNiA2LTYtNiAxLjQxLTEuNDF6IiBmaWxsPSJjdXJyZW50Q29sb3IiLz48L3N2Zz4=')] 
+    bg-[length:16px_16px] 
+    bg-no-repeat 
+    bg-[right_12px_center]
+    min-w-[160px]
+    [&>option]:bg-white
+    [&>option]:text-gray-700
+    [&>optgroup]:bg-white
+    [&>optgroup]:text-gray-700
+    [&>optgroup>option]:pl-6
+  `;
+
+  // Agregar estilos para el menú desplegado
+  const selectStyles = {
+    option: (provided: any, state: any) => ({
+      ...provided,
+      backgroundColor: state.isFocused ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+      color: 'rgb(55, 65, 81)',
+      padding: '8px 16px',
+      cursor: 'pointer',
+      ':active': {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      }
+    }),
+    menu: (provided: any) => ({
+      ...provided,
+      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(255, 255, 255, 0.2)',
+      borderRadius: '12px',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+      overflow: 'hidden',
+      marginTop: '4px',
+    }),
+    optgroup: (provided: any) => ({
+      ...provided,
+      padding: '8px 0',
+      ':not(:first-child)': {
+        borderTop: '1px solid rgba(229, 231, 235, 0.5)'
+      }
+    })
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header onBack={onBack} onLogout={onLogout} onSettings={onSettings} />
@@ -2209,87 +2265,95 @@ export default function Dashboard({
         </motion.div>
 
         {/* Filtros y búsqueda */}
-        <div className="px-6 py-3 border-b border-gray-200 bg-gray-50/50">
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Búsqueda */}
-            <div className="flex-1 min-w-[200px] relative">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar actividad..."
-                className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg
-                         focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-              />
-              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="mb-8 backdrop-blur-sm bg-white/20 rounded-2xl border border-gray-100/20 shadow-lg shadow-gray-100/10">
+          <div className="px-6 py-3 border-b border-gray-100/20">
+            <h3 className="text-sm font-medium text-gray-900">Filtros de búsqueda</h3>
+          </div>
+
+          <div className="p-4">
+            <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-hide">
+              {/* Búsqueda */}
+              <div className="relative group flex-1">
+                <Search className="w-5 h-5 text-gray-400/70 absolute left-3 top-1/2 -translate-y-1/2 
+                         transition-colors group-hover:text-indigo-500" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar actividad..."
+                  className={`w-full pl-10 pr-4 ${filterBaseStyle}`}
+                />
+              </div>
+
+              {/* Empresas */}
+              <select 
+                value={selectedCompany}
+                onChange={(e) => setSelectedCompany(e.target.value)}
+                className={filterBaseStyle}
+              >
+                <option value="all">Todas las empresas</option>
+                <option value="easy">Easy</option>
+                <option value="jumbo">Jumbo</option>
+                <option value="disco">Disco</option>
+                <option value="vea">Vea</option>
+              </select>
+
+              {/* Promociones */}
+              <select
+                value={selectedPromotion}
+                onChange={(e) => setSelectedPromotion(e.target.value)}
+                className={`${filterBaseStyle} [&>*]:!bg-white/90 [&>*]:backdrop-blur-xl`}
+              >
+                <option value="all" className="py-2 px-4 hover:bg-white/20">Todas las promociones</option>
+                {Object.keys(STORE_COMPLIANCE_DATA.promotions).map(promo => (
+                  <option key={promo} value={promo} className="py-2 px-4 hover:bg-white/20">
+                    {promo}
+                  </option>
+                ))}
+              </select>
+
+              {/* Sucursales */}
+              <select 
+                value={selectedLocation}
+                onChange={(e) => setSelectedLocation(e.target.value)}
+                className={filterBaseStyle}
+              >
+                <option value="all">Todas las sucursales</option>
+                <optgroup label="Centros Comerciales">
+                  {LOCATIONS
+                    .filter(loc => loc.type === 'CC')
+                    .filter(loc => selectedCompany === 'all' || loc.company.toLowerCase() === selectedCompany)
+                    .map(location => (
+                      <option key={location.id} value={location.id}>
+                        {location.name} ({location.company})
+                      </option>
+                    ))
+                  }
+                </optgroup>
+                <optgroup label="Regiones">
+                  {LOCATIONS
+                    .filter(loc => loc.type === 'Region')
+                    .filter(loc => selectedCompany === 'all' || loc.company.toLowerCase() === selectedCompany)
+                    .map(location => (
+                      <option key={location.id} value={location.id}>
+                        {location.name} ({location.company})
+                      </option>
+                    ))
+                  }
+                </optgroup>
+              </select>
+
+              {/* Estado */}
+              <select 
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className={filterBaseStyle}
+              >
+                <option value="all">Todos los estados</option>
+                <option value="printed">Impreso</option>
+                <option value="pending">Pendiente</option>
+              </select>
             </div>
-
-            {/* Filtro de Empresas */}
-            <select 
-              value={selectedCompany}
-              onChange={(e) => setSelectedCompany(e.target.value)}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600"
-            >
-              <option value="all">Todas las empresas</option>
-              <option value="easy">Easy</option>
-              <option value="jumbo">Jumbo</option>
-              <option value="disco">Disco</option>
-              <option value="vea">Vea</option>
-            </select>
-
-            {/* Filtro de Promociones */}
-            <select
-              value={selectedPromotion}
-              onChange={(e) => setSelectedPromotion(e.target.value)}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600"
-            >
-              <option value="all">Todas las promociones</option>
-              {Object.keys(STORE_COMPLIANCE_DATA.promotions).map(promo => (
-                <option key={promo} value={promo}>{promo}</option>
-              ))}
-            </select>
-
-            {/* Filtro de Sucursales */}
-            <select 
-              value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 min-w-[200px]"
-            >
-              <option value="all">Todas las sucursales</option>
-              <optgroup label="Centros Comerciales">
-                {LOCATIONS
-                  .filter(loc => loc.type === 'CC')
-                  .filter(loc => selectedCompany === 'all' || loc.company.toLowerCase() === selectedCompany)
-                  .map(location => (
-                    <option key={location.id} value={location.id}>
-                      {location.name} ({location.company})
-                    </option>
-                  ))
-                }
-              </optgroup>
-              <optgroup label="Regiones">
-                {LOCATIONS
-                  .filter(loc => loc.type === 'Region')
-                  .filter(loc => selectedCompany === 'all' || loc.company.toLowerCase() === selectedCompany)
-                  .map(location => (
-                    <option key={location.id} value={location.id}>
-                      {location.name} ({location.company})
-                    </option>
-                  ))
-                }
-              </optgroup>
-            </select>
-
-            {/* Filtro de Estado */}
-            <select 
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="printed">Impreso</option>
-              <option value="pending">Pendiente</option>
-            </select>
           </div>
         </div>
 
