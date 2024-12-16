@@ -131,10 +131,18 @@ const getComplianceColor = (compliance: number) => {
   return 'bg-red-100 text-red-600';
 };
 
+// Modificar la función getComplianceColorHex para usar más degradados
 const getComplianceColorHex = (compliance: number) => {
-  if (compliance >= 90) return '#86efac';  // Verde pastel
-  if (compliance >= 80) return '#fde047';  // Amarillo pastel
-  return '#fca5a5';  // Rojo pastel
+  if (compliance >= 90) {
+    // Degradado de azul indigo a violeta
+    return ['#818cf8', '#6366f1', '#4f46e5'];
+  } else if (compliance >= 80) {
+    // Degradado de violeta a púrpura
+    return ['#a78bfa', '#8b5cf6', '#7c3aed'];
+  } else {
+    // Degradado de rojo a rosa oscuro para valores bajos
+    return ['#f87171', '#ef4444', '#dc2626'];
+  }
 };
 
 const plantillasRecientes: PlantillaReciente[] = [
@@ -1361,6 +1369,13 @@ const GaugeChart: React.FC<GaugeChartProps> = ({ value, total, printed, size = 3
   return (
     <div className="relative flex flex-col items-center">
       <PieChart width={size} height={size/1.6}>
+        <defs>
+          <linearGradient id="gaugeGradient" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor={color[0]} stopOpacity={0.8} />
+            <stop offset="50%" stopColor={color[1]} stopOpacity={0.9} />
+            <stop offset="100%" stopColor={color[2]} stopOpacity={1} />
+          </linearGradient>
+        </defs>
         <Pie
           data={data}
           cx={size/2}
@@ -1376,14 +1391,14 @@ const GaugeChart: React.FC<GaugeChartProps> = ({ value, total, printed, size = 3
           isAnimationActive={true}
           animationDuration={1000}
         >
-          <Cell fill={color} />
+          <Cell fill="url(#gaugeGradient)" />
           <Cell fill="#f3f4f6" />
         </Pie>
         <text
           x={size/2}
           y={size/1.6 - size*0.08}
           textAnchor="middle"
-          fill={color}
+          fill={color[0]}
           className="text-5xl font-bold"
         >
           {value}%
@@ -1485,6 +1500,25 @@ const PrintComplianceChart: React.FC<{
                   layout="vertical"
                   margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
                 >
+                  <defs>
+                    {complianceData.map((entry, index) => {
+                      const colors = getComplianceColorHex(entry.compliance);
+                      return (
+                        <linearGradient
+                          key={`gradient-${index}`}
+                          id={`gradient-${index}`}
+                          x1="0"
+                          y1="0"
+                          x2="1"
+                          y2="0"
+                        >
+                          <stop offset="0%" stopColor={colors[0]} stopOpacity={0.8} />
+                          <stop offset="50%" stopColor={colors[1]} stopOpacity={0.9} />
+                          <stop offset="100%" stopColor={colors[2]} stopOpacity={1} />
+                        </linearGradient>
+                      );
+                    })}
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis type="number" domain={[0, 100]} unit="%" />
                   <YAxis 
@@ -1522,8 +1556,8 @@ const PrintComplianceChart: React.FC<{
                               <div className="flex justify-between items-center">
                                 <span className="text-sm text-gray-600">Cumplimiento:</span>
                                 <span className={`font-medium ${
-                                  data.compliance >= 90 ? 'text-green-600' :
-                                  data.compliance >= 80 ? 'text-yellow-600' :
+                                  data.compliance >= 90 ? 'text-indigo-600' :
+                                  data.compliance >= 80 ? 'text-violet-600' :
                                   'text-red-600'
                                 }`}>
                                   {data.compliance}%
@@ -1553,7 +1587,7 @@ const PrintComplianceChart: React.FC<{
                     {complianceData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={entry.printed === entry.total ? '#86efac' : '#fde047'}  // Verde pastel para completado, amarillo pastel para pendiente
+                        fill={`url(#gradient-${index})`}
                       />
                     ))}
                   </Bar>
@@ -1570,6 +1604,25 @@ const PrintComplianceChart: React.FC<{
                 layout="vertical"
                 margin={{ top: 10, right: 30, left: 100, bottom: 10 }}
               >
+                <defs>
+                  {complianceData.map((entry, index) => {
+                    const colors = getComplianceColorHex(entry.compliance);
+                    return (
+                      <linearGradient
+                        key={`gradient-${index}`}
+                        id={`gradient-${index}`}
+                        x1="0"
+                        y1="0"
+                        x2="1"
+                        y2="0"
+                      >
+                        <stop offset="0%" stopColor={colors[0]} stopOpacity={0.8} />
+                        <stop offset="50%" stopColor={colors[1]} stopOpacity={0.9} />
+                        <stop offset="100%" stopColor={colors[2]} stopOpacity={1} />
+                      </linearGradient>
+                    );
+                  })}
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                 <XAxis type="number" domain={[0, 100]} unit="%" />
                 <YAxis 
@@ -1608,7 +1661,7 @@ const PrintComplianceChart: React.FC<{
                   {complianceData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={getComplianceColorHex(entry.compliance)}
+                      fill={`url(#gradient-${index})`}
                     />
                   ))}
                 </Bar>
