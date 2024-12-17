@@ -7,6 +7,7 @@ import Preview from './Preview';
 import { Block, BlockType } from '../../types/builder';
 import ErrorBoundary from './ErrorBoundary';
 import { HeaderProvider } from '../shared/HeaderProvider';
+import { Header } from '../shared/Header';
 
 interface BuilderProps {
   onBack: () => void;

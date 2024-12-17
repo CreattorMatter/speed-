@@ -6,6 +6,7 @@ import AddProductModal from './AddProductModal';
 import { Product } from '../../types/product';
 import { ProductDetails } from './ProductDetails';
 import { HeaderProvider } from '../shared/HeaderProvider';
+import { Header } from '../shared/Header';
 
 interface ProductsProps {
   onBack: () => void;
