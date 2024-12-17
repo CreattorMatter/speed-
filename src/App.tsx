@@ -213,7 +213,8 @@ function AppContent() {
         />
         <ConfigurationPortal 
           isOpen={isConfigOpen} 
-          onClose={() => setIsConfigOpen(false)} 
+          onClose={() => setIsConfigOpen(false)}
+          currentUser={user}
         />
       </>
     );

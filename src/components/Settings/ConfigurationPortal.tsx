@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabaseClient';
 interface ConfigurationPortalProps {
   isOpen: boolean;
   onClose: () => void;
+  currentUser?: User;
 }
 
 interface User {
@@ -51,7 +52,7 @@ const mockRoles = [
   }
 ];
 
-export function ConfigurationPortal({ isOpen, onClose }: ConfigurationPortalProps) {
+export function ConfigurationPortal({ isOpen, onClose, currentUser }: ConfigurationPortalProps) {
   const [activeTab, setActiveTab] = useState<'users' | 'roles' | 'general'>('users');
   const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
@@ -195,14 +196,49 @@ export function ConfigurationPortal({ isOpen, onClose }: ConfigurationPortalProp
         animate={{ scale: 1 }}
         className="bg-white rounded-2xl shadow-xl w-full max-w-6xl max-h-[80vh] overflow-hidden"
       >
-        <div className="border-b border-gray-200 p-6 flex justify-between items-center">
-          <h2 className="text-2xl font-semibold text-gray-900">Configuración del Sistema</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
+        <div className="border-b border-gray-200 p-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", duration: 0.6 }}
+                className="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center"
+              >
+                <motion.span className="text-xl font-semibold text-violet-600">
+                  {currentUser?.name.charAt(0).toUpperCase()}
+                </motion.span>
+              </motion.div>
+              <div>
+                <motion.h2 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-2xl font-semibold text-gray-900"
+                >
+                  Configuración del Sistema
+                </motion.h2>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-sm text-gray-500"
+                >
+                  Sesión iniciada como{' '}
+                  <span className="font-medium text-violet-600">
+                    {currentUser?.name}
+                  </span>
+                  {' '}({currentUser?.role})
+                </motion.div>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
         </div>
 
         <div className="border-b border-gray-200">
