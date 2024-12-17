@@ -6,9 +6,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       external: ['html2canvas'],
-    },
+    }
   },
   optimizeDeps: {
     include: ['html2canvas'],
-  },
+  }
 });

@@ -267,21 +267,21 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 1, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+        className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col"
       >
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+        {/* Header - fijo en la parte superior */}
+        <div className="p-6 border-b border-gray-200 flex justify-between items-center shrink-0">
           <h2 className="text-2xl font-bold text-gray-900">Configuración</h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="border-b border-gray-200">
+        {/* Tabs - fijo debajo del header */}
+        <div className="border-b border-gray-200 shrink-0">
           <div className="flex gap-4 p-4">
             <button
               onClick={() => setActiveTab('general')}
@@ -319,194 +319,196 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-          {activeTab === 'general' && (
-            <div className="space-y-6">
-              {currentUser.role === 'admin' && (
-                <>
-                  <div className="bg-indigo-50 p-4 rounded-lg">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Database className="w-5 h-5 text-indigo-600" />
-                      <h3 className="text-lg font-medium text-gray-900">
-                        Información de la Base de Datos
-                      </h3>
-                    </div>
+        {/* Content - área scrolleable */}
+        <div className="flex-1 min-h-0">
+          <div className="h-full overflow-y-auto overflow-x-hidden p-6">
+            {activeTab === 'general' && (
+              <div className="space-y-6">
+                {currentUser.role === 'admin' && (
+                  <>
+                    <div className="bg-indigo-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Database className="w-5 h-5 text-indigo-600" />
+                        <h3 className="text-lg font-medium text-gray-900">
+                          Información de la Base de Datos
+                        </h3>
+                      </div>
 
-                    {isLoading ? (
-                      <div className="animate-pulse space-y-4">
-                        <div className="h-4 bg-indigo-200 rounded w-3/4"></div>
-                        <div className="h-4 bg-indigo-200 rounded w-1/2"></div>
-                        <div className="h-4 bg-indigo-200 rounded w-2/3"></div>
-                      </div>
-                    ) : error ? (
-                      <div className="flex items-center gap-2 text-red-600">
-                        <AlertTriangle className="w-5 h-5" />
-                        <span>{error}</span>
-                      </div>
-                    ) : dbStats && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 bg-white rounded-lg border border-indigo-100">
-                          <div className="text-sm text-gray-600">Usuarios Totales</div>
-                          <div className="text-2xl font-bold text-indigo-600">
-                            {dbStats.totalUsers}
-                          </div>
+                      {isLoading ? (
+                        <div className="animate-pulse space-y-4">
+                          <div className="h-4 bg-indigo-200 rounded w-3/4"></div>
+                          <div className="h-4 bg-indigo-200 rounded w-1/2"></div>
+                          <div className="h-4 bg-indigo-200 rounded w-2/3"></div>
                         </div>
-                        <div className="p-4 bg-white rounded-lg border border-indigo-100">
-                          <div className="text-sm text-gray-600">Productos</div>
-                          <div className="text-2xl font-bold text-indigo-600">
-                            {dbStats.totalProducts}
-                          </div>
+                      ) : error ? (
+                        <div className="flex items-center gap-2 text-red-600">
+                          <AlertTriangle className="w-5 h-5" />
+                          <span>{error}</span>
                         </div>
-                        <div className="p-4 bg-white rounded-lg border border-indigo-100">
-                          <div className="text-sm text-gray-600">Templates</div>
-                          <div className="text-2xl font-bold text-indigo-600">
-                            {dbStats.totalTemplates}
-                          </div>
-                        </div>
-                        <div className="p-4 bg-white rounded-lg border border-indigo-100">
-                          <div className="text-sm text-gray-600">Tamaño DB</div>
-                          <div className="text-2xl font-bold text-indigo-600">
-                            {dbStats.dbSize || 'N/A'}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Server className="w-5 h-5 text-gray-600" />
-                      <h3 className="text-lg font-medium text-gray-900">
-                        Información del Sistema
-                      </h3>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Versión</span>
-                        <span className="font-medium">{dbStats?.version || 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Último Backup</span>
-                        <span className="font-medium">
-                          {dbStats?.lastBackup 
-                            ? new Date(dbStats.lastBackup).toLocaleString()
-                            : 'N/A'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Preferencias de Usuario
-                </h3>
-                {/* Configuraciones generales */}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'users' && currentUser.role === 'admin' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold">Gestión de Usuarios</h2>
-                <button
-                  onClick={() => setSelectedUser({})}
-                  className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
-                >
-                  <Users className="w-4 h-4" />
-                  Nuevo Usuario
-                </button>
-              </div>
-
-              <div className="bg-white rounded-lg shadow">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-4 px-6 text-sm font-medium text-gray-500 uppercase">Usuario</th>
-                      <th className="text-left py-4 px-6 text-sm font-medium text-gray-500 uppercase">Email</th>
-                      <th className="text-left py-4 px-6 text-sm font-medium text-gray-500 uppercase">Rol</th>
-                      <th className="text-left py-4 px-6 text-sm font-medium text-gray-500 uppercase">Estado</th>
-                      <th className="text-left py-4 px-6 text-sm font-medium text-gray-500 uppercase">Creado</th>
-                      <th className="text-left py-4 px-6 text-sm font-medium text-gray-500 uppercase">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {users.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center">
-                              <span className="text-violet-600 font-medium">
-                                {user.name.charAt(0).toUpperCase()}
-                              </span>
+                      ) : dbStats && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="p-4 bg-white rounded-lg border border-indigo-100">
+                            <div className="text-sm text-gray-600">Usuarios Totales</div>
+                            <div className="text-2xl font-bold text-indigo-600">
+                              {dbStats.totalUsers}
                             </div>
-                            <span className="font-medium">{user.name}</span>
                           </div>
-                        </td>
-                        <td className="py-4 px-6 text-gray-600">{user.email}</td>
-                        <td className="py-4 px-6">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            user.role === 'admin' 
-                              ? 'bg-violet-100 text-violet-700'
-                              : 'bg-gray-100 text-gray-700'
-                          }`}>
-                            {user.role}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <button
-                            onClick={() => handleUserUpdate(user.id, { 
-                              status: user.status === 'active' ? 'inactive' : 'active' 
-                            })}
-                            className="flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded-full"
-                          >
-                            <CheckCircle className={`w-4 h-4 ${
-                              user.status === 'active' ? 'text-green-500' : 'text-gray-400'
-                            }`} />
-                            <span className={`${
-                              user.status === 'active' ? 'text-green-700' : 'text-gray-500'
-                            }`}>
-                              {user.status === 'active' ? 'Activo' : 'Inactivo'}
-                            </span>
-                          </button>
-                        </td>
-                        <td className="py-4 px-6 text-gray-500">
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setSelectedUser(user)}
-                              className="p-1 hover:bg-gray-100 rounded"
-                              title="Editar usuario"
-                            >
-                              <Pencil className="w-4 h-4 text-gray-600" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="p-1 hover:bg-red-50 rounded"
-                              title="Eliminar usuario"
-                            >
-                              <Trash2 className="w-4 h-4 text-red-600" />
-                            </button>
+                          <div className="p-4 bg-white rounded-lg border border-indigo-100">
+                            <div className="text-sm text-gray-600">Productos</div>
+                            <div className="text-2xl font-bold text-indigo-600">
+                              {dbStats.totalProducts}
+                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+                          <div className="p-4 bg-white rounded-lg border border-indigo-100">
+                            <div className="text-sm text-gray-600">Templates</div>
+                            <div className="text-2xl font-bold text-indigo-600">
+                              {dbStats.totalTemplates}
+                            </div>
+                          </div>
+                          <div className="p-4 bg-white rounded-lg border border-indigo-100">
+                            <div className="text-sm text-gray-600">Tamaño DB</div>
+                            <div className="text-2xl font-bold text-indigo-600">
+                              {dbStats.dbSize || 'N/A'}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
-          {activeTab === 'appearance' && (
-            <div>
-              {/* Contenido de apariencia */}
-            </div>
-          )}
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Server className="w-5 h-5 text-gray-600" />
+                        <h3 className="text-lg font-medium text-gray-900">
+                          Información del Sistema
+                        </h3>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Versión</span>
+                          <span className="font-medium">{dbStats?.version || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Último Backup</span>
+                          <span className="font-medium">
+                            {dbStats?.lastBackup 
+                              ? new Date(dbStats.lastBackup).toLocaleString()
+                              : 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Preferencias de Usuario
+                  </h3>
+                  {/* Configuraciones generales */}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'users' && currentUser.role === 'admin' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold">Gestión de Usuarios</h2>
+                  <button
+                    onClick={() => setSelectedUser({})}
+                    className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
+                  >
+                    <Users className="w-4 h-4" />
+                    Nuevo Usuario
+                  </button>
+                </div>
+
+                <div className="bg-white rounded-lg shadow">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-4 px-6 text-sm font-medium text-gray-500 uppercase">Usuario</th>
+                        <th className="text-left py-4 px-6 text-sm font-medium text-gray-500 uppercase">Email</th>
+                        <th className="text-left py-4 px-6 text-sm font-medium text-gray-500 uppercase">Rol</th>
+                        <th className="text-left py-4 px-6 text-sm font-medium text-gray-500 uppercase">Estado</th>
+                        <th className="text-left py-4 px-6 text-sm font-medium text-gray-500 uppercase">Creado</th>
+                        <th className="text-left py-4 px-6 text-sm font-medium text-gray-500 uppercase">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {users.map((user) => (
+                        <tr key={user.id} className="hover:bg-gray-50">
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center">
+                                <span className="text-violet-600 font-medium">
+                                  {user.name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <span className="font-medium">{user.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-gray-600">{user.email}</td>
+                          <td className="py-4 px-6">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              user.role === 'admin' 
+                                ? 'bg-violet-100 text-violet-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {user.role}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6">
+                            <button
+                              onClick={() => handleUserUpdate(user.id, { 
+                                status: user.status === 'active' ? 'inactive' : 'active' 
+                              })}
+                              className="flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded-full"
+                            >
+                              <CheckCircle className={`w-4 h-4 ${
+                                user.status === 'active' ? 'text-green-500' : 'text-gray-400'
+                              }`} />
+                              <span className={`${
+                                user.status === 'active' ? 'text-green-700' : 'text-gray-500'
+                              }`}>
+                                {user.status === 'active' ? 'Activo' : 'Inactivo'}
+                              </span>
+                            </button>
+                          </td>
+                          <td className="py-4 px-6 text-gray-500">
+                            {new Date(user.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setSelectedUser(user)}
+                                className="p-1 hover:bg-gray-100 rounded"
+                                title="Editar usuario"
+                              >
+                                <Pencil className="w-4 h-4 text-gray-600" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="p-1 hover:bg-red-50 rounded"
+                                title="Eliminar usuario"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'appearance' && (
+              <div>
+                {/* Contenido de apariencia */}
+              </div>
+            )}
+          </div>
         </div>
       </motion.div>
 
