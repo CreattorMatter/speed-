@@ -288,7 +288,7 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900">
-        <Header onBack={onBack} />
+        <Header onBack={onBack} onLogout={handleLogout} />
         {/* Toolbar */}
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4">
@@ -304,20 +304,20 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
         {/* Elementos */}
         <div className="bg-white border-b border-gray-200 py-2">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="flex items-center gap-4 overflow-x-auto pb-2">
+            <div className="flex items-center gap-3 overflow-x-auto pb-2">
               {blockTypes.map((type) => (
                 <motion.button
                   key={type}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleAddBlock(type)}
-                  className="flex flex-col items-center p-3 bg-white rounded-lg border border-gray-200
-                           hover:border-indigo-500 hover:shadow-lg transition-all min-w-[100px]"
+                  className="flex flex-col items-center p-2 bg-white rounded-lg border border-gray-200
+                           hover:border-indigo-500 hover:shadow-lg transition-all min-w-[80px]"
                 >
-                  <div className="p-2 bg-indigo-50 rounded-lg mb-2">
+                  <div className="p-1.5 bg-indigo-50 rounded-lg mb-1.5">
                     {getBlockIcon(type)}
                   </div>
-                  <span className="text-sm font-medium text-gray-600 whitespace-nowrap">
+                  <span className="text-xs font-medium text-gray-600 whitespace-nowrap">
                     {getBlockLabel(type)}
                   </span>
                 </motion.button>
@@ -375,7 +375,7 @@ function generateTemplateId(): string {
 }
 
 function getBlockIcon(type: BlockType) {
-  const iconClass = "w-5 h-5 text-indigo-600";
+  const iconClass = "w-15 h-6 text-indigo-600";
   switch (type) {
     case 'container':
       return <Box className={iconClass} />;
