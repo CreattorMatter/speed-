@@ -8,6 +8,10 @@ import { Block, BlockType } from '../../types/builder';
 import ErrorBoundary from './ErrorBoundary';
 import { HeaderProvider } from '../shared/HeaderProvider';
 import { Header } from '../shared/Header';
+import { SaveTemplateModal } from './SaveTemplateModal';
+import { supabase } from '../../lib/supabaseClient';
+import html2canvas from 'html2canvas';
+import { toast } from 'react-hot-toast';
 
 interface BuilderProps {
   onBack: () => void;
@@ -19,6 +23,15 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [templateId] = useState(() => generateTemplateId());
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string>('');
+  
+  // Agregar estados para el canvas
+  const [canvasSettings] = useState({
+    width: 800,
+    height: 1200,
+    background: '#ffffff'
+  });
 
   const handleAddBlock = (type: BlockType) => {
     const newBlock: Block = {
@@ -33,6 +46,101 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
 
   const blockTypes: BlockType[] = ['header', 'footer', 'sku', 'image', 'price', 'discount', 'promotion', 'logo'];
 
+  const generateThumbnail = async (): Promise<string> => {
+    const canvas = document.querySelector('.builder-canvas');
+    if (!canvas) return '';
+    
+    const screenshot = await html2canvas(canvas as HTMLElement);
+    return screenshot.toDataURL('image/jpeg', 0.5);
+  };
+
+  const handleSaveTemplate = async (name: string, description: string) => {
+    try {
+      // Generar imagen del canvas
+      const canvasArea = document.getElementById('builder-canvas-area');
+      if (!canvasArea) {
+        throw new Error('No se pudo encontrar el área del canvas');
+      }
+      
+      const screenshot = await html2canvas(canvasArea, {
+        backgroundColor: '#ffffff',
+        scale: 2, // Mejor calidad
+        useCORS: true, // Permitir imágenes de otros dominios
+        logging: true, // Para debug
+      });
+      
+      const imageBase64 = screenshot.toDataURL('image/jpeg', 0.9);
+
+      // Obtener el usuario actual de la base de datos
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', userEmail)
+        .single();
+
+      if (userError || !userData) {
+        console.error('Error al obtener usuario:', userError);
+        throw new Error('No se pudo obtener la información del usuario');
+      }
+
+      // Preparar datos de la plantilla
+      const templateData = {
+        name,
+        description,
+        image_data: imageBase64,
+        canvas_settings: {
+          width: canvasSettings.width,
+          height: canvasSettings.height,
+          background: canvasSettings.background,
+        },
+        created_by: userData.id,
+        is_public: false,
+        version: '1.0'
+      };
+
+      console.log('Intentando guardar la plantilla...'); // Debug
+
+      // Guardar la plantilla
+      const { error: templateError } = await supabase
+        .from('builder')
+        .insert([templateData]);
+
+      if (templateError) {
+        console.error('Error al guardar la plantilla:', templateError);
+        throw new Error(`Error al guardar la plantilla: ${templateError.message}`);
+      }
+
+      setIsSaveModalOpen(false);
+      toast.success('Plantilla guardada correctamente');
+    } catch (error) {
+      console.error('Error completo:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al guardar la plantilla');
+    }
+  };
+
+  // Modificar el handler del botón guardar
+  const handleSaveClick = async () => {
+    try {
+      const canvasArea = document.getElementById('builder-canvas-area');
+      if (!canvasArea) {
+        throw new Error('No se pudo encontrar el área del canvas');
+      }
+      
+      const screenshot = await html2canvas(canvasArea, {
+        backgroundColor: '#ffffff',
+        scale: 1, // Menor escala para la vista previa
+        useCORS: true,
+      });
+      
+      const imageBase64 = screenshot.toDataURL('image/jpeg', 0.7);
+      setPreviewImage(imageBase64);
+      setIsSaveModalOpen(true);
+    } catch (error) {
+      console.error('Error al generar vista previa:', error);
+      toast.error('Error al generar la vista previa');
+    }
+  };
+
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900">
@@ -41,7 +149,7 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4">
             <Toolbar 
-              onSave={() => console.log('Guardando...', blocks)} 
+              onSave={handleSaveClick} 
               onPreview={() => setShowPreview(true)}
               templateId={templateId}
             />
@@ -86,6 +194,14 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
           blocks={blocks}
           isOpen={showPreview}
           onClose={() => setShowPreview(false)}
+        />
+
+        {/* Modal de guardado */}
+        <SaveTemplateModal
+          isOpen={isSaveModalOpen}
+          onClose={() => setIsSaveModalOpen(false)}
+          onSave={handleSaveTemplate}
+          previewImage={previewImage}
         />
       </div>
     </HeaderProvider>

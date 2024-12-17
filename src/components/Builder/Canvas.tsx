@@ -60,7 +60,10 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
   }, [setBlocks]);
 
   return (
-    <div className="flex-1 bg-white rounded-lg shadow-lg p-4 relative min-h-[800px] overflow-hidden">
+    <div 
+      id="builder-canvas-area"
+      className="h-full bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 relative"
+    >
       <ZoomControls
         scale={scale}
         onZoomIn={() => setScale(s => Math.min(s + 0.1, 2))}

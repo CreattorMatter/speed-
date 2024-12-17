@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { LogIn, Lock, User, AlertCircle } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Builder from './components/Builder/Builder';
@@ -13,6 +13,7 @@ import { PosterPreviewPage } from './pages/PosterPreview';
 import { Analytics } from './components/Analytics/Analytics';
 import { supabase } from './lib/supabaseClient';
 import { HeaderProvider } from './components/shared/HeaderProvider';
+import { Toaster } from 'react-hot-toast';
 
 export interface DashboardProps {
   onLogout: () => void;
@@ -362,6 +363,32 @@ function App() {
         <Route path="/poster-preview" element={<PosterPreviewPage />} />
         <Route path="*" element={<AppContent />} />
       </Routes>
+      <Suspense fallback={null}>
+        <Toaster 
+          position="bottom-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              duration: 3000,
+              theme: {
+                primary: '#4CAF50',
+                secondary: '#FFF',
+              },
+            },
+            error: {
+              duration: 3000,
+              theme: {
+                primary: '#F44336',
+                secondary: '#FFF',
+              },
+            },
+          }}
+        />
+      </Suspense>
     </Router>
   );
 }
