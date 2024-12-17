@@ -12,6 +12,7 @@ import { ConfigurationPortal } from './components/Settings/ConfigurationPortal';
 import { PosterPreviewPage } from './pages/PosterPreview';
 import { Analytics } from './components/Analytics/Analytics';
 import { supabase } from './lib/supabaseClient';
+import { HeaderProvider } from './components/shared/HeaderProvider';
 
 export interface DashboardProps {
   onLogout: () => void;
@@ -20,7 +21,8 @@ export interface DashboardProps {
   onProducts: () => void;
   onPromotions: () => void;
   onBack: () => void;
-  userEmail?: string;
+  userEmail: string;
+  userName: string;
   onSettings: () => void;
   userRole: 'admin' | 'limited';
   onAnalytics: () => void;
@@ -32,6 +34,7 @@ interface User {
   name: string;
   role: string;
   status: 'active' | 'inactive';
+  password?: string;
 }
 
 function AppContent() {
@@ -61,7 +64,16 @@ function AppContent() {
     try {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        console.log('Usuario recuperado del localStorage:', parsedUser);
+        
+        if (parsedUser && parsedUser.email && parsedUser.name) {
+          setUser(parsedUser);
+          setIsAuthenticated(true);
+          setUserRole(parsedUser.role === 'admin' ? 'admin' : 'limited');
+        } else {
+          console.warn('Usuario en localStorage no tiene todos los campos necesarios');
+        }
       }
     } finally {
       setLoading(false);
@@ -73,8 +85,7 @@ function AppContent() {
     setError('');
     
     try {
-      // Buscar el usuario en la tabla users
-      const { data: user, error } = await supabase
+      const { data: userData, error } = await supabase
         .from('users')
         .select('*')
         .eq('email', email)
@@ -82,16 +93,27 @@ function AppContent() {
         .eq('status', 'active')
         .single();
 
+      console.log('Login - Usuario recuperado de Supabase:', userData);
+
       if (error) {
         console.error('Error de Supabase:', error);
         throw new Error('Error al verificar credenciales');
       }
 
-      if (!user) {
+      if (!userData) {
         throw new Error('Usuario o contraseña inválidos');
       }
 
-      // Guardar el usuario en el estado y localStorage
+      const user: User = {
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        role: userData.role,
+        status: userData.status as 'active' | 'inactive'
+      };
+
+      console.log('Usuario formateado antes de guardar:', user);
+
       setUser(user);
       localStorage.setItem('user', JSON.stringify(user));
       setIsAuthenticated(true);
@@ -196,27 +218,29 @@ function AppContent() {
     return <Analytics onBack={() => setShowAnalytics(false)} onLogout={handleLogout} />;
   }
 
-  if (isAuthenticated) {
+  if (isAuthenticated && user?.email && user?.name) {
     return (
-      <>
+      <HeaderProvider 
+        userEmail={user.email}
+        userName={user.name}
+      >
         <Dashboard 
-          onLogout={handleLogout} 
-          onNewTemplate={() => setShowBuilder(true)} 
+          onLogout={handleLogout}
+          onNewTemplate={() => setShowBuilder(true)}
           onNewPoster={handleNewPoster}
-          onProducts={() => setShowProducts(true)} 
-          onPromotions={() => setShowPromotions(true)} 
+          onProducts={() => setShowProducts(true)}
+          onPromotions={() => setShowPromotions(true)}
           onBack={handleBack}
-          userEmail={email}
           onSettings={handleSettings}
           userRole={userRole}
           onAnalytics={handleAnalytics}
         />
         <ConfigurationPortal 
-          isOpen={isConfigOpen} 
+          isOpen={isConfigOpen}
           onClose={() => setIsConfigOpen(false)}
           currentUser={user}
         />
-      </>
+      </HeaderProvider>
     );
   }
 
