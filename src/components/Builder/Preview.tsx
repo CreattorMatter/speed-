@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { X } from 'lucide-react';
 import { Block } from '../../types/builder';
@@ -10,6 +10,88 @@ interface PreviewProps {
 }
 
 export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
+  const [previewBounds, setPreviewBounds] = useState({ minX: 0, minY: 0, maxX: 0, maxY: 0 });
+  const [scale, setScale] = useState(1);
+
+  // Calcular los límites del contenido y el factor de escala
+  useEffect(() => {
+    if (blocks.length === 0) return;
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    blocks.forEach(block => {
+      minX = Math.min(minX, block.position.x);
+      minY = Math.min(minY, block.position.y);
+      maxX = Math.max(maxX, block.position.x + block.size.width);
+      maxY = Math.max(maxY, block.position.y + block.size.height);
+    });
+
+    setPreviewBounds({ minX, minY, maxX, maxY });
+
+    // Calcular escala para ajustar el contenido
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+    const scaleX = 800 / contentWidth; // 800px es el ancho máximo del área de vista previa
+    const scaleY = 600 / contentHeight; // 600px es el alto máximo
+    setScale(Math.min(scaleX, scaleY, 1)); // No ampliar más allá del tamaño original
+  }, [blocks]);
+
+  const renderBlock = (block: Block) => (
+    <div
+      key={block.id}
+      className={`absolute ${
+        block.isContainer 
+          ? 'border-2 border-dashed border-indigo-300 bg-indigo-50/10' 
+          : ''
+      }`}
+      style={{
+        left: (block.position.x - previewBounds.minX) * scale,
+        top: (block.position.y - previewBounds.minY) * scale,
+        width: block.size.width * scale,
+        height: block.size.height * scale,
+        zIndex: block.isContainer ? 0 : 1,
+        transform: `scale(${scale})`
+      }}
+    >
+      {/* Etiqueta del contenedor */}
+      {block.isContainer && (
+        <div className="absolute -top-6 left-0 text-xs text-indigo-500 font-medium bg-white px-2 py-1 rounded-t-md border border-indigo-200">
+          Contenedor
+        </div>
+      )}
+
+      {/* Contenido del bloque */}
+      {block.content.imageUrl ? (
+        <img 
+          src={block.content.imageUrl} 
+          alt={`Contenido de ${block.type}`}
+          className="w-full h-full object-contain"
+        />
+      ) : (
+        !block.isContainer && (
+          <div className="w-full h-full flex items-center justify-center">
+            {block.content.text}
+          </div>
+        )
+      )}
+
+      {/* Renderizar bloques hijos si es un contenedor */}
+      {block.isContainer && blocks
+        .filter(b => b.parentId === block.id)
+        .map(childBlock => renderBlock(childBlock))}
+    </div>
+  );
+
+  // Ordenar los bloques: primero los contenedores, luego los bloques normales
+  const sortedBlocks = [...blocks].sort((a, b) => {
+    if (a.isContainer && !b.isContainer) return -1;
+    if (!a.isContainer && b.isContainer) return 1;
+    return 0;
+  });
+
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
@@ -28,38 +110,18 @@ export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
             </button>
           </div>
 
-          <div className="p-6 bg-white min-h-[600px] relative">
-            {blocks.map(block => (
-              <div
-                key={block.id}
-                className={`absolute ${
-                  block.isContainer 
-                    ? 'border-2 border-dashed border-indigo-300 bg-indigo-50/10' 
-                    : ''
-                }`}
-                style={{
-                  left: block.position.x,
-                  top: block.position.y,
-                  width: block.size.width,
-                  height: block.size.height,
-                  zIndex: block.isContainer ? 0 : 1
-                }}
-              >
-                {block.content.imageUrl ? (
-                  <img 
-                    src={block.content.imageUrl} 
-                    alt={`Contenido de ${block.type}`}
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  !block.isContainer && (
-                    <div className="w-full h-full flex items-center justify-center">
-                      {block.content.text}
-                    </div>
-                  )
-                )}
-              </div>
-            ))}
+          <div className="p-6 bg-white h-[600px] relative overflow-hidden flex items-center justify-center">
+            <div 
+              className="relative"
+              style={{
+                width: (previewBounds.maxX - previewBounds.minX) * scale,
+                height: (previewBounds.maxY - previewBounds.minY) * scale,
+              }}
+            >
+              {sortedBlocks
+                .filter(block => !block.parentId)
+                .map(block => renderBlock(block))}
+            </div>
           </div>
         </Dialog.Panel>
       </div>

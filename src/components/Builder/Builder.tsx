@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ArrowLeft, Layout, LayoutTemplate, Tag, Image, DollarSign, Percent, Gift, Square, Box } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Toolbar from './Toolbar';
@@ -18,6 +18,36 @@ interface BuilderProps {
   userEmail: string;
   userName: string;
 }
+
+// Función utilitaria para calcular bounds y escala
+const calculateBoundsAndScale = (blocks: Block[]) => {
+  if (blocks.length === 0) {
+    return { bounds: { minX: 0, minY: 0, maxX: 0, maxY: 0 }, scale: 1 };
+  }
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  blocks.forEach(block => {
+    minX = Math.min(minX, block.position.x);
+    minY = Math.min(minY, block.position.y);
+    maxX = Math.max(maxX, block.position.x + block.size.width);
+    maxY = Math.max(maxY, block.position.y + block.size.height);
+  });
+
+  const contentWidth = maxX - minX;
+  const contentHeight = maxY - minY;
+  const scaleX = 800 / contentWidth;
+  const scaleY = 600 / contentHeight;
+  const scale = Math.min(scaleX, scaleY, 1);
+
+  return {
+    bounds: { minX, minY, maxX, maxY },
+    scale
+  };
+};
 
 export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -133,18 +163,66 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
   // Modificar el handler del botón guardar
   const handleSaveClick = async () => {
     try {
-      const canvasArea = document.getElementById('builder-canvas-area');
-      if (!canvasArea) {
-        throw new Error('No se pudo encontrar el área del canvas');
-      }
-      
-      const screenshot = await html2canvas(canvasArea, {
-        backgroundColor: '#ffffff',
-        scale: 1, // Menor escala para la vista previa
-        useCORS: true,
+      const previewContainer = document.createElement('div');
+      previewContainer.style.position = 'absolute';
+      previewContainer.style.left = '-9999px';
+      previewContainer.style.width = '800px';
+      previewContainer.style.height = '600px';
+      previewContainer.style.backgroundColor = 'white';
+      document.body.appendChild(previewContainer);
+
+      const { bounds, scale } = calculateBoundsAndScale(blocks);
+      const sortedBlocks = [...blocks].sort((a, b) => {
+        if (a.isContainer && !b.isContainer) return -1;
+        if (!a.isContainer && b.isContainer) return 1;
+        return 0;
       });
+
+      // Crear contenedor para los bloques escalados
+      const contentContainer = document.createElement('div');
+      contentContainer.style.position = 'relative';
+      contentContainer.style.width = `${(bounds.maxX - bounds.minX) * scale}px`;
+      contentContainer.style.height = `${(bounds.maxY - bounds.minY) * scale}px`;
+      contentContainer.style.transform = `scale(${scale})`;
+      contentContainer.style.transformOrigin = '0 0';
+      previewContainer.appendChild(contentContainer);
+
+      // Renderizar cada bloque
+      sortedBlocks.forEach(block => {
+        const blockElement = document.createElement('div');
+        blockElement.style.position = 'absolute';
+        blockElement.style.left = `${(block.position.x - bounds.minX) * scale}px`;
+        blockElement.style.top = `${(block.position.y - bounds.minY) * scale}px`;
+        blockElement.style.width = `${block.size.width * scale}px`;
+        blockElement.style.height = `${block.size.height * scale}px`;
+        
+        if (block.isContainer) {
+          blockElement.style.border = '2px dashed rgb(165, 180, 252)';
+          blockElement.style.backgroundColor = 'rgba(165, 180, 252, 0.1)';
+        }
+        
+        if (block.content.imageUrl) {
+          const img = document.createElement('img');
+          img.src = block.content.imageUrl;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'contain';
+          blockElement.appendChild(img);
+        }
+        
+        contentContainer.appendChild(blockElement);
+      });
+
+      const screenshot = await html2canvas(previewContainer, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: true,
+      });
+
+      document.body.removeChild(previewContainer);
       
-      const imageBase64 = screenshot.toDataURL('image/jpeg', 0.7);
+      const imageBase64 = screenshot.toDataURL('image/jpeg', 0.9);
       setPreviewImage(imageBase64);
       setIsSaveModalOpen(true);
     } catch (error) {
