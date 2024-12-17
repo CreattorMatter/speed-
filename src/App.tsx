@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LogIn, Lock, User, AlertCircle } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Builder from './components/Builder/Builder';
@@ -11,6 +11,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { ConfigurationPortal } from './components/Settings/ConfigurationPortal';
 import { PosterPreviewPage } from './pages/PosterPreview';
 import { Analytics } from './components/Analytics/Analytics';
+import { supabase } from './lib/supabaseClient';
 
 export interface DashboardProps {
   onLogout: () => void;
@@ -23,6 +24,14 @@ export interface DashboardProps {
   onSettings: () => void;
   userRole: 'admin' | 'limited';
   onAnalytics: () => void;
+}
+
+interface User {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  status: 'active' | 'inactive';
 }
 
 function AppContent() {
@@ -41,6 +50,80 @@ function AppContent() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'limited'>('admin');
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkUser();
+  }, []);
+
+  const checkUser = async () => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+    
+    try {
+      // Buscar el usuario en la tabla users
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .eq('status', 'active')
+        .single();
+
+      if (error) {
+        console.error('Error de Supabase:', error);
+        throw new Error('Error al verificar credenciales');
+      }
+
+      if (!user) {
+        throw new Error('Usuario o contraseña inválidos');
+      }
+
+      // Guardar el usuario en el estado y localStorage
+      setUser(user);
+      localStorage.setItem('user', JSON.stringify(user));
+      setIsAuthenticated(true);
+      setUserRole(user.role === 'admin' ? 'admin' : 'limited');
+      
+    } catch (err) {
+      console.error('Error al iniciar sesión:', err);
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+      setIsAuthenticated(false);
+    }
+  };
+
+  const handleLogout = () => {
+    // Limpiar el usuario y localStorage
+    setUser(null);
+    localStorage.removeItem('user');
+    
+    // Limpiar todos los estados de la aplicación
+    setIsAuthenticated(false);
+    setEmail('');
+    setPassword('');
+    setError('');
+    setShowBuilder(false);
+    setShowProducts(false);
+    setShowPromotions(false);
+    setShowPosterEditor(false);
+    setShowAnalytics(false);
+    setIsConfigOpen(false);
+    
+    // Redirigir al login
+    navigate('/');
+  };
 
   React.useEffect(() => {
     if (location.state?.showPosterEditor) {
@@ -53,40 +136,6 @@ function AppContent() {
       }
     }
   }, [location.state]);
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    
-    // Validar múltiples credenciales
-    const validCredentials = [
-      { email: 'admin@admin.com', password: 'admin', role: 'admin' as const },
-      { email: 'pilar@cenco.com', password: 'pilar', role: 'limited' as const }
-    ];
-
-    const user = validCredentials.find(
-      cred => cred.email === email && cred.password === password
-    );
-    
-    if (user) {
-      setIsAuthenticated(true);
-      setUserRole(user.role);
-      setError('');
-    } else {
-      setError('Usuario o contraseña inválidos');
-      setIsAuthenticated(false);
-    }
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setEmail('');
-    setPassword('');
-    setError('');
-    setShowBuilder(false);
-    setShowProducts(false);
-    setShowPromotions(false);
-    setShowPosterEditor(false);
-  };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value);
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value);
@@ -193,9 +242,11 @@ function AppContent() {
         <div className="bg-white/5 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/10">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="flex items-center gap-2 text-red-400 bg-red-500/10 p-3 rounded-lg backdrop-blur-sm border border-red-500/20">
-                <AlertCircle className="w-5 h-5" />
-                <span className="text-sm">{error}</span>
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 backdrop-blur-sm">
+                <p className="text-red-400 text-sm flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  {error}
+                </p>
               </div>
             )}
 

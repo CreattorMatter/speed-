@@ -1963,9 +1963,15 @@ export default function Dashboard({
     [&>option]:bg-[12px_center]
   `;
 
+  const handleLogoutClick = () => {
+    if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+      onLogout();
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header onBack={onBack} onLogout={onLogout} onSettings={onSettings} />
+      <Header onBack={onBack} onLogout={handleLogoutClick} onSettings={onSettings} />
       
       <motion.div
         initial={{ opacity: 0, y: 20 }}
