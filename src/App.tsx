@@ -230,7 +230,14 @@ function AppContent() {
   }
 
   if (isAuthenticated && showAnalytics) {
-    return <Analytics onBack={() => setShowAnalytics(false)} onLogout={handleLogout} />;
+    return (
+      <Analytics 
+        onBack={() => setShowAnalytics(false)} 
+        onLogout={handleLogout}
+        userEmail={user?.email || ''}
+        userName={user?.name || ''}
+      />
+    );
   }
 
   if (isAuthenticated && user?.email && user?.name) {
