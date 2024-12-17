@@ -21,12 +21,15 @@ import { TemplateSelect } from './TemplateSelect';
 import { FinancingModal } from './FinancingModal';
 import { CreditCard } from 'lucide-react';
 import { POSTER_TEMPLATES } from '../../constants/templates';
+import { HeaderProvider } from '../shared/HeaderProvider';
 
 interface PosterEditorProps {
   onBack: () => void;
   onLogout: () => void;
   initialProducts?: string[];
-  initialPromotion?: Promotion;
+  initialPromotion?: any;
+  userEmail: string;
+  userName: string;
 }
 
 interface Promotion {
@@ -246,7 +249,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   onBack, 
   onLogout, 
   initialProducts = [], 
-  initialPromotion 
+  initialPromotion,
+  userEmail,
+  userName
 }) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -468,338 +473,335 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   };
 
   return (
-    <>
-      <LoadingModal isOpen={isLoading} />
-      <div className="poster-editor-container min-h-screen flex flex-col bg-white">
-        <Header 
-          onBack={onBack} 
-          onLogout={onLogout} 
-          onSettings={() => console.log('Settings clicked')} 
-        />
-        <main className="pt-10 px-6 pb-6 max-w-7xl mx-auto space-y-6 min-h-[1000px]">
-          <div className="flex items-center gap-4 mb-8">
-            <h2 className="text-2xl font-medium text-gray-900">Editor de Carteles</h2>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200">
-            {/* Primera fila: Empresa, Región y CC en línea */}
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-white/70 mb-1">
-                  Empresa
-                </label>
-                <CompanySelect
-                  value={company}
-                  onChange={handleCompanyChange}
-                  companies={COMPANIES}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-white/70 mb-1">
-                  Región
-                </label>
-                <RegionSelect
-                  value={region}
-                  onChange={(values) => {
-                    setRegion(values);
-                    setCC([]);
-                  }}
-                  regions={availableRegions}
-                  isMulti={true}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-white/70 mb-1">
-                  CC:
-                </label>
-                <LocationSelect
-                  value={cc}
-                  onChange={handleCCChange}
-                  locations={filteredLocations}
-                  disabled={region.length === 0}
-                  isMulti={true}
-                  className="bg-white/10 border-white/20 text-white placeholder-white/50 focus:border-white/30"
-                />
-              </div>
+    <HeaderProvider userEmail={userEmail} userName={userName}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
+        <Header onBack={onBack} onLogout={onLogout} />
+        <div className="poster-editor-container min-h-screen flex flex-col bg-white">
+          <main className="pt-10 px-6 pb-6 max-w-7xl mx-auto space-y-6 min-h-[1000px]">
+            <div className="flex items-center gap-4 mb-8">
+              <h2 className="text-2xl font-medium text-gray-900">Editor de Carteles</h2>
             </div>
 
-            {/* Segunda fila: Plantilla y botón de Financiación */}
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  
-                </label>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setIsTemplateModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 
-                      rounded-lg hover:bg-gray-50 transition-colors text-gray-700 w-64"
-                  >
-                    <LayoutTemplate className="w-5 h-5 text-gray-500 shrink-0" />
-                    <span className="truncate">
-                      {selectedTemplateDetails?.name || "Seleccionar plantilla..."}
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => setIsFinancingModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 
-                      rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                  >
-                    <CreditCard className="w-5 h-5 text-gray-500" />
-                    <span>
-                      {selectedFinancing.length > 0
-                        ? `${selectedFinancing.length} financiación${selectedFinancing.length > 1 ? 'es' : ''}`
-                        : "Ver financiación"
-                      }
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-200 pt-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Promoción:
-                </label>
-                <PromotionSelect
-                  value={promotion}
-                  onChange={setPromotion}
-                  promotions={PROMOTIONS}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                />
-              </div>
-
-              {selectedPromotion && (
-                <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-                  <div className="flex items-start gap-6">
-                    <img 
-                      src={selectedPromotion.imageUrl}
-                      alt={selectedPromotion.title}
-                      className="w-32 h-32 object-cover rounded-lg"
-                    />
-                    <div className="flex-1 space-y-4">
-                      <div>
-                        <div className="flex items-center gap-3">
-                          <h3 className="text-lg font-medium text-gray-900">
-                            {selectedPromotion.title}
-                          </h3>
-                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                            {selectedPromotion.category}
-                          </span>
-                        </div>
-                        <p className="text-gray-600 mt-1">{selectedPromotion.description}</p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-1">Descuento</h4>
-                          <p className="text-2xl font-bold text-indigo-600">{selectedPromotion.discount}</p>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-1">Vigencia</h4>
-                          <p className="text-gray-900">
-                            {new Date(selectedPromotion.startDate).toLocaleDateString()} - {new Date(selectedPromotion.endDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-
-                      {selectedPromotion.category === 'Bancaria' && (
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-1">Banco</h4>
-                            <p className="text-gray-900">{selectedPromotion.bank}</p>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-1">Tarjetas</h4>
-                            <p className="text-gray-900">{selectedPromotion.cardType}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Condiciones</h4>
-                        <ul className="space-y-1">
-                          {selectedPromotion.conditions.map((condition, index) => (
-                            <li key={index} className="text-gray-600 text-sm flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                              {condition}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="border-t border-gray-200 pt-6">
-              <div className="grid grid-cols-4 gap-4">
-                <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Categoría:
+            <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200">
+              {/* Primera fila: Empresa, Región y CC en línea */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-1">
+                    Empresa
                   </label>
-                  <CategorySelect
-                    value={selectedCategory}
-                    onChange={setSelectedCategory}
-                    categories={CATEGORIES}
+                  <CompanySelect
+                    value={company}
+                    onChange={handleCompanyChange}
+                    companies={COMPANIES}
                     className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
                   />
                 </div>
-                <div className="col-span-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Productos:
+
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-1">
+                    Región
                   </label>
-                  <div className="relative">
-                    <ProductSelect
-                      value={selectedProducts}
-                      onChange={setSelectedProducts}
-                      products={filteredProducts}
+                  <RegionSelect
+                    value={region}
+                    onChange={(values) => {
+                      setRegion(values);
+                      setCC([]);
+                    }}
+                    regions={availableRegions}
+                    isMulti={true}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-1">
+                    CC:
+                  </label>
+                  <LocationSelect
+                    value={cc}
+                    onChange={handleCCChange}
+                    locations={filteredLocations}
+                    disabled={region.length === 0}
+                    isMulti={true}
+                    className="bg-white/10 border-white/20 text-white placeholder-white/50 focus:border-white/30"
+                  />
+                </div>
+              </div>
+
+              {/* Segunda fila: Plantilla y botón de Financiación */}
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setIsTemplateModalOpen(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 
+                        rounded-lg hover:bg-gray-50 transition-colors text-gray-700 w-64"
+                    >
+                      <LayoutTemplate className="w-5 h-5 text-gray-500 shrink-0" />
+                      <span className="truncate">
+                        {selectedTemplateDetails?.name || "Seleccionar plantilla..."}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => setIsFinancingModalOpen(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 
+                        rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+                    >
+                      <CreditCard className="w-5 h-5 text-gray-500" />
+                      <span>
+                        {selectedFinancing.length > 0
+                          ? `${selectedFinancing.length} financiación${selectedFinancing.length > 1 ? 'es' : ''}`
+                          : "Ver financiación"
+                        }
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Promoción:
+                  </label>
+                  <PromotionSelect
+                    value={promotion}
+                    onChange={setPromotion}
+                    promotions={PROMOTIONS}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
+                  />
+                </div>
+
+                {selectedPromotion && (
+                  <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+                    <div className="flex items-start gap-6">
+                      <img 
+                        src={selectedPromotion.imageUrl}
+                        alt={selectedPromotion.title}
+                        className="w-32 h-32 object-cover rounded-lg"
+                      />
+                      <div className="flex-1 space-y-4">
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {selectedPromotion.title}
+                            </h3>
+                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                              {selectedPromotion.category}
+                            </span>
+                          </div>
+                          <p className="text-gray-600 mt-1">{selectedPromotion.description}</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-1">Descuento</h4>
+                            <p className="text-2xl font-bold text-indigo-600">{selectedPromotion.discount}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-1">Vigencia</h4>
+                            <p className="text-gray-900">
+                              {new Date(selectedPromotion.startDate).toLocaleDateString()} - {new Date(selectedPromotion.endDate).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+
+                        {selectedPromotion.category === 'Bancaria' && (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-700 mb-1">Banco</h4>
+                              <p className="text-gray-900">{selectedPromotion.bank}</p>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-700 mb-1">Tarjetas</h4>
+                              <p className="text-gray-900">{selectedPromotion.cardType}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Condiciones</h4>
+                          <ul className="space-y-1">
+                            {selectedPromotion.conditions.map((condition, index) => (
+                              <li key={index} className="text-gray-600 text-sm flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                                {condition}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-gray-200 pt-6">
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="col-span-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Categoría:
+                    </label>
+                    <CategorySelect
+                      value={selectedCategory}
+                      onChange={setSelectedCategory}
+                      categories={CATEGORIES}
                       className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                      menuPlacement="top"
                     />
+                  </div>
+                  <div className="col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Productos:
+                    </label>
+                    <div className="relative">
+                      <ProductSelect
+                        value={selectedProducts}
+                        onChange={setSelectedProducts}
+                        products={filteredProducts}
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
+                        menuPlacement="top"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {(selectedCategory || mappedProducts.length > 0) && (
-            <div className="border-t border-gray-200 pt-6">
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-4">
-                  {/* Controles agrupados */}
+            {(selectedCategory || mappedProducts.length > 0) && (
+              <div className="border-t border-gray-200 pt-6">
+                <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-4">
-                    {/* Vista grilla/lista */}
-                    <div className="flex bg-gray-200 rounded-lg p-1">
-                      <button
-                        onClick={() => setViewMode('grid')}
-                        className={`p-2 rounded-md transition-colors ${
-                          viewMode === 'grid' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                      >
-                        <LayoutGrid className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setViewMode('list')}
-                        className={`p-2 rounded-md transition-colors ${
-                          viewMode === 'list' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                      >
-                        <List className="w-4 h-4" />
-                      </button>
-                    </div>
+                    {/* Controles agrupados */}
+                    <div className="flex items-center gap-4">
+                      {/* Vista grilla/lista */}
+                      <div className="flex bg-gray-200 rounded-lg p-1">
+                        <button
+                          onClick={() => setViewMode('grid')}
+                          className={`p-2 rounded-md transition-colors ${
+                            viewMode === 'grid' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          <LayoutGrid className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setViewMode('list')}
+                          className={`p-2 rounded-md transition-colors ${
+                            viewMode === 'list' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
+                          }`}
+                        >
+                          <List className="w-4 h-4" />
+                        </button>
+                      </div>
 
-                    {/* Separador vertical */}
-                    <div className="h-8 w-px bg-gray-200"></div>
+                      {/* Separador vertical */}
+                      <div className="h-8 w-px bg-gray-200"></div>
 
-                    {/* Selector de formato */}
-                    <div className="relative">
+                      {/* Selector de formato */}
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowFormatSelector(!showFormatSelector)}
+                          className="bg-gray-200 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors flex items-center gap-2"
+                        >
+                          {selectedFormat.id}
+                          <span className="text-xs text-gray-500">
+                            {selectedFormat.width} × {selectedFormat.height}
+                          </span>
+                          <svg className="w-4 h-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+
+                        {/* Menú desplegable de formatos */}
+                        {showFormatSelector && (
+                          <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-64 z-50">
+                            {PAPER_FORMATS.map(format => (
+                              <button
+                                key={format.id}
+                                onClick={() => {
+                                  setSelectedFormat(format);
+                                  setShowFormatSelector(false);
+                                }}
+                                className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center justify-between ${
+                                  selectedFormat.id === format.id ? 'bg-gray-50 text-indigo-600' : 'text-gray-700'
+                                }`}
+                              >
+                                <span className="font-medium">{format.name}</span>
+                                <span className="text-xs text-gray-500">
+                                  {format.width} × {format.height}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Separador vertical */}
+                      <div className="h-8 w-px bg-gray-200"></div>
+
+                      {/* Control de orientación */}
                       <button
-                        onClick={() => setShowFormatSelector(!showFormatSelector)}
-                        className="bg-gray-200 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors flex items-center gap-2"
+                        onClick={() => setIsLandscape(!isLandscape)}
+                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors flex items-center gap-2"
                       >
-                        {selectedFormat.id}
-                        <span className="text-xs text-gray-500">
-                          {selectedFormat.width} × {selectedFormat.height}
-                        </span>
-                        <svg className="w-4 h-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        <svg 
+                          className={`w-4 h-4 transition-transform ${isLandscape ? 'rotate-90' : ''}`} 
+                          viewBox="0 0 24 24" 
+                          fill="none" 
+                          stroke="currentColor"
+                        >
+                          <rect x="4" y="5" width="16" height="14" rx="2" strokeWidth="2"/>
                         </svg>
+                        <span className="text-sm">
+                          {isLandscape ? 'Horizontal' : 'Vertical'}
+                        </span>
                       </button>
 
-                      {/* Menú desplegable de formatos */}
-                      {showFormatSelector && (
-                        <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-64 z-50">
-                          {PAPER_FORMATS.map(format => (
-                            <button
-                              key={format.id}
-                              onClick={() => {
-                                setSelectedFormat(format);
-                                setShowFormatSelector(false);
-                              }}
-                              className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center justify-between ${
-                                selectedFormat.id === format.id ? 'bg-gray-50 text-indigo-600' : 'text-gray-700'
-                              }`}
-                            >
-                              <span className="font-medium">{format.name}</span>
-                              <span className="text-xs text-gray-500">
-                                {format.width} × {format.height}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                      {/* Separador vertical */}
+                      <div className="h-8 w-px bg-gray-200"></div>
 
-                    {/* Separador vertical */}
-                    <div className="h-8 w-px bg-gray-200"></div>
+                      {/* Controles de zoom */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleZoomOut}
+                          className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="text-sm text-gray-600 min-w-[3rem] text-center">
+                          {Math.round(zoom * 100)}%
+                        </span>
+                        <button
+                          onClick={handleZoomIn}
+                          className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
 
-                    {/* Control de orientación */}
-                    <button
-                      onClick={() => setIsLandscape(!isLandscape)}
-                      className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors flex items-center gap-2"
-                    >
-                      <svg 
-                        className={`w-4 h-4 transition-transform ${isLandscape ? 'rotate-90' : ''}`} 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        stroke="currentColor"
-                      >
-                        <rect x="4" y="5" width="16" height="14" rx="2" strokeWidth="2"/>
-                      </svg>
-                      <span className="text-sm">
-                        {isLandscape ? 'Horizontal' : 'Vertical'}
-                      </span>
-                    </button>
+                      {/* Separador vertical */}
+                      <div className="h-8 w-px bg-gray-200"></div>
 
-                    {/* Separador vertical */}
-                    <div className="h-8 w-px bg-gray-200"></div>
-
-                    {/* Controles de zoom */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={handleZoomOut}
-                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="text-sm text-gray-600 min-w-[3rem] text-center">
-                        {Math.round(zoom * 100)}%
-                      </span>
-                      <button
-                        onClick={handleZoomIn}
-                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Separador vertical */}
-                    <div className="h-8 w-px bg-gray-200"></div>
-
-                    {/* Controles de tamaño del cartel */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleCardSizeChange(cardSize - 0.05)}
-                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="text-sm text-gray-600 min-w-[3rem] text-center">
-                        {Math.round(cardSize * 100)}%
-                      </span>
-                      <button
-                        onClick={() => handleCardSizeChange(cardSize + 0.05)}
-                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
+                      {/* Controles de tamaño del cartel */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleCardSizeChange(cardSize - 0.05)}
+                          className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="text-sm text-gray-600 min-w-[3rem] text-center">
+                          {Math.round(cardSize * 100)}%
+                        </span>
+                        <button
+                          onClick={() => handleCardSizeChange(cardSize + 0.05)}
+                          className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -832,57 +834,57 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   </button>
                 </div>
               </div>
+            )}
 
-              <div className="h-[800px] w-[1080px] mx-auto overflow-y-auto">
-                <div className={viewMode === 'grid' ? 'space-y-8' : 'space-y-4'}>
-                  {renderPosters()}
-                </div>
+            <div className="h-[800px] w-[1080px] mx-auto overflow-y-auto">
+              <div className={viewMode === 'grid' ? 'space-y-8' : 'space-y-4'}>
+                {renderPosters()}
               </div>
             </div>
-          )}
 
-          <ProductSelectorModal
-            isOpen={isProductSelectorOpen}
-            onClose={() => setIsProductSelectorOpen(false)}
-            products={selectedCategory === 'Todos' || !selectedCategory 
-              ? products
-              : products.filter(p => p.category === selectedCategory)
-            }
-            selectedProducts={selectedProducts}
-            onSelectProduct={handleSelectProduct}
-            category={selectedCategory}
-          />
+            <ProductSelectorModal
+              isOpen={isProductSelectorOpen}
+              onClose={() => setIsProductSelectorOpen(false)}
+              products={selectedCategory === 'Todos' || !selectedCategory 
+                ? products
+                : products.filter(p => p.category === selectedCategory)
+              }
+              selectedProducts={selectedProducts}
+              onSelectProduct={handleSelectProduct}
+              category={selectedCategory}
+            />
 
-          <SendingModal
-            isOpen={isSendingModalOpen}
-            onClose={() => setIsSendingModalOpen(false)}
-            locations={filteredLocations.filter(loc => cc.includes(loc.id))}
-            productsCount={selectedProducts.length}
-          />
+            <SendingModal
+              isOpen={isSendingModalOpen}
+              onClose={() => setIsSendingModalOpen(false)}
+              locations={filteredLocations.filter(loc => cc.includes(loc.id))}
+              productsCount={selectedProducts.length}
+            />
 
-          <PosterModal
-            isOpen={!!selectedPoster}
-            onClose={() => setSelectedPoster(null)}
-            product={selectedPoster!}
-            promotion={selectedPromotion}
-            company={companyDetails}
-            showLogo={showLogo}
-          />
+            <PosterModal
+              isOpen={!!selectedPoster}
+              onClose={() => setSelectedPoster(null)}
+              product={selectedPoster!}
+              promotion={selectedPromotion}
+              company={companyDetails}
+              showLogo={showLogo}
+            />
 
-          <FinancingModal
-            isOpen={isFinancingModalOpen}
-            onClose={() => setIsFinancingModalOpen(false)}
-            onSelect={setSelectedFinancing}
-          />
+            <FinancingModal
+              isOpen={isFinancingModalOpen}
+              onClose={() => setIsFinancingModalOpen(false)}
+              onSelect={setSelectedFinancing}
+            />
 
-          <TemplateSelect
-            isOpen={isTemplateModalOpen}
-            onClose={() => setIsTemplateModalOpen(false)}
-            value={selectedTemplate}
-            onChange={setSelectedTemplate}
-          />
-        </main>
+            <TemplateSelect
+              isOpen={isTemplateModalOpen}
+              onClose={() => setIsTemplateModalOpen(false)}
+              value={selectedTemplate}
+              onChange={setSelectedTemplate}
+            />
+          </main>
+        </div>
       </div>
-    </>
+    </HeaderProvider>
   );
 }; 

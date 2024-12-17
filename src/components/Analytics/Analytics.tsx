@@ -24,10 +24,13 @@ import { DateRangeSelector } from './DateRangeSelector';
 import { generateRandomData } from '../../utils/analyticsData';
 import { AnimatePresence } from 'framer-motion';
 import { ScatterChart, Scatter, ZAxis } from 'recharts';
+import { HeaderProvider } from '../shared/HeaderProvider';
 
 interface AnalyticsProps {
   onBack: () => void;
   onLogout: () => void;
+  userEmail: string;
+  userName: string;
 }
 
 interface TopProduct {
@@ -170,7 +173,7 @@ const GRADIENTS = {
 
 type CompanyName = keyof typeof GRADIENTS;
 
-export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
+export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout, userEmail, userName }) => {
   const [dateRange, setDateRange] = useState(() => {
     const end = new Date();
     const start = new Date();
@@ -926,159 +929,161 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AnimatePresence>
-        {isLoading && <LoadingModal />}
-      </AnimatePresence>
+    <HeaderProvider userEmail={userEmail} userName={userName}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
+        <AnimatePresence>
+          {isLoading && <LoadingModal />}
+        </AnimatePresence>
 
-      <Header onBack={onBack} onLogout={onLogout} />
-      
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <BarChart3 className="w-6 h-6 text-indigo-600" />
+        <Header onBack={onBack} onLogout={onLogout} />
+        
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <BarChart3 className="w-6 h-6 text-indigo-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
+            <p className="text-gray-600">
+              Vista general del rendimiento y métricas importantes
+            </p>
+          </motion.div>
+
+          <div className="mb-8">
+            <DateRangeSelector
+              startDate={dateRange.start}
+              endDate={dateRange.end}
+              onRangeChange={handleDateChange}
+            />
           </div>
-          <p className="text-gray-600">
-            Vista general del rendimiento y métricas importantes
-          </p>
-        </motion.div>
 
-        <div className="mb-8">
-          <DateRangeSelector
-            startDate={dateRange.start}
-            endDate={dateRange.end}
-            onRangeChange={handleDateChange}
-          />
-        </div>
+          <CompanySelector />
 
-        <CompanySelector />
+          <div className="mb-6">
+            <PromotionConversionChart 
+              data={filteredData} 
+              selectedCompany={selectedCompany}
+            />
+          </div>
 
-        <div className="mb-6">
-          <PromotionConversionChart 
-            data={filteredData} 
-            selectedCompany={selectedCompany}
-          />
-        </div>
+          <div className="mb-6">
+            <StoreSLAChart 
+              data={filteredData} 
+              selectedCompany={selectedCompany}
+            />
+          </div>
 
-        <div className="mb-6">
-          <StoreSLAChart 
-            data={filteredData} 
-            selectedCompany={selectedCompany}
-          />
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <StatsCard
+              title="Ventas Totales"
+              value={filteredData.stats.totalSales}
+              icon={<TrendingUp />}
+              trend={filteredData.stats.trends.sales}
+              positive
+            />
+            <StatsCard
+              title="Regiones Activas"
+              value={filteredData.stats.regions}
+              icon={<MapPin />}
+              trend={`+${filteredData.stats.trends.regions}`}
+              positive
+            />
+            <StatsCard
+              title="Empresas"
+              value={filteredData.salesData.length}
+              icon={<Building2 />}
+              trend="Estable"
+            />
+            <StatsCard
+              title="Productos"
+              value={filteredData.stats.products}
+              icon={<Package />}
+              trend={`+${filteredData.stats.trends.products}`}
+              positive
+            />
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatsCard
-            title="Ventas Totales"
-            value={filteredData.stats.totalSales}
-            icon={<TrendingUp />}
-            trend={filteredData.stats.trends.sales}
-            positive
-          />
-          <StatsCard
-            title="Regiones Activas"
-            value={filteredData.stats.regions}
-            icon={<MapPin />}
-            trend={`+${filteredData.stats.trends.regions}`}
-            positive
-          />
-          <StatsCard
-            title="Empresas"
-            value={filteredData.salesData.length}
-            icon={<Building2 />}
-            trend="Estable"
-          />
-          <StatsCard
-            title="Productos"
-            value={filteredData.stats.products}
-            icon={<Package />}
-            trend={`+${filteredData.stats.trends.products}`}
-            positive
-          />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <ChartCard title="Ventas por Empresa">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={filteredData.salesData} margin={{ top: 50, right: 30, left: 20, bottom: 5 }}>
-                <defs>
-                  {Object.entries(GRADIENTS).map(([_, gradient]) => (
-                    <linearGradient key={gradient.id} id={gradient.id} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={gradient.colors[0]} stopOpacity={0.9}/>
-                      <stop offset="95%" stopColor={gradient.colors[1]} stopOpacity={0.9}/>
-                    </linearGradient>
-                  ))}
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fill: '#666' }}
-                  axisLine={{ stroke: '#E5E7EB' }}
-                />
-                <YAxis 
-                  axisLine={{ stroke: '#E5E7EB' }}
-                  tick={{ fill: '#666' }}
-                />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
-                          <div className="flex items-center gap-2 mb-2">
-                            <img 
-                              src={data.logo} 
-                              alt={data.name} 
-                              className="w-8 h-8 object-contain"
-                            />
-                            <span className="font-medium">{data.name}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <ChartCard title="Ventas por Empresa">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={filteredData.salesData} margin={{ top: 50, right: 30, left: 20, bottom: 5 }}>
+                  <defs>
+                    {Object.entries(GRADIENTS).map(([_, gradient]) => (
+                      <linearGradient key={gradient.id} id={gradient.id} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={gradient.colors[0]} stopOpacity={0.9}/>
+                        <stop offset="95%" stopColor={gradient.colors[1]} stopOpacity={0.9}/>
+                      </linearGradient>
+                    ))}
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fill: '#666' }}
+                    axisLine={{ stroke: '#E5E7EB' }}
+                  />
+                  <YAxis 
+                    axisLine={{ stroke: '#E5E7EB' }}
+                    tick={{ fill: '#666' }}
+                  />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-100">
+                            <div className="flex items-center gap-2 mb-2">
+                              <img 
+                                src={data.logo} 
+                                alt={data.name} 
+                                className="w-8 h-8 object-contain"
+                              />
+                              <span className="font-medium">{data.name}</span>
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              Ventas: ${data.value.toLocaleString()}
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-600">
-                            Ventas: ${data.value.toLocaleString()}
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Bar 
-                  dataKey="value" 
-                  radius={[10, 10, 0, 0]}
-                  label={<CustomBarLabel />}
-                >
-                  {filteredData.salesData.map((entry) => (
-                    <Cell 
-                      key={`cell-${entry.name}`} 
-                      fill={`url(#${GRADIENTS[entry.name as keyof typeof GRADIENTS].id})`}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar 
+                    dataKey="value" 
+                    radius={[10, 10, 0, 0]}
+                    label={<CustomBarLabel />}
+                  >
+                    {filteredData.salesData.map((entry) => (
+                      <Cell 
+                        key={`cell-${entry.name}`} 
+                        fill={`url(#${GRADIENTS[entry.name as keyof typeof GRADIENTS].id})`}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
 
-          <RegionalDistributionChart />
-        </div>
+            <RegionalDistributionChart />
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ChartCard title={`Cantidad de Ventas ${selectedCompany ? `- ${selectedCompany}` : ''}`}>
-            <ResponsiveContainer width="100%" height={300}>
-              {renderAreaChart()}
-            </ResponsiveContainer>
-          </ChartCard>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChartCard title={`Cantidad de Ventas ${selectedCompany ? `- ${selectedCompany}` : ''}`}>
+              <ResponsiveContainer width="100%" height={300}>
+                {renderAreaChart()}
+              </ResponsiveContainer>
+            </ChartCard>
 
-          {renderTopProductsChart()}
+            {renderTopProductsChart()}
+          </div>
         </div>
       </div>
-    </div>
+    </HeaderProvider>
   );
 };
 

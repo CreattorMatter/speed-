@@ -5,9 +5,13 @@ import { products } from '../../data/products';
 import AddProductModal from './AddProductModal';
 import { Product } from '../../types/product';
 import { ProductDetails } from './ProductDetails';
+import { HeaderProvider } from '../shared/HeaderProvider';
 
 interface ProductsProps {
   onBack: () => void;
+  onLogout: () => void;
+  userEmail: string;
+  userName: string;
 }
 
 // Función para normalizar texto (eliminar tildes y caracteres especiales)
@@ -39,7 +43,7 @@ const DisabledTooltip: React.FC<{ children: React.ReactNode }> = ({ children }) 
   );
 };
 
-export default function Products({ onBack }: ProductsProps) {
+export default function Products({ onBack, onLogout, userEmail, userName }: ProductsProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
@@ -222,309 +226,291 @@ export default function Products({ onBack }: ProductsProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900">
-      {/* Header */}
-      <div className="bg-white/10 backdrop-blur-lg shadow-sm border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center h-16 relative">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={onBack}
-              className="flex items-center text-white/80 hover:text-white"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              <span className="font-medium">Volver al inicio</span>
-            </motion.button>
-
-            <span className="absolute left-1/2 -translate-x-1/2 text-white font-light text-2xl tracking-tight">
-              Speed<span className="font-medium">+</span>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Toolbar */}
-        <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-8">
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Buscar por nombre, SKU o categoría..."
-                className="w-full bg-white/10 border border-white/20 rounded-lg py-2 pl-10 pr-4 
-                         text-white placeholder-white/50 focus:outline-none focus:ring-2 
-                         focus:ring-purple-500/50 transition-all duration-200"
-              />
-              <Search className="absolute left-3 top-2.5 w-5 h-5 text-white/50" />
-              {searchTerm && (
-                <button
-                  onClick={() => handleSearch('')}
-                  className="absolute right-3 top-2.5 text-white/50 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+    <HeaderProvider userEmail={userEmail} userName={userName}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
+        <Header onBack={onBack} onLogout={onLogout} />
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          {/* Toolbar */}
+          <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-8">
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  placeholder="Buscar por nombre, SKU o categoría..."
+                  className="w-full bg-white/10 border border-white/20 rounded-lg py-2 pl-10 pr-4 
+                           text-white placeholder-white/50 focus:outline-none focus:ring-2 
+                           focus:ring-purple-500/50 transition-all duration-200"
+                />
+                <Search className="absolute left-3 top-2.5 w-5 h-5 text-white/50" />
+                {searchTerm && (
+                  <button
+                    onClick={() => handleSearch('')}
+                    className="absolute right-3 top-2.5 text-white/50 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="flex gap-4">
-            <div className="relative">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowCategoryFilter(!showCategoryFilter)}
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-lg 
-                         hover:bg-white/20 transition-colors duration-200"
-              >
-                <Filter className="w-5 h-5" />
-                <span className="hidden sm:inline">
-                  {selectedCategory || 'Filtrar por Categoría'}
-                </span>
-              </motion.button>
+            <div className="flex gap-4">
+              <div className="relative">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowCategoryFilter(!showCategoryFilter)}
+                  className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-lg 
+                           hover:bg-white/20 transition-colors duration-200"
+                >
+                  <Filter className="w-5 h-5" />
+                  <span className="hidden sm:inline">
+                    {selectedCategory || 'Filtrar por Categoría'}
+                  </span>
+                </motion.button>
 
-              {/* Dropdown de categorías */}
-              {showCategoryFilter && (
-                <div className="absolute right-0 mt-2 w-64 bg-white/10 backdrop-blur-lg border 
-                              border-white/20 rounded-lg shadow-xl z-50">
-                  <div className="p-2">
-                    <button
-                      onClick={() => {
-                        setSelectedCategory('');
-                        setShowCategoryFilter(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-white hover:bg-white/10 rounded-lg"
-                    >
-                      Todas las categorías
-                    </button>
-                    {categories.map((category) => (
+                {/* Dropdown de categorías */}
+                {showCategoryFilter && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white/10 backdrop-blur-lg border 
+                                border-white/20 rounded-lg shadow-xl z-50">
+                    <div className="p-2">
                       <button
-                        key={category}
                         onClick={() => {
-                          setSelectedCategory(category);
+                          setSelectedCategory('');
                           setShowCategoryFilter(false);
                         }}
                         className="w-full text-left px-4 py-2 text-white hover:bg-white/10 rounded-lg"
                       >
-                        {category}
+                        Todas las categorías
                       </button>
-                    ))}
+                      {categories.map((category) => (
+                        <button
+                          key={category}
+                          onClick={() => {
+                            setSelectedCategory(category);
+                            setShowCategoryFilter(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-white hover:bg-white/10 rounded-lg"
+                        >
+                          {category}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <DisabledTooltip>
+                <motion.button
+                  whileHover={{ scale: 1 }}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-500/50 
+                           text-gray-400 rounded-lg cursor-not-allowed
+                           border border-gray-600/30 transition-colors"
+                  disabled={true}
+                >
+                  <Plus className="w-5 h-5" />
+                  <span className="hidden sm:inline">Nuevo Producto</span>
+                </motion.button>
+              </DisabledTooltip>
+            </div>
+          </div>
+
+          {/* Toolbar con selección */}
+          <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-8">
+            <div className="flex items-center gap-4">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleSelectAll}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-lg 
+                         hover:bg-white/20 transition-colors"
+              >
+                {selectedProducts.size === filteredProducts.length ? (
+                  <CheckSquare className="w-5 h-5" />
+                ) : (
+                  <Square className="w-5 h-5" />
+                )}
+                <span className="hidden sm:inline">
+                  {selectedProducts.size === 0
+                    ? 'Seleccionar Todos'
+                    : selectedProducts.size === filteredProducts.length
+                    ? 'Deseleccionar Todos'
+                    : `${selectedProducts.size} seleccionados`}
+                </span>
+              </motion.button>
+
+              {selectedProducts.size > 0 && (
+                <div className="flex items-center gap-4 mb-6">
+                  <span className="text-white/60">
+                    {selectedProducts.size} productos seleccionados
+                  </span>
+                  <div className="flex gap-2">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleExportCSV}
+                      className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 
+                               rounded-lg hover:bg-emerald-500/20"
+                    >
+                      <FileText className="w-5 h-5" />
+                      <span className="hidden sm:inline">Exportar CSV</span>
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleDeleteSelected}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 
+                               rounded-lg hover:bg-red-500/20"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                      <span className="hidden sm:inline">Eliminar</span>
+                    </motion.button>
                   </div>
                 </div>
               )}
             </div>
-
-            <DisabledTooltip>
-              <motion.button
-                whileHover={{ scale: 1 }}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-500/50 
-                         text-gray-400 rounded-lg cursor-not-allowed
-                         border border-gray-600/30 transition-colors"
-                disabled={true}
-              >
-                <Plus className="w-5 h-5" />
-                <span className="hidden sm:inline">Nuevo Producto</span>
-              </motion.button>
-            </DisabledTooltip>
           </div>
-        </div>
 
-        {/* Toolbar con selección */}
-        <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleSelectAll}
-              className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white rounded-lg 
-                       hover:bg-white/20 transition-colors"
-            >
-              {selectedProducts.size === filteredProducts.length ? (
-                <CheckSquare className="w-5 h-5" />
-              ) : (
-                <Square className="w-5 h-5" />
-              )}
-              <span className="hidden sm:inline">
-                {selectedProducts.size === 0
-                  ? 'Seleccionar Todos'
-                  : selectedProducts.size === filteredProducts.length
-                  ? 'Deseleccionar Todos'
-                  : `${selectedProducts.size} seleccionados`}
-              </span>
-            </motion.button>
-
-            {selectedProducts.size > 0 && (
-              <div className="flex items-center gap-4 mb-6">
-                <span className="text-white/60">
-                  {selectedProducts.size} productos seleccionados
-                </span>
-                <div className="flex gap-2">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleExportCSV}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 
-                             rounded-lg hover:bg-emerald-500/20"
-                  >
-                    <FileText className="w-5 h-5" />
-                    <span className="hidden sm:inline">Exportar CSV</span>
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleDeleteSelected}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 
-                             rounded-lg hover:bg-red-500/20"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                    <span className="hidden sm:inline">Eliminar</span>
-                  </motion.button>
-                </div>
+          {/* Contador de resultados y filtro activo */}
+          <div className="flex items-center gap-4 mb-6 text-white/60">
+            <span>
+              {filteredProducts.length === localProducts.length
+                ? `${localProducts.length} productos`
+                : `${filteredProducts.length} de ${localProducts.length} productos`}
+            </span>
+            {selectedCategory && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full">
+                <span>{selectedCategory}</span>
+                <button
+                  onClick={() => setSelectedCategory('')}
+                  className="hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Contador de resultados y filtro activo */}
-        <div className="flex items-center gap-4 mb-6 text-white/60">
-          <span>
-            {filteredProducts.length === localProducts.length
-              ? `${localProducts.length} productos`
-              : `${filteredProducts.length} de ${localProducts.length} productos`}
-          </span>
-          {selectedCategory && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full">
-              <span>{selectedCategory}</span>
-              <button
-                onClick={() => setSelectedCategory('')}
-                className="hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Products Grid */}
-        <AnimatePresence mode="popLayout">
-          {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
-                <motion.div
-                  key={product.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  className={`bg-white/10 backdrop-blur-md rounded-lg border 
-                           overflow-hidden group relative
-                           ${selectedProducts.has(product.id) 
-                             ? 'border-purple-500' 
-                             : recentlyAdded.has(product.id)
-                             ? 'border-emerald-500'
-                             : 'border-white/20'}`}
-                >
-                  {/* Indicador de producto recién agregado */}
-                  {recentlyAdded.has(product.id) && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="absolute top-2 left-2 z-10 bg-emerald-500/20 p-1 rounded-full"
-                    >
-                      <CheckCircle className="w-5 h-5 text-emerald-400" />
-                    </motion.div>
-                  )}
-
-                  {/* Checkbox de selección */}
-                  <div className="absolute top-2 right-2 z-10 flex gap-2">
-                    <button
-                      onClick={() => handleSelect(product.id)}
-                      className="p-1 bg-black/50 rounded-lg backdrop-blur-sm"
-                    >
-                      {selectedProducts.has(product.id) ? (
-                        <CheckSquare className="w-5 h-5 text-purple-400" />
-                      ) : (
-                        <Square className="w-5 h-5 text-white/60" />
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="aspect-square relative overflow-hidden">
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-
-                  <div className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="text-white font-medium">{product.name}</h3>
-                        <span className="text-white/60 text-sm">SKU: {product.sku}</span>
-                      </div>
-                      <span className="text-white font-bold">
-                        ${product.price.toFixed(2)}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs px-2 py-1 bg-purple-500/20 text-purple-300 rounded-full">
-                        {product.category}
-                      </span>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => setSelectedProduct(product)}
-                        className="text-white/60 hover:text-white text-sm"
+          {/* Products Grid */}
+          <AnimatePresence mode="popLayout">
+            {filteredProducts.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredProducts.map((product) => (
+                  <motion.div
+                    key={product.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    className={`bg-white/10 backdrop-blur-md rounded-lg border 
+                             overflow-hidden group relative
+                             ${selectedProducts.has(product.id) 
+                               ? 'border-purple-500' 
+                               : recentlyAdded.has(product.id)
+                               ? 'border-emerald-500'
+                               : 'border-white/20'}`}
+                  >
+                    {/* Indicador de producto recién agregado */}
+                    {recentlyAdded.has(product.id) && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="absolute top-2 left-2 z-10 bg-emerald-500/20 p-1 rounded-full"
                       >
-                        Ver detalles
-                      </motion.button>
+                        <CheckCircle className="w-5 h-5 text-emerald-400" />
+                      </motion.div>
+                    )}
+
+                    {/* Checkbox de selección */}
+                    <div className="absolute top-2 right-2 z-10 flex gap-2">
+                      <button
+                        onClick={() => handleSelect(product.id)}
+                        className="p-1 bg-black/50 rounded-lg backdrop-blur-sm"
+                      >
+                        {selectedProducts.has(product.id) ? (
+                          <CheckSquare className="w-5 h-5 text-purple-400" />
+                        ) : (
+                          <Square className="w-5 h-5 text-white/60" />
+                        )}
+                      </button>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-12"
-            >
-              <div className="text-white/60 text-lg">
-                No se encontraron productos que coincidan con "{searchTerm}"
+
+                    <div className="aspect-square relative overflow-hidden">
+                      <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="text-white font-medium">{product.name}</h3>
+                          <span className="text-white/60 text-sm">SKU: {product.sku}</span>
+                        </div>
+                        <span className="text-white font-bold">
+                          ${product.price.toFixed(2)}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs px-2 py-1 bg-purple-500/20 text-purple-300 rounded-full">
+                          {product.category}
+                        </span>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => setSelectedProduct(product)}
+                          className="text-white/60 hover:text-white text-sm"
+                        >
+                          Ver detalles
+                        </motion.button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
-              <button
-                onClick={() => handleSearch('')}
-                className="mt-4 text-purple-400 hover:text-purple-300"
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-12"
               >
-                Limpiar búsqueda
-              </button>
-            </motion.div>
+                <div className="text-white/60 text-lg">
+                  No se encontraron productos que coincidan con "{searchTerm}"
+                </div>
+                <button
+                  onClick={() => handleSearch('')}
+                  className="mt-4 text-purple-400 hover:text-purple-300"
+                >
+                  Limpiar búsqueda
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {selectedProduct && (
+            <ProductDetails
+              product={selectedProduct}
+              isOpen={!!selectedProduct}
+              onClose={() => setSelectedProduct(null)}
+              onUpdate={handleUpdateProduct}
+              onDelete={handleDeleteProduct}
+              categories={categories}
+            />
           )}
-        </AnimatePresence>
+        </div>
 
-        {selectedProduct && (
-          <ProductDetails
-            product={selectedProduct}
-            isOpen={!!selectedProduct}
-            onClose={() => setSelectedProduct(null)}
-            onUpdate={handleUpdateProduct}
-            onDelete={handleDeleteProduct}
-            categories={categories}
-          />
-        )}
+        <AddProductModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onAddProduct={handleAddProduct}
+        />
       </div>
-
-      <AddProductModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAddProduct={handleAddProduct}
-      />
-    </div>
+    </HeaderProvider>
   );
 } 

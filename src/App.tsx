@@ -192,11 +192,24 @@ function AppContent() {
   };
 
   if (isAuthenticated && showBuilder) {
-    return <Builder onBack={handleBack} />;
+    return (
+      <Builder 
+        onBack={handleBack} 
+        userEmail={user?.email || ''} 
+        userName={user?.name || ''}
+      />
+    );
   }
 
   if (isAuthenticated && showProducts) {
-    return <Products onBack={handleBack} />;
+    return (
+      <Products 
+        onBack={handleBack} 
+        onLogout={handleLogout}
+        userEmail={user?.email || ''} 
+        userName={user?.name || ''}
+      />
+    );
   }
 
   if (isAuthenticated && showPromotions) {
@@ -210,6 +223,8 @@ function AppContent() {
         onLogout={handleLogout}
         initialProducts={location.state?.selectedProducts}
         initialPromotion={location.state?.selectedPromotion}
+        userEmail={user?.email || ''}
+        userName={user?.name || ''}
       />
     );
   }
