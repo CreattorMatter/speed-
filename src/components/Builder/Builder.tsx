@@ -60,7 +60,7 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
   const [savingStep, setSavingStep] = useState<'idle' | 'generating' | 'uploading'>('idle');
   
   // Agregar estados para el canvas
-  const [canvasSettings] = useState({
+  const [canvasSettings, setCanvasSettings] = useState({
     width: 800,
     height: 1200,
     background: '#ffffff'
@@ -119,16 +119,17 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
       const templateData = {
         name,
         description,
-        image_data: previewImage,
-        blocks: JSON.stringify(blocks),
-        canvas_settings: {
-          width: canvasSettings.width,
-          height: canvasSettings.height,
-          background: canvasSettings.background,
-        },
-        created_by: userData.id,
-        is_public: false,
-        version: '1.0'
+        preview_image: previewImage,
+        data: JSON.stringify({
+          blocks,
+          settings: {
+            width: 3000,
+            height: 2000,
+            background: '#ffffff'
+          }
+        }),
+        user_id: userData.id,
+        is_public: false
       };
 
       // Guardar la plantilla
@@ -251,9 +252,21 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
 
   const handleSelectTemplate = (template: any) => {
     try {
-      // Convertir la imagen base64 a bloques
-      const blocks = JSON.parse(template.blocks || '[]');
-      setBlocks(blocks);
+      // Parsear los datos de la plantilla
+      const templateData = JSON.parse(template.data || '{}');
+      
+      // Validar que los bloques tengan la estructura correcta
+      if (!Array.isArray(templateData.blocks)) {
+        throw new Error('Formato de bloques inválido');
+      }
+
+      // Actualizar los bloques
+      setBlocks(templateData.blocks);
+
+      // Cerrar el modal de búsqueda
+      setIsSearchModalOpen(false);
+      
+      // Mostrar mensaje de éxito
       toast.success('Plantilla cargada exitosamente');
     } catch (error) {
       console.error('Error al cargar la plantilla:', error);
@@ -269,7 +282,7 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900">
-        <Header onBack={onBack} onLogout={handleLogout} />
+        <Header onBack={onBack} />
         {/* Toolbar */}
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4">
@@ -309,7 +322,7 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
         
         {/* Canvas */}
         <div className="flex-1 overflow-hidden p-6">
-          <div className="h-full bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20">
+          <div className="h-full">
             <ErrorBoundary>
               <Canvas 
                 blocks={blocks} 
@@ -326,7 +339,6 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
           onClose={() => setShowPreview(false)}
         />
 
-        {/* Modal de guardado */}
         <SaveTemplateModal
           isOpen={isSaveModalOpen}
           onClose={() => {
