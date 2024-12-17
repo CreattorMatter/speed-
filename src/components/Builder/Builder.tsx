@@ -11,8 +11,9 @@ import { Header } from '../shared/Header';
 import { SaveTemplateModal } from './SaveTemplateModal';
 import { SearchTemplateModal } from './SearchTemplateModal';
 import { supabase } from '../../lib/supabaseClient';
-import html2canvas from 'html2canvas';
 import { toast } from 'react-hot-toast';
+// @ts-ignore
+import html2canvas from 'html2canvas/dist/html2canvas.min.js';
 
 interface BuilderProps {
   onBack: () => void;
