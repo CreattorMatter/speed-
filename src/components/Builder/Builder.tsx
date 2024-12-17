@@ -302,22 +302,23 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
         </div>
 
         {/* Elementos */}
-        <div className="bg-white border-b border-gray-200 py-2">
+        <div className="bg-white border-b border-gray-200 py-3">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center gap-3 overflow-x-auto pb-2">
               {blockTypes.map((type) => (
                 <motion.button
                   key={type}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.03, y: -2 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => handleAddBlock(type)}
-                  className="flex flex-col items-center p-2 bg-white rounded-lg border border-gray-200
-                           hover:border-indigo-500 hover:shadow-lg transition-all min-w-[80px]"
+                  className="flex flex-col items-center p-2.5 bg-white rounded-xl border border-gray-100
+                           hover:border-indigo-500/20 hover:bg-indigo-50/50 hover:shadow-md 
+                           transition-all duration-200 min-w-[85px] group"
                 >
-                  <div className="p-1.5 bg-indigo-50 rounded-lg mb-1.5">
+                  <div className="p-2 rounded-lg mb-2 group-hover:bg-white transition-colors duration-200">
                     {getBlockIcon(type)}
                   </div>
-                  <span className="text-xs font-medium text-gray-600 whitespace-nowrap">
+                  <span className="text-xs font-medium text-gray-600 group-hover:text-indigo-600 transition-colors duration-200">
                     {getBlockLabel(type)}
                   </span>
                 </motion.button>
@@ -375,7 +376,7 @@ function generateTemplateId(): string {
 }
 
 function getBlockIcon(type: BlockType) {
-  const iconClass = "w-15 h-6 text-indigo-600";
+  const iconClass = "w-5 h-5 text-indigo-500 group-hover:text-indigo-600 transition-colors duration-200";
   switch (type) {
     case 'container':
       return <Box className={iconClass} />;
