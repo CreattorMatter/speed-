@@ -120,25 +120,30 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
       const templateData = {
         name,
         description,
-        preview_image: previewImage,
-        data: JSON.stringify({
+        image_data: previewImage,
+        canvas_settings: {
           blocks,
           settings: {
             width: 3000,
             height: 2000,
             background: '#ffffff'
           }
-        }),
-        user_id: userData.id,
-        is_public: false
+        },
+        created_by: userData.id,
+        is_public: false,
+        version: '1.0'
       };
 
+      console.log('Datos a guardar:', templateData); // Para debug
+
       // Guardar la plantilla
-      const { error: templateError } = await supabase
+      const { data, error: templateError } = await supabase
         .from('builder')
-        .insert([templateData]);
+        .insert([templateData])
+        .select();
 
       if (templateError) {
+        console.error('Error de Supabase:', templateError); // Para debug
         throw new Error(`Error al guardar la plantilla: ${templateError.message}`);
       }
 
@@ -254,7 +259,7 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
   const handleSelectTemplate = (template: any) => {
     try {
       // Parsear los datos de la plantilla
-      const templateData = JSON.parse(template.data || '{}');
+      const templateData = template.canvas_settings;
       
       // Validar que los bloques tengan la estructura correcta
       if (!Array.isArray(templateData.blocks)) {
