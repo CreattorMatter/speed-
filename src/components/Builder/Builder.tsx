@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Layout, LayoutTemplate, Tag, Image, DollarSign, Percent, Gift, Square } from 'lucide-react';
+import { ArrowLeft, Layout, LayoutTemplate, Tag, Image, DollarSign, Percent, Gift, Square, Box } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Toolbar from './Toolbar';
 import Canvas from './Canvas';
@@ -39,12 +39,24 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
       type,
       content: { text: `Nuevo bloque ${type}` },
       position: { x: 50, y: 50 },
-      size: { width: 200, height: 100 }
+      size: type === 'container' ? { width: 400, height: 300 } : { width: 200, height: 100 },
+      isContainer: type === 'container',
+      children: type === 'container' ? [] : undefined
     };
     setBlocks(prevBlocks => [...prevBlocks, newBlock]);
   };
 
-  const blockTypes: BlockType[] = ['header', 'footer', 'sku', 'image', 'price', 'discount', 'promotion', 'logo'];
+  const blockTypes: BlockType[] = [
+    'container',
+    'header', 
+    'footer', 
+    'sku', 
+    'image', 
+    'price', 
+    'discount', 
+    'promotion', 
+    'logo'
+  ];
 
   const generateThumbnail = async (): Promise<string> => {
     const canvas = document.querySelector('.builder-canvas');
@@ -141,6 +153,27 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
     }
   };
 
+  const handleDropInContainer = (containerId: string, blockId: string, position: { x: number, y: number }) => {
+    setBlocks(prevBlocks => {
+      const blockToMove = prevBlocks.find(b => b.id === blockId);
+      const container = prevBlocks.find(b => b.id === containerId);
+      
+      if (!blockToMove || !container) return prevBlocks;
+
+      // Remover el bloque de su posición actual
+      const blocksWithoutMoved = prevBlocks.filter(b => b.id !== blockId);
+
+      // Actualizar la posición del bloque dentro del contenedor
+      const updatedBlock = {
+        ...blockToMove,
+        position,
+        parentId: containerId
+      };
+
+      return [...blocksWithoutMoved, updatedBlock];
+    });
+  };
+
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900">
@@ -185,7 +218,11 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
         <div className="flex-1 overflow-hidden p-6">
           <div className="h-full bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20">
             <ErrorBoundary>
-              <Canvas blocks={blocks} setBlocks={setBlocks} />
+              <Canvas 
+                blocks={blocks} 
+                setBlocks={setBlocks}
+                onDropInContainer={handleDropInContainer}
+              />
             </ErrorBoundary>
           </div>
         </div>
@@ -217,6 +254,8 @@ function generateTemplateId(): string {
 function getBlockIcon(type: BlockType) {
   const iconClass = "w-5 h-5 text-indigo-600";
   switch (type) {
+    case 'container':
+      return <Box className={iconClass} />;
     case 'header':
       return <Layout className={iconClass} />;
     case 'footer':
@@ -239,6 +278,7 @@ function getBlockIcon(type: BlockType) {
 }
 
 const blockLabels: Record<BlockType, string> = {
+  container: 'Contenedor',
   header: 'Encabezado',
   footer: 'Pie de página',
   sku: 'SKU',

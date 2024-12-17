@@ -7,14 +7,23 @@ import { Block as BlockType } from '../../types/builder';
 interface CanvasProps {
   blocks: BlockType[];
   setBlocks: React.Dispatch<React.SetStateAction<BlockType[]>>;
+  onDropInContainer: (containerId: string, blockId: string, position: { x: number, y: number }) => void;
 }
 
-export default function Canvas({ blocks, setBlocks }: CanvasProps) {
+export default function Canvas({ blocks, setBlocks, onDropInContainer }: CanvasProps) {
   const GRID_SIZE = 20;
   const [scale, setScale] = useState(1);
 
   const handleDelete = useCallback((id: string) => {
-    setBlocks(prev => prev.filter(block => block.id !== id));
+    setBlocks(prev => {
+      const blockToDelete = prev.find(b => b.id === id);
+      if (blockToDelete?.isContainer) {
+        // Si es un contenedor, eliminar también los bloques hijos
+        return prev.filter(block => block.id !== id && block.parentId !== id);
+      }
+      // Si no es un contenedor, solo eliminar el bloque
+      return prev.filter(block => block.id !== id);
+    });
   }, [setBlocks]);
 
   const handleResize = useCallback((id: string, size: { width: number; height: number }) => {
@@ -27,15 +36,45 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
     const block = blocks.find(b => b.id === id);
     if (!block) return;
 
-    const startX = e.clientX - block.position.x;
-    const startY = e.clientY - block.position.y;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const initialBlockPosition = { ...block.position };
+    const childrenInitialPositions = blocks
+      .filter(b => b.parentId === id)
+      .map(b => ({ id: b.id, position: { ...b.position } }));
 
     const handleMouseMove = (e: MouseEvent) => {
-      setBlocks(prev => prev.map(b => 
-        b.id === id 
-          ? { ...b, position: { x: e.clientX - startX, y: e.clientY - startY } }
-          : b
-      ));
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      setBlocks(prev => {
+        return prev.map(b => {
+          if (b.id === id) {
+            // Mover el contenedor
+            return {
+              ...b,
+              position: {
+                x: initialBlockPosition.x + deltaX,
+                y: initialBlockPosition.y + deltaY
+              }
+            };
+          } else if (b.parentId === id) {
+            // Encontrar la posición inicial de este hijo
+            const initialPos = childrenInitialPositions.find(p => p.id === b.id)?.position;
+            if (!initialPos) return b;
+            
+            // Mover el bloque hijo manteniendo su posición relativa
+            return {
+              ...b,
+              position: {
+                x: initialPos.x + deltaX,
+                y: initialPos.y + deltaY
+              }
+            };
+          }
+          return b;
+        });
+      });
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -91,6 +130,7 @@ export default function Canvas({ blocks, setBlocks }: CanvasProps) {
             onResize={handleResize}
             onMove={handleMove}
             onImageUpload={handleImageUpload}
+            onDropInContainer={onDropInContainer}
           />
         ))}
       </div>

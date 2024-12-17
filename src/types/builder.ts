@@ -1,12 +1,4 @@
-export type BlockType = 
-  | 'header'
-  | 'footer'
-  | 'sku'
-  | 'image'
-  | 'price'
-  | 'discount'
-  | 'promotion'
-  | 'logo';
+export type BlockType = 'container' | 'header' | 'footer' | 'sku' | 'image' | 'price' | 'discount' | 'promotion' | 'logo';
 
 export interface BlockContent {
   text?: string;
@@ -25,6 +17,17 @@ export interface Block {
     width: number;
     height: number;
   };
+  isContainer?: boolean;
+  parentId?: string;
+  children?: Block[];
+  zIndex?: number;
+  layerOrder?: number;
+  rotation?: number;
+  scale?: {
+    x: number;
+    y: number;
+  };
+  styles?: Record<string, any>;
 }
 
 export interface PresetSize {
