@@ -9,6 +9,7 @@ import ErrorBoundary from './ErrorBoundary';
 import { HeaderProvider } from '../shared/HeaderProvider';
 import { Header } from '../shared/Header';
 import { SaveTemplateModal } from './SaveTemplateModal';
+import { SearchTemplateModal } from './SearchTemplateModal';
 import { supabase } from '../../lib/supabaseClient';
 import html2canvas from 'html2canvas';
 import { toast } from 'react-hot-toast';
@@ -52,9 +53,11 @@ const calculateBoundsAndScale = (blocks: Block[]) => {
 export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [showPreview, setShowPreview] = useState(false);
-  const [templateId] = useState(() => generateTemplateId());
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [savingStep, setSavingStep] = useState<'idle' | 'generating' | 'uploading'>('idle');
   
   // Agregar estados para el canvas
   const [canvasSettings] = useState({
@@ -98,20 +101,8 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
 
   const handleSaveTemplate = async (name: string, description: string) => {
     try {
-      // Generar imagen del canvas
-      const canvasArea = document.getElementById('builder-canvas-area');
-      if (!canvasArea) {
-        throw new Error('No se pudo encontrar el área del canvas');
-      }
-      
-      const screenshot = await html2canvas(canvasArea, {
-        backgroundColor: '#ffffff',
-        scale: 2, // Mejor calidad
-        useCORS: true, // Permitir imágenes de otros dominios
-        logging: true, // Para debug
-      });
-      
-      const imageBase64 = screenshot.toDataURL('image/jpeg', 0.9);
+      setIsSaving(true);
+      setSavingStep('uploading');
 
       // Obtener el usuario actual de la base de datos
       const { data: userData, error: userError } = await supabase
@@ -121,7 +112,6 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
         .single();
 
       if (userError || !userData) {
-        console.error('Error al obtener usuario:', userError);
         throw new Error('No se pudo obtener la información del usuario');
       }
 
@@ -129,7 +119,8 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
       const templateData = {
         name,
         description,
-        image_data: imageBase64,
+        image_data: previewImage,
+        blocks: JSON.stringify(blocks),
         canvas_settings: {
           width: canvasSettings.width,
           height: canvasSettings.height,
@@ -140,29 +131,32 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
         version: '1.0'
       };
 
-      console.log('Intentando guardar la plantilla...'); // Debug
-
       // Guardar la plantilla
       const { error: templateError } = await supabase
         .from('builder')
         .insert([templateData]);
 
       if (templateError) {
-        console.error('Error al guardar la plantilla:', templateError);
         throw new Error(`Error al guardar la plantilla: ${templateError.message}`);
       }
 
       setIsSaveModalOpen(false);
-      toast.success('Plantilla guardada correctamente');
+      toast.success('¡Plantilla guardada exitosamente!');
     } catch (error) {
       console.error('Error completo:', error);
       toast.error(error instanceof Error ? error.message : 'Error al guardar la plantilla');
+    } finally {
+      setIsSaving(false);
+      setSavingStep('idle');
     }
   };
 
   // Modificar el handler del botón guardar
   const handleSaveClick = async () => {
     try {
+      setIsSaving(true);
+      setSavingStep('generating');
+
       const previewContainer = document.createElement('div');
       previewContainer.style.position = 'absolute';
       previewContainer.style.left = '-9999px';
@@ -228,6 +222,9 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
     } catch (error) {
       console.error('Error al generar vista previa:', error);
       toast.error('Error al generar la vista previa');
+    } finally {
+      setIsSaving(false);
+      setSavingStep('idle');
     }
   };
 
@@ -252,17 +249,35 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
     });
   };
 
+  const handleSelectTemplate = (template: any) => {
+    try {
+      // Convertir la imagen base64 a bloques
+      const blocks = JSON.parse(template.blocks || '[]');
+      setBlocks(blocks);
+      toast.success('Plantilla cargada exitosamente');
+    } catch (error) {
+      console.error('Error al cargar la plantilla:', error);
+      toast.error('Error al cargar la plantilla');
+    }
+  };
+
+  const handleLogout = () => {
+    // Implementar la lógica de logout aquí
+    console.log('Logout');
+  };
+
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900">
-        <Header onBack={onBack} />
+        <Header onBack={onBack} onLogout={handleLogout} />
         {/* Toolbar */}
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4">
             <Toolbar 
               onSave={handleSaveClick} 
               onPreview={() => setShowPreview(true)}
-              templateId={templateId}
+              onSearch={() => setIsSearchModalOpen(true)}
+              isSaving={isSaving}
             />
           </div>
         </div>
@@ -314,9 +329,21 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
         {/* Modal de guardado */}
         <SaveTemplateModal
           isOpen={isSaveModalOpen}
-          onClose={() => setIsSaveModalOpen(false)}
+          onClose={() => {
+            if (!isSaving) {
+              setIsSaveModalOpen(false);
+            }
+          }}
           onSave={handleSaveTemplate}
           previewImage={previewImage}
+          isSaving={isSaving}
+          savingStep={savingStep}
+        />
+
+        <SearchTemplateModal
+          isOpen={isSearchModalOpen}
+          onClose={() => setIsSearchModalOpen(false)}
+          onSelectTemplate={handleSelectTemplate}
         />
       </div>
     </HeaderProvider>

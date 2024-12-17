@@ -9,34 +9,44 @@ interface PreviewProps {
   onClose: () => void;
 }
 
+// Función utilitaria para calcular bounds y escala
+const calculateBoundsAndScale = (blocks: Block[]) => {
+  if (blocks.length === 0) {
+    return { bounds: { minX: 0, minY: 0, maxX: 0, maxY: 0 }, scale: 1 };
+  }
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  blocks.forEach(block => {
+    minX = Math.min(minX, block.position.x);
+    minY = Math.min(minY, block.position.y);
+    maxX = Math.max(maxX, block.position.x + block.size.width);
+    maxY = Math.max(maxY, block.position.y + block.size.height);
+  });
+
+  const contentWidth = maxX - minX;
+  const contentHeight = maxY - minY;
+  const scaleX = 800 / contentWidth;
+  const scaleY = 600 / contentHeight;
+  const scale = Math.min(scaleX, scaleY, 1);
+
+  return {
+    bounds: { minX, minY, maxX, maxY },
+    scale
+  };
+};
+
 export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
   const [previewBounds, setPreviewBounds] = useState({ minX: 0, minY: 0, maxX: 0, maxY: 0 });
   const [scale, setScale] = useState(1);
 
-  // Calcular los límites del contenido y el factor de escala
   useEffect(() => {
-    if (blocks.length === 0) return;
-
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-
-    blocks.forEach(block => {
-      minX = Math.min(minX, block.position.x);
-      minY = Math.min(minY, block.position.y);
-      maxX = Math.max(maxX, block.position.x + block.size.width);
-      maxY = Math.max(maxY, block.position.y + block.size.height);
-    });
-
-    setPreviewBounds({ minX, minY, maxX, maxY });
-
-    // Calcular escala para ajustar el contenido
-    const contentWidth = maxX - minX;
-    const contentHeight = maxY - minY;
-    const scaleX = 800 / contentWidth; // 800px es el ancho máximo del área de vista previa
-    const scaleY = 600 / contentHeight; // 600px es el alto máximo
-    setScale(Math.min(scaleX, scaleY, 1)); // No ampliar más allá del tamaño original
+    const { bounds, scale } = calculateBoundsAndScale(blocks);
+    setPreviewBounds(bounds);
+    setScale(scale);
   }, [blocks]);
 
   const renderBlock = (block: Block) => (
@@ -56,14 +66,12 @@ export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
         transform: `scale(${scale})`
       }}
     >
-      {/* Etiqueta del contenedor */}
       {block.isContainer && (
         <div className="absolute -top-6 left-0 text-xs text-indigo-500 font-medium bg-white px-2 py-1 rounded-t-md border border-indigo-200">
           Contenedor
         </div>
       )}
 
-      {/* Contenido del bloque */}
       {block.content.imageUrl ? (
         <img 
           src={block.content.imageUrl} 
@@ -78,14 +86,12 @@ export default function Preview({ blocks, isOpen, onClose }: PreviewProps) {
         )
       )}
 
-      {/* Renderizar bloques hijos si es un contenedor */}
       {block.isContainer && blocks
         .filter(b => b.parentId === block.id)
         .map(childBlock => renderBlock(childBlock))}
     </div>
   );
 
-  // Ordenar los bloques: primero los contenedores, luego los bloques normales
   const sortedBlocks = [...blocks].sort((a, b) => {
     if (a.isContainer && !b.isContainer) return -1;
     if (!a.isContainer && b.isContainer) return 1;
