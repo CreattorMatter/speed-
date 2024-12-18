@@ -146,6 +146,7 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
   const [companies, setCompanies] = useState<any[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
   const [isAddCompanyModalOpen, setIsAddCompanyModalOpen] = useState(false);
+  const [selectedLogo, setSelectedLogo] = useState<string>('');
 
   useEffect(() => {
     if (isOpen && currentUser.role === 'admin') {
