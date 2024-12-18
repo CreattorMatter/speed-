@@ -14,6 +14,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'react-hot-toast';
 // @ts-ignore
 import html2canvas from 'html2canvas/dist/html2canvas.min.js';
+import { AIGeneratingModal } from './AIGeneratingModal';
 
 interface BuilderProps {
   onBack: () => void;
@@ -59,6 +60,7 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
   const [previewImage, setPreviewImage] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [savingStep, setSavingStep] = useState<'idle' | 'generating' | 'uploading'>('idle');
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   
   // Agregar estados para el canvas
   const [canvasSettings, setCanvasSettings] = useState({
@@ -285,6 +287,129 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
     console.log('Logout');
   };
 
+  const generateAITemplate = () => {
+    // Función para generar números aleatorios dentro de un rango
+    const random = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1) + min);
+    
+    // Generar tamaño aleatorio para el contenedor
+    const containerWidth = random(600, 1000);
+    const containerHeight = random(800, 1200);
+    
+    // Crear un contenedor principal con tamaño aleatorio
+    const container: Block = {
+      id: `container-${Date.now()}`,
+      type: 'container',
+      content: { text: 'Contenedor principal' },
+      position: { x: 50, y: 50 },
+      size: { width: containerWidth, height: containerHeight },
+      isContainer: true,
+      children: []
+    };
+
+    // Definir layouts posibles
+    const layoutTypes = [
+      'header', 'logo', 'image', 'sku', 'price', 'discount', 'promotion', 'footer'
+    ];
+
+    // Generar un orden aleatorio de los bloques
+    const shuffledLayout = [...layoutTypes]
+      .sort(() => Math.random() - 0.5)
+      .map(type => ({
+        type,
+        height: random(60, type === 'image' ? 400 : 120),
+        marginTop: random(10, 40)
+      }));
+
+    // Decidir si usar layout en columnas o filas
+    const useColumns = Math.random() > 0.5;
+    
+    if (useColumns) {
+      // Layout en columnas
+      const numColumns = random(1, 2);
+      const columnWidth = (containerWidth - 100) / numColumns;
+      const columns = Array(numColumns).fill(null).map(() => [] as any[]);
+      
+      // Distribuir bloques en columnas
+      shuffledLayout.forEach((block, index) => {
+        columns[index % numColumns].push(block);
+      });
+
+      // Crear bloques para cada columna
+      const blocks = columns.flatMap((column, columnIndex) => {
+        let currentY = 30;
+        return column.map((layout) => {
+          const block: Block = {
+            id: `${layout.type}-${Date.now()}-${Math.random()}`,
+            type: layout.type as BlockType,
+            content: { text: `Bloque ${layout.type}` },
+            position: {
+              x: 50 + (columnWidth * columnIndex),
+              y: currentY
+            },
+            size: {
+              width: columnWidth - 20,
+              height: layout.height
+            },
+            parentId: container.id
+          };
+          currentY += layout.height + layout.marginTop;
+          return block;
+        });
+      });
+
+      // Ajustar altura del contenedor
+      const maxColumnHeight = Math.max(...columns.map(column => 
+        column.reduce((sum, block) => sum + block.height + block.marginTop, 0)
+      ));
+      container.size.height = maxColumnHeight + 60;
+
+      setBlocks([container, ...blocks]);
+    } else {
+      // Layout en filas con posiciones aleatorias
+      let currentY = 30;
+      const blocks = shuffledLayout.map((layout) => {
+        // Generar posición X aleatoria dentro de los márgenes
+        const maxX = containerWidth - (containerWidth - 100);
+        const randomX = random(50, maxX);
+        
+        const block: Block = {
+          id: `${layout.type}-${Date.now()}-${Math.random()}`,
+          type: layout.type as BlockType,
+          content: { text: `Bloque ${layout.type}` },
+          position: {
+            x: randomX,
+            y: currentY
+          },
+          size: {
+            width: random(containerWidth/3, containerWidth - 100),
+            height: layout.height
+          },
+          parentId: container.id
+        };
+        
+        currentY += layout.height + layout.marginTop;
+        return block;
+      });
+
+      // Ajustar altura del contenedor
+      container.size.height = currentY + 30;
+
+      setBlocks([container, ...blocks]);
+    }
+
+    // Mostrar notificación de éxito
+    toast.success('¡Plantilla generada con éxito!');
+  };
+
+  const handleGenerateAI = () => {
+    setIsGeneratingAI(true);
+  };
+
+  const handleFinishGeneration = () => {
+    setIsGeneratingAI(false);
+    generateAITemplate();
+  };
+
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900">
@@ -296,6 +421,7 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
               onSave={handleSaveClick} 
               onPreview={() => setShowPreview(true)}
               onSearch={() => setIsSearchModalOpen(true)}
+              onGenerateAI={handleGenerateAI}
               isSaving={isSaving}
             />
           </div>
@@ -363,6 +489,11 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
           isOpen={isSearchModalOpen}
           onClose={() => setIsSearchModalOpen(false)}
           onSelectTemplate={handleSelectTemplate}
+        />
+
+        <AIGeneratingModal 
+          isOpen={isGeneratingAI}
+          onFinish={handleFinishGeneration}
         />
       </div>
     </HeaderProvider>

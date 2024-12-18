@@ -1,14 +1,15 @@
 import React from 'react';
-import { Eye, Save, Loader2, Search } from 'lucide-react';
+import { Eye, Save, Loader2, Search, Wand2 } from 'lucide-react';
 
 interface ToolbarProps {
   onSave: () => void;
   onPreview: () => void;
   onSearch: () => void;
+  onGenerateAI: () => void;
   isSaving: boolean;
 }
 
-export default function Toolbar({ onSave, onPreview, onSearch, isSaving }: ToolbarProps) {
+export default function Toolbar({ onSave, onPreview, onSearch, onGenerateAI, isSaving }: ToolbarProps) {
   return (
     <div className="flex items-center justify-between py-2">
       <div className="flex items-center gap-4">
@@ -27,6 +28,14 @@ export default function Toolbar({ onSave, onPreview, onSearch, isSaving }: Toolb
         >
           <Search className="w-4 h-4" />
           Buscar plantilla
+        </button>
+        <button
+          onClick={onGenerateAI}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-md hover:from-purple-700 hover:to-indigo-700"
+          disabled={isSaving}
+        >
+          <Wand2 className="w-4 h-4" />
+          Plantilla AI
         </button>
       </div>
       <button
