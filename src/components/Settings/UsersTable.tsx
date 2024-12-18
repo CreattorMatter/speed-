@@ -20,8 +20,30 @@ interface UsersTableProps {
 }
 
 export function UsersTable({ users, onEdit, onDelete, onStatusChange }: UsersTableProps) {
+  const handleNewUser = () => {
+    // Lógica para nuevo usuario
+  };
+
+  const handleLDAP = () => {
+    // Lógica para LDAP/AD
+  };
+
   return (
     <div className="overflow-x-auto">
+      <div className="flex justify-end gap-2 mt-4">
+        <button
+          onClick={handleNewUser}
+          className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-transform transform hover:scale-105"
+        >
+          Nuevo Usuario
+        </button>
+        <button
+          onClick={handleLDAP}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105"
+        >
+          LDAP/AD
+        </button>
+      </div>
       <table className="w-full text-sm text-left">
         <thead className="text-xs uppercase bg-gray-50">
           <tr>

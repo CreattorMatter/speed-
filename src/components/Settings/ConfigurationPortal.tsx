@@ -4,6 +4,8 @@ import { X, Database, Server, AlertTriangle, Settings2, Users, Palette, Pencil, 
 import { supabase } from '../../lib/supabaseClient';
 import { EditCompanyModal } from './EditCompanyModal';
 import { AddCompanyModal } from './AddCompanyModal';
+import { LDAPConfigModal } from './LDAPConfigModal';
+import NewUserModal from './NewUserModal';
 
 interface ConfigurationPortalProps {
   isOpen: boolean;
@@ -147,6 +149,8 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
   const [selectedCompany, setSelectedCompany] = useState<any>(null);
   const [isAddCompanyModalOpen, setIsAddCompanyModalOpen] = useState(false);
   const [selectedLogo, setSelectedLogo] = useState<string>('');
+  const [isLDAPModalOpen, setIsLDAPModalOpen] = useState(false);
+  const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && currentUser.role === 'admin') {
@@ -263,18 +267,15 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
     }
   };
 
-  const handleCreateUser = async (userId: number, userData: any) => {
+  const handleCreateUser = async (userData: any) => {
     try {
       const { error } = await supabase
         .from('users')
-        .insert([{
-          ...userData,
-          status: 'active',
-        }]);
+        .insert([{ name: userData.name, email: userData.email, role: userData.role, password: userData.password, status: 'active' }]);
 
       if (error) throw error;
       fetchUsers();
-      setSelectedUser(null);
+      setIsNewUserModalOpen(false);
       showNotification('success', 'Usuario creado correctamente');
     } catch (err) {
       console.error('Error creating user:', err);
@@ -306,6 +307,20 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
       console.error('Error deleting company:', err);
       showNotification('error', 'Error al eliminar la empresa');
     }
+  };
+
+  const handleNewUser = () => {
+    setIsNewUserModalOpen(true);
+  };
+
+  const handleLDAP = () => {
+    setIsLDAPModalOpen(true);
+  };
+
+  const handleSaveLDAPConfig = (config: any) => {
+    // Lógica para guardar la configuración LDAP/AD
+    console.log('Configuración LDAP/AD guardada:', config);
+    setIsLDAPModalOpen(false);
   };
 
   if (!isOpen) return null;
@@ -491,13 +506,20 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
               <div className="space-y-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold">Gestión de Usuarios</h2>
-                  <button
-                    onClick={() => setSelectedUser({})}
-                    className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
-                  >
-                    <Users className="w-4 h-4" />
-                    Nuevo Usuario
-                  </button>
+                  <div className="flex justify-end gap-2 mt-4">
+                    <button
+                      onClick={handleNewUser}
+                      className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-transform transform hover:scale-105"
+                    >
+                      Nuevo Usuario
+                    </button>
+                    <button
+                      onClick={handleLDAP}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105"
+                    >
+                      LDAP/AD
+                    </button>
+                  </div>
                 </div>
 
                 <div className="bg-white rounded-lg shadow">
@@ -641,6 +663,20 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
             fetchCompanies();
           }}
           showNotification={showNotification}
+        />
+      )}
+
+      {isLDAPModalOpen && (
+        <LDAPConfigModal
+          onClose={() => setIsLDAPModalOpen(false)}
+          onSave={handleSaveLDAPConfig}
+        />
+      )}
+
+      {isNewUserModalOpen && (
+        <NewUserModal
+          onClose={() => setIsNewUserModalOpen(false)}
+          onSave={handleCreateUser}
         />
       )}
     </div>

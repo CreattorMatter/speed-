@@ -1,185 +1,67 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { X, Loader } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
-import { Toast } from '../shared/Toast';
 
 interface NewUserModalProps {
-  isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSave: (userData: any) => void;
 }
 
-interface UserFormData {
-  name: string;
-  email: string;
-  role: string;
-  password: string;
-}
+const NewUserModal: React.FC<NewUserModalProps> = ({ onClose, onSave }) => {
+  const [userData, setUserData] = useState({ name: '', email: '', role: 'user', password: '' });
 
-export function NewUserModal({ isOpen, onClose, onSuccess }: NewUserModalProps) {
-  const [formData, setFormData] = useState<UserFormData>({
-    name: '',
-    email: '',
-    role: 'user',
-    password: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .insert({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role,
-          status: 'active'
-        })
-        .select('id, name, email, role')
-        .single();
-
-      if (error) {
-        console.error('Error de Supabase:', error);
-        throw new Error(error.message);
-      }
-
-      if (!data) {
-        throw new Error('No se pudo crear el usuario');
-      }
-
-      console.log('Usuario creado:', data);
-      setShowSuccessToast(true);
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-      }, 2000);
-    } catch (err) {
-      console.error('Error completo:', err);
-      setError(err instanceof Error ? err.message : 'Error al crear el usuario');
-    } finally {
-      setLoading(false);
-    }
+    onSave(userData);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
-      >
-        <motion.div
-          initial={{ scale: 0.95 }}
-          animate={{ scale: 1 }}
-          className="bg-white rounded-xl shadow-xl w-full max-w-lg m-4"
-        >
-          <div className="flex justify-between items-center p-6 border-b">
-            <h2 className="text-xl font-semibold">Nuevo Usuario</h2>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-              <X className="w-5 h-5" />
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <h3 className="text-lg font-medium mb-4">Nuevo Usuario</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            value={userData.name}
+            onChange={(e) => setUserData({ ...userData, name: e.target.value })}
+            placeholder="Nombre"
+            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500"
+            required
+          />
+          <input
+            type="email"
+            value={userData.email}
+            onChange={(e) => setUserData({ ...userData, email: e.target.value })}
+            placeholder="Email"
+            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500"
+            required
+          />
+          <input
+            type="password"
+            value={userData.password}
+            onChange={(e) => setUserData({ ...userData, password: e.target.value })}
+            placeholder="Contraseña"
+            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500"
+            required
+          />
+          <select
+            value={userData.role}
+            onChange={(e) => setUserData({ ...userData, role: e.target.value })}
+            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500"
+          >
+            <option value="user">Usuario</option>
+            <option value="admin">Admin</option>
+          </select>
+          <div className="flex justify-end gap-2 mt-4">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
+              Cancelar
+            </button>
+            <button type="submit" className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700">
+              Guardar
             </button>
           </div>
-
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Rol
-              </label>
-              <select
-                required
-                value={formData.role}
-                onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
-              >
-                <option value="user">Usuario</option>
-                <option value="admin">Administrador</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Contraseña
-              </label>
-              <input
-                type="password"
-                required
-                value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
-              />
-            </div>
-
-            {error && (
-              <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm">
-                {error}
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 
-                         disabled:bg-violet-300 flex items-center gap-2"
-              >
-                {loading && <Loader className="w-4 h-4 animate-spin" />}
-                Crear Usuario
-              </button>
-            </div>
-          </form>
-        </motion.div>
-      </motion.div>
-
-      <Toast
-        message="Usuario creado exitosamente"
-        type="success"
-        isVisible={showSuccessToast}
-        onClose={() => setShowSuccessToast(false)}
-      />
-    </>
+        </form>
+      </div>
+    </div>
   );
-} 
+};
+
+export default NewUserModal; 
