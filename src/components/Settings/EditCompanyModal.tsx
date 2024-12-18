@@ -211,7 +211,7 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({ company, onC
             </div>
           </form>
           <div className="w-1/2">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Sucursales</h4>
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Seleccione la Sucursal</h4>
             <Select
               options={sucursalOptions}
               value={selectedSucursal}
@@ -221,7 +221,7 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({ company, onC
             />
             {selectedSucursal && (
               <div className="mt-4">
-                <h5 className="text-sm font-medium text-gray-700">Detalles de la Sucursal</h5>
+                <h5 className="text-sm font-medium text-gray-700"></h5>
                 <p>Dirección: {selectedSucursal.label}</p>
                 <p>Teléfono: {sucursales.find(s => s.id === selectedSucursal.value)?.telefono}</p>
                 <p>Horario: {sucursales.find(s => s.id === selectedSucursal.value)?.horario}</p>
@@ -240,14 +240,14 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({ company, onC
                     className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg hover:from-purple-600 hover:to-indigo-600 transition-transform transform hover:scale-105"
                   >
                     <Edit className="mr-2" />
-                    Editar Sucursal
+                    Editar
                   </button>
                   <button
                     onClick={() => setIsAddSucursalModalOpen(true)}
                     className="flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition-transform transform hover:scale-105"
                   >
                     <Plus className="mr-2" />
-                    Agregar Sucursal
+                    Agregar
                   </button>
                   <button
                     onClick={() => {
@@ -258,7 +258,7 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({ company, onC
                     className="flex items-center px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:from-red-600 hover:to-pink-600 transition-transform transform hover:scale-105 ml-auto"
                   >
                     <Trash2 className="mr-2" />
-                    Eliminar Sucursal
+                  Eliminar
                   </button>
                 </div>
               </div>
