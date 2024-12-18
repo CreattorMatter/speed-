@@ -207,8 +207,8 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
         .from('products')
         .select('count');
 
-      const { data: templatesCount } = await supabase
-        .from('templates')
+      const { data: builderCount } = await supabase
+        .from('builder')
         .select('count');
 
       // Obtener información del sistema
@@ -218,7 +218,7 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
       setDbStats({
         totalUsers: usersCount?.[0]?.count || 0,
         totalProducts: productsCount?.[0]?.count || 0,
-        totalTemplates: templatesCount?.[0]?.count || 0,
+        totalTemplates: builderCount?.[0]?.count || 0,
         lastBackup: systemInfo?.last_backup,
         dbSize: systemInfo?.db_size,
         version: systemInfo?.version
@@ -365,7 +365,10 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
       >
         {/* Header - fijo en la parte superior */}
         <div className="p-6 border-b border-gray-200 flex justify-between items-center shrink-0">
-          <h2 className="text-2xl font-bold text-gray-900">Configuración</h2>
+          <div className="flex items-center gap-2">
+            <Settings2 className="w-6 h-6 text-indigo-600" />
+            <h2 className="text-2xl font-bold text-gray-900">Configuración</h2>
+          </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
             <X className="w-5 h-5" />
           </button>
@@ -419,9 +422,12 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
                   <>
                     <div className="bg-indigo-50 p-4 rounded-lg">
                       <div className="flex items-center justify-between gap-3 mb-4">
-                        <h3 className="text-lg font-medium text-gray-900">
-                          Estado del Sistema
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <Server className="w-5 h-5 text-indigo-600" />
+                          <h3 className="text-lg font-medium text-gray-900">
+                            Estado del Sistema
+                          </h3>
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
@@ -453,7 +459,7 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
                       {dbStats && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                           <div className="p-4 bg-white rounded-lg border border-indigo-100">
-                            <div className="text-sm text-gray-600">Usuarios Totales</div>
+                            <div className="text-sm text-gray-600">Usuarios</div>
                             <div className="text-2xl font-bold text-indigo-600">
                               {dbStats.totalUsers}
                             </div>
@@ -465,7 +471,7 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
                             </div>
                           </div>
                           <div className="p-4 bg-white rounded-lg border border-indigo-100">
-                            <div className="text-sm text-gray-600">Templates</div>
+                            <div className="text-sm text-gray-600">Plantillas</div>
                             <div className="text-2xl font-bold text-indigo-600">
                               {dbStats.totalTemplates}
                             </div>
@@ -529,14 +535,16 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
                   <div className="flex justify-end gap-2 mt-4">
                     <button
                       onClick={handleNewUser}
-                      className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-transform transform hover:scale-105"
+                      className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-transform transform hover:scale-105 flex items-center gap-2"
                     >
-                      Nuevo Usuario
+                      <Users className="w-4 h-4" />
+                     Nuevo Usuario
                     </button>
                     <button
                       onClick={handleLDAP}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 flex items-center gap-2"
                     >
+                      <Server className="w-4 h-4" />
                       LDAP / AD
                     </button>
                   </div>

@@ -16,7 +16,7 @@ const NewUserModal: React.FC<NewUserModalProps> = ({ onClose, onSave }) => {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-        <h3 className="text-lg font-medium mb-4">Nuevo Usuario</h3>
+        <h3 className="text-lg font-medium mb-4">Nuevo Usuario Local</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
