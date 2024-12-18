@@ -39,8 +39,8 @@ interface User {
 }
 
 function AppContent() {
-  const [email, setEmail] = useState('admin@admin.com');
-  const [password, setPassword] = useState('admin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
