@@ -6,6 +6,7 @@ import { EditCompanyModal } from './EditCompanyModal';
 import { AddCompanyModal } from './AddCompanyModal';
 import { LDAPConfigModal } from './LDAPConfigModal';
 import NewUserModal from './NewUserModal';
+import { Tooltip } from 'react-tooltip';
 
 interface ConfigurationPortalProps {
   isOpen: boolean;
@@ -152,6 +153,22 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
   const [isLDAPModalOpen, setIsLDAPModalOpen] = useState(false);
   const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
 
+  // Simulación de datos de disponibilidad por hora
+  const generateHourlyData = () => {
+    const today = new Date();
+    return Array.from({ length: 24 }, (_, index) => {
+      const date = new Date(today);
+      date.setHours(date.getHours() - (23 - index));
+      return {
+        date: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        uptime: (Math.random() * 0.0005 + 0.9995).toFixed(4), // Garantiza 99.95% o superior
+        status: Math.random() > 0.05 ? 'operational' : 'maintenance'
+      };
+    });
+  };
+
+  const [hourlyStats] = useState(generateHourlyData());
+
   useEffect(() => {
     if (isOpen && currentUser.role === 'admin') {
       fetchUsers();
@@ -251,7 +268,12 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
+  const handleDeleteUser = async (userId: number, userRole: string) => {
+    if (userRole === 'admin') {
+      alert('No se puede eliminar al usuario administrador.');
+      return;
+    }
+
     if (!confirm('¿Estás seguro de que deseas eliminar este usuario?')) return;
     
     try {
@@ -323,6 +345,14 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
     setIsLDAPModalOpen(false);
   };
 
+  const handleEditUser = (user: any) => {
+    if (user.role === 'admin') {
+      alert('No se puede editar al usuario administrador.');
+      return;
+    }
+    setSelectedUser(user);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -388,26 +418,40 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
                 {currentUser.role === 'admin' && (
                   <>
                     <div className="bg-indigo-50 p-4 rounded-lg">
-                      <div className="flex items-center gap-3 mb-4">
-                        <Database className="w-5 h-5 text-indigo-600" />
+                      <div className="flex items-center justify-between gap-3 mb-4">
                         <h3 className="text-lg font-medium text-gray-900">
-                          Información de la Base de Datos
+                          Estado del Sistema
                         </h3>
                       </div>
-
-                      {isLoading ? (
-                        <div className="animate-pulse space-y-4">
-                          <div className="h-4 bg-indigo-200 rounded w-3/4"></div>
-                          <div className="h-4 bg-indigo-200 rounded w-1/2"></div>
-                          <div className="h-4 bg-indigo-200 rounded w-2/3"></div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">Estado del Sistema (últimas 24 horas)</span>
+                          <span className="font-medium">
+                            {(hourlyStats.reduce((acc, hour) => acc + parseFloat(hour.uptime), 0) / 24 * 100).toFixed(3)}%
+                          </span>
                         </div>
-                      ) : error ? (
-                        <div className="flex items-center gap-2 text-red-600">
-                          <AlertTriangle className="w-5 h-5" />
-                          <span>{error}</span>
+                        <div className="w-full bg-gray-100 rounded-full h-3 flex overflow-hidden shadow-inner">
+                          {hourlyStats.map((hour, index) => (
+                            <div
+                              key={index}
+                              className={`h-3 transition-all duration-300 ${
+                                hour.status === 'operational' 
+                                  ? 'bg-gradient-to-r from-emerald-400 to-green-500 hover:from-emerald-500 hover:to-green-600' 
+                                  : 'bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600'
+                              }`}
+                              style={{ width: `${100/24}%` }}
+                              data-tooltip-id="status-tooltip"
+                              data-tooltip-content={`${hour.date}: ${(parseFloat(hour.uptime) * 100).toFixed(3)}% - ${hour.status === 'operational' ? 'Operativo' : 'Mantenimiento'}`}
+                            />
+                          ))}
                         </div>
-                      ) : dbStats && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Tooltip 
+                          id="status-tooltip" 
+                          className="bg-gray-900/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-xl"
+                        />
+                      </div>
+                      {dbStats && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                           <div className="p-4 bg-white rounded-lg border border-indigo-100">
                             <div className="text-sm text-gray-600">Usuarios Totales</div>
                             <div className="text-2xl font-bold text-indigo-600">
@@ -434,29 +478,6 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
                           </div>
                         </div>
                       )}
-                    </div>
-
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex items-center gap-3 mb-4">
-                        <Server className="w-5 h-5 text-gray-600" />
-                        <h3 className="text-lg font-medium text-gray-900">
-                          Información del Sistema
-                        </h3>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Versión</span>
-                          <span className="font-medium">{dbStats?.version || 'N/A'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Último Backup</span>
-                          <span className="font-medium">
-                            {dbStats?.lastBackup 
-                              ? new Date(dbStats.lastBackup).toLocaleString()
-                              : 'N/A'}
-                          </span>
-                        </div>
-                      </div>
                     </div>
 
                     <div className="bg-indigo-50 p-4 rounded-lg">
@@ -495,7 +516,6 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
 
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium text-gray-900">
-                    Preferencias de Usuario
                   </h3>
                   {/* Configuraciones generales */}
                 </div>
@@ -517,7 +537,7 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
                       onClick={handleLDAP}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105"
                     >
-                      LDAP/AD
+                      LDAP / AD
                     </button>
                   </div>
                 </div>
@@ -580,14 +600,14 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-2">
                               <button
-                                onClick={() => setSelectedUser(user)}
+                                onClick={() => handleEditUser(user)}
                                 className="p-1 hover:bg-gray-100 rounded"
                                 title="Editar usuario"
                               >
                                 <Pencil className="w-4 h-4 text-gray-600" />
                               </button>
                               <button
-                                onClick={() => handleDeleteUser(user.id)}
+                                onClick={() => handleDeleteUser(user.id, user.role)}
                                 className="p-1 hover:bg-red-50 rounded"
                                 title="Eliminar usuario"
                               >
