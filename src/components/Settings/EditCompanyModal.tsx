@@ -25,7 +25,7 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({ company, onC
     try {
       const { data, error } = await supabase
         .from('sucursales')
-        .select('*')
+        .select('id, nombre, direccion, telefono, horario')
         .eq('empresa_id', empresaId);
       if (error) throw error;
       setSucursales(data || []);
@@ -77,7 +77,8 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({ company, onC
         .update({
           nombre: updatedSucursal.nombre,
           direccion: updatedSucursal.direccion,
-          telefono: updatedSucursal.telefono
+          telefono: updatedSucursal.telefono,
+          horario: updatedSucursal.horario
         })
         .eq('id', updatedSucursal.id);
 
@@ -186,6 +187,7 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({ company, onC
                 <h5 className="text-sm font-medium text-gray-700">Detalles de la Sucursal</h5>
                 <p>Dirección: {selectedSucursal.label}</p>
                 <p>Teléfono: {sucursales.find(s => s.id === selectedSucursal.value)?.telefono}</p>
+                <p>Horario: {sucursales.find(s => s.id === selectedSucursal.value)?.horario}</p>
                 <div className="mt-2">
                   <iframe
                     width="100%"
