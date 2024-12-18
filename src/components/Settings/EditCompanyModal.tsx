@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Select from 'react-select';
 import { supabase } from '../../lib/supabaseClient';
-import { EditSucursalModal } from './EditSucursalModal';
+import EditSucursalModal from './EditSucursalModal';
 import { AddSucursalModal } from './AddSucursalModal';
 import { Edit, Trash2, Plus } from 'lucide-react';
 
