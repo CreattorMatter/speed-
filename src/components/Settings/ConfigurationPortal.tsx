@@ -314,7 +314,7 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
       <motion.div
         initial={{ opacity: 1, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        exit={{ opacity: 1, scale: 0.95 }}
         className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col"
       >
         {/* Header - fijo en la parte superior */}

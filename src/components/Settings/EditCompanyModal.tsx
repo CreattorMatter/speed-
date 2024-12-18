@@ -31,17 +31,17 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({ company, onC
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ duration: 0.3 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
     >
       <motion.div
-        initial={{ y: 50 }}
+        initial={{ y: 100 }}
         animate={{ y: 0 }}
-        exit={{ y: 50 }}
-        transition={{ duration: 0.3 }}
+        exit={{ y: 100 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
       >
         <h3 className="text-lg font-medium mb-4">Editar Empresa</h3>
