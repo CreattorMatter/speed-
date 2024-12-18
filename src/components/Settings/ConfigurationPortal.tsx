@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Database, Server, AlertTriangle, Settings2, Users, Palette, Pencil, Trash2, CheckCircle, Check } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { EditCompanyModal } from './EditCompanyModal';
+import { AddCompanyModal } from './AddCompanyModal';
 
 interface ConfigurationPortalProps {
   isOpen: boolean;
@@ -141,12 +143,16 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
   const [roles, setRoles] = useState<string[]>(['admin', 'limited']);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [notification, setNotification] = useState<Notification | null>(null);
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<any>(null);
+  const [isAddCompanyModalOpen, setIsAddCompanyModalOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && currentUser.role === 'admin') {
       fetchUsers();
       if (activeTab === 'general') {
         fetchDatabaseStats();
+        fetchCompanies();
       }
     }
   }, [isOpen, activeTab]);
@@ -200,6 +206,19 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
       console.error('Error:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('empresas')
+        .select('*');
+
+      if (error) throw error;
+      setCompanies(data || []);
+    } catch (err) {
+      console.error('Error fetching companies:', err);
     }
   };
 
@@ -259,6 +278,32 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
     } catch (err) {
       console.error('Error creating user:', err);
       showNotification('error', 'Error al crear el usuario');
+    }
+  };
+
+  const handleAddCompany = () => {
+    setIsAddCompanyModalOpen(true);
+  };
+
+  const handleEditCompany = (company: any) => {
+    setSelectedCompany(company);
+  };
+
+  const handleDeleteCompany = async (companyId: number) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta empresa?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('empresas')
+        .delete()
+        .eq('id', companyId);
+
+      if (error) throw error;
+      showNotification('success', 'Empresa eliminada correctamente');
+      fetchCompanies();
+    } catch (err) {
+      console.error('Error deleting company:', err);
+      showNotification('error', 'Error al eliminar la empresa');
     }
   };
 
@@ -395,6 +440,38 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
                               : 'N/A'}
                           </span>
                         </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-indigo-50 p-4 rounded-lg">
+                      <div className="flex items-center justify-between gap-3 mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">
+                          Empresas
+                        </h3>
+                        <button
+                          onClick={handleAddCompany}
+                          className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
+                        >
+                          Agregar Empresa
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap justify-center gap-6">
+                        {companies.map(company => (
+                          <div key={company.id} className="relative group">
+                            <img
+                              src={company.logo}
+                              alt={company.nombre}
+                              className="h-16 w-auto object-contain cursor-pointer transition-transform duration-200 group-hover:scale-105 group-hover:shadow-lg"
+                              onClick={() => handleEditCompany(company)}
+                            />
+                            <button
+                              onClick={() => handleDeleteCompany(company.id)}
+                              className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            >
+                              X
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </>
@@ -540,6 +617,29 @@ export function ConfigurationPortal({ isOpen, onClose, currentUser }: Configurat
           onClose={() => setSelectedUser(null)}
           onSave={selectedUser.id ? handleUserUpdate : handleCreateUser}
           roles={roles}
+        />
+      )}
+
+      {selectedCompany && (
+        <EditCompanyModal
+          company={selectedCompany}
+          onClose={() => setSelectedCompany(null)}
+          onSave={() => {
+            setSelectedCompany(null);
+            fetchCompanies();
+          }}
+          showNotification={showNotification}
+        />
+      )}
+
+      {isAddCompanyModalOpen && (
+        <AddCompanyModal
+          onClose={() => setIsAddCompanyModalOpen(false)}
+          onSave={() => {
+            setIsAddCompanyModalOpen(false);
+            fetchCompanies();
+          }}
+          showNotification={showNotification}
         />
       )}
     </div>
