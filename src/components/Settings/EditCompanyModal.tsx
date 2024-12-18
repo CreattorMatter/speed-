@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import Select from 'react-select';
 import { supabase } from '../../lib/supabaseClient';
 import { EditSucursalModal } from './EditSucursalModal';
+import { AddSucursalModal } from './AddSucursalModal';
+import { Edit, Trash2, Plus } from 'lucide-react';
 
 interface EditCompanyModalProps {
   company: any;
@@ -16,6 +18,7 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({ company, onC
   const [sucursales, setSucursales] = useState<any[]>([]);
   const [selectedSucursal, setSelectedSucursal] = useState<any>(null);
   const [isEditSucursalModalOpen, setIsEditSucursalModalOpen] = useState(false);
+  const [isAddSucursalModalOpen, setIsAddSucursalModalOpen] = useState(false);
 
   useEffect(() => {
     fetchSucursales(company.id);
@@ -90,6 +93,40 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({ company, onC
     } catch (err) {
       console.error('Error updating sucursal:', err);
       showNotification('error', 'Error al actualizar la sucursal');
+    }
+  };
+
+  const handleAddSucursal = async (newSucursal: any) => {
+    try {
+      const { error } = await supabase
+        .from('sucursales')
+        .insert(newSucursal);
+
+      if (error) throw error;
+
+      setIsAddSucursalModalOpen(false);
+      showNotification('success', 'Sucursal agregada correctamente');
+      fetchSucursales(company.id); // Refresca la lista de sucursales
+    } catch (err) {
+      console.error('Error adding sucursal:', err);
+      showNotification('error', 'Error al agregar la sucursal');
+    }
+  };
+
+  const handleDeleteSucursal = async (sucursalId: number) => {
+    try {
+      const { error } = await supabase
+        .from('sucursales')
+        .delete()
+        .eq('id', sucursalId);
+
+      if (error) throw error;
+
+      showNotification('success', 'Sucursal eliminada correctamente');
+      fetchSucursales(company.id); // Refresca la lista de sucursales
+    } catch (err) {
+      console.error('Error deleting sucursal:', err);
+      showNotification('error', 'Error al eliminar la sucursal');
     }
   };
 
@@ -197,12 +234,33 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({ company, onC
                     allowFullScreen
                   ></iframe>
                 </div>
-                <button
-                  onClick={() => handleEditSucursal(selectedSucursal.value)}
-                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Editar Sucursal
-                </button>
+                <div className="flex justify-start gap-2 mt-4">
+                  <button
+                    onClick={() => handleEditSucursal(selectedSucursal.value)}
+                    className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg hover:from-purple-600 hover:to-indigo-600 transition-transform transform hover:scale-105"
+                  >
+                    <Edit className="mr-2" />
+                    Editar Sucursal
+                  </button>
+                  <button
+                    onClick={() => setIsAddSucursalModalOpen(true)}
+                    className="flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition-transform transform hover:scale-105"
+                  >
+                    <Plus className="mr-2" />
+                    Agregar Sucursal
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm('¿Estás seguro de que deseas eliminar esta sucursal?')) {
+                        handleDeleteSucursal(selectedSucursal.value);
+                      }
+                    }}
+                    className="flex items-center px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:from-red-600 hover:to-pink-600 transition-transform transform hover:scale-105 ml-auto"
+                  >
+                    <Trash2 className="mr-2" />
+                    Eliminar Sucursal
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -213,6 +271,13 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({ company, onC
           sucursal={selectedSucursal}
           onClose={() => setIsEditSucursalModalOpen(false)}
           onSave={handleSaveSucursal}
+        />
+      )}
+      {isAddSucursalModalOpen && (
+        <AddSucursalModal
+          empresaId={company.id}
+          onClose={() => setIsAddSucursalModalOpen(false)}
+          onSave={handleAddSucursal}
         />
       )}
     </motion.div>
