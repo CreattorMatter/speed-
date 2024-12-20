@@ -1,15 +1,19 @@
 import { supabase } from './supabaseClient';
 
 interface Template {
+  id?: number;
   name: string;
   description: string;
   image_data: string;
+  image_url?: string;
   blocks?: string;
   canvas_settings: any;
   created_by: string;
   user_email: string;
   is_public: boolean;
   version: string;
+  status?: 'active' | 'inactive';
+  created_at?: string;
 }
 
 interface User {
@@ -84,6 +88,7 @@ class BuilderService {
         name: templateData.name || 'Sin nombre',
         description: templateData.description || '',
         image_data: templateData.image_data,
+        image_url: templateData.image_data,
         blocks: typeof templateData.blocks === 'string' ? templateData.blocks : JSON.stringify(templateData.blocks || []),
         canvas_settings: typeof templateData.canvas_settings === 'string' 
           ? templateData.canvas_settings 
@@ -92,6 +97,7 @@ class BuilderService {
         user_email: user.email,
         is_public: templateData.is_public || false,
         version: templateData.version || '1.0',
+        status: 'active',
         created_at: new Date().toISOString()
       };
 
