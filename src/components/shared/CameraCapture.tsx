@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Camera, X } from 'lucide-react';
+import { Camera, X, Save } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'react-hot-toast';
 
@@ -13,6 +13,9 @@ export function CameraCapture({ isOpen, onClose, onPhotoTaken }: CameraCapturePr
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [photoName, setPhotoName] = useState('');
+  const [capturedImage, setCapturedImage] = useState<{ blob: Blob; preview: string } | null>(null);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -101,14 +104,36 @@ export function CameraCapture({ isOpen, onClose, onPhotoTaken }: CameraCapturePr
         );
       });
 
-      // Crear el archivo
-      const fileName = `capture-${Date.now()}.jpg`;
-      const file = new File([blob], fileName, { type: 'image/jpeg' });
+      // Guardar la imagen capturada y mostrar el modal
+      setCapturedImage({
+        blob,
+        preview: canvas.toDataURL('image/jpeg')
+      });
+      setShowNameModal(true);
+      setIsLoading(false);
+
+    } catch (err) {
+      console.error('Error al tomar la foto:', err);
+      toast.error(err instanceof Error ? err.message : 'Error al procesar la imagen');
+      setIsLoading(false);
+    }
+  };
+
+  const savePhoto = async () => {
+    if (!capturedImage || !photoName.trim()) return;
+    setIsLoading(true);
+
+    try {
+      // Crear el archivo con solo el nombre proporcionado
+      const fileName = `${photoName.trim()}.jpg`;
+      const file = new File([capturedImage.blob], fileName, { type: 'image/jpeg' });
 
       // Subir a Supabase
       const { data, error } = await supabase.storage
         .from('builder-images')
-        .upload(`captures/${fileName}`, file);
+        .upload(`captures/${fileName}`, file, {
+          upsert: true // Sobrescribir si existe un archivo con el mismo nombre
+        });
 
       if (error) {
         throw new Error('Error al subir la imagen: ' + error.message);
@@ -129,10 +154,13 @@ export function CameraCapture({ isOpen, onClose, onPhotoTaken }: CameraCapturePr
       onClose();
 
     } catch (err) {
-      console.error('Error al tomar la foto:', err);
-      toast.error(err instanceof Error ? err.message : 'Error al procesar la imagen');
+      console.error('Error al guardar la foto:', err);
+      toast.error(err instanceof Error ? err.message : 'Error al guardar la imagen');
     } finally {
       setIsLoading(false);
+      setShowNameModal(false);
+      setCapturedImage(null);
+      setPhotoName('');
     }
   };
 
@@ -140,33 +168,88 @@ export function CameraCapture({ isOpen, onClose, onPhotoTaken }: CameraCapturePr
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      <div className="relative flex-1">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="w-full h-full object-cover"
-        />
-        
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 bg-black/50 rounded-full text-white"
-        >
-          <X className="w-6 h-6" />
-        </button>
-      </div>
+      {!showNameModal ? (
+        <>
+          <div className="relative flex-1">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+            />
+            
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 bg-black/50 rounded-full text-white"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
 
-      <div className="p-4 bg-black">
-        <button
-          onClick={takePhoto}
-          disabled={isLoading}
-          className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center
-            ${isLoading ? 'bg-gray-400' : 'bg-white'}`}
-        >
-          <Camera className={`w-8 h-8 ${isLoading ? 'text-gray-600' : 'text-black'}`} />
-        </button>
-      </div>
+          <div className="p-4 bg-black">
+            <button
+              onClick={takePhoto}
+              disabled={isLoading}
+              className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center
+                ${isLoading ? 'bg-gray-400' : 'bg-white'}`}
+            >
+              <Camera className={`w-8 h-8 ${isLoading ? 'text-gray-600' : 'text-black'}`} />
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col h-full p-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-white text-xl font-semibold">Nombrar foto</h2>
+            <button
+              onClick={() => {
+                setShowNameModal(false);
+                setCapturedImage(null);
+                setPhotoName('');
+              }}
+              className="p-2 text-white"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {capturedImage && (
+            <div className="flex-1 mb-4">
+              <img
+                src={capturedImage.preview}
+                alt="Vista previa"
+                className="w-full h-64 object-contain bg-black/50 rounded-lg"
+              />
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <input
+              type="text"
+              value={photoName}
+              onChange={(e) => setPhotoName(e.target.value)}
+              placeholder="Nombre de la foto"
+              className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg 
+                       text-white placeholder-white/50 focus:outline-none focus:ring-2 
+                       focus:ring-white/50"
+              autoFocus
+            />
+
+            <button
+              onClick={savePhoto}
+              disabled={isLoading || !photoName.trim()}
+              className={`w-full py-3 flex items-center justify-center gap-2 rounded-lg
+                ${isLoading || !photoName.trim() 
+                  ? 'bg-gray-600 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700'} text-white transition-colors`}
+            >
+              <Save className="w-5 h-5" />
+              {isLoading ? 'Guardando...' : 'Guardar foto'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
