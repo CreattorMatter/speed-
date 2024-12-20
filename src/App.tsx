@@ -76,13 +76,6 @@ function AppContent() {
           setUser(parsedUser);
           setIsAuthenticated(true);
           setUserRole(parsedUser.role === 'admin' ? 'admin' : 'limited');
-          
-          if (isMobile()) {
-            console.log('Dispositivo móvil detectado');
-            setShowMobileModal(true);
-          } else {
-            console.log('No es dispositivo móvil');
-          }
         } else {
           console.warn('Usuario en localStorage no tiene todos los campos necesarios');
         }
@@ -220,6 +213,8 @@ function AppContent() {
 
   const handlePhotoTaken = async (imageUrl: string) => {
     try {
+      console.log('Guardando imagen:', imageUrl);
+      
       const { error } = await supabase
         .from('builder')
         .insert([
@@ -227,13 +222,18 @@ function AppContent() {
             image_url: imageUrl,
             created_by: user?.id,
             created_at: new Date().toISOString(),
-            type: 'captured_image'
+            type: 'captured_image',
+            status: 'active'
           }
         ]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error en supabase:', error);
+        throw error;
+      }
       
       toast.success('Imagen guardada correctamente');
+      setShowCamera(false);
     } catch (err) {
       console.error('Error saving image:', err);
       toast.error('Error al guardar la imagen');
@@ -241,59 +241,45 @@ function AppContent() {
   };
 
   if (isAuthenticated) {
-    if (user?.email === 'ftes@ftes.com') {
-      return <Navigate to="/ftes" replace />;
-    }
-
-    if (showBuilder) {
-      return <Builder onBack={handleBack} />;
-    }
-
-    if (showProducts) {
-      return (
-        <Products 
-          onBack={handleBack} 
-          onLogout={handleLogout}
-          userEmail={user?.email || ''} 
-          userName={user?.name || ''}
-        />
-      );
-    }
-
-    if (showPromotions) {
-      return <Promotions onBack={handleBack} />;
-    }
-
-    if (showPosterEditor) {
-      return (
-        <PosterEditor 
-          onBack={() => setShowPosterEditor(false)}
-          onLogout={handleLogout}
-          initialProducts={location.state?.selectedProducts}
-          initialPromotion={location.state?.selectedPromotion}
-          userEmail={user?.email || ''}
-          userName={user?.name || ''}
-        />
-      );
-    }
-
-    if (showAnalytics) {
-      return (
-        <Analytics 
-          onBack={() => setShowAnalytics(false)} 
-          onLogout={handleLogout}
-          userEmail={user?.email || ''}
-          userName={user?.name || ''}
-        />
-      );
-    }
-
-    if (user?.email && user?.name) {
-      return (
-        <HeaderProvider 
-          userEmail={user.email}
-          userName={user.name}
-        >
+    return (
+      <HeaderProvider 
+        userEmail={user?.email || ''}
+        userName={user?.name || ''}
+      >
+        {showBuilder && <Builder onBack={handleBack} />}
+        
+        {showProducts && (
+          <Products 
+            onBack={handleBack} 
+            onLogout={handleLogout}
+            userEmail={user?.email || ''} 
+            userName={user?.name || ''}
+          />
+        )}
+        
+        {showPromotions && <Promotions onBack={handleBack} />}
+        
+        {showPosterEditor && (
+          <PosterEditor 
+            onBack={() => setShowPosterEditor(false)}
+            onLogout={handleLogout}
+            initialProducts={location.state?.selectedProducts}
+            initialPromotion={location.state?.selectedPromotion}
+            userEmail={user?.email || ''}
+            userName={user?.name || ''}
+          />
+        )}
+        
+        {showAnalytics && (
+          <Analytics 
+            onBack={() => setShowAnalytics(false)} 
+            onLogout={handleLogout}
+            userEmail={user?.email || ''}
+            userName={user?.name || ''}
+          />
+        )}
+        
+        {!showBuilder && !showProducts && !showPromotions && !showPosterEditor && !showAnalytics && (
           <Dashboard 
             onLogout={handleLogout}
             onNewTemplate={() => setShowBuilder(true)}
@@ -305,14 +291,40 @@ function AppContent() {
             userRole={userRole}
             onAnalytics={handleAnalytics}
           />
-          <ConfigurationPortal 
-            isOpen={isConfigOpen}
-            onClose={() => setIsConfigOpen(false)}
-            currentUser={user}
-          />
-        </HeaderProvider>
-      );
-    }
+        )}
+
+        <ConfigurationPortal 
+          isOpen={isConfigOpen}
+          onClose={() => setIsConfigOpen(false)}
+          currentUser={user}
+        />
+
+        <MobileDetectionModal
+          isOpen={showMobileModal}
+          onClose={() => setShowMobileModal(false)}
+          onCapture={() => {
+            setShowMobileModal(false);
+            setShowCamera(true);
+          }}
+          onContinue={() => setShowMobileModal(false)}
+        />
+
+        <CameraCapture
+          isOpen={showCamera}
+          onClose={() => setShowCamera(false)}
+          onPhotoTaken={handlePhotoTaken}
+        />
+
+        {process.env.NODE_ENV === 'development' && (
+          <button
+            onClick={() => setShowMobileModal(true)}
+            className="fixed bottom-4 right-4 bg-blue-500 text-white p-2 rounded"
+          >
+            Test Mobile Modal
+          </button>
+        )}
+      </HeaderProvider>
+    );
   }
 
   return (
@@ -399,30 +411,6 @@ function AppContent() {
           </form>
         </div>
       </div>
-      <MobileDetectionModal
-        isOpen={showMobileModal}
-        onClose={() => setShowMobileModal(false)}
-        onCapture={() => {
-          setShowMobileModal(false);
-          setShowCamera(true);
-        }}
-        onContinue={() => setShowMobileModal(false)}
-      />
-
-      <CameraCapture
-        isOpen={showCamera}
-        onClose={() => setShowCamera(false)}
-        onPhotoTaken={handlePhotoTaken}
-      />
-
-      {process.env.NODE_ENV === 'development' && (
-        <button
-          onClick={() => setShowMobileModal(true)}
-          className="fixed bottom-4 right-4 bg-blue-500 text-white p-2 rounded"
-        >
-          Test Mobile Modal
-        </button>
-      )}
     </div>
   );
 }

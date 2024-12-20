@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Camera, X } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { toast } from 'react-hot-toast';
 
 interface CameraCaptureProps {
   isOpen: boolean;
@@ -22,15 +23,28 @@ export function CameraCapture({ isOpen, onClose, onPhotoTaken }: CameraCapturePr
 
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
+      const constraints = {
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        }
+      };
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(mediaStream);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        await new Promise((resolve) => {
+          if (videoRef.current) {
+            videoRef.current.onloadedmetadata = resolve;
+          }
+        });
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
+      toast.error('No se pudo acceder a la cámara');
     }
   };
 
@@ -42,36 +56,63 @@ export function CameraCapture({ isOpen, onClose, onPhotoTaken }: CameraCapturePr
   };
 
   const takePhoto = () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current) {
+      console.error('No se encontró la referencia del video');
+      return;
+    }
 
-    const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.drawImage(videoRef.current, 0, 0);
-    canvas.toBlob(async (blob) => {
-      if (!blob) return;
-
-      try {
-        const file = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
-        const { data, error } = await supabase.storage
-          .from('builder-images')
-          .upload(`captures/${file.name}`, file);
-
-        if (error) throw error;
-
-        const imageUrl = supabase.storage
-          .from('builder-images')
-          .getPublicUrl(`captures/${file.name}`).data.publicUrl;
-
-        onPhotoTaken(imageUrl);
-        onClose();
-      } catch (err) {
-        console.error('Error uploading image:', err);
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        console.error('No se pudo obtener el contexto del canvas');
+        return;
       }
-    }, 'image/jpeg', 0.8);
+
+      ctx.drawImage(videoRef.current, 0, 0);
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          console.error('No se pudo crear el blob de la imagen');
+          return;
+        }
+
+        try {
+          console.log('Creando archivo de imagen...');
+          const file = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          
+          console.log('Subiendo a Supabase...');
+          const { data, error } = await supabase.storage
+            .from('builder-images')
+            .upload(`captures/${file.name}`, file);
+
+          if (error) {
+            console.error('Error al subir a Supabase:', error);
+            throw error;
+          }
+
+          console.log('Imagen subida exitosamente:', data);
+          
+          const imageUrl = supabase.storage
+            .from('builder-images')
+            .getPublicUrl(`captures/${file.name}`).data.publicUrl;
+
+          console.log('URL de la imagen:', imageUrl);
+          onPhotoTaken(imageUrl);
+          
+        } catch (err) {
+          console.error('Error en el proceso de captura:', err);
+          toast.error('Error al procesar la imagen');
+        }
+      }, 'image/jpeg', 0.8);
+
+    } catch (err) {
+      console.error('Error al tomar la foto:', err);
+      toast.error('Error al capturar la imagen');
+    }
   };
 
   if (!isOpen) return null;
