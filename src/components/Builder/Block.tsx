@@ -19,6 +19,8 @@ export function Block({ block, onDelete, onResize, onMove, onImageUpload, onDrop
   const resizeRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  console.log('Renderizando bloque:', block);
+
   const handleDragOver = (e: React.DragEvent) => {
     if (block.isContainer) {
       e.preventDefault();
@@ -68,8 +70,8 @@ export function Block({ block, onDelete, onResize, onMove, onImageUpload, onDrop
       ref={blockRef}
       className={`absolute cursor-move ${
         block.isContainer 
-          ? 'border-2 border-dashed border-indigo-300 bg-indigo-50/30 hover:bg-indigo-50/40 transition-colors' 
-          : 'bg-white rounded-lg shadow-md'
+          ? 'border-2 border-dashed border-indigo-300 bg-indigo-50 hover:bg-indigo-100 transition-colors' 
+          : 'bg-white rounded-lg shadow-md hover:shadow-lg'
       }`}
       style={{
         left: block.position.x,
@@ -77,15 +79,21 @@ export function Block({ block, onDelete, onResize, onMove, onImageUpload, onDrop
         width: block.size.width,
         height: block.size.height,
         zIndex: block.isContainer ? 0 : 1,
-        ...(block.isContainer && {
-          boxShadow: 'inset 0 0 20px rgba(99, 102, 241, 0.1)'
-        })
+        transform: block.rotation ? `rotate(${block.rotation}deg)` : undefined,
+        ...(block.scale && {
+          transform: `${block.rotation ? `rotate(${block.rotation}deg) ` : ''}scale(${block.scale.x}, ${block.scale.y})`
+        }),
+        ...block.styles
       }}
       onMouseDown={(e) => onMove(e, block.id)}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       draggable={!block.isContainer}
       onDragStart={handleDragStart}
+      data-block-id={block.id}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2 }}
     >
       {/* Etiqueta del contenedor */}
       {block.isContainer && (
@@ -97,14 +105,14 @@ export function Block({ block, onDelete, onResize, onMove, onImageUpload, onDrop
       {/* Botón de eliminar */}
       <button
         onClick={() => onDelete(block.id)}
-        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 z-10"
+        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 z-10 shadow-sm"
       >
         <X className="w-4 h-4" />
       </button>
 
       {/* Contenido del bloque */}
       <div className="w-full h-full flex flex-col items-center justify-center relative">
-        {block.content.imageUrl ? (
+        {block.content?.imageUrl ? (
           <img 
             src={block.content.imageUrl} 
             alt={`Imagen para ${block.type}`}
@@ -122,7 +130,11 @@ export function Block({ block, onDelete, onResize, onMove, onImageUpload, onDrop
               </button>
             ) : (
               !block.isContainer && (
-                <span className="text-gray-500">{block.content.text}</span>
+                <div className="w-full h-full flex items-center justify-center p-4">
+                  <span className="text-gray-500 text-center break-words">
+                    {block.content?.text || `Bloque ${block.type}`}
+                  </span>
+                </div>
               )
             )}
           </>
@@ -140,7 +152,7 @@ export function Block({ block, onDelete, onResize, onMove, onImageUpload, onDrop
       {/* Manejador de redimensionamiento */}
       <div
         ref={resizeRef}
-        className={`absolute bottom-0 right-0 w-4 h-4 cursor-se-resize ${block.isContainer ? 'bg-indigo-400' : 'bg-indigo-500'} rounded-bl`}
+        className="absolute bottom-0 right-0 w-4 h-4 bg-indigo-500 rounded-full cursor-se-resize transform translate-x-1/2 translate-y-1/2 hover:scale-110 transition-transform"
         onMouseDown={(e) => {
           e.stopPropagation();
           const startX = e.clientX;
@@ -149,18 +161,18 @@ export function Block({ block, onDelete, onResize, onMove, onImageUpload, onDrop
           const startHeight = block.size.height;
 
           const handleMouseMove = (e: MouseEvent) => {
-            const newWidth = Math.max(100, startWidth + (e.clientX - startX));
-            const newHeight = Math.max(100, startHeight + (e.clientY - startY));
-            onResize(block.id, { width: newWidth, height: newHeight });
-          };
-
-          const handleMouseUp = () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            onResize(block.id, {
+              width: Math.max(50, startWidth + deltaX),
+              height: Math.max(50, startHeight + deltaY)
+            });
           };
 
           document.addEventListener('mousemove', handleMouseMove);
-          document.addEventListener('mouseup', handleMouseUp);
+          document.addEventListener('mouseup', () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+          }, { once: true });
         }}
       />
     </motion.div>

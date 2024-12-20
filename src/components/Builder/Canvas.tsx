@@ -98,10 +98,19 @@ export default function Canvas({ blocks, setBlocks, onDropInContainer }: CanvasP
     reader.readAsDataURL(file);
   }, [setBlocks]);
 
+  // Ordenar los bloques para que los contenedores se rendericen primero
+  const sortedBlocks = [...blocks].sort((a, b) => {
+    if (a.isContainer && !b.isContainer) return -1;
+    if (!a.isContainer && b.isContainer) return 1;
+    return 0;
+  });
+
+  console.log('Renderizando bloques en Canvas:', sortedBlocks);
+
   return (
     <div 
       id="builder-canvas-area"
-      className="h-full bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 relative"
+      className="h-full w-full relative bg-white rounded-lg shadow-lg overflow-hidden"
     >
       <ZoomControls
         scale={scale}
@@ -110,7 +119,7 @@ export default function Canvas({ blocks, setBlocks, onDropInContainer }: CanvasP
       />
       <Rulers gridSize={GRID_SIZE * scale} />
       <div 
-        className="relative w-[calc(100%-20px)] h-[calc(100%-20px)] ml-[20px] mt-[20px]"
+        className="builder-canvas relative w-[calc(100%-20px)] h-[calc(100%-20px)] ml-[20px] mt-[20px] overflow-auto"
         style={{
           transform: `scale(${scale})`,
           transformOrigin: '0 0',
@@ -118,21 +127,28 @@ export default function Canvas({ blocks, setBlocks, onDropInContainer }: CanvasP
                            linear-gradient(to bottom, rgba(99, 102, 241, 0.1) 1px, transparent 1px)`,
           backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
           backgroundColor: 'white',
-          width: '3000px',
-          height: '2000px'
+          minWidth: '3000px',
+          minHeight: '2000px',
+          position: 'relative'
         }}
       >
-        {blocks.map(block => (
-          <Block
-            key={block.id}
-            block={block}
-            onDelete={handleDelete}
-            onResize={handleResize}
-            onMove={handleMove}
-            onImageUpload={handleImageUpload}
-            onDropInContainer={onDropInContainer}
-          />
-        ))}
+        {sortedBlocks.length > 0 ? (
+          sortedBlocks.map(block => (
+            <Block
+              key={block.id}
+              block={block}
+              onDelete={handleDelete}
+              onResize={handleResize}
+              onMove={handleMove}
+              onImageUpload={handleImageUpload}
+              onDropInContainer={onDropInContainer}
+            />
+          ))
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+            Arrastra elementos aquí para comenzar
+          </div>
+        )}
       </div>
     </div>
   );

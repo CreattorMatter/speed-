@@ -64,6 +64,9 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
   const [savingStep, setSavingStep] = useState<'idle' | 'generating' | 'uploading'>('idle');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [session, setSession] = useState<any>(null);
+  const [templateName, setTemplateName] = useState('');
+  const [templateDescription, setTemplateDescription] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
   
   // Agregar estados para el canvas
   const [canvasSettings, setCanvasSettings] = useState({
@@ -122,51 +125,55 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
     return screenshot.toDataURL('image/jpeg', 0.5);
   };
 
-  const handleSaveTemplate = async (name: string, description: string) => {
+  const handleSaveTemplate = async (name: string, description: string, isPublic: boolean) => {
     try {
-      setIsSaving(true);
-      setSavingStep('uploading');
-
-      console.log('Iniciando proceso de guardado...');
-
-      // Obtener usuario del localStorage
-      const storedUser = localStorage.getItem('user');
-      if (!storedUser) {
-        throw new Error('No hay sesión activa. Por favor, inicia sesión nuevamente.');
+      if (!name.trim()) {
+        toast.error('Por favor, ingresa un nombre para la plantilla');
+        return;
       }
 
-      const user = JSON.parse(storedUser);
-      console.log('Usuario actual:', user);
+      setIsSaving(true);
+      setSavingStep('generating');
 
-      // Preparar datos de la plantilla
+      // Preparar los bloques para guardar
+      const blocksToSave = blocks.map(block => ({
+        ...block,
+        children: blocks.filter(b => b.parentId === block.id)
+      }));
+
+      // Filtrar solo los bloques raíz (sin parentId)
+      const rootBlocks = blocksToSave.filter(block => !block.parentId);
+
+      // Preparar los datos de la plantilla
       const templateData = {
         name,
-        description,
-        image_data: previewImage,
-        canvas_settings: {
-          blocks,
-          settings: canvasSettings
-        },
-        created_by: user.email,
-        user_email: user.email,
-        is_public: false,
+        description: description || '',
+        image_data: await getCanvasImage(),
+        blocks: JSON.stringify(rootBlocks),
+        canvas_settings: JSON.stringify({
+          width: canvasSettings.width,
+          height: canvasSettings.height,
+          background: canvasSettings.background
+        }),
+        is_public: isPublic,
+        created_by: userName,
+        user_email: userEmail,
         version: '1.0'
       };
 
-      console.log('Datos de la plantilla preparados:', templateData);
+      console.log('Guardando plantilla:', templateData);
 
-      // Guardar la plantilla usando el servicio
-      const result = await builderService.saveTemplate(templateData);
-      console.log('Resultado del guardado:', result);
-
+      await builderService.saveTemplate(templateData);
+      
       setIsSaveModalOpen(false);
-      toast.success('¡Plantilla guardada exitosamente!');
+      
+      toast.success('Plantilla guardada exitosamente');
     } catch (error) {
-      console.error('Error completo:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error al guardar la plantilla';
-      toast.error(errorMessage);
+      console.error('Error al guardar la plantilla:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al guardar la plantilla');
     } finally {
       setIsSaving(false);
+      setSavingStep('idle');
     }
   };
 
@@ -270,22 +277,107 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
 
   const handleSelectTemplate = (template: any) => {
     try {
-      // Parsear los datos de la plantilla
-      const templateData = template.canvas_settings;
+      console.log('Cargando plantilla:', template);
       
-      // Validar que los bloques tengan la estructura correcta
-      if (!Array.isArray(templateData.blocks)) {
-        throw new Error('Formato de bloques inválido');
+      let blocksToLoad = [];
+      
+      // Intentar parsear los bloques
+      try {
+        if (typeof template.blocks === 'string') {
+          blocksToLoad = JSON.parse(template.blocks);
+          console.log('Bloques parseados:', blocksToLoad);
+        } else {
+          blocksToLoad = template.blocks || [];
+        }
+      } catch (error) {
+        console.error('Error al parsear bloques:', error);
+        blocksToLoad = [];
       }
 
-      // Actualizar los bloques
-      setBlocks(templateData.blocks);
+      // Si no hay bloques, crear un contenedor por defecto
+      if (!blocksToLoad || blocksToLoad.length === 0) {
+        blocksToLoad = [{
+          id: `container-${Date.now()}`,
+          type: 'container',
+          content: { text: 'Contenedor principal' },
+          position: { x: 50, y: 50 },
+          size: { width: 800, height: 600 },
+          isContainer: true,
+          children: []
+        }];
+      }
 
-      // Cerrar el modal de búsqueda
-      setIsSearchModalOpen(false);
+      // Función recursiva para procesar bloques y sus hijos
+      const processBlocksRecursively = (blocks: any[]): Block[] => {
+        const processedBlocks: Block[] = [];
+
+        blocks.forEach(block => {
+          // Procesar el bloque actual
+          const processedBlock: Block = {
+            id: block.id || `block-${Date.now()}-${Math.random()}`,
+            type: block.type || 'container',
+            content: {
+              text: block.content?.text || '',
+              imageUrl: block.content?.imageUrl || block.content?.image_url || block.image_url || ''
+            },
+            position: {
+              x: Number(block.position?.x) || 50,
+              y: Number(block.position?.y) || 50
+            },
+            size: {
+              width: Number(block.size?.width) || 200,
+              height: Number(block.size?.height) || 100
+            },
+            isContainer: block.type === 'container',
+            styles: block.styles || block.style || {},
+            parentId: block.parentId || block.parent_id,
+            children: [],
+            zIndex: Number(block.zIndex || block.z_index) || (block.type === 'container' ? 0 : 1),
+            layerOrder: Number(block.layerOrder || block.layer_order) || 0,
+            rotation: Number(block.rotation) || 0,
+            scale: block.scale || { x: 1, y: 1 }
+          };
+
+          processedBlocks.push(processedBlock);
+
+          // Procesar los bloques hijos si existen
+          if (block.children && Array.isArray(block.children)) {
+            const childBlocks = processBlocksRecursively(block.children);
+            childBlocks.forEach(childBlock => {
+              childBlock.parentId = processedBlock.id;
+              processedBlocks.push(childBlock);
+            });
+          }
+        });
+
+        return processedBlocks;
+      };
+
+      // Procesar todos los bloques
+      const allBlocks = processBlocksRecursively(blocksToLoad);
+      console.log('Todos los bloques procesados:', allBlocks);
+
+      // Actualizar el estado con todos los bloques
+      setBlocks(allBlocks);
       
-      // Mostrar mensaje de éxito
-      toast.success('Plantilla cargada exitosamente');
+      // Actualizar la configuración del canvas si existe
+      if (template.canvas_settings) {
+        try {
+          const canvasConfig = typeof template.canvas_settings === 'string'
+            ? JSON.parse(template.canvas_settings)
+            : template.canvas_settings;
+
+          setCanvasSettings({
+            width: Number(canvasConfig.width) || 800,
+            height: Number(canvasConfig.height) || 1200,
+            background: canvasConfig.background || '#ffffff'
+          });
+        } catch (error) {
+          console.error('Error al procesar la configuración del canvas:', error);
+        }
+      }
+      
+      toast.success('Plantilla cargada correctamente');
     } catch (error) {
       console.error('Error al cargar la plantilla:', error);
       toast.error('Error al cargar la plantilla');
@@ -397,7 +489,7 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
       // Layout en filas con posiciones aleatorias
       let currentY = 30;
       const blocks = shuffledLayout.map((layout) => {
-        // Generar posición X aleatoria dentro de los márgenes
+        // Generar posición X aleatoria dentro de los mrgenes
         const maxX = containerWidth - (containerWidth - 100);
         const randomX = random(50, maxX);
         
@@ -437,6 +529,25 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
   const handleFinishGeneration = () => {
     setIsGeneratingAI(false);
     generateAITemplate();
+  };
+
+  // Función para obtener la imagen del canvas
+  const getCanvasImage = async () => {
+    const canvas = document.querySelector('.builder-canvas');
+    if (!canvas) return '';
+    
+    try {
+      const screenshot = await html2canvas(canvas as HTMLElement, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: true,
+      });
+      return screenshot.toDataURL('image/jpeg', 0.9);
+    } catch (error) {
+      console.error('Error al generar imagen del canvas:', error);
+      return '';
+    }
   };
 
   return (
