@@ -90,46 +90,40 @@ function AppContent() {
     setError('');
 
     try {
-      // Primero autenticar con Supabase
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password
-      });
-
-      if (authError) throw authError;
-
-      // Luego obtener los datos del usuario
-      const { data, error } = await supabase
+      // Verificar usuario y contraseña en la tabla users
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('email', email)
+        .eq('password', password)  // Validar también la contraseña
         .eq('status', 'active')
         .single();
 
-      if (error) throw error;
-
-      if (data) {
-        const user: User = {
-          id: data.id,
-          email: data.email,
-          name: data.name,
-          role: data.role,
-          status: data.status
-        };
-
-        localStorage.setItem('user', JSON.stringify(user));
-        setUser(user);
-        setIsAuthenticated(true);
-        setUserRole(data.role === 'admin' ? 'admin' : 'limited');
-
-        if (isMobile()) {
-          setShowMobileModal(true);
-        }
-      } else {
+      if (userError || !userData) {
+        console.error('Error al verificar usuario:', userError);
         setError('Usuario o contraseña incorrectos');
+        return;
+      }
+
+      // Si el usuario existe y las credenciales son correctas
+      const user: User = {
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        role: userData.role,
+        status: userData.status
+      };
+
+      localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
+      setIsAuthenticated(true);
+      setUserRole(userData.role === 'admin' ? 'admin' : 'limited');
+
+      if (isMobile()) {
+        setShowMobileModal(true);
       }
     } catch (error) {
-      console.error('Error during login:', error);
+      console.error('Error durante el login:', error);
       setError('Error al iniciar sesión');
     }
   };
