@@ -5,11 +5,11 @@ import { useHeader } from './HeaderProvider';
 
 interface HeaderProps {
   onBack?: () => void;
-  onLogout: () => void;
+  onLogout?: () => void;
 }
 
 export function Header({ onBack, onLogout }: HeaderProps) {
-  const { userEmail, userName } = useHeader();
+  const { userEmail, userName, userRole } = useHeader();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const displayName = userName || 'Usuario';
@@ -68,15 +68,19 @@ export function Header({ onBack, onLogout }: HeaderProps) {
                   >
                     <div className="px-4 py-2 border-b border-white/10">
                       <p className="text-sm font-medium text-white/90">{displayName}</p>
-                      <p className="text-xs text-white/60">{userEmail}</p>
+                      <p className="text-xs text-white/60">
+                        {userEmail} {userRole && <span className="ml-1 text-violet-400">({userRole})</span>}
+                      </p>
                     </div>
-                    <button
-                      onClick={onLogout}
-                      className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-white/5 flex items-center gap-2 transition-colors"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Cerrar sesión
-                    </button>
+                    {onLogout && (
+                      <button
+                        onClick={onLogout}
+                        className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-white/5 flex items-center gap-2 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Cerrar sesión
+                      </button>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

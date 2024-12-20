@@ -15,11 +15,13 @@ import { toast } from 'react-hot-toast';
 // @ts-ignore
 import html2canvas from 'html2canvas/dist/html2canvas.min.js';
 import { AIGeneratingModal } from './AIGeneratingModal';
+import { builderService } from '../../lib/builderService';
 
 interface BuilderProps {
   onBack: () => void;
   userEmail: string;
   userName: string;
+  userRole?: 'admin' | 'limited';
 }
 
 // Función utilitaria para calcular bounds y escala
@@ -52,7 +54,7 @@ const calculateBoundsAndScale = (blocks: Block[]) => {
   };
 };
 
-export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
+export default function Builder({ onBack, userEmail, userName, userRole = 'admin' }: BuilderProps) {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
@@ -61,6 +63,7 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [savingStep, setSavingStep] = useState<'idle' | 'generating' | 'uploading'>('idle');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [session, setSession] = useState<any>(null);
   
   // Agregar estados para el canvas
   const [canvasSettings, setCanvasSettings] = useState({
@@ -68,6 +71,23 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
     height: 1200,
     background: '#ffffff'
   });
+
+  // Efecto para verificar y mantener la sesión
+  React.useEffect(() => {
+    // Verificar sesión actual
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setSession(user);
+    }
+
+    // Suscribirse a cambios en la sesión
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleAddBlock = (type: BlockType) => {
     const newBlock: Block = {
@@ -107,16 +127,16 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
       setIsSaving(true);
       setSavingStep('uploading');
 
-      // Obtener el usuario actual de la base de datos
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', userEmail)
-        .single();
+      console.log('Iniciando proceso de guardado...');
 
-      if (userError || !userData) {
-        throw new Error('No se pudo obtener la información del usuario');
+      // Obtener usuario del localStorage
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) {
+        throw new Error('No hay sesión activa. Por favor, inicia sesión nuevamente.');
       }
+
+      const user = JSON.parse(storedUser);
+      console.log('Usuario actual:', user);
 
       // Preparar datos de la plantilla
       const templateData = {
@@ -125,38 +145,28 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
         image_data: previewImage,
         canvas_settings: {
           blocks,
-          settings: {
-            width: 3000,
-            height: 2000,
-            background: '#ffffff'
-          }
+          settings: canvasSettings
         },
-        created_by: userData.id,
+        created_by: user.email,
+        user_email: user.email,
         is_public: false,
         version: '1.0'
       };
 
-      console.log('Datos a guardar:', templateData); // Para debug
+      console.log('Datos de la plantilla preparados:', templateData);
 
-      // Guardar la plantilla
-      const { data, error: templateError } = await supabase
-        .from('builder')
-        .insert([templateData])
-        .select();
-
-      if (templateError) {
-        console.error('Error de Supabase:', templateError); // Para debug
-        throw new Error(`Error al guardar la plantilla: ${templateError.message}`);
-      }
+      // Guardar la plantilla usando el servicio
+      const result = await builderService.saveTemplate(templateData);
+      console.log('Resultado del guardado:', result);
 
       setIsSaveModalOpen(false);
       toast.success('¡Plantilla guardada exitosamente!');
     } catch (error) {
       console.error('Error completo:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al guardar la plantilla');
+      const errorMessage = error instanceof Error ? error.message : 'Error al guardar la plantilla';
+      toast.error(errorMessage);
     } finally {
       setIsSaving(false);
-      setSavingStep('idle');
     }
   };
 
@@ -280,6 +290,25 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
       console.error('Error al cargar la plantilla:', error);
       toast.error('Error al cargar la plantilla');
     }
+  };
+
+  const handleSelectImage = (imageUrl: string) => {
+    // Crear un nuevo bloque de tipo imagen con la URL seleccionada
+    const newBlock: Block = {
+      id: `image-${Date.now()}`,
+      type: 'image',
+      content: { 
+        text: 'Imagen capturada',
+        imageUrl: imageUrl 
+      },
+      position: { x: 50, y: 50 },
+      size: { width: 300, height: 200 },
+      isContainer: false
+    };
+
+    // Agregar el nuevo bloque al canvas
+    setBlocks(prevBlocks => [...prevBlocks, newBlock]);
+    toast.success('Imagen agregada exitosamente');
   };
 
   const handleLogout = () => {
@@ -411,7 +440,7 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
   };
 
   return (
-    <HeaderProvider userEmail={userEmail} userName={userName}>
+    <HeaderProvider userEmail={userEmail} userName={userName} userRole={userRole}>
       <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900">
         <Header onBack={onBack} onLogout={handleLogout} />
         {/* Toolbar */}
@@ -489,6 +518,7 @@ export default function Builder({ onBack, userEmail, userName }: BuilderProps) {
           isOpen={isSearchModalOpen}
           onClose={() => setIsSearchModalOpen(false)}
           onSelectTemplate={handleSelectTemplate}
+          onSelectImage={handleSelectImage}
         />
 
         <AIGeneratingModal 

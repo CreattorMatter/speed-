@@ -16,6 +16,7 @@ import { HeaderProvider } from './components/shared/HeaderProvider';
 import { Toaster } from 'react-hot-toast';
 import { MobileDetectionModal } from './components/shared/MobileDetectionModal';
 import { CameraCapture } from './components/shared/CameraCapture';
+import { toast } from 'react-hot-toast';
 
 export interface DashboardProps {
   onLogout: () => void;
@@ -70,16 +71,31 @@ function AppContent() {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
-        console.log('Usuario recuperado del localStorage:', parsedUser);
         
-        if (parsedUser && parsedUser.email && parsedUser.name) {
-          setUser(parsedUser);
-          setIsAuthenticated(true);
-          setUserRole(parsedUser.role === 'admin' ? 'admin' : 'limited');
-        } else {
-          console.warn('Usuario en localStorage no tiene todos los campos necesarios');
+        // Verificar que el usuario sigue activo en la base de datos
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', parsedUser.email)
+          .eq('status', 'active')
+          .single();
+
+        if (userError || !userData) {
+          console.error('Usuario no encontrado o inactivo');
+          localStorage.removeItem('user');
+          return;
+        }
+
+        setUser(parsedUser);
+        setIsAuthenticated(true);
+        setUserRole(parsedUser.role === 'admin' ? 'admin' : 'limited');
+
+        if (isMobile()) {
+          setShowMobileModal(true);
         }
       }
+    } catch (error) {
+      console.error('Error durante la verificación del usuario:', error);
     } finally {
       setLoading(false);
     }
@@ -90,23 +106,36 @@ function AppContent() {
     setError('');
 
     try {
-      // Verificar usuario y contraseña en la tabla users
+      console.log('Intentando login con:', email);
+      
+      // Verificar credenciales directamente en la tabla users
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('email', email)
-        .eq('password', password)  // Validar también la contraseña
-        .eq('status', 'active')
+        .eq('password', password)
         .single();
 
-      if (userError || !userData) {
+      if (userError) {
         console.error('Error al verificar usuario:', userError);
+        setError('Error al verificar credenciales');
+        return;
+      }
+
+      if (!userData) {
+        console.error('Usuario no encontrado');
         setError('Usuario o contraseña incorrectos');
         return;
       }
 
-      // Si el usuario existe y las credenciales son correctas
-      const user: User = {
+      if (userData.status !== 'active') {
+        console.error('Usuario inactivo');
+        setError('Usuario inactivo');
+        return;
+      }
+
+      // Guardar datos del usuario
+      const user = {
         id: userData.id,
         email: userData.email,
         name: userData.name,
@@ -114,14 +143,18 @@ function AppContent() {
         status: userData.status
       };
 
+      // Guardar en localStorage y estado
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
       setIsAuthenticated(true);
       setUserRole(userData.role === 'admin' ? 'admin' : 'limited');
 
+      // Verificar si es dispositivo móvil
       if (isMobile()) {
         setShowMobileModal(true);
       }
+
+      console.log('Login exitoso:', user);
     } catch (error) {
       console.error('Error durante el login:', error);
       setError('Error al iniciar sesión');
@@ -129,24 +162,29 @@ function AppContent() {
   };
 
   const handleLogout = () => {
-    // Limpiar el usuario y localStorage
-    setUser(null);
-    localStorage.removeItem('user');
-    
-    // Limpiar todos los estados de la aplicación
-    setIsAuthenticated(false);
-    setEmail('');
-    setPassword('');
-    setError('');
-    setShowBuilder(false);
-    setShowProducts(false);
-    setShowPromotions(false);
-    setShowPosterEditor(false);
-    setShowAnalytics(false);
-    setIsConfigOpen(false);
-    
-    // Redirigir al login
-    navigate('/');
+    try {
+      // Limpiar el usuario y localStorage
+      setUser(null);
+      localStorage.removeItem('user');
+      
+      // Limpiar todos los estados de la aplicación
+      setIsAuthenticated(false);
+      setEmail('');
+      setPassword('');
+      setError('');
+      setShowBuilder(false);
+      setShowProducts(false);
+      setShowPromotions(false);
+      setShowPosterEditor(false);
+      setShowAnalytics(false);
+      setIsConfigOpen(false);
+      
+      // Redirigir al login
+      navigate('/');
+    } catch (error) {
+      console.error('Error durante el logout:', error);
+      toast.error('Error al cerrar sesión');
+    }
   };
 
   React.useEffect(() => {
@@ -244,7 +282,14 @@ function AppContent() {
         userEmail={user?.email || ''}
         userName={user?.name || ''}
       >
-        {showBuilder && <Builder onBack={handleBack} />}
+        {showBuilder && (
+          <Builder 
+            onBack={handleBack}
+            userEmail={user?.email || ''}
+            userName={user?.name || ''}
+            userRole={userRole}
+          />
+        )}
         
         {showProducts && (
           <Products 
@@ -294,7 +339,7 @@ function AppContent() {
         <ConfigurationPortal 
           isOpen={isConfigOpen}
           onClose={() => setIsConfigOpen(false)}
-          currentUser={user}
+          currentUser={user || { id: 0, email: '', name: '', role: '' }}
         />
 
         <MobileDetectionModal
@@ -432,14 +477,14 @@ function App() {
             },
             success: {
               duration: 3000,
-              theme: {
+              iconTheme: {
                 primary: '#4CAF50',
                 secondary: '#FFF',
               },
             },
             error: {
               duration: 3000,
-              theme: {
+              iconTheme: {
                 primary: '#F44336',
                 secondary: '#FFF',
               },

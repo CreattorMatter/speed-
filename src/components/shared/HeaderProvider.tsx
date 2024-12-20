@@ -3,26 +3,28 @@ import React, { createContext, useContext } from 'react';
 interface HeaderContextType {
   userEmail: string;
   userName: string;
+  userRole?: 'admin' | 'limited';
 }
 
-const HeaderContext = createContext<HeaderContextType | null>(null);
+const HeaderContext = createContext<HeaderContextType>({
+  userEmail: '',
+  userName: '',
+  userRole: 'limited'
+});
 
-export function HeaderProvider({ 
-  children, 
-  userEmail, 
-  userName 
-}: HeaderContextType & { children: React.ReactNode }) {
+export const useHeader = () => useContext(HeaderContext);
+
+interface HeaderProviderProps {
+  children: React.ReactNode;
+  userEmail: string;
+  userName: string;
+  userRole?: 'admin' | 'limited';
+}
+
+export function HeaderProvider({ children, userEmail, userName, userRole = 'admin' }: HeaderProviderProps) {
   return (
-    <HeaderContext.Provider value={{ userEmail, userName }}>
+    <HeaderContext.Provider value={{ userEmail, userName, userRole }}>
       {children}
     </HeaderContext.Provider>
   );
-}
-
-export function useHeader() {
-  const context = useContext(HeaderContext);
-  if (!context) {
-    throw new Error('useHeader must be used within a HeaderProvider');
-  }
-  return context;
 } 
