@@ -6,7 +6,7 @@ import Products from './components/Products/Products';
 import Promotions from './components/Promotions';
 import { PosterEditor } from './components/Posters/PosterEditor';
 import { PrintView } from './components/Posters/PrintView';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ConfigurationPortal } from './components/Settings/ConfigurationPortal';
 import { PosterPreviewPage } from './pages/PosterPreview';
@@ -14,6 +14,8 @@ import { Analytics } from './components/Analytics/Analytics';
 import { supabase } from './lib/supabaseClient';
 import { HeaderProvider } from './components/shared/HeaderProvider';
 import { Toaster } from 'react-hot-toast';
+import { MobileDetectionModal } from './components/shared/MobileDetectionModal';
+import { CameraCapture } from './components/shared/CameraCapture';
 
 export interface DashboardProps {
   onLogout: () => void;
@@ -56,6 +58,8 @@ function AppContent() {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showMobileModal, setShowMobileModal] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -81,12 +85,12 @@ function AppContent() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     try {
-      const { data: userData, error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('email', email)
@@ -94,36 +98,31 @@ function AppContent() {
         .eq('status', 'active')
         .single();
 
-      console.log('Login - Usuario recuperado de Supabase:', userData);
+      if (error) throw error;
 
-      if (error) {
-        console.error('Error de Supabase:', error);
-        throw new Error('Error al verificar credenciales');
+      if (data) {
+        const user: User = {
+          id: data.id,
+          email: data.email,
+          name: data.name,
+          role: data.role,
+          status: data.status
+        };
+
+        localStorage.setItem('user', JSON.stringify(user));
+        setUser(user);
+        setIsAuthenticated(true);
+        setUserRole(data.role === 'admin' ? 'admin' : 'limited');
+        
+        if (isMobile()) {
+          setShowMobileModal(true);
+        }
+      } else {
+        setError('Usuario o contraseña incorrectos');
       }
-
-      if (!userData) {
-        throw new Error('Usuario o contraseña inválidos');
-      }
-
-      const user: User = {
-        id: userData.id,
-        email: userData.email,
-        name: userData.name,
-        role: userData.role,
-        status: userData.status as 'active' | 'inactive'
-      };
-
-      console.log('Usuario formateado antes de guardar:', user);
-
-      setUser(user);
-      localStorage.setItem('user', JSON.stringify(user));
-      setIsAuthenticated(true);
-      setUserRole(user.role === 'admin' ? 'admin' : 'limited');
-      
-    } catch (err) {
-      console.error('Error al iniciar sesión:', err);
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
-      setIsAuthenticated(false);
+    } catch (error) {
+      console.error('Error during login:', error);
+      setError('Error al iniciar sesión');
     }
   };
 
@@ -192,79 +191,105 @@ function AppContent() {
     setShowAnalytics(true);
   };
 
-  if (isAuthenticated && showBuilder) {
-    return (
-      <Builder 
-        onBack={handleBack} 
-        userEmail={user?.email || ''} 
-        userName={user?.name || ''}
-      />
-    );
-  }
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
 
-  if (isAuthenticated && showProducts) {
-    return (
-      <Products 
-        onBack={handleBack} 
-        onLogout={handleLogout}
-        userEmail={user?.email || ''} 
-        userName={user?.name || ''}
-      />
-    );
-  }
+  const handlePhotoTaken = async (imageUrl: string) => {
+    try {
+      const { error } = await supabase
+        .from('builder')
+        .insert([
+          {
+            image_url: imageUrl,
+            created_by: user?.id,
+            created_at: new Date().toISOString(),
+            type: 'captured_image'
+          }
+        ]);
 
-  if (isAuthenticated && showPromotions) {
-    return <Promotions onBack={handleBack} />;
-  }
+      if (error) throw error;
+      
+      toast.success('Imagen guardada correctamente');
+    } catch (err) {
+      console.error('Error saving image:', err);
+      toast.error('Error al guardar la imagen');
+    }
+  };
 
-  if (isAuthenticated && showPosterEditor) {
-    return (
-      <PosterEditor 
-        onBack={() => setShowPosterEditor(false)}
-        onLogout={handleLogout}
-        initialProducts={location.state?.selectedProducts}
-        initialPromotion={location.state?.selectedPromotion}
-        userEmail={user?.email || ''}
-        userName={user?.name || ''}
-      />
-    );
-  }
+  if (isAuthenticated) {
+    if (user?.email === 'ftes@ftes.com') {
+      return <Navigate to="/ftes" replace />;
+    }
 
-  if (isAuthenticated && showAnalytics) {
-    return (
-      <Analytics 
-        onBack={() => setShowAnalytics(false)} 
-        onLogout={handleLogout}
-        userEmail={user?.email || ''}
-        userName={user?.name || ''}
-      />
-    );
-  }
+    if (showBuilder) {
+      return <Builder onBack={handleBack} />;
+    }
 
-  if (isAuthenticated && user?.email && user?.name) {
-    return (
-      <HeaderProvider 
-        userEmail={user.email}
-        userName={user.name}
-      >
-        <Dashboard 
+    if (showProducts) {
+      return (
+        <Products 
+          onBack={handleBack} 
           onLogout={handleLogout}
-          onNewTemplate={() => setShowBuilder(true)}
-          onNewPoster={handleNewPoster}
-          onProducts={() => setShowProducts(true)}
-          onPromotions={() => setShowPromotions(true)}
-          onBack={handleBack}
-          onSettings={handleSettings}
-          userRole={userRole}
-          onAnalytics={handleAnalytics}
+          userEmail={user?.email || ''} 
+          userName={user?.name || ''}
         />
-        <ConfigurationPortal 
-          isOpen={isConfigOpen}
-          onClose={() => setIsConfigOpen(false)}
-          currentUser={user}
+      );
+    }
+
+    if (showPromotions) {
+      return <Promotions onBack={handleBack} />;
+    }
+
+    if (showPosterEditor) {
+      return (
+        <PosterEditor 
+          onBack={() => setShowPosterEditor(false)}
+          onLogout={handleLogout}
+          initialProducts={location.state?.selectedProducts}
+          initialPromotion={location.state?.selectedPromotion}
+          userEmail={user?.email || ''}
+          userName={user?.name || ''}
         />
-      </HeaderProvider>
-    );
+      );
+    }
+
+    if (showAnalytics) {
+      return (
+        <Analytics 
+          onBack={() => setShowAnalytics(false)} 
+          onLogout={handleLogout}
+          userEmail={user?.email || ''}
+          userName={user?.name || ''}
+        />
+      );
+    }
+
+    if (user?.email && user?.name) {
+      return (
+        <HeaderProvider 
+          userEmail={user.email}
+          userName={user.name}
+        >
+          <Dashboard 
+            onLogout={handleLogout}
+            onNewTemplate={() => setShowBuilder(true)}
+            onNewPoster={handleNewPoster}
+            onProducts={() => setShowProducts(true)}
+            onPromotions={() => setShowPromotions(true)}
+            onBack={handleBack}
+            onSettings={handleSettings}
+            userRole={userRole}
+            onAnalytics={handleAnalytics}
+          />
+          <ConfigurationPortal 
+            isOpen={isConfigOpen}
+            onClose={() => setIsConfigOpen(false)}
+            currentUser={user}
+          />
+        </HeaderProvider>
+      );
+    }
   }
 
   return (
@@ -288,7 +313,7 @@ function AppContent() {
         </div>
 
         <div className="bg-white/5 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/10">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6">
             {error && (
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 backdrop-blur-sm">
                 <p className="text-red-400 text-sm flex items-center gap-2">
@@ -351,6 +376,21 @@ function AppContent() {
           </form>
         </div>
       </div>
+      <MobileDetectionModal
+        isOpen={showMobileModal}
+        onClose={() => setShowMobileModal(false)}
+        onCapture={() => {
+          setShowMobileModal(false);
+          setShowCamera(true);
+        }}
+        onContinue={() => setShowMobileModal(false)}
+      />
+
+      <CameraCapture
+        isOpen={showCamera}
+        onClose={() => setShowCamera(false)}
+        onPhotoTaken={handlePhotoTaken}
+      />
     </div>
   );
 }
