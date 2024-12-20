@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Camera, X, Save } from 'lucide-react';
+import { Camera, X, Save, Plus, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'react-hot-toast';
 
@@ -14,6 +14,7 @@ export function CameraCapture({ isOpen, onClose, onPhotoTaken }: CameraCapturePr
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
+  const [showContinueModal, setShowContinueModal] = useState(false);
   const [photoName, setPhotoName] = useState('');
   const [capturedImage, setCapturedImage] = useState<{ blob: Blob; preview: string } | null>(null);
 
@@ -151,24 +152,67 @@ export function CameraCapture({ isOpen, onClose, onPhotoTaken }: CameraCapturePr
       // Notificar éxito
       onPhotoTaken(urlData.publicUrl);
       toast.success('Imagen guardada correctamente');
-      onClose();
+      
+      // Mostrar modal de continuar
+      setShowNameModal(false);
+      setCapturedImage(null);
+      setPhotoName('');
+      setShowContinueModal(true);
+      setIsLoading(false);
 
     } catch (err) {
       console.error('Error al guardar la foto:', err);
       toast.error(err instanceof Error ? err.message : 'Error al guardar la imagen');
-    } finally {
       setIsLoading(false);
-      setShowNameModal(false);
-      setCapturedImage(null);
-      setPhotoName('');
     }
+  };
+
+  const handleNewPhoto = () => {
+    // Reiniciar todos los estados
+    setShowContinueModal(false);
+    setShowNameModal(false);
+    setCapturedImage(null);
+    setPhotoName('');
+    setIsLoading(false);
+    
+    // Detener la cámara actual y reiniciarla
+    stopCamera();
+    startCamera();
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      {!showNameModal ? (
+      {showContinueModal ? (
+        <div className="flex flex-col h-full p-4 items-center justify-center">
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 w-full max-w-sm">
+            <h2 className="text-white text-xl font-semibold text-center mb-6">
+              ¿Qué deseas hacer?
+            </h2>
+            
+            <div className="space-y-4">
+              <button
+                onClick={handleNewPhoto}
+                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 
+                         text-white px-4 py-3 rounded-lg transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                Tomar otra foto
+              </button>
+
+              <button
+                onClick={onClose}
+                className="w-full flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 
+                         text-white px-4 py-3 rounded-lg transition-colors"
+              >
+                <ArrowRight className="w-5 h-5" />
+                Continuar con el sistema
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : !showNameModal ? (
         <>
           <div className="relative flex-1">
             <video
