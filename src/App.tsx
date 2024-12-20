@@ -90,11 +90,19 @@ function AppContent() {
     setError('');
 
     try {
+      // Primero autenticar con Supabase
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+      if (authError) throw authError;
+
+      // Luego obtener los datos del usuario
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('email', email)
-        .eq('password', password)
         .eq('status', 'active')
         .single();
 
@@ -113,12 +121,8 @@ function AppContent() {
         setUser(user);
         setIsAuthenticated(true);
         setUserRole(data.role === 'admin' ? 'admin' : 'limited');
-        
-        const isMobileDevice = isMobile();
-        console.log('¿Es dispositivo móvil?:', isMobileDevice);
-        
-        if (isMobileDevice) {
-          console.log('Mostrando modal móvil');
+
+        if (isMobile()) {
           setShowMobileModal(true);
         }
       } else {
