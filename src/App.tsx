@@ -76,6 +76,13 @@ function AppContent() {
           setUser(parsedUser);
           setIsAuthenticated(true);
           setUserRole(parsedUser.role === 'admin' ? 'admin' : 'limited');
+          
+          if (isMobile()) {
+            console.log('Dispositivo móvil detectado');
+            setShowMobileModal(true);
+          } else {
+            console.log('No es dispositivo móvil');
+          }
         } else {
           console.warn('Usuario en localStorage no tiene todos los campos necesarios');
         }
@@ -114,7 +121,11 @@ function AppContent() {
         setIsAuthenticated(true);
         setUserRole(data.role === 'admin' ? 'admin' : 'limited');
         
-        if (isMobile()) {
+        const isMobileDevice = isMobile();
+        console.log('¿Es dispositivo móvil?:', isMobileDevice);
+        
+        if (isMobileDevice) {
+          console.log('Mostrando modal móvil');
           setShowMobileModal(true);
         }
       } else {
@@ -192,7 +203,19 @@ function AppContent() {
   };
 
   const isMobile = () => {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+    
+    // Patrón más detallado para detectar dispositivos móviles
+    const mobilePattern = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet|ipad/i;
+    
+    // Verificar también el tipo de dispositivo si está disponible
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    console.log('User Agent:', userAgent);
+    console.log('Es dispositivo táctil:', isTouchDevice);
+    console.log('Coincide con patrón móvil:', mobilePattern.test(userAgent.toLowerCase()));
+    
+    return mobilePattern.test(userAgent.toLowerCase()) || isTouchDevice;
   };
 
   const handlePhotoTaken = async (imageUrl: string) => {
@@ -391,6 +414,15 @@ function AppContent() {
         onClose={() => setShowCamera(false)}
         onPhotoTaken={handlePhotoTaken}
       />
+
+      {process.env.NODE_ENV === 'development' && (
+        <button
+          onClick={() => setShowMobileModal(true)}
+          className="fixed bottom-4 right-4 bg-blue-500 text-white p-2 rounded"
+        >
+          Test Mobile Modal
+        </button>
+      )}
     </div>
   );
 }
