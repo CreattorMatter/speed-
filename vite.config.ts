@@ -12,7 +12,10 @@ export default defineConfig({
   optimizeDeps: {
     include: ['html2canvas']
   },
+  base: '/',
   build: {
+    outDir: 'dist',
+    copyPublicDir: true,
     commonjsOptions: {
       include: [/html2canvas/, /node_modules/]
     }
