@@ -23,7 +23,7 @@ export const COMPANIES: Company[] = [
   { 
     id: 'vea', 
     name: 'Vea', 
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/9/94/Logo-VEA-Supermercados.png'
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/f/fc/Logo_Vea_Cencosud.png'
   },
   { 
     id: 'easy-mdh', 
