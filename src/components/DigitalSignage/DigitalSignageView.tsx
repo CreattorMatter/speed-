@@ -14,6 +14,7 @@ export const DigitalSignageView: React.FC<DigitalSignageViewProps> = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [scale, setScale] = useState(1.2);
 
   useEffect(() => {
     // Recuperar datos del poster del sessionStorage
@@ -52,16 +53,16 @@ export const DigitalSignageView: React.FC<DigitalSignageViewProps> = () => {
   // Función para manejar la pantalla completa
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      // Entrar en pantalla completa
       document.documentElement.requestFullscreen().then(() => {
         setIsFullscreen(true);
+        setScale(1.8); // Aumentamos la escala en pantalla completa
       }).catch(err => {
         console.error('Error al intentar pantalla completa:', err);
       });
     } else {
-      // Salir de pantalla completa
       document.exitFullscreen().then(() => {
         setIsFullscreen(false);
+        setScale(1.2); // Volvemos a la escala normal
       }).catch(err => {
         console.error('Error al salir de pantalla completa:', err);
       });
@@ -101,20 +102,31 @@ export const DigitalSignageView: React.FC<DigitalSignageViewProps> = () => {
               overflow: 'hidden'
             }}
           >
-            <div className="relative" style={{ transform: 'scale(1.2)' }}>
+            <motion.div 
+              className="relative"
+              animate={{ 
+                scale,
+                transition: { duration: 0.3, ease: "easeInOut" }
+              }}
+            >
               <PosterPreview
                 product={currentPosterData.products[currentIndex]}
                 promotion={currentPosterData.promotion}
                 company={currentPosterData.company}
                 showTopLogo={currentPosterData.showLogo}
-                selectedFormat={{ id: 'digital', width: '1920px', height: '1080px', name: 'Digital' }}
+                selectedFormat={{ 
+                  id: 'digital', 
+                  width: isFullscreen ? '1920px' : '1280px',
+                  height: isFullscreen ? '1080px' : '720px',
+                  name: 'Digital' 
+                }}
                 zoom={1}
                 cardSize={1}
                 financing={currentPosterData.financing}
                 hideGrid={true}
-                fullscreen={true}
+                fullscreen={isFullscreen}
               />
-            </div>
+            </motion.div>
           </motion.div>
         </AnimatePresence>
 
