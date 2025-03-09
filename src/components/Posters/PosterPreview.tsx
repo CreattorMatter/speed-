@@ -51,6 +51,8 @@ interface PosterPreviewProps {
   cardSize: number;
   isLandscape?: boolean;
   financing?: FinancingOption[] | null;
+  hideGrid?: boolean;
+  fullscreen?: boolean;
 }
 
 // Definimos los formatos de papel disponibles
@@ -77,7 +79,9 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   zoom,
   cardSize,
   isLandscape = false,
-  financing = null
+  financing = null,
+  hideGrid = false,
+  fullscreen = false,
 }) => {
   // En el componente, agregamos el estado para el formato seleccionado
   const [showFormatSelector, setShowFormatSelector] = useState(false);
@@ -387,14 +391,14 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
   // Renderizado normal cuando no es modal
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-8">
+    <div className={`flex justify-center items-center ${fullscreen ? 'min-h-screen' : ''}`}>
       <div className="flex gap-4 items-start">
-        {/* Área de la hoja con zoom y movimiento */}
+        {/* Área del cartel */}
         <div 
           className="relative overflow-hidden flex items-center justify-center"
           style={{
-            width: '100vw',
-            height: '90vh',
+            width: fullscreen ? '100vw' : '100%',
+            height: fullscreen ? '100vh' : '90vh',
             cursor: isDragging ? 'grabbing' : 'grab'
           }}
           onMouseDown={handleMouseDown}
@@ -402,8 +406,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
           onMouseUp={() => setIsDragging(false)}
           onMouseLeave={() => setIsDragging(false)}
         >
-          <div className="relative"> {/* Contenedor para la hoja y los controles */}
-            {/* Mantener solo la hoja */}
+          <div className="relative">
+            {/* Contenedor del cartel */}
             <div 
               className="bg-white shadow-xl relative transition-transform"
               style={{ 
@@ -411,7 +415,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                 height: isLandscape ? selectedFormat.width : selectedFormat.height,
                 transform: `scale(${zoom}) translate(${position.x}px, ${position.y}px)`,
                 transformOrigin: 'center center',
-                backgroundImage: `
+                backgroundImage: hideGrid ? 'none' : `
                   linear-gradient(to right, #f0f0f0 1px, transparent 1px),
                   linear-gradient(to bottom, #f0f0f0 1px, transparent 1px)
                 `,

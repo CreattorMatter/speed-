@@ -472,6 +472,27 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     return null;
   };
 
+  const handleDigitalSignageClick = () => {
+    // Preparamos los datos del cartel actual
+    const currentPosterData = {
+      products: mappedProducts,
+      category: selectedCategory,
+      promotion: selectedPromotion,
+      company: companyDetails,
+      showLogo,
+      financing: selectedFinancing,
+      template: selectedTemplate
+    };
+
+    // Abrimos en nueva pestaña
+    const newWindow = window.open('/digital-signage', '_blank');
+    if (newWindow) {
+      // Guardamos los datos en sessionStorage para recuperarlos en la nueva vista
+      sessionStorage.setItem('currentPosterData', JSON.stringify(currentPosterData));
+      newWindow.focus();
+    }
+  };
+
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
@@ -821,17 +842,42 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                     </label>
                   </div>
 
-                  <button
-                    onClick={handleSendToLocations}
-                    disabled={!cc.length || !selectedProducts.length}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors
-                      ${(!cc.length || !selectedProducts.length)
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                      }`}
-                  >
-                    Enviar a Sucursales
-                  </button>
+                  {/* Botones de acción */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleSendToLocations}
+                      disabled={!cc.length || !selectedProducts.length}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors
+                        ${(!cc.length || !selectedProducts.length)
+                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                        }`}
+                    >
+                      Enviar a Sucursales
+                    </button>
+
+                    {/* Nuevo botón de Cartelería Digital */}
+                    <button
+                      onClick={handleDigitalSignageClick}
+                      className="px-4 py-2 rounded-lg font-medium bg-emerald-600 text-white 
+                                hover:bg-emerald-700 transition-colors flex items-center gap-2"
+                    >
+                      <svg 
+                        className="w-5 h-5" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={2} 
+                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
+                      </svg>
+                      Cartelería Digital
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

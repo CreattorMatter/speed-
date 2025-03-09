@@ -17,6 +17,7 @@ import { Toaster } from 'react-hot-toast';
 import { MobileDetectionModal } from './components/shared/MobileDetectionModal';
 import { CameraCapture } from './components/shared/CameraCapture';
 import { toast } from 'react-hot-toast';
+import { DigitalSignageView } from './components/DigitalSignage/DigitalSignageView';
 
 export interface DashboardProps {
   onLogout: () => void;
@@ -464,6 +465,7 @@ function App() {
       <Routes>
         <Route path="/print-view" element={<PrintView />} />
         <Route path="/poster-preview" element={<PosterPreviewPage />} />
+        <Route path="/digital-signage" element={<DigitalSignageView />} />
         <Route path="*" element={<AppContent />} />
       </Routes>
       <Suspense fallback={null}>
