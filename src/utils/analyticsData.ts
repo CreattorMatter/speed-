@@ -245,7 +245,7 @@ export const generateRandomData = (startDate: Date, endDate: Date) => {
       name: 'Vea', 
       value: Math.floor((Math.random() * 400 + 1200) * multiplier), 
       color: '#FFE5A5',
-      logo: 'https://upload.wikimedia.org/wikipedia/commons/9/94/Logo-VEA-Supermercados.png'
+      logo: 'https://upload.wikimedia.org/wikipedia/commons/f/fc/Logo_Vea_Cencosud.png'
     },
   ];
 
