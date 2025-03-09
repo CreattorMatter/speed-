@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PosterPreview } from '../Posters/PosterPreview';
-import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Maximize2, Minimize2 } from 'lucide-react';
 
 interface DigitalSignageViewProps {
   // Props si necesitas
@@ -13,6 +13,7 @@ export const DigitalSignageView: React.FC<DigitalSignageViewProps> = () => {
   const [intervalTime, setIntervalTime] = useState(5000); // 5 segundos por defecto
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showControls, setShowControls] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     // Recuperar datos del poster del sessionStorage
@@ -47,6 +48,37 @@ export const DigitalSignageView: React.FC<DigitalSignageViewProps> = () => {
     if (!currentPosterData?.products?.length) return;
     setCurrentIndex((prev) => (prev + 1) % currentPosterData.products.length);
   };
+
+  // Función para manejar la pantalla completa
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      // Entrar en pantalla completa
+      document.documentElement.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+      }).catch(err => {
+        console.error('Error al intentar pantalla completa:', err);
+      });
+    } else {
+      // Salir de pantalla completa
+      document.exitFullscreen().then(() => {
+        setIsFullscreen(false);
+      }).catch(err => {
+        console.error('Error al salir de pantalla completa:', err);
+      });
+    }
+  };
+
+  // Escuchar cambios en el estado de pantalla completa
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   if (!currentPosterData) {
     return <div>Cargando...</div>;
@@ -106,6 +138,19 @@ export const DigitalSignageView: React.FC<DigitalSignageViewProps> = () => {
                 <option value={5000}>5 segundos</option>
                 <option value={10000}>10 segundos</option>
               </select>
+
+              {/* Botón de pantalla completa */}
+              <button
+                onClick={toggleFullscreen}
+                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center gap-2"
+                title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+              >
+                {isFullscreen ? (
+                  <Minimize2 className="w-5 h-5" />
+                ) : (
+                  <Maximize2 className="w-5 h-5" />
+                )}
+              </button>
             </div>
 
             <div className="flex items-center gap-2">
