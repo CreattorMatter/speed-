@@ -5,6 +5,14 @@ interface Location {
   id: string;
   name: string;
   region: string;
+  coordinates?: [number, number];
+  address?: string;
+}
+
+interface Option {
+  value: string;
+  label: string;
+  region?: string;
 }
 
 interface LocationSelectProps {
@@ -24,46 +32,52 @@ export const LocationSelect: React.FC<LocationSelectProps> = ({
   isMulti = false,
   className
 }) => {
-  const selectAllOption = {
-    value: '*',
-    label: 'Seleccionar todos'
-  };
+  const options: Option[] = locations.map(l => ({
+    value: l.id,
+    label: l.name,
+    region: l.region
+  }));
+
+  const formatOptionLabel = ({ label, region }: Option) => (
+    <div className="flex flex-col">
+      <div>{label}</div>
+      {region && <div className="text-sm text-gray-500">{region}</div>}
+    </div>
+  );
 
   const handleChange = (selectedOptions: any) => {
+    if (!selectedOptions) {
+      onChange([]);
+      return;
+    }
+
     if (Array.isArray(selectedOptions)) {
-      if (selectedOptions.some(option => option.value === '*')) {
-        onChange(locations.map(location => location.id));
-      } else {
-        onChange(selectedOptions.map(option => option.value));
-      }
+      onChange(selectedOptions.map(option => option.value));
     } else {
-      onChange(selectedOptions ? [selectedOptions.value] : []);
+      onChange([selectedOptions.value]);
     }
   };
 
-  const options = [
-    selectAllOption,
-    ...locations.map(l => ({
-      value: l.id,
-      label: l.name
-    }))
-  ];
+  const selectedValues = options.filter(option => 
+    value.includes(option.value)
+  );
 
   return (
     <Select
       isMulti={isMulti}
       isDisabled={disabled}
-      value={value.length === locations.length 
-        ? [selectAllOption]
-        : options.filter(option => value.includes(option.value))}
+      value={selectedValues}
       onChange={handleChange}
       options={options}
+      formatOptionLabel={formatOptionLabel}
       classNames={{
         control: (state) => `${className} ${state.isFocused ? 'border-indigo-500' : ''}`,
-        menu: () => "bg-white rounded-lg shadow-lg",
+        menu: () => "bg-white rounded-lg shadow-lg max-h-60 overflow-auto",
         option: () => "px-3 py-2 hover:bg-gray-100 cursor-pointer"
       }}
       placeholder="Seleccionar sucursales..."
+      closeMenuOnSelect={!isMulti}
+      isClearable
     />
   );
 }; 
