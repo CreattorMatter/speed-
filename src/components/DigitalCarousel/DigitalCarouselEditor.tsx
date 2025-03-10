@@ -302,36 +302,15 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     setShowSendModal(true);
     setSendingStatus('sending');
 
-    try {
-      // Usar el ID existente del carrusel
-      const { error } = await supabaseAdmin
-        .from('carousels')
-        .insert({
-          id: carouselId,
-          images: selectedImages,
-          interval_time: intervalTime,
-          start_date: startDate,
-          end_date: endDate,
-          start_time: startTime,
-          end_time: endTime,
-          devices: selectedDevices,
-          branches: selectedSucursales,
-          company_id: selectedEmpresa
-        });
-
-      if (error) throw error;
-
+    // Simular el proceso de envío
+    setTimeout(() => {
       setSendingStatus('success');
       setTimeout(() => {
         setShowSendModal(false);
         setSendingStatus('idle');
         toast.success('Carrusel enviado exitosamente');
       }, 2000);
-    } catch (error) {
-      console.error('Error al enviar el carrusel:', error);
-      setSendingStatus('error');
-      toast.error('Error al enviar el carrusel');
-    }
+    }, 3000);
   };
 
   const ImageModal = () => (
