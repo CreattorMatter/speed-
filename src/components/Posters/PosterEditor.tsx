@@ -415,8 +415,25 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
         canvas.toBlob((blob) => resolve(blob as Blob), 'image/png', 1.0);
       });
 
-      const timestamp = Date.now();
-      const fileName = `poster_${timestamp}.png`;
+      // Función para limpiar el texto para el nombre del archivo
+      const cleanFileName = (text: string) => {
+        return text
+          .toLowerCase()
+          .replace(/[áéíóúñü]/g, c => ({ 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ñ': 'n', 'ü': 'u' })[c] || c)
+          .replace(/[^a-z0-9]/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '');
+      };
+
+      // Obtener los componentes del nombre
+      const companyName = companyDetails?.name || 'sin_empresa';
+      const promotionName = selectedPromotion?.title || 'sin_promocion';
+      const productName = selectedProducts.length > 0 
+        ? mappedProducts[0].name 
+        : selectedCategory || 'sin_producto';
+
+      // Formar el nombre del archivo
+      const fileName = `${cleanFileName(companyName)}_${cleanFileName(promotionName)}_${cleanFileName(productName)}.png`;
 
       await uploadToBucket(fileName, blob);
       toast.success('Cartel guardado correctamente', { id: toastId });
