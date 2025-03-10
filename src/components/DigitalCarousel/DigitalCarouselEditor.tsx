@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from '../shared/Header';
 import { CompanySelect } from '../Posters/CompanySelect';
 import { LocationSelect } from '../Posters/LocationSelect';
-import { ArrowLeft, Monitor, Tv, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
+import { ArrowLeft, Monitor, Tv, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2, Video } from 'lucide-react';
 import { getEmpresas, getSucursalesPorEmpresa, type Empresa, type Sucursal } from '../../lib/supabaseClient-sucursales';
 import { toast } from 'react-hot-toast';
 import Select from 'react-select';
@@ -40,6 +40,8 @@ interface DigitalCarouselEditorProps {
 interface SelectedImage {
   url: string;
   name: string;
+  type: 'image' | 'video';
+  videoType?: 'local' | 'youtube';
 }
 
 const CarouselPreview: React.FC<{ 
@@ -55,6 +57,7 @@ const CarouselPreview: React.FC<{
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const nextSlide = useCallback(() => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
@@ -66,10 +69,11 @@ const CarouselPreview: React.FC<{
 
   useEffect(() => {
     if (images.length <= 1) return;
+    if (images[currentIndex].type === 'video') return; // No avanzar automáticamente en videos
     
     const timer = setInterval(nextSlide, intervalTime * 1000);
     return () => clearInterval(timer);
-  }, [nextSlide, images.length, intervalTime]);
+  }, [nextSlide, images.length, intervalTime, currentIndex, images]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -92,7 +96,19 @@ const CarouselPreview: React.FC<{
     }
   };
 
+  // Manejar el final del video
+  const handleVideoEnd = () => {
+    if (images.length > 1) {
+      nextSlide();
+    } else if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play();
+    }
+  };
+
   if (images.length === 0) return null;
+
+  const currentItem = images[currentIndex];
 
   return (
     <div 
@@ -100,19 +116,37 @@ const CarouselPreview: React.FC<{
       className={`relative bg-black overflow-hidden group
         ${isFullscreen ? 'fixed inset-0 z-50' : 'w-full aspect-video rounded-lg'}`}
     >
-      {/* Imágenes del carrusel */}
+      {/* Contenido del carrusel */}
       <div className="relative w-full h-full flex items-center justify-center">
-        {images.map((image, index) => (
+        {images.map((item, index) => (
           <div
-            key={image.name}
+            key={item.name}
             className={`absolute inset-0 transition-opacity duration-500 ease-in-out flex items-center justify-center
               ${index === currentIndex ? 'opacity-100' : 'opacity-0'}`}
           >
-            <img
-              src={image.url}
-              alt={image.name}
-              className={`${isFullscreen ? 'max-h-screen max-w-screen' : 'w-full h-full'} object-contain`}
-            />
+            {item.type === 'image' ? (
+              <img
+                src={item.url}
+                alt={item.name}
+                className={`${isFullscreen ? 'max-h-screen max-w-screen' : 'w-full h-full'} object-contain`}
+              />
+            ) : item.videoType === 'youtube' ? (
+              <iframe
+                src={`${item.url.replace('watch?v=', 'embed/')}?autoplay=1&mute=1`}
+                className="w-full h-full"
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
+            ) : (
+              <video
+                ref={videoRef}
+                src={item.url}
+                className={`${isFullscreen ? 'max-h-screen max-w-screen' : 'w-full h-full'} object-contain`}
+                controls
+                autoPlay
+                onEnded={handleVideoEnd}
+              />
+            )}
           </div>
         ))}
       </div>
@@ -137,15 +171,21 @@ const CarouselPreview: React.FC<{
 
           {/* Indicadores de posición */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {images.map((_, index) => (
+            {images.map((item, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentIndex(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300
+                className={`flex items-center justify-center transition-all duration-300
                   ${index === currentIndex 
-                    ? 'bg-white w-4' 
-                    : 'bg-white/50 hover:bg-white/75'}`}
-              />
+                    ? 'bg-white w-8' 
+                    : 'bg-white/50 w-2'} h-2 rounded-full hover:bg-white/75`}
+              >
+                {index === currentIndex && item.type === 'video' && (
+                  <div className="w-4 h-4 flex items-center justify-center">
+                    <Video className="w-3 h-3 text-blue-500" />
+                  </div>
+                )}
+              </button>
             ))}
           </div>
         </>
@@ -197,6 +237,9 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   const [sendingProgress, setSendingProgress] = useState<SendingProgress[]>([]);
   const [carouselUrl, setCarouselUrl] = useState<string>('');
   const [carouselId, setCarouselId] = useState<string>('');
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [videoUrl, setVideoUrl] = useState('');
+  const [videoType, setVideoType] = useState<'local' | 'youtube'>('youtube');
 
   // Cargar empresas al montar el componente
   useEffect(() => {
@@ -253,7 +296,8 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
           .filter(file => file.name.match(/\.(jpg|jpeg|png|gif)$/i))
           .map(file => ({
             name: file.name,
-            url: `${supabaseAdmin.storage.from('posters').getPublicUrl(file.name).data.publicUrl}`
+            url: `${supabaseAdmin.storage.from('posters').getPublicUrl(file.name).data.publicUrl}`,
+            type: 'image' as const
           }));
 
         setAvailableImages(images);
@@ -373,6 +417,156 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                 className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
               >
                 Confirmar ({selectedImages.length})
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+
+  const VideoModal = () => (
+    <AnimatePresence>
+      {showVideoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white rounded-xl max-w-2xl w-full overflow-hidden flex flex-col"
+          >
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-medium">Agregar Video</h3>
+              <button
+                onClick={() => {
+                  setShowVideoModal(false);
+                  setVideoUrl('');
+                }}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Tipo de Video
+                </label>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setVideoType('youtube')}
+                    className={`px-4 py-2 rounded-md ${
+                      videoType === 'youtube' 
+                        ? 'bg-blue-500 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    URL de YouTube
+                  </button>
+                  <button
+                    onClick={() => setVideoType('local')}
+                    className={`px-4 py-2 rounded-md ${
+                      videoType === 'local' 
+                        ? 'bg-blue-500 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Video Local
+                  </button>
+                </div>
+              </div>
+
+              {videoType === 'youtube' ? (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    URL del Video
+                  </label>
+                  <input
+                    type="text"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    placeholder="https://youtube.com/watch?v=..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Seleccionar Video
+                  </label>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const url = URL.createObjectURL(file);
+                        setVideoUrl(url);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              )}
+
+              {videoUrl && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Vista Previa
+                  </label>
+                  <div className="aspect-video rounded-lg overflow-hidden bg-black">
+                    {videoType === 'youtube' ? (
+                      <iframe
+                        src={videoUrl.replace('watch?v=', 'embed/')}
+                        className="w-full h-full"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video
+                        src={videoUrl}
+                        controls
+                        className="w-full h-full"
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="p-4 border-t border-gray-200 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowVideoModal(false);
+                  setVideoUrl('');
+                }}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (videoUrl) {
+                    const videoName = videoType === 'youtube' 
+                      ? `youtube-${new Date().getTime()}`
+                      : `local-${new Date().getTime()}`;
+                    
+                    setSelectedImages([...selectedImages, {
+                      url: videoUrl,
+                      name: videoName,
+                      type: 'video',
+                      videoType
+                    }]);
+                    setShowVideoModal(false);
+                    setVideoUrl('');
+                  }
+                }}
+                disabled={!videoUrl}
+                className={`px-4 py-2 rounded-md text-white ${
+                  videoUrl 
+                    ? 'bg-blue-500 hover:bg-blue-600' 
+                    : 'bg-gray-400 cursor-not-allowed'
+                }`}
+              >
+                Agregar Video
               </button>
             </div>
           </motion.div>
@@ -638,7 +832,14 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                       className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                     >
                       <ImageIcon className="w-5 h-5" />
-                      Agregar Imágenes ({selectedImages.length})
+                      Agregar Imágenes ({selectedImages.filter(item => item.type === 'image').length})
+                    </button>
+                    <button
+                      onClick={() => setShowVideoModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                      <Video className="w-5 h-5" />
+                      Agregar Videos ({selectedImages.filter(item => item.type === 'video').length})
                     </button>
                     <button
                       onClick={handleSendCarousel}
@@ -703,6 +904,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
 
         {/* Modales */}
         <ImageModal />
+        <VideoModal />
         <SendModal />
       </div>
     </div>
