@@ -22,6 +22,12 @@ import { FinancingModal } from './FinancingModal';
 import { CreditCard } from 'lucide-react';
 import { POSTER_TEMPLATES } from '../../constants/templates';
 import { HeaderProvider } from '../shared/HeaderProvider';
+import { toast } from 'react-hot-toast';
+import { uploadToBucket } from '../../lib/supabaseClient-carteles';
+import html2canvas from 'html2canvas';
+import { Product } from '../../types/product';
+import { Promotion } from '../../types/promotion';
+import { supabase } from '../../lib/supabaseClient';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -30,38 +36,6 @@ interface PosterEditorProps {
   initialPromotion?: any;
   userEmail: string;
   userName: string;
-}
-
-interface Promotion {
-  id: string;
-  title: string;
-  description: string;
-  discount: string;
-  imageUrl: string;
-  category: 'Bancaria' | 'Especial' | 'Categoría';
-  conditions: string[];
-  startDate: string;
-  endDate: string;
-  bank?: string;
-  cardType?: string;
-  type?: 'percentage' | '2x1' | '3x2' | 'second-70';
-}
-
-interface Product {
-  id: string;
-  sku: string;
-  name: string;
-  price: number;
-  imageUrl: string;
-  category: string;
-}
-
-interface FinancingOption {
-  bank: string;
-  logo: string;
-  cardName: string;
-  cardImage: string;
-  plan: string;
 }
 
 const PAPER_FORMATS = [
@@ -229,18 +203,21 @@ const FINANCING_OPTIONS: FinancingOption[] = [
     bank: 'Visa',
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png',
     cardName: 'Visa',
+    cardImage: 'https://www.visa.com.ar/dam/VCOM/regional/lac/SPA/Default/Pay%20With%20Visa/Find%20a%20Card/Credit%20cards/Classic/visa_classic_card_400x225.jpg',
     plan: 'Hasta 12 cuotas sin interés'
   },
   {
     bank: 'Mastercard',
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png',
     cardName: 'Mastercard',
+    cardImage: 'https://www.mastercard.com.ar/content/dam/public/mastercardcom/lac/ar/home/consumidores/encontra-tu-tarjeta/tarjetas-credito/platinum-card.png',
     plan: 'Hasta 6 cuotas sin interés'
   },
   {
     bank: 'American Express',
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/American_Express_logo.svg/1200px-American_Express_logo.svg.png',
     cardName: 'American Express',
+    cardImage: 'https://www.americanexpress.com/content/dam/amex/es-ar/negocios/corp_green_ar_960x608.png',
     plan: '25% OFF'
   }
 ];
@@ -338,12 +315,22 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     return result;
   }, [company]);
 
-  const selectedPromotion = PROMOTIONS.find(p => p.id === promotion);
+  const selectedPromotion = PROMOTIONS.find(p => p.id === promotion) as Promotion | undefined;
 
-  // Renombrar a mappedProducts para evitar la redeclaración
-  const mappedProducts = selectedProducts.map(productId => 
-    products.find(p => p.id === productId)
-  ).filter((p): p is Product => p !== undefined);
+  // Modificar el mapeo de productos para asegurar que tienen todos los campos requeridos
+  const mappedProducts = selectedProducts.map(productId => {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      // Asegurarnos de que el producto tiene todos los campos requeridos
+      return {
+        ...product,
+        description: product.description || product.name,
+        sku: product.sku || product.id,
+        imageUrl: product.imageUrl || product.image || '',
+      } as Product;
+    }
+    return undefined;
+  }).filter((p): p is Product => p !== undefined);
 
   const handlePrint = () => {
     const printData = {
@@ -383,6 +370,61 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Modificar handleSavePosters para trabajar sin autenticación
+  const handleSavePosters = async () => {
+    try {
+      const toastId = toast.loading('Guardando cartel...');
+
+      // Usar el id del contenedor
+      const posterContainer = document.getElementById('poster-container');
+      if (!posterContainer) {
+        throw new Error('No se encontró el contenedor del cartel');
+      }
+
+      // Buscar el primer poster dentro del contenedor
+      const posterElement = posterContainer.querySelector('.poster-preview');
+      if (!posterElement) {
+        throw new Error('No hay ningún cartel seleccionado para guardar');
+      }
+
+      // Temporalmente remover el fondo cuadriculado
+      const elementsWithGrid = posterElement.querySelectorAll('[style*="linear-gradient"]');
+      const originalStyles = new Map();
+
+      elementsWithGrid.forEach((element) => {
+        originalStyles.set(element, element.getAttribute('style'));
+        element.style.backgroundImage = 'none';
+      });
+
+      // Capturar el cartel
+      const canvas = await html2canvas(posterElement as HTMLElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: true
+      });
+
+      // Restaurar los estilos originales
+      elementsWithGrid.forEach((element) => {
+        element.setAttribute('style', originalStyles.get(element) || '');
+      });
+
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((blob) => resolve(blob as Blob), 'image/png', 1.0);
+      });
+
+      const timestamp = Date.now();
+      const fileName = `poster_${timestamp}.png`;
+
+      await uploadToBucket(fileName, blob);
+      toast.success('Cartel guardado correctamente', { id: toastId });
+    } catch (error: any) {
+      console.error('Error al guardar el cartel:', error);
+      toast.error(error.message || 'Error al guardar el cartel');
+    }
+  };
 
   // Modificar donde se usan los productos
   const filteredProducts = selectedCategory === 'Todos' || !selectedCategory 
@@ -856,33 +898,58 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       Enviar a Sucursales
                     </button>
 
-                    {/* Nuevo botón de Cartelería Digital */}
-                    <button
-                      onClick={handleDigitalSignageClick}
-                      className="px-4 py-2 rounded-lg font-medium bg-emerald-600 text-white 
-                                hover:bg-emerald-700 transition-colors flex items-center gap-2"
-                    >
-                      <svg 
-                        className="w-5 h-5" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
+                    {/* Botones agrupados */}
+                    <div className="flex items-center gap-2">
+                      {/* Botón de Cartelería Digital */}
+                      <button
+                        onClick={handleDigitalSignageClick}
+                        className="px-4 py-2 rounded-lg font-medium bg-emerald-600 text-white 
+                                  hover:bg-emerald-700 transition-colors flex items-center gap-2"
                       >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                      </svg>
-                      Cartelería Digital
-                    </button>
+                        <svg 
+                          className="w-5 h-5" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                          />
+                        </svg>
+                        Cartelería Digital
+                      </button>
+
+                      {/* Nuevo botón de Guardar Cartel */}
+                      <button
+                        onClick={handleSavePosters}
+                        className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white 
+                                  hover:bg-blue-700 transition-colors flex items-center gap-2"
+                      >
+                        <svg 
+                          className="w-5 h-5" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                          />
+                        </svg>
+                        Guardar Cartel
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="h-[800px] w-[1080px] mx-auto overflow-y-auto">
+            <div id="poster-container" className="h-[800px] w-[1080px] mx-auto overflow-y-auto">
               <div className={viewMode === 'grid' ? 'space-y-8' : 'space-y-4'}>
                 {renderPosters()}
               </div>

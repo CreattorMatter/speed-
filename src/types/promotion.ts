@@ -3,18 +3,15 @@ export interface Promotion {
   title: string;
   description: string;
   discount: string;
+  imageUrl: string;
+  category: 'Bancaria' | 'Especial' | 'Categoría';
+  conditions: string[];
   startDate: string;
   endDate: string;
-  imageUrl: string;
-  category: 'Bancaria' | 'Producto' | 'Categoría' | 'Especial';
-  conditions: string[];
-  isActive: boolean;
   bank?: string;
   cardType?: string;
+  type?: 'percentage' | '2x1' | '3x2' | 'second-70';
+  isActive: boolean;
   selectedBanks: string[];
-  cardOptions: {
-    debit: boolean;
-    credit: boolean;
-    cardBrands: string[];
-  };
+  cardOptions: string[];
 } 

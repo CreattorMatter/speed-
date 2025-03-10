@@ -6,4 +6,8 @@ export interface Product {
   price: number;
   imageUrl: string;
   category: string;
+  subCategory?: string;
+  brand?: string;
+  packageType?: string;
+  volume?: string;
 } 
