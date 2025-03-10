@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from '../shared/Header';
 import { CompanySelect } from '../Posters/CompanySelect';
 import { LocationSelect } from '../Posters/LocationSelect';
-import { ArrowLeft, Monitor, Tv, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check } from 'lucide-react';
+import { ArrowLeft, Monitor, Tv, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getEmpresas, getSucursalesPorEmpresa, type Empresa, type Sucursal } from '../../lib/supabaseClient-sucursales';
 import { toast } from 'react-hot-toast';
 import Select from 'react-select';
@@ -41,6 +41,83 @@ interface SelectedImage {
   url: string;
   name: string;
 }
+
+const CarouselPreview: React.FC<{ images: SelectedImage[] }> = ({ images }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const nextSlide = useCallback(() => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+  }, [images.length]);
+
+  const prevSlide = () => {
+    setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
+  };
+
+  // Avance automático del carrusel
+  useEffect(() => {
+    if (images.length <= 1) return;
+    
+    const timer = setInterval(nextSlide, 3000); // Cambiar imagen cada 3 segundos
+    return () => clearInterval(timer);
+  }, [nextSlide, images.length]);
+
+  if (images.length === 0) return null;
+
+  return (
+    <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden group">
+      {/* Imágenes del carrusel */}
+      <div className="relative w-full h-full">
+        {images.map((image, index) => (
+          <div
+            key={image.name}
+            className={`absolute inset-0 transition-opacity duration-500 ease-in-out
+              ${index === currentIndex ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <img
+              src={image.url}
+              alt={image.name}
+              className="w-full h-full object-contain"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Controles de navegación */}
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={prevSlide}
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full
+                     opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <button
+            onClick={nextSlide}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full
+                     opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+
+          {/* Indicadores de posición */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentIndex(index)}
+                className={`w-2 h-2 rounded-full transition-all duration-300
+                  ${index === currentIndex 
+                    ? 'bg-white w-4' 
+                    : 'bg-white/50 hover:bg-white/75'}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   onBack,
@@ -405,6 +482,18 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                       </div>
                     </div>
                   </div>
+
+                  {/* Preview del Carrusel */}
+                  {selectedImages.length > 0 && (
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-medium text-gray-900">
+                        Previsualización del Carrusel
+                      </h4>
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <CarouselPreview images={selectedImages} />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Sección de botones */}
                   <div className="col-span-full flex justify-end gap-4 mt-6">
