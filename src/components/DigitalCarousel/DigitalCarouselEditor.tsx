@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '../shared/Header';
 import { CompanySelect } from '../Posters/CompanySelect';
 import { LocationSelect } from '../Posters/LocationSelect';
-import { ArrowLeft, Monitor, Tv, Layout, MonitorPlay } from 'lucide-react';
+import { ArrowLeft, Monitor, Tv, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check } from 'lucide-react';
 import { getEmpresas, getSucursalesPorEmpresa, type Empresa, type Sucursal } from '../../lib/supabaseClient-sucursales';
 import { toast } from 'react-hot-toast';
 import Select from 'react-select';
+import { supabaseAdmin } from '../../lib/supabaseClient-carteles';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Company {
   id: string;
@@ -35,6 +37,11 @@ interface DigitalCarouselEditorProps {
   userName: string;
 }
 
+interface SelectedImage {
+  url: string;
+  name: string;
+}
+
 export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   onBack,
   onLogout,
@@ -45,12 +52,17 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   const [selectedEmpresa, setSelectedEmpresa] = useState<string>('');
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
   const [selectedSucursales, setSelectedSucursales] = useState<string[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<DeviceType | null>(null);
+  const [selectedDevices, setSelectedDevices] = useState<DeviceType[]>([]);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [startTime, setStartTime] = useState<string>('08:00');
   const [endTime, setEndTime] = useState<string>('20:00');
   const [loading, setLoading] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
+  const [availableImages, setAvailableImages] = useState<SelectedImage[]>([]);
+  const [sendingStatus, setSendingStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
   // Cargar empresas al montar el componente
   useEffect(() => {
@@ -93,6 +105,33 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     loadSucursales();
   }, [selectedEmpresa]);
 
+  // Cargar imágenes disponibles del bucket de Supabase
+  useEffect(() => {
+    const loadImages = async () => {
+      try {
+        const { data: files, error } = await supabaseAdmin.storage
+          .from('posters')
+          .list();
+
+        if (error) throw error;
+
+        const images = files
+          .filter(file => file.name.match(/\.(jpg|jpeg|png|gif)$/i))
+          .map(file => ({
+            name: file.name,
+            url: `${supabaseAdmin.storage.from('posters').getPublicUrl(file.name).data.publicUrl}`
+          }));
+
+        setAvailableImages(images);
+      } catch (error) {
+        console.error('Error al cargar imágenes:', error);
+        toast.error('Error al cargar las imágenes disponibles');
+      }
+    };
+
+    loadImages();
+  }, []);
+
   const handleCompanyChange = (newCompany: string) => {
     setSelectedEmpresa(newCompany);
     setSelectedSucursales([]);
@@ -105,13 +144,140 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     </div>
   );
 
+  const handleSendCarousel = async () => {
+    if (!selectedDevices.length || !selectedImages.length || !selectedSucursales.length) {
+      toast.error('Por favor complete todos los campos requeridos');
+      return;
+    }
+
+    setShowSendModal(true);
+    setSendingStatus('sending');
+
+    // Simular envío (aquí irá la lógica real de envío)
+    setTimeout(() => {
+      setSendingStatus('success');
+      setTimeout(() => {
+        setShowSendModal(false);
+        setSendingStatus('idle');
+        toast.success('Carrusel enviado exitosamente');
+      }, 2000);
+    }, 3000);
+  };
+
+  const ImageModal = () => (
+    <AnimatePresence>
+      {showImageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+          >
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-medium">Seleccionar Imágenes</h3>
+              <button
+                onClick={() => setShowImageModal(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-auto grid grid-cols-3 gap-4">
+              {availableImages.map((image) => (
+                <div
+                  key={image.name}
+                  className={`relative rounded-lg overflow-hidden cursor-pointer border-2 
+                    ${selectedImages.some(i => i.name === image.name) 
+                      ? 'border-blue-500' 
+                      : 'border-transparent'}`}
+                  onClick={() => {
+                    if (selectedImages.some(i => i.name === image.name)) {
+                      setSelectedImages(selectedImages.filter(i => i.name !== image.name));
+                    } else {
+                      setSelectedImages([...selectedImages, image]);
+                    }
+                  }}
+                >
+                  <img
+                    src={image.url}
+                    alt={image.name}
+                    className="w-full h-48 object-cover"
+                  />
+                  {selectedImages.some(i => i.name === image.name) && (
+                    <div className="absolute top-2 right-2 bg-blue-500 rounded-full p-1">
+                      <Check className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t border-gray-200 flex justify-end gap-2">
+              <button
+                onClick={() => setShowImageModal(false)}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => setShowImageModal(false)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              >
+                Confirmar ({selectedImages.length})
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+
+  const SendModal = () => (
+    <AnimatePresence>
+      {showSendModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white rounded-xl p-8 max-w-md w-full flex flex-col items-center"
+          >
+            {sendingStatus === 'sending' && (
+              <>
+                <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+                <h3 className="text-lg font-medium mb-2">Enviando Carrusel</h3>
+                <p className="text-gray-500 text-center">
+                  Configurando el carrusel en las sucursales seleccionadas...
+                </p>
+              </>
+            )}
+            {sendingStatus === 'success' && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="flex flex-col items-center"
+              >
+                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-4">
+                  <Check className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">¡Enviado con Éxito!</h3>
+                <p className="text-gray-500 text-center">
+                  El carrusel ha sido configurado correctamente
+                </p>
+              </motion.div>
+            )}
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
       <Header onBack={onBack} onLogout={onLogout} />
       <div className="min-h-screen flex flex-col bg-white">
         <main className="pt-10 px-6 pb-6 max-w-7xl mx-auto space-y-6">
           <div className="flex items-center gap-4 mb-8">
-
             <h2 className="text-2xl font-medium text-gray-900">Editor de Carrusel Digital</h2>
           </div>
 
@@ -172,15 +338,16 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                         Tipo de Dispositivo
                       </label>
                       <Select
-                        value={devices.find(d => d.value === selectedDevice)}
-                        onChange={(option) => setSelectedDevice(option?.value || null)}
+                        isMulti
+                        value={devices.filter(d => selectedDevices.includes(d.value))}
+                        onChange={(options) => setSelectedDevices(options ? options.map(opt => opt.value) : [])}
                         options={devices}
                         formatOptionLabel={formatDeviceOption}
                         classNames={{
                           control: (state) => `${state.isFocused ? 'border-indigo-500' : ''}`,
                           option: () => "px-3 py-2 hover:bg-gray-100 cursor-pointer"
                         }}
-                        placeholder="Seleccionar dispositivo..."
+                        placeholder="Seleccionar dispositivos..."
                       />
                     </div>
 
@@ -239,12 +406,35 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                     </div>
                   </div>
 
-                  {/* Resumen de la configuración */}
-                  <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                  {/* Sección de botones */}
+                  <div className="col-span-full flex justify-end gap-4 mt-6">
+                    <button
+                      onClick={() => setShowImageModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                      <ImageIcon className="w-5 h-5" />
+                      Agregar Imágenes ({selectedImages.length})
+                    </button>
+                    <button
+                      onClick={handleSendCarousel}
+                      disabled={!selectedDevices.length || !selectedImages.length || !selectedSucursales.length}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-md text-white
+                        ${(!selectedDevices.length || !selectedImages.length || !selectedSucursales.length)
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-blue-500 hover:bg-blue-600'}`}
+                    >
+                      <Send className="w-5 h-5" />
+                      Enviar
+                    </button>
+                  </div>
+
+                  {/* Resumen actualizado */}
+                  <div className="col-span-full mt-6 p-4 bg-gray-50 rounded-lg">
                     <h4 className="text-sm font-medium text-gray-900 mb-2">Resumen de Configuración</h4>
                     <ul className="space-y-2 text-sm text-gray-600">
                       <li>• Sucursales seleccionadas: {selectedSucursales.length}</li>
-                      <li>• Dispositivo: {devices.find(d => d.value === selectedDevice)?.label || 'No seleccionado'}</li>
+                      <li>• Dispositivos: {selectedDevices.map(d => devices.find(dev => dev.value === d)?.label).join(', ') || 'No seleccionado'}</li>
+                      <li>• Imágenes seleccionadas: {selectedImages.length}</li>
                       <li>• Período: {startDate ? `${startDate} al ${endDate}` : 'No configurado'}</li>
                       <li>• Horario: {`${startTime} a ${endTime}`}</li>
                     </ul>
@@ -262,6 +452,10 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
             </div>
           </div>
         </main>
+
+        {/* Modales */}
+        <ImageModal />
+        <SendModal />
       </div>
     </div>
   );
