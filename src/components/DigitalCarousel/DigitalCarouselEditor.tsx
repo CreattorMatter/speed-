@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from '../shared/Header';
 import { CompanySelect } from '../Posters/CompanySelect';
 import { LocationSelect } from '../Posters/LocationSelect';
-import { ArrowLeft, Monitor, Tv, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Monitor, Tv, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
 import { getEmpresas, getSucursalesPorEmpresa, type Empresa, type Sucursal } from '../../lib/supabaseClient-sucursales';
 import { toast } from 'react-hot-toast';
 import Select from 'react-select';
@@ -42,8 +42,19 @@ interface SelectedImage {
   name: string;
 }
 
-const CarouselPreview: React.FC<{ images: SelectedImage[] }> = ({ images }) => {
+const CarouselPreview: React.FC<{ 
+  images: SelectedImage[];
+  intervalTime: number;
+  isFullscreen?: boolean;
+  onFullscreenChange: (isFullscreen: boolean) => void;
+}> = ({ 
+  images, 
+  intervalTime,
+  isFullscreen = false,
+  onFullscreenChange
+}) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   const nextSlide = useCallback(() => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
@@ -53,30 +64,54 @@ const CarouselPreview: React.FC<{ images: SelectedImage[] }> = ({ images }) => {
     setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
   };
 
-  // Avance automático del carrusel
   useEffect(() => {
     if (images.length <= 1) return;
     
-    const timer = setInterval(nextSlide, 3000); // Cambiar imagen cada 3 segundos
+    const timer = setInterval(nextSlide, intervalTime * 1000);
     return () => clearInterval(timer);
-  }, [nextSlide, images.length]);
+  }, [nextSlide, images.length, intervalTime]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      onFullscreenChange(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, [onFullscreenChange]);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement && carouselRef.current) {
+        await carouselRef.current.requestFullscreen();
+      } else if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+    } catch (error) {
+      console.error('Error al cambiar el modo pantalla completa:', error);
+    }
+  };
 
   if (images.length === 0) return null;
 
   return (
-    <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden group">
+    <div 
+      ref={carouselRef}
+      className={`relative bg-black overflow-hidden group
+        ${isFullscreen ? 'fixed inset-0 z-50' : 'w-full aspect-video rounded-lg'}`}
+    >
       {/* Imágenes del carrusel */}
-      <div className="relative w-full h-full">
+      <div className="relative w-full h-full flex items-center justify-center">
         {images.map((image, index) => (
           <div
             key={image.name}
-            className={`absolute inset-0 transition-opacity duration-500 ease-in-out
+            className={`absolute inset-0 transition-opacity duration-500 ease-in-out flex items-center justify-center
               ${index === currentIndex ? 'opacity-100' : 'opacity-0'}`}
           >
             <img
               src={image.url}
               alt={image.name}
-              className="w-full h-full object-contain"
+              className={`${isFullscreen ? 'max-h-screen max-w-screen' : 'w-full h-full'} object-contain`}
             />
           </div>
         ))}
@@ -87,14 +122,14 @@ const CarouselPreview: React.FC<{ images: SelectedImage[] }> = ({ images }) => {
         <>
           <button
             onClick={prevSlide}
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full
                      opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
           <button
             onClick={nextSlide}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full
                      opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           >
             <ChevronRight className="w-6 h-6" />
@@ -115,6 +150,15 @@ const CarouselPreview: React.FC<{ images: SelectedImage[] }> = ({ images }) => {
           </div>
         </>
       )}
+
+      {/* Botón de pantalla completa */}
+      <button
+        onClick={toggleFullscreen}
+        className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full
+                 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+      >
+        {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+      </button>
     </div>
   );
 };
@@ -140,6 +184,8 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [availableImages, setAvailableImages] = useState<SelectedImage[]>([]);
   const [sendingStatus, setSendingStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [intervalTime, setIntervalTime] = useState<number>(3);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Cargar empresas al montar el componente
   useEffect(() => {
@@ -349,6 +395,10 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     </AnimatePresence>
   );
 
+  const handleFullscreenChange = (fullscreen: boolean) => {
+    setIsFullscreen(fullscreen);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
       <Header onBack={onBack} onLogout={onLogout} />
@@ -481,19 +531,44 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                         />
                       </div>
                     </div>
+
+                    {/* Selector de tiempo por imagen */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tiempo por imagen (segundos)
+                      </label>
+                      <Select
+                        value={{ value: intervalTime, label: `${intervalTime} segundos` }}
+                        onChange={(option) => setIntervalTime(option?.value || 3)}
+                        options={[
+                          { value: 2, label: '2 segundos' },
+                          { value: 3, label: '3 segundos' },
+                          { value: 5, label: '5 segundos' },
+                          { value: 8, label: '8 segundos' },
+                          { value: 10, label: '10 segundos' },
+                        ]}
+                        classNames={{
+                          control: (state) => `${state.isFocused ? 'border-indigo-500' : ''}`,
+                          option: () => "px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                        }}
+                      />
+                    </div>
                   </div>
 
                   {/* Preview del Carrusel */}
-                  {selectedImages.length > 0 && (
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-medium text-gray-900">
-                        Previsualización del Carrusel
-                      </h4>
-                      <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        <CarouselPreview images={selectedImages} />
-                      </div>
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-medium text-gray-900">
+                      Previsualización del Carrusel
+                    </h4>
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <CarouselPreview 
+                        images={selectedImages} 
+                        intervalTime={intervalTime}
+                        isFullscreen={isFullscreen}
+                        onFullscreenChange={handleFullscreenChange}
+                      />
                     </div>
-                  )}
+                  </div>
 
                   {/* Sección de botones */}
                   <div className="col-span-full flex justify-end gap-4 mt-6">
@@ -526,6 +601,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                       <li>• Imágenes seleccionadas: {selectedImages.length}</li>
                       <li>• Período: {startDate ? `${startDate} al ${endDate}` : 'No configurado'}</li>
                       <li>• Horario: {`${startTime} a ${endTime}`}</li>
+                      <li>• Tiempo por imagen: {intervalTime} segundos</li>
                     </ul>
                   </div>
                 </div>
