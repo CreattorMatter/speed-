@@ -6,6 +6,7 @@ import Products from './components/Products/Products';
 import Promotions from './components/Promotions';
 import { PosterEditor } from './components/Posters/PosterEditor';
 import { PrintView } from './components/Posters/PrintView';
+import { DigitalCarouselEditor } from './components/DigitalCarousel/DigitalCarouselEditor';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ConfigurationPortal } from './components/Settings/ConfigurationPortal';
@@ -31,6 +32,7 @@ export interface DashboardProps {
   onSettings: () => void;
   userRole: 'admin' | 'limited';
   onAnalytics: () => void;
+  onDigitalPoster: () => void;
 }
 
 interface User {
@@ -62,6 +64,7 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [showDigitalCarousel, setShowDigitalCarousel] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -204,32 +207,23 @@ function AppContent() {
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value);
 
   const handleBack = () => {
-    if (showBuilder) {
-      setShowBuilder(false);
-    } else if (showProducts) {
-      setShowProducts(false);
-    } else if (showPromotions) {
-      setShowPromotions(false);
-    } else if (showPosterEditor) {
-      setShowPosterEditor(false);
-    } else if (isAuthenticated) {
-      if (window.confirm('¿Deseas cerrar sesión?')) {
-        handleLogout();
-      }
-    }
+    navigate('/');
   };
 
   const handleNewPoster = () => {
-    setShowPosterEditor(true);
+    navigate('/poster-editor');
   };
 
   const handleSettings = () => {
-    console.log('Opening settings...');
     setIsConfigOpen(true);
   };
 
   const handleAnalytics = () => {
-    setShowAnalytics(true);
+    navigate('/analytics');
+  };
+
+  const handleDigitalPoster = () => {
+    navigate('/digital-carousel');
   };
 
   const isMobile = () => {
@@ -277,185 +271,225 @@ function AppContent() {
     }
   };
 
-  if (isAuthenticated) {
+  if (loading) {
+    return <div>Cargando...</div>;
+  }
+
+  if (!isAuthenticated) {
     return (
-      <HeaderProvider 
-        userEmail={user?.email || ''}
-        userName={user?.name || ''}
-      >
-        {showBuilder && (
-          <Builder 
-            onBack={handleBack}
-            userEmail={user?.email || ''}
-            userName={user?.name || ''}
-            userRole={userRole}
-          />
-        )}
-        
-        {showProducts && (
-          <Products 
-            onBack={handleBack} 
-            onLogout={handleLogout}
-            userEmail={user?.email || ''} 
-            userName={user?.name || ''}
-          />
-        )}
-        
-        {showPromotions && <Promotions onBack={handleBack} />}
-        
-        {showPosterEditor && (
-          <PosterEditor 
-            onBack={() => setShowPosterEditor(false)}
-            onLogout={handleLogout}
-            initialProducts={location.state?.selectedProducts}
-            initialPromotion={location.state?.selectedPromotion}
-            userEmail={user?.email || ''}
-            userName={user?.name || ''}
-          />
-        )}
-        
-        {showAnalytics && (
-          <Analytics 
-            onBack={() => setShowAnalytics(false)} 
-            onLogout={handleLogout}
-            userEmail={user?.email || ''}
-            userName={user?.name || ''}
-          />
-        )}
-        
-        {!showBuilder && !showProducts && !showPromotions && !showPosterEditor && !showAnalytics && (
-          <Dashboard 
-            onLogout={handleLogout}
-            onNewTemplate={() => setShowBuilder(true)}
-            onNewPoster={handleNewPoster}
-            onProducts={() => setShowProducts(true)}
-            onPromotions={() => setShowPromotions(true)}
-            onBack={handleBack}
-            onSettings={handleSettings}
-            userRole={userRole}
-            onAnalytics={handleAnalytics}
-          />
-        )}
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900 
+                    flex items-start justify-center pt-10 sm:pt-20 p-2 sm:p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 sm:w-20 h-16 sm:h-20 
+                          rounded-full bg-white/10 backdrop-blur-lg">
+              <LogIn className="w-8 sm:w-10 h-8 sm:h-10" />
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-2">
+              <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-400 bg-clip-text text-transparent">
+                SPID
+              </span>
+              <span className="bg-gradient-to-r from-violet-400 to-fuchsia-500 bg-clip-text text-transparent">
+                {' '}Plus
+              </span>
+            </h1>
+            <p className="text-white/70 text-lg">Inicia sesión en tu cuenta</p>
+          </div>
 
-        <ConfigurationPortal 
-          isOpen={isConfigOpen}
-          onClose={() => setIsConfigOpen(false)}
-          currentUser={user || { id: 0, email: '', name: '', role: '' }}
-        />
+          <div className="bg-white/5 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/10">
+            <form onSubmit={handleLogin} className="space-y-6">
+              {error && (
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 backdrop-blur-sm">
+                  <p className="text-red-400 text-sm flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    {error}
+                  </p>
+                </div>
+              )}
 
-        <MobileDetectionModal
-          isOpen={showMobileModal}
-          onClose={() => setShowMobileModal(false)}
-          onCapture={() => {
-            setShowMobileModal(false);
-            setShowCamera(true);
-          }}
-          onContinue={() => setShowMobileModal(false)}
-        />
+              <div className="space-y-2">
+                <label htmlFor="email" className="block text-sm font-medium text-white/90">
+                  Email
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-white/40" />
+                  </div>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={handleEmailChange}
+                    className="block w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg 
+                             focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white"
+                    placeholder="tu@email.com"
+                    defaultValue="admin@admin.com"
+                  />
+                </div>
+              </div>
 
-        <CameraCapture
-          isOpen={showCamera}
-          onClose={() => setShowCamera(false)}
-          onPhotoTaken={handlePhotoTaken}
-        />
+              <div className="space-y-2">
+                <label htmlFor="password" className="block text-sm font-medium text-white/90">
+                  Contraseña
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-white/40" />
+                  </div>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={handlePasswordChange}
+                    className="block w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg 
+                             focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white"
+                    placeholder="••••••••"
+                    defaultValue="admin"
+                  />
+                </div>
+              </div>
 
-        {process.env.NODE_ENV === 'development' && (
-          <button
-            onClick={() => setShowMobileModal(true)}
-            className="fixed bottom-4 right-4 bg-blue-500 text-white p-2 rounded"
-          >
-            Test Mobile Modal
-          </button>
-        )}
-      </HeaderProvider>
+              <button
+                type="submit"
+                className="w-full py-3 px-4 bg-white/20 hover:bg-white/30 text-white rounded-lg 
+                         transition-all duration-200 font-medium shadow-lg hover:shadow-xl
+                         backdrop-blur-lg border border-white/20"
+              >
+                Iniciar Sesión
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900 
-                    flex items-start justify-center pt-10 sm:pt-20 p-2 sm:p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 sm:w-20 h-16 sm:h-20 
-                        rounded-full bg-white/10 backdrop-blur-lg">
-            <LogIn className="w-8 sm:w-10 h-8 sm:h-10" />
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-            <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-400 bg-clip-text text-transparent">
-              SPID
-            </span>
-            <span className="bg-gradient-to-r from-violet-400 to-fuchsia-500 bg-clip-text text-transparent">
-              {' '}Plus
-            </span>
-          </h1>
-          <p className="text-white/70 text-lg">Inicia sesión en tu cuenta</p>
-        </div>
+    <HeaderProvider 
+      userEmail={user?.email || ''}
+      userName={user?.name || ''}
+    >
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <Dashboard
+              onLogout={handleLogout}
+              onNewTemplate={() => navigate('/builder')}
+              onNewPoster={handleNewPoster}
+              onProducts={() => navigate('/products')}
+              onPromotions={() => navigate('/promotions')}
+              onBack={handleBack}
+              userEmail={user?.email || ''}
+              onSettings={handleSettings}
+              userRole={userRole}
+              onAnalytics={handleAnalytics}
+              onDigitalPoster={handleDigitalPoster}
+            />
+          }
+        />
+        
+        <Route
+          path="/builder"
+          element={
+            <Builder 
+              onBack={handleBack}
+              userEmail={user?.email || ''}
+              userName={user?.name || ''}
+              userRole={userRole}
+            />
+          }
+        />
+        
+        <Route
+          path="/products"
+          element={
+            <Products 
+              onBack={handleBack} 
+              onLogout={handleLogout}
+              userEmail={user?.email || ''} 
+              userName={user?.name || ''}
+            />
+          }
+        />
+        
+        <Route
+          path="/promotions"
+          element={
+            <Promotions onBack={handleBack} />
+          }
+        />
+        
+        <Route
+          path="/poster-editor"
+          element={
+            <PosterEditor 
+              onBack={handleBack}
+              onLogout={handleLogout}
+              initialProducts={location.state?.selectedProducts}
+              initialPromotion={location.state?.selectedPromotion}
+              userEmail={user?.email || ''}
+              userName={user?.name || ''}
+            />
+          }
+        />
+        
+        <Route
+          path="/analytics"
+          element={
+            <Analytics 
+              onBack={handleBack}
+              onLogout={handleLogout}
+              userEmail={user?.email || ''}
+              userName={user?.name || ''}
+            />
+          }
+        />
 
-        <div className="bg-white/5 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/10">
-          <form onSubmit={handleLogin} className="space-y-6">
-            {error && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 backdrop-blur-sm">
-                <p className="text-red-400 text-sm flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" />
-                  {error}
-                </p>
-              </div>
-            )}
+        <Route
+          path="/digital-carousel"
+          element={
+            <DigitalCarouselEditor
+              onBack={handleBack}
+              onLogout={handleLogout}
+              userEmail={user?.email || ''}
+              userName={user?.name || ''}
+            />
+          }
+        />
+      </Routes>
 
-            <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-white/90">
-                Email
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-white/40" />
-                </div>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={handleEmailChange}
-                  className="block w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg 
-                           focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white"
-                  placeholder="tu@email.com"
-                  defaultValue="admin@admin.com"
-                />
-              </div>
-            </div>
+      <ConfigurationPortal 
+        isOpen={isConfigOpen}
+        onClose={() => setIsConfigOpen(false)}
+        currentUser={user || { id: 0, email: '', name: '', role: '' }}
+      />
 
-            <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium text-white/90">
-                Contraseña
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-white/40" />
-                </div>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={handlePasswordChange}
-                  className="block w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg 
-                           focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white"
-                  placeholder="••••••••"
-                  defaultValue="admin"
-                />
-              </div>
-            </div>
+      <MobileDetectionModal
+        isOpen={showMobileModal}
+        onClose={() => setShowMobileModal(false)}
+        onCapture={() => {
+          setShowMobileModal(false);
+          setShowCamera(true);
+        }}
+        onContinue={() => setShowMobileModal(false)}
+      />
 
-            <button
-              type="submit"
-              className="w-full py-3 px-4 bg-white/20 hover:bg-white/30 text-white rounded-lg 
-                       transition-all duration-200 font-medium shadow-lg hover:shadow-xl
-                       backdrop-blur-lg border border-white/20"
-            >
-              Iniciar Sesión
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
+      <CameraCapture
+        isOpen={showCamera}
+        onClose={() => setShowCamera(false)}
+        onPhotoTaken={handlePhotoTaken}
+      />
+
+      {process.env.NODE_ENV === 'development' && (
+        <button
+          onClick={() => setShowMobileModal(true)}
+          className="fixed bottom-4 right-4 bg-blue-500 text-white p-2 rounded"
+        >
+          Test Mobile Modal
+        </button>
+      )}
+    </HeaderProvider>
   );
 }
 

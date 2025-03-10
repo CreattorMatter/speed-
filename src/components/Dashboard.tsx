@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, LogOut, Plus, Package2, Tags, Star, Clock, FileText, Sun, Moon, LayoutTemplate, Settings, Send, FileEdit, Printer, X, BarChart3, Search, InboxIcon } from 'lucide-react';
+import { ArrowLeft, LogOut, Plus, Package2, Tags, Star, Clock, FileText, Sun, Moon, LayoutTemplate, Settings, Send, FileEdit, Printer, X, BarChart3, Search, InboxIcon, Monitor } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Header } from './shared/Header';
 import { COMPANIES } from '../data/companies';
@@ -26,6 +26,7 @@ interface DashboardProps {
   onSettings: () => void;
   userRole: 'admin' | 'limited';
   onAnalytics: () => void;
+  onDigitalPoster: () => void; // Nueva función para el carrusel digital
 }
 
 interface PlantillaReciente {
@@ -1797,7 +1798,8 @@ export default function Dashboard({
   userEmail,
   onSettings,
   userRole,
-  onAnalytics
+  onAnalytics,
+  onDigitalPoster
 }: DashboardProps) {
   // Datos de ejemplo
   const stats: DashboardStats = {
@@ -2088,6 +2090,26 @@ export default function Dashboard({
             </span>
           </motion.button>
 
+          {/* Nuevo botón de Cartel Digital */}
+          <motion.button
+            whileHover={userRole === 'admin' ? { scale: 1.05 } : {}}
+            whileTap={userRole === 'admin' ? { scale: 0.95 } : {}}
+            onClick={userRole === 'admin' ? onDigitalPoster : undefined}
+            className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+              ${userRole === 'admin' 
+                ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white hover:shadow-[0_0_35px_rgba(16,185,129,0.4)]' 
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+          >
+            <div className="mb-4 p-4 rounded-2xl bg-white/20
+              transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300
+              backdrop-blur-lg">
+              <Monitor className="w-10 h-10 text-white" />
+            </div>
+            <span className="text-xl font-semibold">
+              Cartel Digital
+            </span>
+          </motion.button>
+
           <motion.button
             whileHover={userRole === 'admin' ? { scale: 1.05 } : {}}
             whileTap={userRole === 'admin' ? { scale: 0.95 } : {}}
@@ -2120,7 +2142,7 @@ export default function Dashboard({
               <Settings className="w-10 h-10 text-white" />
             </div>
             <span className={`text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent`}>
-              Configuración
+              Config
             </span>
           </motion.button>
 
