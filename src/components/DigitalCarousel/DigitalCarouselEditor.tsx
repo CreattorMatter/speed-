@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from '../shared/Header';
 import { CompanySelect } from '../Posters/CompanySelect';
 import { LocationSelect } from '../Posters/LocationSelect';
-import { ArrowLeft, Monitor, Tv, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2, Video } from 'lucide-react';
+import { ArrowLeft, Monitor, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2, Video, ShoppingCart, Tablet, MonitorSmartphone, Layers, TouchpadOff } from 'lucide-react';
 import { getEmpresas, getSucursalesPorEmpresa, type Empresa, type Sucursal } from '../../lib/supabaseClient-sucursales';
 import { toast } from 'react-hot-toast';
 import Select from 'react-select';
@@ -15,7 +15,7 @@ interface Company {
   logo: string;
 }
 
-type DeviceType = 'pantalla-caja' | 'punta-gondola' | 'lcd-publicitario' | 'wall-publicidad';
+type DeviceType = 'videowall' | 'caja-registradora' | 'self-checkout' | 'kiosko-digital' | 'tablet-carrito' | 'pantalla-interactiva' | 'punta-gondola';
 
 interface Device {
   value: DeviceType;
@@ -24,10 +24,41 @@ interface Device {
 }
 
 const devices: Device[] = [
-  { value: 'pantalla-caja', label: 'Pantalla de Caja', icon: <Monitor className="w-5 h-5" /> },
-  { value: 'punta-gondola', label: 'Punta de Góndola', icon: <Layout className="w-5 h-5" /> },
-  { value: 'lcd-publicitario', label: 'LCD Publicitario', icon: <Tv className="w-5 h-5" /> },
-  { value: 'wall-publicidad', label: 'Wall Publicidad', icon: <MonitorPlay className="w-5 h-5" /> }
+  { 
+    value: 'videowall', 
+    label: 'Videowall', 
+    icon: <Layers className="w-5 h-5" /> 
+  },
+  { 
+    value: 'caja-registradora', 
+    label: 'Pantalla de Caja Registradora', 
+    icon: <Monitor className="w-5 h-5" /> 
+  },
+  { 
+    value: 'self-checkout', 
+    label: 'Self-Checkout (Caja de Autopago)', 
+    icon: <ShoppingCart className="w-5 h-5" /> 
+  },
+  { 
+    value: 'kiosko-digital', 
+    label: 'Kiosco Digital', 
+    icon: <MonitorSmartphone className="w-5 h-5" /> 
+  },
+  { 
+    value: 'tablet-carrito', 
+    label: 'Tablet/Pantalla en Carrito', 
+    icon: <Tablet className="w-5 h-5" /> 
+  },
+  { 
+    value: 'pantalla-interactiva', 
+    label: 'Pantalla Interactiva', 
+    icon: <TouchpadOff className="w-5 h-5" /> 
+  },
+  { 
+    value: 'punta-gondola', 
+    label: 'Punta de Góndola', 
+    icon: <Layout className="w-5 h-5" /> 
+  }
 ];
 
 interface DigitalCarouselEditorProps {
