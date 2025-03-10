@@ -163,6 +163,14 @@ const CarouselPreview: React.FC<{
   );
 };
 
+interface SendingProgress {
+  sucursal: string;
+  devices: {
+    type: DeviceType;
+    status: 'pending' | 'sending' | 'success';
+  }[];
+}
+
 export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   onBack,
   onLogout,
@@ -186,6 +194,9 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   const [sendingStatus, setSendingStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [intervalTime, setIntervalTime] = useState<number>(3);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [sendingProgress, setSendingProgress] = useState<SendingProgress[]>([]);
+  const [carouselUrl, setCarouselUrl] = useState<string>('');
+  const [carouselId, setCarouselId] = useState<string>('');
 
   // Cargar empresas al montar el componente
   useEffect(() => {
@@ -255,6 +266,21 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     loadImages();
   }, []);
 
+  // Generar URL única cuando se seleccionan imágenes
+  useEffect(() => {
+    if (selectedImages.length > 0) {
+      if (!carouselId) {
+        // Generar un ID único para el carrusel solo si no existe
+        const newCarouselId = Math.random().toString(36).substring(2, 15);
+        setCarouselId(newCarouselId);
+        setCarouselUrl(`${window.location.origin}/carousel/${newCarouselId}`);
+      }
+    } else {
+      setCarouselId('');
+      setCarouselUrl('');
+    }
+  }, [selectedImages, carouselId]);
+
   const handleCompanyChange = (newCompany: string) => {
     setSelectedEmpresa(newCompany);
     setSelectedSucursales([]);
@@ -276,15 +302,36 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     setShowSendModal(true);
     setSendingStatus('sending');
 
-    // Simular envío (aquí irá la lógica real de envío)
-    setTimeout(() => {
+    try {
+      // Usar el ID existente del carrusel
+      const { error } = await supabaseAdmin
+        .from('carousels')
+        .insert({
+          id: carouselId,
+          images: selectedImages,
+          interval_time: intervalTime,
+          start_date: startDate,
+          end_date: endDate,
+          start_time: startTime,
+          end_time: endTime,
+          devices: selectedDevices,
+          branches: selectedSucursales,
+          company_id: selectedEmpresa
+        });
+
+      if (error) throw error;
+
       setSendingStatus('success');
       setTimeout(() => {
         setShowSendModal(false);
         setSendingStatus('idle');
         toast.success('Carrusel enviado exitosamente');
       }, 2000);
-    }, 3000);
+    } catch (error) {
+      console.error('Error al enviar el carrusel:', error);
+      setSendingStatus('error');
+      toast.error('Error al enviar el carrusel');
+    }
   };
 
   const ImageModal = () => (
@@ -363,30 +410,65 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-xl p-8 max-w-md w-full flex flex-col items-center"
+            className="bg-white rounded-xl p-8 max-w-2xl w-full flex flex-col items-center"
           >
             {sendingStatus === 'sending' && (
-              <>
+              <div className="flex flex-col items-center space-y-6">
                 <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
-                <h3 className="text-lg font-medium mb-2">Enviando Carrusel</h3>
-                <p className="text-gray-500 text-center">
-                  Configurando el carrusel en las sucursales seleccionadas...
-                </p>
-              </>
+                <h3 className="text-xl font-medium mb-2">Enviando Carrusel</h3>
+                <div className="w-full space-y-4">
+                  {selectedSucursales.map((sucId) => {
+                    const sucursal = sucursales.find(s => s.id.toString() === sucId);
+                    return (
+                      <motion.div
+                        key={sucId}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gray-50 rounded-lg p-4"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-500" />
+                          <span className="font-medium">{sucursal?.direccion}</span>
+                        </div>
+                        <div className="mt-2 grid grid-cols-2 gap-2 pl-4">
+                          {selectedDevices.map((deviceType) => {
+                            const device = devices.find(d => d.value === deviceType);
+                            return (
+                              <div key={deviceType} className="flex items-center gap-2 text-gray-600">
+                                {device?.icon}
+                                <span className="text-sm">{device?.label}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
             {sendingStatus === 'success' && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="flex flex-col items-center"
+                className="flex flex-col items-center text-center"
               >
                 <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-4">
                   <Check className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-lg font-medium mb-2">¡Enviado con Éxito!</h3>
-                <p className="text-gray-500 text-center">
-                  El carrusel ha sido configurado correctamente
+                <h3 className="text-xl font-medium mb-2">¡Enviado con Éxito!</h3>
+                <p className="text-gray-500">
+                  El carrusel ha sido configurado correctamente en todas las sucursales y dispositivos seleccionados.
                 </p>
+                <button
+                  onClick={() => {
+                    setShowSendModal(false);
+                    setSendingStatus('idle');
+                  }}
+                  className="mt-6 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+                >
+                  Cerrar
+                </button>
               </motion.div>
             )}
           </motion.div>
@@ -602,6 +684,28 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                       <li>• Período: {startDate ? `${startDate} al ${endDate}` : 'No configurado'}</li>
                       <li>• Horario: {`${startTime} a ${endTime}`}</li>
                       <li>• Tiempo por imagen: {intervalTime} segundos</li>
+                      {carouselUrl && (
+                        <li className="pt-2">
+                          <span className="font-medium text-gray-900">• URL del Carrusel:</span>
+                          <div className="mt-1 flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={carouselUrl}
+                              readOnly
+                              className="flex-1 px-3 py-1 text-sm border border-gray-300 rounded bg-white"
+                            />
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(carouselUrl);
+                                toast.success('URL copiada al portapapeles');
+                              }}
+                              className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                            >
+                              Copiar
+                            </button>
+                          </div>
+                        </li>
+                      )}
                     </ul>
                   </div>
                 </div>
