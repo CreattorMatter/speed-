@@ -9,6 +9,8 @@ interface CarouselViewProps {
 interface CarouselImage {
   url: string;
   name: string;
+  type: 'image' | 'video';
+  videoType?: 'local' | 'youtube';
 }
 
 interface CarouselData {
@@ -137,17 +139,44 @@ export const CarouselView: React.FC<CarouselViewProps> = ({ carouselId }) => {
     >
       {/* Imágenes del carrusel */}
       <div className="relative w-full h-full flex items-center justify-center">
-        {images.map((image, index) => (
+        {images.map((item, index) => (
           <div
-            key={image.name}
+            key={item.name}
             className={`absolute inset-0 transition-opacity duration-500 ease-in-out flex items-center justify-center
               ${index === currentIndex ? 'opacity-100' : 'opacity-0'}`}
           >
-            <img
-              src={image.url}
-              alt={image.name}
-              className="max-h-screen max-w-screen object-contain"
-            />
+            {item.type === 'image' ? (
+              <img
+                src={item.url}
+                alt={item.name}
+                className="max-h-screen max-w-screen object-contain"
+              />
+            ) : item.videoType === 'youtube' ? (
+              <iframe
+                src={`${item.url.replace('watch?v=', 'embed/')}?autoplay=1&mute=1`}
+                className="w-full h-full"
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
+            ) : (
+              <video
+                src={item.url}
+                className="max-h-screen max-w-screen object-contain"
+                controls
+                autoPlay
+                onEnded={() => {
+                  if (images.length > 1) {
+                    setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+                  } else {
+                    const video = document.querySelector('video');
+                    if (video) {
+                      video.currentTime = 0;
+                      video.play();
+                    }
+                  }
+                }}
+              />
+            )}
           </div>
         ))}
       </div>

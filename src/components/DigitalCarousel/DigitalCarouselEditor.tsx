@@ -377,15 +377,45 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     setShowSendModal(true);
     setSendingStatus('sending');
 
-    // Simular el proceso de envío
-    setTimeout(() => {
+    try {
+      // Guardar la información del carrusel en Supabase
+      const { error } = await supabaseAdmin
+        .from('carousels')
+        .upsert({
+          id: carouselId,
+          images: selectedImages,
+          interval_time: intervalTime,
+          start_date: startDate || null,
+          end_date: endDate || null,
+          start_time: startTime || null,
+          end_time: endTime || null,
+          devices: selectedDevices,
+          sucursales: selectedSucursales,
+          empresa_id: selectedEmpresa,
+          created_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      // Simular un tiempo de envío más largo (2 segundos)
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
       setSendingStatus('success');
       setTimeout(() => {
         setShowSendModal(false);
         setSendingStatus('idle');
-        toast.success('Carrusel enviado exitosamente');
+        toast.success('Carrusel guardado y enviado exitosamente');
       }, 2000);
-    }, 3000);
+
+    } catch (error) {
+      console.error('Error al guardar el carrusel:', error);
+      setSendingStatus('error');
+      toast.error('Error al guardar el carrusel');
+      setTimeout(() => {
+        setShowSendModal(false);
+        setSendingStatus('idle');
+      }, 2000);
+    }
   };
 
   const ImageModal = () => (
@@ -670,6 +700,30 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                     setSendingStatus('idle');
                   }}
                   className="mt-6 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </motion.div>
+            )}
+            {sendingStatus === 'error' && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="flex flex-col items-center text-center"
+              >
+                <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mb-4">
+                  <X className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-medium mb-2">Error al Enviar</h3>
+                <p className="text-gray-500">
+                  Ha ocurrido un error al intentar guardar y enviar el carrusel. Por favor, inténtelo de nuevo.
+                </p>
+                <button
+                  onClick={() => {
+                    setShowSendModal(false);
+                    setSendingStatus('idle');
+                  }}
+                  className="mt-6 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
                 >
                   Cerrar
                 </button>

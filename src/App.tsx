@@ -19,6 +19,7 @@ import { MobileDetectionModal } from './components/shared/MobileDetectionModal';
 import { CameraCapture } from './components/shared/CameraCapture';
 import { toast } from 'react-hot-toast';
 import { DigitalSignageView } from './components/DigitalSignage/DigitalSignageView';
+import { CarouselView } from './components/DigitalCarousel/CarouselView';
 
 export interface DashboardProps {
   onLogout: () => void;
@@ -455,6 +456,19 @@ function AppContent() {
               userEmail={user?.email || ''}
               userName={user?.name || ''}
             />
+          }
+        />
+
+        <Route
+          path="/carousel/:id"
+          element={
+            <Suspense fallback={
+              <div className="fixed inset-0 bg-black flex items-center justify-center">
+                <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            }>
+              <CarouselView carouselId={window.location.pathname.split('/').pop() || ''} />
+            </Suspense>
           }
         />
       </Routes>
