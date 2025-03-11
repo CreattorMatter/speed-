@@ -1,12 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Minimize2, Maximize2 } from 'lucide-react';
+import { MessageCircle, X, Send, Minimize2, Maximize2, Building2, MapPin } from 'lucide-react';
+import { getChatbotEmpresas, getChatbotSucursales, type Empresa, type Sucursal } from '../../lib/supabaseClient-chatbot';
 
 interface Message {
   id: string;
   type: 'user' | 'bot';
   text: string;
   timestamp: Date;
+  options?: {
+    type: 'empresas' | 'sucursales';
+    data: Empresa[] | Sucursal[];
+  };
 }
 
 interface ChatbotProps {
@@ -27,7 +32,7 @@ const FAQ_RESPONSES: Record<string, string> = {
   'enviar cartel': 'Puedes enviar carteles a diferentes sucursales usando la función de envío en el editor de carteles.',
   'digital': 'Los carteles digitales se pueden crear y gestionar desde la sección "Cartel Digital" en el dashboard.',
   'plantilla': 'Puedes crear y gestionar plantillas usando el "Builder" en el dashboard.',
-  'sucursal': 'Puedes ver el estado de las sucursales en la sección de Analytics.',
+  'sucursal': '¿De qué empresa quieres consultar las sucursales?',
   'ayuda': 'Estoy aquí para ayudarte con cualquier duda sobre SPID+. Puedes preguntarme sobre carteles, plantillas, sucursales y más.',
   'problema': 'Si tienes algún problema técnico, por favor contacta al soporte técnico en soporte@spidplus.com',
   'error': 'Si encuentras un error, por favor toma una captura de pantalla y repórtalo al equipo de soporte.',
@@ -39,6 +44,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ userEmail }) => {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -65,19 +71,75 @@ export const Chatbot: React.FC<ChatbotProps> = ({ userEmail }) => {
     setInputValue('');
     setIsTyping(true);
 
-    // Simular respuesta del bot
-    setTimeout(() => {
-      const botResponse = generateBotResponse(inputValue.toLowerCase());
+    // Si el usuario está preguntando por sucursales
+    if (inputValue.toLowerCase().includes('sucursal')) {
+      try {
+        const empresas = await getChatbotEmpresas();
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'bot',
+          text: '¿De qué empresa quieres consultar las sucursales?',
+          timestamp: new Date(),
+          options: {
+            type: 'empresas',
+            data: empresas
+          }
+        };
+        setMessages(prev => [...prev, botMessage]);
+      } catch (error) {
+        console.error('Error al obtener empresas:', error);
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'bot',
+          text: 'Lo siento, hubo un error al obtener las empresas. Por favor, intenta más tarde.',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    } else {
+      // Respuesta normal del bot
+      setTimeout(() => {
+        const botResponse = generateBotResponse(inputValue.toLowerCase());
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'bot',
+          text: botResponse,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, botMessage]);
+      }, 1000);
+    }
+    setIsTyping(false);
+  };
+
+  const handleEmpresaClick = async (empresa: Empresa) => {
+    setSelectedEmpresa(empresa);
+    setIsTyping(true);
+
+    try {
+      const sucursales = await getChatbotSucursales(empresa.id);
       const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: Date.now().toString(),
         type: 'bot',
-        text: botResponse,
+        text: `Aquí están las sucursales de ${empresa.nombre}:`,
+        timestamp: new Date(),
+        options: {
+          type: 'sucursales',
+          data: sucursales
+        }
+      };
+      setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Error al obtener sucursales:', error);
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        type: 'bot',
+        text: 'Lo siento, hubo un error al obtener las sucursales. Por favor, intenta más tarde.',
         timestamp: new Date()
       };
-
-      setMessages(prev => [...prev, botMessage]);
-      setIsTyping(false);
-    }, 1000);
+      setMessages(prev => [...prev, errorMessage]);
+    }
+    setIsTyping(false);
   };
 
   const generateBotResponse = (input: string): string => {
@@ -89,7 +151,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ userEmail }) => {
     }
 
     // Respuesta por defecto
-    return 'Lo siento, no entiendo tu pregunta. Puedes preguntarme  "crear cartel", "enviar cartel", "digital", "plantilla", "sucursal", "ayuda", "problema", "error"';
+    return 'Lo siento, no entiendo tu pregunta. Puedes preguntarme sobre "crear cartel", "enviar cartel", "digital", "plantilla", "sucursal", "ayuda", "problema", "error"';
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -97,6 +159,49 @@ export const Chatbot: React.FC<ChatbotProps> = ({ userEmail }) => {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const renderMessageContent = (message: Message) => {
+    if (message.options) {
+      if (message.options.type === 'empresas') {
+        return (
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {(message.options.data as Empresa[]).map((empresa) => (
+              <button
+                key={empresa.id}
+                onClick={() => handleEmpresaClick(empresa)}
+                className="flex items-center gap-2 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                <Building2 className="w-4 h-4" />
+                <span>{empresa.nombre}</span>
+              </button>
+            ))}
+          </div>
+        );
+      } else if (message.options.type === 'sucursales') {
+        return (
+          <div className="space-y-2 mt-2">
+            {(message.options.data as Sucursal[]).map((sucursal) => (
+              <div
+                key={sucursal.id}
+                className="p-3 rounded-lg bg-white/10"
+              >
+                <div className="flex items-center gap-2 font-medium">
+                  <MapPin className="w-4 h-4" />
+                  <span>{sucursal.nombre}</span>
+                </div>
+                <div className="mt-1 text-sm opacity-80">
+                  <p>{sucursal.direccion}</p>
+                  <p>Tel: {sucursal.telefono}</p>
+                  <p>Horario: {sucursal.horario}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      }
+    }
+    return <p className="text-sm">{message.text}</p>;
   };
 
   return (
@@ -107,7 +212,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ userEmail }) => {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="bg-white rounded-lg shadow-xl mb-4 w-80 overflow-hidden border border-gray-200"
+            className="bg-white rounded-lg shadow-xl mb-4 w-96 overflow-hidden border border-gray-200"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-indigo-600 to-violet-600 p-4 flex items-center justify-between">
@@ -147,7 +252,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ userEmail }) => {
                         : 'bg-gray-100 text-gray-800'
                     }`}
                   >
-                    <p className="text-sm">{message.text}</p>
+                    {renderMessageContent(message)}
                     <span className="text-xs opacity-70 mt-1 block">
                       {message.timestamp.toLocaleTimeString()}
                     </span>
