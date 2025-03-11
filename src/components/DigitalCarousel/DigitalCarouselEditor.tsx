@@ -236,10 +236,7 @@ const CarouselPreview: React.FC<{
 
 interface SendingProgress {
   sucursal: string;
-  devices: {
-    type: DeviceType;
-    status: 'pending' | 'sending' | 'success';
-  }[];
+  status: 'pending' | 'sending' | 'success' | 'error';
 }
 
 export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
@@ -265,7 +262,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   const [sendingStatus, setSendingStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [intervalTime, setIntervalTime] = useState<number>(3);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [sendingProgress, setSendingProgress] = useState<SendingProgress[]>([]);
+  const [sendingProgress, setSendingProgress] = useState<Record<string, SendingProgress>>({});
   const [carouselUrl, setCarouselUrl] = useState<string>('');
   const [carouselId, setCarouselId] = useState<string>('');
   const [showVideoModal, setShowVideoModal] = useState(false);
@@ -391,7 +388,6 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     }
 
     setShowSendModal(true);
-    setSendingStatus('sending');
 
     try {
       // Guardar la información del carrusel en Supabase
@@ -413,24 +409,11 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
 
       if (error) throw error;
 
-      // Simular un tiempo de envío más largo (2 segundos)
-      await new Promise(resolve => setTimeout(resolve, 3500));
-
-      setSendingStatus('success');
-      setTimeout(() => {
-        setShowSendModal(false);
-        setSendingStatus('idle');
-        toast.success('Carrusel guardado y enviado exitosamente');
-      }, 2000);
+      toast.success('Carrusel guardado exitosamente');
 
     } catch (error) {
       console.error('Error al guardar el carrusel:', error);
-      setSendingStatus('error');
       toast.error('Error al guardar el carrusel');
-      setTimeout(() => {
-        setShowSendModal(false);
-        setSendingStatus('idle');
-      }, 2000);
     }
   };
 
@@ -652,6 +635,39 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     </AnimatePresence>
   );
 
+  const handleSendToSucursal = async (sucursalId: string, sucursalName: string) => {
+    setSendingProgress(prev => ({
+      ...prev,
+      [sucursalId]: { sucursal: sucursalName, status: 'sending' }
+    }));
+
+    try {
+      // Simular envío a la sucursal
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setSendingProgress(prev => ({
+        ...prev,
+        [sucursalId]: { sucursal: sucursalName, status: 'success' }
+      }));
+      toast.success(`Enviado exitosamente a ${sucursalName}`);
+    } catch (error) {
+      setSendingProgress(prev => ({
+        ...prev,
+        [sucursalId]: { sucursal: sucursalName, status: 'error' }
+      }));
+      toast.error(`Error al enviar a ${sucursalName}`);
+    }
+  };
+
+  const handleSendToAll = async () => {
+    for (const sucId of selectedSucursales) {
+      const sucursal = sucursales.find(s => s.id.toString() === sucId);
+      if (sucursal) {
+        await handleSendToSucursal(sucId, sucursal.direccion);
+      }
+    }
+  };
+
   const SendModal = () => (
     <AnimatePresence>
       {showSendModal && (
@@ -660,109 +676,103 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-xl p-8 max-w-2xl w-full flex flex-col items-center"
+            className="bg-white rounded-xl p-8 max-w-2xl w-full flex flex-col"
           >
-            {sendingStatus === 'sending' && (
-              <div className="flex flex-col items-center space-y-6 w-full">
-                <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
-                <h3 className="text-xl font-medium mb-2">Enviando Carrusel</h3>
-                <div className="w-full space-y-4">
-                  {selectedSucursales.map((sucId, index) => {
-                    const sucursal = sucursales.find(s => s.id.toString() === sucId);
-                    return (
-                      <motion.div
-                        key={sucId}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.2 }}
-                        className="bg-gray-50 rounded-lg p-4"
-                      >
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-2 h-2 rounded-full bg-blue-500" />
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-medium">Enviar Carrusel a Sucursales</h3>
+              <button
+                onClick={() => setShowSendModal(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto max-h-[60vh]">
+              <div className="space-y-4">
+                {selectedSucursales.map((sucId) => {
+                  const sucursal = sucursales.find(s => s.id.toString() === sucId);
+                  const progress = sendingProgress[sucId];
+                  
+                  return (
+                    <motion.div
+                      key={sucId}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-gray-50 rounded-lg p-4"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            !progress ? 'bg-gray-400' :
+                            progress.status === 'sending' ? 'bg-blue-500' :
+                            progress.status === 'success' ? 'bg-green-500' :
+                            'bg-red-500'
+                          }`} />
                           <span className="font-medium">{sucursal?.direccion}</span>
                         </div>
-                        <motion.div 
-                          className="h-2 bg-gray-200 rounded-full overflow-hidden mb-3"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: index * 0.2 + 0.2 }}
+                        <button
+                          onClick={() => handleSendToSucursal(sucId, sucursal?.direccion || '')}
+                          disabled={progress?.status === 'sending' || progress?.status === 'success'}
+                          className={`px-3 py-1 rounded-md text-sm flex items-center gap-1
+                            ${progress?.status === 'success' 
+                              ? 'bg-green-500 text-white cursor-not-allowed'
+                              : progress?.status === 'sending'
+                              ? 'bg-blue-500 text-white cursor-wait'
+                              : 'bg-blue-500 text-white hover:bg-blue-600'
+                            }`}
                         >
-                          <motion.div
-                            className="h-full bg-green-500"
-                            initial={{ width: "0%" }}
-                            animate={{ width: "100%" }}
-                            transition={{ 
-                              duration: 2,
-                              delay: index * 0.2 + 0.4,
-                              ease: "easeInOut"
-                            }}
-                          />
-                        </motion.div>
-                        <div className="grid grid-cols-2 gap-2 pl-4">
-                          {selectedDevices.map((deviceType) => {
-                            const device = devices.find(d => d.value === deviceType);
-                            return (
-                              <div key={deviceType} className="flex items-center gap-2 text-gray-600">
-                                {device?.icon}
-                                <span className="text-sm">{device?.label}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
+                          {progress?.status === 'success' ? (
+                            <Check className="w-4 h-4" />
+                          ) : progress?.status === 'sending' ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4" />
+                          )}
+                          {progress?.status === 'success' ? 'Enviado' : 
+                           progress?.status === 'sending' ? 'Enviando...' : 'Enviar'}
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 pl-4">
+                        {selectedDevices.map((deviceType) => {
+                          const device = devices.find(d => d.value === deviceType);
+                          return (
+                            <div key={deviceType} className="flex items-center gap-2 text-gray-600">
+                              {device?.icon}
+                              <span className="text-sm">{device?.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
-            )}
-            {sendingStatus === 'success' && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="flex flex-col items-center text-center"
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowSendModal(false);
+                  setSendingProgress({});
+                }}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
               >
-                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-4">
-                  <Check className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-xl font-medium mb-2">¡Enviado con Éxito!</h3>
-                <p className="text-gray-500">
-                  El carrusel ha sido configurado correctamente en todas las sucursales y dispositivos seleccionados.
-                </p>
-                <button
-                  onClick={() => {
-                    setShowSendModal(false);
-                    setSendingStatus('idle');
-                  }}
-                  className="mt-6 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-                >
-                  Cerrar
-                </button>
-              </motion.div>
-            )}
-            {sendingStatus === 'error' && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="flex flex-col items-center text-center"
+                Cancelar
+              </button>
+              <button
+                onClick={handleSendToAll}
+                disabled={Object.keys(sendingProgress).length === selectedSucursales.length}
+                className={`px-4 py-2 rounded-md text-white flex items-center gap-2
+                  ${Object.keys(sendingProgress).length === selectedSucursales.length
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-500 hover:bg-blue-600'
+                  }`}
               >
-                <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mb-4">
-                  <X className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-xl font-medium mb-2">Error al Enviar</h3>
-                <p className="text-gray-500">
-                  Ha ocurrido un error al intentar guardar y enviar el carrusel. Por favor, inténtelo de nuevo.
-                </p>
-                <button
-                  onClick={() => {
-                    setShowSendModal(false);
-                    setSendingStatus('idle');
-                  }}
-                  className="mt-6 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-                >
-                  Cerrar
-                </button>
-              </motion.div>
-            )}
+                <Send className="w-5 h-5" />
+                Enviar a Todas
+              </button>
+            </div>
           </motion.div>
         </div>
       )}
@@ -1180,7 +1190,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                           : 'bg-blue-500 hover:bg-blue-600'}`}
                     >
                       <Send className="w-5 h-5" />
-                      Enviar
+                      Guardar
                     </button>
                   </div>
 
