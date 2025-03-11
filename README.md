@@ -1,14 +1,19 @@
 # Speed+ 
 
 🚀 Descripción del Proyecto
+
 Speed+ es una aplicación web moderna desarrollada con React y TypeScript. Está diseñada para permitir a los usuarios crear y gestionar plantillas de manera eficiente. La aplicación utiliza Vite como herramienta de construcción y Tailwind CSS para el diseño.
 
 🌟 Características Principales
 
 🔐 Autenticación Segura: Implementada con Supabase.
+
 📊 Panel de Control: Ofrece estadísticas y un constructor de plantillas visual.
+
 🎨 Interfaz Intuitiva y Responsive: Diseñada con Tailwind CSS.
+
 🖼️ Integración de Iconos: Utiliza Lucide React para iconografía.
+
 
 🗂️ Estructura del Proyecto
 
