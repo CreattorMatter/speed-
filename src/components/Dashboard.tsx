@@ -14,6 +14,7 @@ import {
   ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Sector 
 } from 'recharts';
 import Select from 'react-select';
+import { Chatbot } from './Chatbot/Chatbot';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -2613,6 +2614,9 @@ export default function Dashboard({
           locationName={printingLocation?.name || ''}
         />
       </motion.div>
+
+      {/* Agregar el Chatbot */}
+      <Chatbot userEmail={userEmail} />
     </div>
   );
 }
