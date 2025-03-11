@@ -910,10 +910,19 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                  <span 
+                                    className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full cursor-help"
+                                    title={carousel.images.map(img => img.name).join('\n')}
+                                  >
                                     {carousel.images.length} elementos
                                   </span>
-                                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                  <span 
+                                    className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full cursor-help"
+                                    title={carousel.sucursales.map(sucId => {
+                                      const sucursal = sucursales.find(s => s.id.toString() === sucId);
+                                      return sucursal?.direccion || 'Sucursal no encontrada';
+                                    }).join('\n')}
+                                  >
                                     {carousel.sucursales.length} sucursales
                                   </span>
                                 </div>
