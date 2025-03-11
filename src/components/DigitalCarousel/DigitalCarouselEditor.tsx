@@ -398,7 +398,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
       if (error) throw error;
 
       // Simular un tiempo de envío más largo (2 segundos)
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, 3500));
 
       setSendingStatus('success');
       setTimeout(() => {
@@ -647,24 +647,42 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
             className="bg-white rounded-xl p-8 max-w-2xl w-full flex flex-col items-center"
           >
             {sendingStatus === 'sending' && (
-              <div className="flex flex-col items-center space-y-6">
+              <div className="flex flex-col items-center space-y-6 w-full">
                 <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
                 <h3 className="text-xl font-medium mb-2">Enviando Carrusel</h3>
                 <div className="w-full space-y-4">
-                  {selectedSucursales.map((sucId) => {
+                  {selectedSucursales.map((sucId, index) => {
                     const sucursal = sucursales.find(s => s.id.toString() === sucId);
                     return (
                       <motion.div
                         key={sucId}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.2 }}
                         className="bg-gray-50 rounded-lg p-4"
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 mb-3">
                           <div className="w-2 h-2 rounded-full bg-blue-500" />
                           <span className="font-medium">{sucursal?.direccion}</span>
                         </div>
-                        <div className="mt-2 grid grid-cols-2 gap-2 pl-4">
+                        <motion.div 
+                          className="h-2 bg-gray-200 rounded-full overflow-hidden mb-3"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: index * 0.2 + 0.2 }}
+                        >
+                          <motion.div
+                            className="h-full bg-green-500"
+                            initial={{ width: "0%" }}
+                            animate={{ width: "100%" }}
+                            transition={{ 
+                              duration: 2,
+                              delay: index * 0.2 + 0.4,
+                              ease: "easeInOut"
+                            }}
+                          />
+                        </motion.div>
+                        <div className="grid grid-cols-2 gap-2 pl-4">
                           {selectedDevices.map((deviceType) => {
                             const device = devices.find(d => d.value === deviceType);
                             return (
