@@ -89,7 +89,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ userEmail }) => {
     }
 
     // Respuesta por defecto
-    return 'Lo siento, no entiendo tu pregunta. ¿Podrías reformularla o ser más específico?';
+    return 'Lo siento, no entiendo tu pregunta. Puedes preguntarme  "crear cartel", "enviar cartel", "digital", "plantilla", "sucursal", "ayuda", "problema", "error"';
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
