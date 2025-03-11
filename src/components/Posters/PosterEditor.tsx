@@ -371,46 +371,66 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Modificar handleSavePosters para trabajar sin autenticación
+  // Modificar handleSavePosters para mejorar el escalado y eliminar los espacios en blanco innecesarios
   const handleSavePosters = async () => {
     try {
       const toastId = toast.loading('Guardando cartel...');
 
-      // Usar el id del contenedor
-      const posterContainer = document.getElementById('poster-container');
-      if (!posterContainer) {
-        throw new Error('No se encontró el contenedor del cartel');
+      // Buscar el contenedor del cartel (el elemento que contiene el contenido real)
+      const posterContent = document.querySelector('.poster-content');
+      if (!posterContent) {
+        throw new Error('No se encontró el contenido del cartel para guardar');
       }
 
-      // Buscar el primer poster dentro del contenedor
-      const posterElement = posterContainer.querySelector('.poster-preview');
-      if (!posterElement) {
-        throw new Error('No hay ningún cartel seleccionado para guardar');
-      }
+      // Crear un contenedor temporal para la captura
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      document.body.appendChild(tempContainer);
 
-      // Temporalmente remover el fondo cuadriculado
-      const elementsWithGrid = posterElement.querySelectorAll('[style*="linear-gradient"]');
-      const originalStyles = new Map();
+      // Clonar el contenido del cartel al contenedor temporal
+      const clone = posterContent.cloneNode(true) as HTMLElement;
+      tempContainer.appendChild(clone);
 
-      elementsWithGrid.forEach((element) => {
-        originalStyles.set(element, element.getAttribute('style'));
-        element.style.backgroundImage = 'none';
+      // Ajustar el estilo del clon
+      clone.style.transform = 'none';
+      clone.style.margin = '0';
+      clone.style.padding = '0';
+      clone.style.width = 'fit-content';
+      clone.style.height = 'fit-content';
+      clone.style.position = 'static';
+
+      // Remover fondos y ajustar estilos
+      const elementsWithBackground = clone.querySelectorAll('[style*="background"]');
+      elementsWithBackground.forEach((element) => {
+        (element as HTMLElement).style.backgroundImage = 'none';
+        (element as HTMLElement).style.backgroundColor = 'white';
       });
 
-      // Capturar el cartel
-      const canvas = await html2canvas(posterElement as HTMLElement, {
+      // Configurar html2canvas con opciones específicas
+      const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        logging: true
+        logging: false,
+        removeContainer: true,
+        imageTimeout: 0,
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.querySelector('.poster-content');
+          if (clonedElement) {
+            (clonedElement as HTMLElement).style.transform = 'none';
+            (clonedElement as HTMLElement).style.margin = '0';
+            (clonedElement as HTMLElement).style.padding = '0';
+          }
+        }
       });
 
-      // Restaurar los estilos originales
-      elementsWithGrid.forEach((element) => {
-        element.setAttribute('style', originalStyles.get(element) || '');
-      });
+      // Limpiar el contenedor temporal
+      document.body.removeChild(tempContainer);
 
+      // Convertir a blob con calidad máxima
       const blob = await new Promise<Blob>((resolve) => {
         canvas.toBlob((blob) => resolve(blob as Blob), 'image/png', 1.0);
       });
@@ -425,15 +445,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
           .replace(/^_|_$/g, '');
       };
 
-      // Obtener los componentes del nombre
-      const companyName = companyDetails?.name || 'sin_empresa';
-      const promotionName = selectedPromotion?.title || 'sin_promocion';
-      const productName = selectedProducts.length > 0 
-        ? mappedProducts[0].name 
-        : selectedCategory || 'sin_producto';
-
       // Formar el nombre del archivo
-      const fileName = `${cleanFileName(companyName)}_${cleanFileName(promotionName)}_${cleanFileName(productName)}.png`;
+      const companyName = companyDetails?.name || 'sin_empresa';
+      const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
+      const fileName = `${cleanFileName(companyName)}_${timestamp}.png`;
 
       await uploadToBucket(fileName, blob);
       toast.success('Cartel guardado correctamente', { id: toastId });
