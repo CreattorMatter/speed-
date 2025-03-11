@@ -87,7 +87,7 @@ export const CarouselView: React.FC<CarouselViewProps> = ({ carouselId }) => {
         }
 
       } catch (err) {
-        setError('Error al cargar las imágenes del carrusel, debe Enviar/ Guardar el carrusel previo a usar la URL');
+        setError('Error al cargar las imágenes del carrusel, debe Guardar el carrusel previo a usar la URL');
         console.error('Error:', err);
       } finally {
         setLoading(false);

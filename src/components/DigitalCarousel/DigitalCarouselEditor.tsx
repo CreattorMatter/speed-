@@ -281,9 +281,11 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     end_time: string | null;
     devices: DeviceType[];
     sucursales: string[];
+    name?: string;
   }>>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoadingCarousels, setIsLoadingCarousels] = useState(false);
+  const [carouselName, setCarouselName] = useState<string>('Carrusel sin nombre');
 
   // Cargar empresas al montar el componente
   useEffect(() => {
@@ -395,6 +397,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
         .from('carousels')
         .upsert({
           id: carouselId,
+          name: carouselName,
           images: selectedImages,
           interval_time: intervalTime,
           start_date: startDate || null,
@@ -816,6 +819,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     setEndTime(carousel.end_time || '20:00');
     setCarouselId(carousel.id);
     setCarouselUrl(`${window.location.origin}/carousel/${carousel.id}`);
+    setCarouselName(carousel.name || 'Carrusel sin nombre');
     setShowSearchModal(false);
     toast.success('Carrusel cargado exitosamente');
   };
@@ -916,7 +920,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                                     <h4 className="font-medium text-gray-900">{empresa?.nombre}</h4>
                                   </div>
                                   <p className="text-sm text-gray-500 mt-1">
-                                    ID: {carousel.id} • Creado: {new Date(carousel.created_at).toLocaleDateString()}
+                                    {carousel.name || 'Carrusel sin nombre'} • ID: {carousel.id} • Creado: {new Date(carousel.created_at).toLocaleDateString()}
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1049,9 +1053,20 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
             <div className="mt-8">
               {selectedEmpresa && selectedSucursales.length > 0 ? (
                 <div className="bg-white rounded-lg p-6 border border-gray-200 space-y-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Configuración del Carrusel
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Configuración del Carrusel
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={carouselName}
+                        onChange={(e) => setCarouselName(e.target.value)}
+                        placeholder="Nombre del carrusel"
+                        className="px-3 py-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      />
+                    </div>
+                  </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Selector de Dispositivo */}
