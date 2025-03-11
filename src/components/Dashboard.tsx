@@ -2015,7 +2015,7 @@ export default function Dashboard({
             👋
           </motion.span>
           <p className="text-slate-500">
-            Aquí está lo que sucede con tus plantillas.
+            Todos los carteles físicos y digitales en un solo lugar.
           </p>
         </motion.div>
 
