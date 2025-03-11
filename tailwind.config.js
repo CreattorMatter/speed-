@@ -8,6 +8,7 @@ export default {
     extend: {
       animation: {
         'gradient-xy': 'gradient-xy 15s ease infinite',
+        'gradient-pulse': 'gradient-pulse 10s ease infinite',
       },
       keyframes: {
         'gradient-xy': {
@@ -18,6 +19,14 @@ export default {
           '50%': {
             'background-size': '200% 200%',
             'background-position': 'right center'
+          }
+        },
+        'gradient-pulse': {
+          '0%, 100%': {
+            'opacity': 1
+          },
+          '50%': {
+            'opacity': 0.5
           }
         }
       }

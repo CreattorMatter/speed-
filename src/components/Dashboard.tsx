@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import Select from 'react-select';
 import { Chatbot } from './Chatbot/Chatbot';
+import { NewsModal } from './NewsModal';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -1838,6 +1839,8 @@ export default function Dashboard({
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedPromotion, setSelectedPromotion] = useState('all');
 
+  const [showNewsModal, setShowNewsModal] = useState(true);
+
   // Filtrar las actividades basado en el usuario
   const filteredActivities = React.useMemo(() => {
     return activities.filter(activity => {
@@ -1976,6 +1979,12 @@ export default function Dashboard({
     <div className="min-h-screen flex flex-col bg-white">
       <Header onBack={onBack} onLogout={handleLogoutClick} onSettings={onSettings} />
       
+      {/* Agregar el Modal de Novedades */}
+      <NewsModal 
+        isOpen={showNewsModal}
+        onClose={() => setShowNewsModal(false)}
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
