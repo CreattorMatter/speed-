@@ -1057,13 +1057,16 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                     <h3 className="text-lg font-medium text-gray-900">
                       Configuración del Carrusel
                     </h3>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 bg-white shadow-sm rounded-md border border-gray-300 hover:border-blue-500 transition-colors duration-200 group focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-opacity-50">
+                      <div className="px-3 py-2 text-gray-400 group-hover:text-blue-500 group-focus-within:text-blue-500">
+                        <Layout className="w-4 h-4" />
+                      </div>
                       <input
                         type="text"
                         value={carouselName}
                         onChange={(e) => setCarouselName(e.target.value)}
                         placeholder="Nombre del carrusel"
-                        className="px-3 py-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        className="px-0 py-2 pr-3 border-0 focus:ring-0 text-sm text-gray-700 placeholder-gray-400 bg-transparent w-64 font-bold"
                       />
                     </div>
                   </div>
