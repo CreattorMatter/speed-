@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from '../shared/Header';
 import { CompanySelect } from '../Posters/CompanySelect';
 import { LocationSelect } from '../Posters/LocationSelect';
-import { ArrowLeft, Monitor, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2, Video, ShoppingCart, Tablet, MonitorSmartphone, Layers, TouchpadOff } from 'lucide-react';
+import { ArrowLeft, Monitor, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2, Video, ShoppingCart, Tablet, MonitorSmartphone, Layers, TouchpadOff, Search } from 'lucide-react';
 import { getEmpresas, getSucursalesPorEmpresa, type Empresa, type Sucursal } from '../../lib/supabaseClient-sucursales';
 import { toast } from 'react-hot-toast';
 import Select from 'react-select';
@@ -271,6 +271,22 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
   const [videoType, setVideoType] = useState<'local' | 'youtube'>('youtube');
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [savedCarousels, setSavedCarousels] = useState<Array<{
+    id: string;
+    empresa_id: string;
+    created_at: string;
+    images: SelectedImage[];
+    interval_time: number;
+    start_date: string | null;
+    end_date: string | null;
+    start_time: string | null;
+    end_time: string | null;
+    devices: DeviceType[];
+    sucursales: string[];
+  }>>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoadingCarousels, setIsLoadingCarousels] = useState(false);
 
   // Cargar empresas al montar el componente
   useEffect(() => {
@@ -757,13 +773,215 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     setIsFullscreen(fullscreen);
   };
 
+  // Función para cargar carruseles guardados
+  const loadSavedCarousels = async () => {
+    try {
+      setIsLoadingCarousels(true);
+      const { data, error } = await supabaseAdmin
+        .from('carousels')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setSavedCarousels(data || []);
+    } catch (error) {
+      console.error('Error al cargar carruseles:', error);
+      toast.error('Error al cargar los carruseles guardados');
+    } finally {
+      setIsLoadingCarousels(false);
+    }
+  };
+
+  // Función para cargar un carrusel seleccionado
+  const loadCarousel = (carousel: typeof savedCarousels[0]) => {
+    setSelectedEmpresa(carousel.empresa_id);
+    setSelectedSucursales(carousel.sucursales);
+    setSelectedDevices(carousel.devices);
+    setSelectedImages(carousel.images);
+    setIntervalTime(carousel.interval_time);
+    setStartDate(carousel.start_date || '');
+    setEndDate(carousel.end_date || '');
+    setStartTime(carousel.start_time || '08:00');
+    setEndTime(carousel.end_time || '20:00');
+    setCarouselId(carousel.id);
+    setCarouselUrl(`${window.location.origin}/carousel/${carousel.id}`);
+    setShowSearchModal(false);
+    toast.success('Carrusel cargado exitosamente');
+  };
+
+  // Modal de búsqueda de carruseles
+  const SearchModal = () => (
+    <AnimatePresence>
+      {showSearchModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+          >
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-medium">Buscar Carrusel</h3>
+              <button
+                onClick={() => setShowSearchModal(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 border-b border-gray-200">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar por empresa, ID o sucursal..."
+                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+                <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              {isLoadingCarousels ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+              ) : savedCarousels.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No se encontraron carruseles guardados
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {savedCarousels
+                    .filter(carousel => {
+                      const empresa = empresas.find(e => e.id.toString() === carousel.empresa_id);
+                      return (
+                        carousel.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        empresa?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        carousel.sucursales.some(suc => {
+                          const sucursal = sucursales.find(s => s.id.toString() === suc);
+                          return sucursal?.direccion.toLowerCase().includes(searchTerm.toLowerCase());
+                        })
+                      );
+                    })
+                    .map(carousel => {
+                      const empresa = empresas.find(e => e.id.toString() === carousel.empresa_id);
+                      return (
+                        <div
+                          key={carousel.id}
+                          className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-all duration-200 hover:shadow-md"
+                          onClick={() => loadCarousel(carousel)}
+                        >
+                          <div className="flex gap-4">
+                            {/* Miniatura del carrusel */}
+                            <div className="w-32 h-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
+                              {carousel.images[0] && (
+                                carousel.images[0].type === 'image' ? (
+                                  <img
+                                    src={carousel.images[0].url}
+                                    alt="Miniatura"
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                                    <Video className="w-6 h-6 text-white" />
+                                  </div>
+                                )
+                              )}
+                            </div>
+                            
+                            {/* Información principal */}
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    {empresa?.logo && (
+                                      <img
+                                        src={empresa.logo}
+                                        alt={empresa.nombre}
+                                        className="w-6 h-6 object-contain"
+                                      />
+                                    )}
+                                    <h4 className="font-medium text-gray-900">{empresa?.nombre}</h4>
+                                  </div>
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    ID: {carousel.id} • Creado: {new Date(carousel.created_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                    {carousel.images.length} elementos
+                                  </span>
+                                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                    {carousel.sucursales.length} sucursales
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {/* Detalles */}
+                              <div className="mt-2 grid grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-xs text-gray-600 mb-1">Dispositivos:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {carousel.devices.slice(0, 2).map(deviceType => {
+                                      const device = devices.find(d => d.value === deviceType);
+                                      return (
+                                        <span key={deviceType} className="inline-flex items-center text-xs text-gray-500">
+                                          {device?.icon}
+                                          <span className="ml-1">{device?.label}</span>
+                                          {carousel.devices.length > 2 && carousel.devices.indexOf(deviceType) === 1 && (
+                                            <span className="ml-1">+{carousel.devices.length - 2}</span>
+                                          )}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-600 mb-1">Período:</p>
+                                  <p className="text-xs text-gray-500">
+                                    {carousel.start_date ? 
+                                      `${new Date(carousel.start_date).toLocaleDateString()} - ${new Date(carousel.end_date || '').toLocaleDateString()}` : 
+                                      'Sin período definido'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+
+  // Cargar carruseles cuando se abre el modal
+  useEffect(() => {
+    if (showSearchModal) {
+      loadSavedCarousels();
+    }
+  }, [showSearchModal]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
       <Header onBack={onBack} onLogout={onLogout} />
       <div className="min-h-screen flex flex-col bg-white">
         <main className="pt-10 px-6 pb-6 max-w-7xl mx-auto space-y-6">
-          <div className="flex items-center gap-4 mb-8">
-            <h2 className="text-2xl font-medium text-gray-900">Editor de Carrusel Digital</h2>
+          <div className="flex items-center justify-between gap-4 mb-8">
+            <h2 className="text-2xl font-medium text-gray-900">Editor de Cartelería Digital</h2>
+            <button
+              onClick={() => setShowSearchModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              <Search className="w-5 h-5" />
+              Buscar Carrusel
+            </button>
           </div>
 
           <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200">
@@ -1009,6 +1227,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
         <ImageModal />
         <VideoModal />
         <SendModal />
+        <SearchModal />
       </div>
     </div>
   );
