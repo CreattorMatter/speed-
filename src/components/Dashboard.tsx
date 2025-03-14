@@ -1839,7 +1839,17 @@ export default function Dashboard({
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedPromotion, setSelectedPromotion] = useState('all');
 
-  const [showNewsModal, setShowNewsModal] = useState(true);
+  const [showNewsModal, setShowNewsModal] = useState(() => {
+    // Verificar si es la primera vez que el usuario inicia sesión en esta sesión
+    const hasSeenNews = localStorage.getItem('hasSeenNews');
+    return !hasSeenNews;
+  });
+
+  const handleCloseNewsModal = () => {
+    setShowNewsModal(false);
+    // Guardar en localStorage que el usuario ya vio las novedades
+    localStorage.setItem('hasSeenNews', 'true');
+  };
 
   // Filtrar las actividades basado en el usuario
   const filteredActivities = React.useMemo(() => {
@@ -1971,6 +1981,8 @@ export default function Dashboard({
 
   const handleLogoutClick = () => {
     if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+      // Limpiar el estado de las novedades al cerrar sesión
+      localStorage.removeItem('hasSeenNews');
       onLogout();
     }
   };
@@ -1982,7 +1994,7 @@ export default function Dashboard({
       {/* Agregar el Modal de Novedades */}
       <NewsModal 
         isOpen={showNewsModal}
-        onClose={() => setShowNewsModal(false)}
+        onClose={handleCloseNewsModal}
       />
 
       <motion.div
