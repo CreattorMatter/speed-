@@ -285,7 +285,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   }>>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoadingCarousels, setIsLoadingCarousels] = useState(false);
-  const [carouselName, setCarouselName] = useState<string>('Carrusel sin nombre');
+  const [carouselName, setCarouselName] = useState<string>('Playlist sin nombre');
 
   // Cargar empresas al montar el componente
   useEffect(() => {
@@ -363,7 +363,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
         // Generar un ID único para el carrusel solo si no existe
         const newCarouselId = Math.random().toString(36).substring(2, 15);
         setCarouselId(newCarouselId);
-        setCarouselUrl(`${window.location.origin}/carousel/${newCarouselId}`);
+        setCarouselUrl(`${window.location.origin}/playlist/${newCarouselId}`);
       }
     } else {
       setCarouselId('');
@@ -412,11 +412,11 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
 
       if (error) throw error;
 
-      toast.success('Carrusel guardado exitosamente');
+      toast.success('Playlist guardada exitosamente');
 
     } catch (error) {
-      console.error('Error al guardar el carrusel:', error);
-      toast.error('Error al guardar el carrusel');
+      console.error('Error al guardar la playlist:', error);
+      toast.error('Error al guardar la playlist');
     }
   };
 
@@ -682,7 +682,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
             className="bg-white rounded-xl p-8 max-w-2xl w-full flex flex-col"
           >
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-medium">Enviar Carrusel a Sucursales</h3>
+              <h3 className="text-xl font-medium">Enviar Playlist a Sucursales</h3>
               <button
                 onClick={() => setShowSendModal(false)}
                 className="text-gray-400 hover:text-gray-500"
@@ -786,7 +786,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     setIsFullscreen(fullscreen);
   };
 
-  // Función para cargar carruseles guardados
+  // Función para cargar playlists guardadas
   const loadSavedCarousels = async () => {
     try {
       setIsLoadingCarousels(true);
@@ -799,14 +799,14 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
 
       setSavedCarousels(data || []);
     } catch (error) {
-      console.error('Error al cargar carruseles:', error);
-      toast.error('Error al cargar los carruseles guardados');
+      console.error('Error al cargar playlists:', error);
+      toast.error('Error al cargar las playlists guardadas');
     } finally {
       setIsLoadingCarousels(false);
     }
   };
 
-  // Función para cargar un carrusel seleccionado
+  // Función para cargar una playlist seleccionada
   const loadCarousel = (carousel: typeof savedCarousels[0]) => {
     setSelectedEmpresa(carousel.empresa_id);
     setSelectedSucursales(carousel.sucursales);
@@ -818,13 +818,13 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     setStartTime(carousel.start_time || '08:00');
     setEndTime(carousel.end_time || '20:00');
     setCarouselId(carousel.id);
-    setCarouselUrl(`${window.location.origin}/carousel/${carousel.id}`);
-    setCarouselName(carousel.name || 'Carrusel sin nombre');
+    setCarouselUrl(`${window.location.origin}/playlist/${carousel.id}`);
+    setCarouselName(carousel.name || 'Playlist sin nombre');
     setShowSearchModal(false);
-    toast.success('Carrusel cargado exitosamente');
+    toast.success('Playlist cargada exitosamente');
   };
 
-  // Modal de búsqueda de carruseles
+  // Modal de búsqueda de playlists
   const SearchModal = React.memo(() => {
     const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
     
@@ -832,10 +832,17 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
       const searchTermLower = localSearchTerm.toLowerCase();
       return savedCarousels.filter(carousel => {
         const empresa = empresas.find(e => e.id.toString() === carousel.empresa_id);
+        // Buscar coincidencias en los dispositivos
+        const deviceMatches = carousel.devices.some(deviceType => {
+          const device = devices.find(d => d.value === deviceType);
+          return device?.label.toLowerCase().includes(searchTermLower);
+        });
+        
         return (
           carousel.id.toLowerCase().includes(searchTermLower) ||
           (carousel.name || '').toLowerCase().includes(searchTermLower) ||
           empresa?.nombre.toLowerCase().includes(searchTermLower) ||
+          deviceMatches || // Incluir coincidencias de dispositivos
           carousel.sucursales.some(suc => {
             const sucursal = sucursales.find(s => s.id.toString() === suc);
             return sucursal?.direccion.toLowerCase().includes(searchTermLower);
@@ -855,7 +862,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
               className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col"
             >
               <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 className="text-lg font-medium">Buscar Carrusel</h3>
+                <h3 className="text-lg font-medium">Buscar Playlist</h3>
                 <button
                   onClick={() => {
                     setShowSearchModal(false);
@@ -873,7 +880,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                       type="text"
                       value={localSearchTerm}
                       onChange={(e) => setLocalSearchTerm(e.target.value)}
-                      placeholder="Buscar por nombre, empresa, ID o sucursal..."
+                      placeholder="Buscar por nombre, empresa, dispositivo, ID o sucursal..."
                       className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     />
                     <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -899,7 +906,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                   </div>
                 ) : savedCarousels.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    No se encontraron carruseles guardados
+                    No se encontraron playlists guardadas
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -912,7 +919,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                           onClick={() => loadCarousel(carousel)}
                         >
                           <div className="flex gap-4">
-                            {/* Miniatura del carrusel */}
+                            {/* Miniatura de la playlist */}
                             <div className="w-32 h-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
                               {carousel.images[0] && (
                                 carousel.images[0].type === 'image' ? (
@@ -944,7 +951,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                                     <h4 className="font-medium text-gray-900">{empresa?.nombre}</h4>
                                   </div>
                                   <p className="text-sm text-gray-500 mt-1">
-                                    {carousel.name || 'Carrusel sin nombre'} • ID: {carousel.id} • Creado: {new Date(carousel.created_at).toLocaleDateString()}
+                                    {carousel.name || 'Playlist sin nombre'} • ID: {carousel.id} • Creada: {new Date(carousel.created_at).toLocaleDateString()}
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1009,7 +1016,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     );
   });
 
-  // Cargar carruseles cuando se abre el modal
+  // Cargar playlists cuando se abre el modal
   useEffect(() => {
     if (showSearchModal && savedCarousels.length === 0) {
       loadSavedCarousels();
@@ -1028,7 +1035,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
               className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
             >
               <Search className="w-5 h-5" />
-              Buscar Carrusel
+              Buscar Playlist
             </button>
           </div>
 
@@ -1080,7 +1087,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                 <div className="bg-white rounded-lg p-6 border border-gray-200 space-y-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium text-gray-900">
-                      Configuración del Carrusel
+                      Configuración de la Playlist
                     </h3>
                     <div className="flex items-center gap-2 bg-white shadow-sm rounded-md border border-gray-300 hover:border-blue-500 transition-colors duration-200 group focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-opacity-50">
                       <div className="px-3 py-2 text-gray-400 group-hover:text-blue-500 group-focus-within:text-blue-500">
@@ -1090,7 +1097,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                         type="text"
                         value={carouselName}
                         onChange={(e) => setCarouselName(e.target.value)}
-                        placeholder="Nombre del carrusel"
+                        placeholder="Nombre de la playlist"
                         className="px-0 py-2 pr-3 border-0 focus:ring-0 text-sm text-gray-700 placeholder-gray-400 bg-transparent w-64 font-bold"
                       />
                     </div>
@@ -1193,10 +1200,10 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                     </div>
                   </div>
 
-                  {/* Preview del Carrusel */}
+                  {/* Preview de la Playlist */}
                   <div className="space-y-4">
                     <h4 className="text-lg font-medium text-gray-900">
-                      Previsualización del Carrusel
+                      Previsualización de la Playlist
                     </h4>
                     <div className="border border-gray-200 rounded-lg overflow-hidden">
                       <CarouselPreview 
@@ -1249,7 +1256,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                       <li>• Tiempo por imagen: {intervalTime} segundos</li>
                       {carouselUrl && (
                         <li className="pt-2">
-                          <span className="font-medium text-gray-900">• URL del Carrusel:</span>
+                          <span className="font-medium text-gray-900">• URL de la Playlist:</span>
                           <div className="mt-1 flex items-center gap-2">
                             <input
                               type="text"
@@ -1277,7 +1284,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                   <p className="text-gray-500">
                     {!selectedEmpresa 
                       ? 'Seleccione una empresa para comenzar'
-                      : 'Seleccione al menos una sucursal para configurar el carrusel'}
+                      : 'Seleccione al menos una sucursal para configurar la playlist'}
                   </p>
                 </div>
               )}
