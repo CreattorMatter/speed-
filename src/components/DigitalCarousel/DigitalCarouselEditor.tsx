@@ -845,15 +845,29 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
               </button>
             </div>
             <div className="p-4 border-b border-gray-200">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Buscar por empresa, ID o sucursal..."
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                />
-                <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <div className="relative flex gap-2">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Buscar por nombre, empresa, ID o sucursal..."
+                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                </div>
+                <button
+                  onClick={loadSavedCarousels}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md flex items-center gap-2 text-gray-700"
+                >
+                  <svg className={`w-4 h-4 ${isLoadingCarousels ? 'animate-spin' : ''}`} viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M12 4V2A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8Z"
+                    />
+                  </svg>
+                  Actualizar
+                </button>
               </div>
             </div>
             <div className="flex-1 overflow-auto p-4">
@@ -870,12 +884,14 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                   {savedCarousels
                     .filter(carousel => {
                       const empresa = empresas.find(e => e.id.toString() === carousel.empresa_id);
+                      const searchTermLower = searchTerm.toLowerCase();
                       return (
-                        carousel.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        empresa?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        carousel.id.toLowerCase().includes(searchTermLower) ||
+                        (carousel.name || '').toLowerCase().includes(searchTermLower) ||
+                        empresa?.nombre.toLowerCase().includes(searchTermLower) ||
                         carousel.sucursales.some(suc => {
                           const sucursal = sucursales.find(s => s.id.toString() === suc);
-                          return sucursal?.direccion.toLowerCase().includes(searchTerm.toLowerCase());
+                          return sucursal?.direccion.toLowerCase().includes(searchTermLower);
                         })
                       );
                     })
@@ -986,7 +1002,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
 
   // Cargar carruseles cuando se abre el modal
   useEffect(() => {
-    if (showSearchModal) {
+    if (showSearchModal && savedCarousels.length === 0) {
       loadSavedCarousels();
     }
   }, [showSearchModal]);

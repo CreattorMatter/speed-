@@ -28,14 +28,11 @@ const INITIAL_MESSAGES: Message[] = [
 ];
 
 const FAQ_RESPONSES: Record<string, string> = {
-  'crear cartel': 'Para crear un cartel, puedes usar el botón "Cartel" en el dashboard. Necesitarás permisos de administrador.',
-  'enviar cartel': 'Puedes enviar carteles a diferentes sucursales usando la función de envío en el editor de carteles.',
+  'crear cartel': 'Para crear un cartel, puedes usar el botón "Cartel" en el dashboard para carteles físicos o "Cartel Digital" para carteles digitales.',
+  'enviar cartel': 'Puedes enviar carteles a diferentes sucursales usando la función de envío en el editor de carteles, digital o físico.',
   'digital': 'Los carteles digitales se pueden crear y gestionar desde la sección "Cartel Digital" en el dashboard.',
   'plantilla': 'Puedes crear y gestionar plantillas usando el "Builder" en el dashboard.',
-  'sucursal': '¿De qué empresa quieres consultar las sucursales?',
-  'ayuda': 'Estoy aquí para ayudarte con cualquier duda sobre SPID+. Puedes preguntarme sobre carteles, plantillas, sucursales y más.',
-  'problema': 'Si tienes algún problema técnico, por favor contacta al soporte técnico en soporte@spidplus.com',
-  'error': 'Si encuentras un error, por favor toma una captura de pantalla y repórtalo al equipo de soporte.',
+  'sucursal': '¿De qué empresa quieres consultar las sucursales?'
 };
 
 export const Chatbot: React.FC<ChatbotProps> = ({ userEmail }) => {
