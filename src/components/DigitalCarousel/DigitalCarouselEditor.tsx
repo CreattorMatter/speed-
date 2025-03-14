@@ -73,16 +73,15 @@ interface SelectedImage {
   name: string;
   type: 'image' | 'video';
   videoType?: 'local' | 'youtube';
+  duration: number;
 }
 
 const CarouselPreview: React.FC<{ 
   images: SelectedImage[];
-  intervalTime: number;
   isFullscreen?: boolean;
   onFullscreenChange: (isFullscreen: boolean) => void;
 }> = ({ 
   images, 
-  intervalTime,
   isFullscreen = false,
   onFullscreenChange
 }) => {
@@ -102,9 +101,9 @@ const CarouselPreview: React.FC<{
     if (images.length <= 1) return;
     if (images[currentIndex].type === 'video') return; // No avanzar automáticamente en videos
     
-    const timer = setInterval(nextSlide, intervalTime * 1000);
+    const timer = setInterval(nextSlide, images[currentIndex].duration * 1000);
     return () => clearInterval(timer);
-  }, [nextSlide, images.length, intervalTime, currentIndex, images]);
+  }, [nextSlide, images.length, currentIndex, images]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -260,7 +259,6 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [availableImages, setAvailableImages] = useState<SelectedImage[]>([]);
   const [sendingStatus, setSendingStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-  const [intervalTime, setIntervalTime] = useState<number>(3);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [sendingProgress, setSendingProgress] = useState<Record<string, SendingProgress>>({});
   const [carouselUrl, setCarouselUrl] = useState<string>('');
@@ -343,7 +341,8 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
           .map(file => ({
             name: file.name,
             url: `${supabaseAdmin.storage.from('posters').getPublicUrl(file.name).data.publicUrl}`,
-            type: 'image' as const
+            type: 'image' as const,
+            duration: 3 // Duración por defecto para imágenes
           }));
 
         setAvailableImages(images);
@@ -392,14 +391,12 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     setShowSendModal(true);
 
     try {
-      // Guardar la información del carrusel en Supabase
       const { error } = await supabaseAdmin
         .from('carousels')
         .upsert({
           id: carouselId,
           name: carouselName,
           images: selectedImages,
-          interval_time: intervalTime,
           start_date: startDate || null,
           end_date: endDate || null,
           start_time: startTime || null,
@@ -418,6 +415,20 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
       console.error('Error al guardar la playlist:', error);
       toast.error('Error al guardar la playlist');
     }
+  };
+
+  const handleImageSelection = (image: Omit<SelectedImage, 'duration'>) => {
+    if (selectedImages.some(i => i.name === image.name)) {
+      setSelectedImages(selectedImages.filter(i => i.name !== image.name));
+    } else {
+      setSelectedImages([...selectedImages, { ...image, duration: 3 }]);
+    }
+  };
+
+  const updateImageDuration = (name: string, duration: number) => {
+    setSelectedImages(selectedImages.map(img => 
+      img.name === name ? { ...img, duration } : img
+    ));
   };
 
   const ImageModal = () => (
@@ -443,44 +454,41 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
               {availableImages.map((image) => (
                 <div
                   key={image.name}
-                  className={`relative rounded-lg overflow-hidden cursor-pointer border-2 
-                    ${selectedImages.some(i => i.name === image.name) 
-                      ? 'border-blue-500' 
-                      : 'border-transparent'}`}
-                  onClick={() => {
-                    if (selectedImages.some(i => i.name === image.name)) {
-                      setSelectedImages(selectedImages.filter(i => i.name !== image.name));
-                    } else {
-                      setSelectedImages([...selectedImages, image]);
-                    }
-                  }}
+                  className="relative rounded-lg overflow-hidden border-2"
                 >
-                  <img
-                    src={image.url}
-                    alt={image.name}
-                    className="w-full h-48 object-cover"
-                  />
+                  <div
+                    className={`cursor-pointer ${
+                      selectedImages.some(i => i.name === image.name) 
+                        ? 'border-blue-500' 
+                        : 'border-transparent'
+                    }`}
+                    onClick={() => handleImageSelection(image)}
+                  >
+                    <img
+                      src={image.url}
+                      alt={image.name}
+                      className="w-full h-48 object-cover"
+                    />
+                  </div>
                   {selectedImages.some(i => i.name === image.name) && (
-                    <div className="absolute top-2 right-2 bg-blue-500 rounded-full p-1">
-                      <Check className="w-4 h-4 text-white" />
+                    <div className="absolute bottom-0 left-0 right-0 bg-white p-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">Duración:</span>
+                        <select
+                          value={selectedImages.find(i => i.name === image.name)?.duration || 3}
+                          onChange={(e) => updateImageDuration(image.name, Number(e.target.value))}
+                          className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {[2, 3, 5, 8, 10, 15, 20, 30].map(value => (
+                            <option key={value} value={value}>{value} segundos</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   )}
                 </div>
               ))}
-            </div>
-            <div className="p-4 border-t border-gray-200 flex justify-end gap-2">
-              <button
-                onClick={() => setShowImageModal(false)}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => setShowImageModal(false)}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              >
-                Confirmar ({selectedImages.length})
-              </button>
             </div>
           </motion.div>
         </div>
@@ -606,22 +614,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                 Cancelar
               </button>
               <button
-                onClick={() => {
-                  if (videoUrl) {
-                    const videoName = videoType === 'youtube' 
-                      ? `youtube-${new Date().getTime()}`
-                      : `local-${new Date().getTime()}`;
-                    
-                    setSelectedImages([...selectedImages, {
-                      url: videoUrl,
-                      name: videoName,
-                      type: 'video',
-                      videoType
-                    }]);
-                    setShowVideoModal(false);
-                    setVideoUrl('');
-                  }
-                }}
+                onClick={handleAddVideo}
                 disabled={!videoUrl}
                 className={`px-4 py-2 rounded-md text-white ${
                   videoUrl 
@@ -812,7 +805,6 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     setSelectedSucursales(carousel.sucursales);
     setSelectedDevices(carousel.devices);
     setSelectedImages(carousel.images);
-    setIntervalTime(carousel.interval_time);
     setStartDate(carousel.start_date || '');
     setEndDate(carousel.end_date || '');
     setStartTime(carousel.start_time || '08:00');
@@ -1023,6 +1015,25 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     }
   }, [showSearchModal]);
 
+  // Modificar el VideoModal para incluir la duración
+  const handleAddVideo = () => {
+    if (videoUrl) {
+      const videoName = videoType === 'youtube' 
+        ? `youtube-${new Date().getTime()}`
+        : `local-${new Date().getTime()}`;
+      
+      setSelectedImages([...selectedImages, {
+        url: videoUrl,
+        name: videoName,
+        type: 'video',
+        videoType,
+        duration: 30 // Duración por defecto para videos
+      }]);
+      setShowVideoModal(false);
+      setVideoUrl('');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
       <Header onBack={onBack} onLogout={onLogout} />
@@ -1176,28 +1187,6 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                         />
                       </div>
                     </div>
-
-                    {/* Selector de tiempo por imagen */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Tiempo por imagen (segundos)
-                      </label>
-                      <Select
-                        value={{ value: intervalTime, label: `${intervalTime} segundos` }}
-                        onChange={(option) => setIntervalTime(option?.value || 3)}
-                        options={[
-                          { value: 2, label: '2 segundos' },
-                          { value: 3, label: '3 segundos' },
-                          { value: 5, label: '5 segundos' },
-                          { value: 8, label: '8 segundos' },
-                          { value: 10, label: '10 segundos' },
-                        ]}
-                        classNames={{
-                          control: (state) => `${state.isFocused ? 'border-indigo-500' : ''}`,
-                          option: () => "px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                        }}
-                      />
-                    </div>
                   </div>
 
                   {/* Preview de la Playlist */}
@@ -1207,8 +1196,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                     </h4>
                     <div className="border border-gray-200 rounded-lg overflow-hidden">
                       <CarouselPreview 
-                        images={selectedImages} 
-                        intervalTime={intervalTime}
+                        images={selectedImages}
                         isFullscreen={isFullscreen}
                         onFullscreenChange={handleFullscreenChange}
                       />
@@ -1250,10 +1238,114 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                     <ul className="space-y-2 text-sm text-gray-600">
                       <li>• Sucursales seleccionadas: {selectedSucursales.length}</li>
                       <li>• Dispositivos: {selectedDevices.map(d => devices.find(dev => dev.value === d)?.label).join(', ') || 'No seleccionado'}</li>
-                      <li>• Imágenes seleccionadas: {selectedImages.length}</li>
+                      <li>• Elementos seleccionados: {selectedImages.length}</li>
                       <li>• Período: {startDate ? `${startDate} al ${endDate}` : 'No configurado'}</li>
                       <li>• Horario: {`${startTime} a ${endTime}`}</li>
-                      <li>• Tiempo por imagen: {intervalTime} segundos</li>
+                      <li>• Tiempo total de reproducción: {selectedImages.reduce((total, img) => total + img.duration, 0)} segundos</li>
+                      {selectedImages.length > 0 && (
+                        <li className="mt-2">
+                          <p className="font-medium text-gray-900 mb-1">Detalles de elementos:</p>
+                          <div className="pl-4 space-y-2">
+                            {selectedImages.map((img, index) => (
+                              <div 
+                                key={img.name} 
+                                className="group relative flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                              >
+                                {/* Número y tipo de elemento */}
+                                <div className="flex items-center gap-2 min-w-[24px]">
+                                  <span>{index + 1}.</span>
+                                  {img.type === 'image' ? <ImageIcon className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+                                </div>
+
+                                {/* Nombre y duración */}
+                                <div className="flex-1 flex items-center justify-between">
+                                  <span className="truncate max-w-[200px]" title={img.name}>{img.name}</span>
+                                  <div className="flex items-center gap-2">
+                                    <select
+                                      value={img.duration}
+                                      onChange={(e) => updateImageDuration(img.name, Number(e.target.value))}
+                                      className="px-2 py-1 text-sm border border-gray-300 rounded hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                    >
+                                      {[2, 3, 5, 8, 10, 15, 20, 30].map(value => (
+                                        <option key={value} value={value}>{value} segundos</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+
+                                {/* Vista previa al hover */}
+                                <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                  <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-1">
+                                    {img.type === 'image' ? (
+                                      <img
+                                        src={img.url}
+                                        alt={img.name}
+                                        className="w-48 h-32 object-contain bg-gray-100 rounded"
+                                      />
+                                    ) : (
+                                      <div className="w-48 h-32 bg-gray-100 rounded flex items-center justify-center">
+                                        {img.videoType === 'youtube' ? (
+                                          <iframe
+                                            src={`${img.url.replace('watch?v=', 'embed/')}?autoplay=0`}
+                                            className="w-full h-full rounded"
+                                            allowFullScreen
+                                          />
+                                        ) : (
+                                          <div className="flex flex-col items-center gap-2">
+                                            <Video className="w-8 h-8 text-gray-400" />
+                                            <span className="text-xs text-gray-500">Vista previa no disponible</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Botones de acción */}
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                  <button
+                                    onClick={() => {
+                                      const newImages = [...selectedImages];
+                                      if (index > 0) {
+                                        [newImages[index], newImages[index - 1]] = [newImages[index - 1], newImages[index]];
+                                        setSelectedImages(newImages);
+                                      }
+                                    }}
+                                    disabled={index === 0}
+                                    className={`p-1 rounded-full ${index === 0 ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-200'}`}
+                                    title="Mover arriba"
+                                  >
+                                    <ChevronLeft className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      const newImages = [...selectedImages];
+                                      if (index < selectedImages.length - 1) {
+                                        [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
+                                        setSelectedImages(newImages);
+                                      }
+                                    }}
+                                    disabled={index === selectedImages.length - 1}
+                                    className={`p-1 rounded-full ${index === selectedImages.length - 1 ? 'text-gray-300' : 'text-gray-500 hover:bg-gray-200'}`}
+                                    title="Mover abajo"
+                                  >
+                                    <ChevronRight className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedImages(selectedImages.filter((_, i) => i !== index));
+                                    }}
+                                    className="p-1 rounded-full text-red-500 hover:bg-red-50"
+                                    title="Eliminar"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </li>
+                      )}
                       {carouselUrl && (
                         <li className="pt-2">
                           <span className="font-medium text-gray-900">• URL de la Playlist:</span>
