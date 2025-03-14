@@ -825,77 +825,85 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   };
 
   // Modal de búsqueda de carruseles
-  const SearchModal = () => (
-    <AnimatePresence>
-      {showSearchModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col"
-          >
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium">Buscar Carrusel</h3>
-              <button
-                onClick={() => setShowSearchModal(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-4 border-b border-gray-200">
-              <div className="relative flex gap-2">
-                <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Buscar por nombre, empresa, ID o sucursal..."
-                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                </div>
+  const SearchModal = React.memo(() => {
+    const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
+    
+    const filteredCarousels = React.useMemo(() => {
+      const searchTermLower = localSearchTerm.toLowerCase();
+      return savedCarousels.filter(carousel => {
+        const empresa = empresas.find(e => e.id.toString() === carousel.empresa_id);
+        return (
+          carousel.id.toLowerCase().includes(searchTermLower) ||
+          (carousel.name || '').toLowerCase().includes(searchTermLower) ||
+          empresa?.nombre.toLowerCase().includes(searchTermLower) ||
+          carousel.sucursales.some(suc => {
+            const sucursal = sucursales.find(s => s.id.toString() === suc);
+            return sucursal?.direccion.toLowerCase().includes(searchTermLower);
+          })
+        );
+      });
+    }, [localSearchTerm, savedCarousels, empresas, sucursales]);
+
+    return (
+      <AnimatePresence>
+        {showSearchModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+            >
+              <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-medium">Buscar Carrusel</h3>
                 <button
-                  onClick={loadSavedCarousels}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md flex items-center gap-2 text-gray-700"
+                  onClick={() => {
+                    setShowSearchModal(false);
+                    setLocalSearchTerm('');
+                  }}
+                  className="text-gray-400 hover:text-gray-500"
                 >
-                  <svg className={`w-4 h-4 ${isLoadingCarousels ? 'animate-spin' : ''}`} viewBox="0 0 24 24">
-                    <path
-                      fill="currentColor"
-                      d="M12 4V2A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8Z"
-                    />
-                  </svg>
-                  Actualizar
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </div>
-            <div className="flex-1 overflow-auto p-4">
-              {isLoadingCarousels ? (
-                <div className="flex justify-center items-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <div className="p-4 border-b border-gray-200">
+                <div className="relative flex gap-2">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={localSearchTerm}
+                      onChange={(e) => setLocalSearchTerm(e.target.value)}
+                      placeholder="Buscar por nombre, empresa, ID o sucursal..."
+                      className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  </div>
+                  <button
+                    onClick={loadSavedCarousels}
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md flex items-center gap-2 text-gray-700"
+                  >
+                    <svg className={`w-4 h-4 ${isLoadingCarousels ? 'animate-spin' : ''}`} viewBox="0 0 24 24">
+                      <path
+                        fill="currentColor"
+                        d="M12 4V2A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8Z"
+                      />
+                    </svg>
+                    Actualizar
+                  </button>
                 </div>
-              ) : savedCarousels.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  No se encontraron carruseles guardados
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {savedCarousels
-                    .filter(carousel => {
-                      const empresa = empresas.find(e => e.id.toString() === carousel.empresa_id);
-                      const searchTermLower = searchTerm.toLowerCase();
-                      return (
-                        carousel.id.toLowerCase().includes(searchTermLower) ||
-                        (carousel.name || '').toLowerCase().includes(searchTermLower) ||
-                        empresa?.nombre.toLowerCase().includes(searchTermLower) ||
-                        carousel.sucursales.some(suc => {
-                          const sucursal = sucursales.find(s => s.id.toString() === suc);
-                          return sucursal?.direccion.toLowerCase().includes(searchTermLower);
-                        })
-                      );
-                    })
-                    .map(carousel => {
+              </div>
+              <div className="flex-1 overflow-auto p-4">
+                {isLoadingCarousels ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : savedCarousels.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No se encontraron carruseles guardados
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredCarousels.map(carousel => {
                       const empresa = empresas.find(e => e.id.toString() === carousel.empresa_id);
                       return (
                         <div
@@ -991,14 +999,15 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                         </div>
                       );
                     })}
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
-  );
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    );
+  });
 
   // Cargar carruseles cuando se abre el modal
   useEffect(() => {
