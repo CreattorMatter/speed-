@@ -89,21 +89,31 @@ const CarouselPreview: React.FC<{
   const carouselRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Asegurarse de que currentIndex sea válido cuando cambian las imágenes
+  useEffect(() => {
+    if (currentIndex >= images.length) {
+      setCurrentIndex(0);
+    }
+  }, [images.length, currentIndex]);
+
   const nextSlide = useCallback(() => {
+    if (images.length === 0) return;
     setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
   }, [images.length]);
 
   const prevSlide = () => {
+    if (images.length === 0) return;
     setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
   };
 
   useEffect(() => {
     if (images.length <= 1) return;
-    if (images[currentIndex].type === 'video') return; // No avanzar automáticamente en videos
+    if (!images[currentIndex]) return;
+    if (images[currentIndex].type === 'video') return;
     
     const timer = setInterval(nextSlide, images[currentIndex].duration * 1000);
     return () => clearInterval(timer);
-  }, [nextSlide, images.length, currentIndex, images]);
+  }, [nextSlide, images, currentIndex]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -126,7 +136,6 @@ const CarouselPreview: React.FC<{
     }
   };
 
-  // Manejar el final del video
   const handleVideoEnd = () => {
     if (images.length > 1) {
       nextSlide();
@@ -136,7 +145,20 @@ const CarouselPreview: React.FC<{
     }
   };
 
-  if (images.length === 0) return null;
+  // Si no hay imágenes, mostrar un mensaje
+  if (images.length === 0) {
+    return (
+      <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
+        <p className="text-gray-500">No hay elementos en la playlist</p>
+      </div>
+    );
+  }
+
+  // Si el índice actual no es válido, resetear a 0
+  if (!images[currentIndex]) {
+    setCurrentIndex(0);
+    return null;
+  }
 
   const currentItem = images[currentIndex];
 
