@@ -27,6 +27,12 @@ interface CapturedImage {
   created_at: string;
 }
 
+interface PosterImage {
+  name: string;
+  url: string;
+  created_at: string;
+}
+
 interface SearchTemplateModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -42,17 +48,19 @@ export function SearchTemplateModal({
 }: SearchTemplateModalProps) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [capturedImages, setCapturedImages] = useState<CapturedImage[]>([]);
+  const [posters, setPosters] = useState<PosterImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [selectedImage, setSelectedImage] = useState<CapturedImage | null>(null);
-  const [activeTab, setActiveTab] = useState<'templates' | 'images'>('templates');
+  const [activeTab, setActiveTab] = useState<'templates' | 'images' | 'posters'>('templates');
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       loadTemplates();
       loadCapturedImages();
+      loadPosters();
     }
   }, [isOpen]);
 
@@ -133,6 +141,52 @@ export function SearchTemplateModal({
     } catch (error) {
       console.error('Error al cargar las imágenes:', error);
       toast.error('Error al cargar las imágenes');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadPosters = async () => {
+    try {
+      setIsLoading(true);
+      const { data: posterList, error: listError } = await supabase.storage
+        .from('posters')
+        .list('', {
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
+
+      if (listError) {
+        console.error('Error al listar carteles:', listError);
+        throw listError;
+      }
+
+      if (!posterList) {
+        console.log('No se encontraron carteles');
+        setPosters([]);
+        return;
+      }
+
+      console.log('Carteles encontrados:', posterList);
+
+      const postersWithUrls = await Promise.all(
+        posterList.map(async (file) => {
+          const { data: urlData } = supabase.storage
+            .from('posters')
+            .getPublicUrl(file.name);
+
+          return {
+            name: file.name,
+            url: urlData.publicUrl,
+            created_at: file.created_at || new Date().toISOString()
+          };
+        })
+      );
+
+      console.log('Carteles con URLs:', postersWithUrls);
+      setPosters(postersWithUrls);
+    } catch (error) {
+      console.error('Error al cargar los carteles:', error);
+      toast.error('Error al cargar los carteles');
     } finally {
       setIsLoading(false);
     }
@@ -221,6 +275,10 @@ export function SearchTemplateModal({
     image.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const filteredPosters = posters.filter(poster =>
+    poster.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const handleSelectTemplate = (template: Template) => {
     try {
       console.log('Seleccionando plantilla:', template);
@@ -295,156 +353,196 @@ export function SearchTemplateModal({
     }
   };
 
-  return (
-    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" aria-hidden="true" />
-      
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-3xl w-full bg-white rounded-xl shadow-lg">
-          <div className="flex justify-between items-start p-4 border-b">
-            <Dialog.Title className="text-lg font-semibold">
-              {activeTab === 'templates' ? 'Buscar plantilla' : 'Imágenes capturadas'}
-            </Dialog.Title>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+  const handleSelectPoster = (poster: PosterImage) => {
+    try {
+      console.log('Seleccionando cartel:', poster);
+      if (onSelectImage) {
+        onSelectImage(poster.url);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error al seleccionar el cartel:', error);
+      toast.error('Error al seleccionar el cartel');
+    }
+  };
 
-          <div className="p-4">
-            <div className="flex gap-4 mb-4">
+  return (
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      className="fixed inset-0 z-50 overflow-y-auto"
+    >
+      <div className="flex items-center justify-center min-h-screen px-4">
+        <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+        
+        <div className="relative bg-white rounded-lg w-full max-w-4xl p-6">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+          >
+            <X size={24} />
+          </button>
+
+          <div className="mb-6">
+            <div className="flex space-x-4 mb-4">
               <button
-                onClick={() => setActiveTab('templates')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
+                className={`px-4 py-2 rounded-lg ${
                   activeTab === 'templates'
                     ? 'bg-blue-500 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
+                onClick={() => setActiveTab('templates')}
               >
                 Plantillas
               </button>
               <button
-                onClick={() => setActiveTab('images')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
+                className={`px-4 py-2 rounded-lg ${
                   activeTab === 'images'
                     ? 'bg-blue-500 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
+                onClick={() => setActiveTab('images')}
               >
                 Imágenes
               </button>
+              <button
+                className={`px-4 py-2 rounded-lg ${
+                  activeTab === 'posters'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                onClick={() => setActiveTab('posters')}
+              >
+                Carteles
+              </button>
             </div>
 
-            <div className="relative mb-4">
+            <div className="relative">
               <input
                 type="text"
                 placeholder="Buscar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border rounded-lg pl-10"
               />
-              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
             </div>
-
-            {isLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-              </div>
-            ) : activeTab === 'templates' ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto">
-                {filteredTemplates.map((template) => (
-                  <motion.div
-                    key={template.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    className="relative cursor-pointer group"
-                  >
-                    <div className="relative aspect-video rounded-lg overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
-                      <img
-                        src={template.image_data}
-                        alt={template.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <button
-                            onClick={() => handleTemplateClick(template)}
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transform transition-all hover:scale-105"
-                          >
-                            Utilizar
-                          </button>
-                        </div>
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <h3 className="text-white text-sm font-medium truncate">
-                            {template.name}
-                          </h3>
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteTemplate(template);
-                        }}
-                        disabled={isDeleting}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto">
-                {filteredImages.map((image) => (
-                  <motion.div
-                    key={image.name}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    className="relative cursor-pointer group"
-                  >
-                    <div className="relative aspect-video rounded-lg overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
-                      <img
-                        src={image.url}
-                        alt={image.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <button
-                            onClick={() => handleImageClick(image)}
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transform transition-all hover:scale-105"
-                          >
-                            Utilizar
-                          </button>
-                        </div>
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <h3 className="text-white text-sm font-medium truncate">
-                            {image.name}
-                          </h3>
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteImage(image);
-                        }}
-                        disabled={isDeleting}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
           </div>
-        </Dialog.Panel>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="animate-spin text-blue-500" size={32} />
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto p-4">
+              {activeTab === 'templates' && filteredTemplates.map((template) => (
+                <motion.div
+                  key={template.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className="relative cursor-pointer group"
+                >
+                  <div className="relative aspect-video rounded-lg overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
+                    <img
+                      src={template.image_data}
+                      alt={template.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <button
+                          onClick={() => handleTemplateClick(template)}
+                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transform transition-all hover:scale-105"
+                        >
+                          Utilizar
+                        </button>
+                      </div>
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <h3 className="text-white text-sm font-medium truncate">
+                          {template.name}
+                        </h3>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTemplate(template);
+                      }}
+                      disabled={isDeleting}
+                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+              
+              {activeTab === 'images' && filteredImages.map((image) => (
+                <motion.div
+                  key={image.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className="relative cursor-pointer group"
+                >
+                  <div className="relative aspect-video rounded-lg overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
+                    <img
+                      src={image.url}
+                      alt={image.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <button
+                          onClick={() => handleImageClick(image)}
+                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transform transition-all hover:scale-105"
+                        >
+                          Utilizar
+                        </button>
+                      </div>
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <h3 className="text-white text-sm font-medium truncate">
+                          {image.name}
+                        </h3>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteImage(image);
+                      }}
+                      disabled={isDeleting}
+                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+
+              {activeTab === 'posters' && filteredPosters.map((poster) => (
+                <motion.div
+                  key={poster.name}
+                  className="relative group cursor-pointer rounded-lg overflow-hidden shadow-md"
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => handleSelectPoster(poster)}
+                >
+                  <img
+                    src={poster.url}
+                    alt={poster.name}
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200">
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-black bg-opacity-50 text-white text-sm truncate">
+                      {poster.name}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </Dialog>
   );
