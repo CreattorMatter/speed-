@@ -46,6 +46,17 @@ export function ExportModal({ isOpen, onClose, canvasRef }: ExportModalProps) {
     try {
       setIsExporting(true);
 
+      // Guardar el estilo original del fondo
+      const paperElement = canvasRef.current.querySelector('.bg-white.shadow-lg') as HTMLElement;
+      if (!paperElement) {
+        toast.error('No se encontró el área de trabajo');
+        return;
+      }
+
+      // Guardar el backgroundImage original y removerlo temporalmente
+      const originalBackground = paperElement.style.backgroundImage;
+      paperElement.style.backgroundImage = 'none';
+
       // Configuración de html2canvas
       const canvas = await html2canvas(canvasRef.current, {
         scale: qualityFactors[options.quality],
@@ -55,6 +66,9 @@ export function ExportModal({ isOpen, onClose, canvasRef }: ExportModalProps) {
         windowWidth: canvasRef.current.scrollWidth,
         windowHeight: canvasRef.current.scrollHeight,
       });
+
+      // Restaurar el backgroundImage original
+      paperElement.style.backgroundImage = originalBackground;
 
       // Convertir el canvas a una URL de datos
       const dataUrl = canvas.toDataURL('image/png', 1.0);
