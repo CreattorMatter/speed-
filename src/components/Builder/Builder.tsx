@@ -71,6 +71,7 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
   const [isPublic, setIsPublic] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState(PAPER_FORMATS[2]); // A4 por defecto
   const [isLandscape, setIsLandscape] = useState(false);
+  const [scale, setScale] = useState(1);
   
   // Agregar estados para el canvas
   const [canvasSettings, setCanvasSettings] = useState({
@@ -594,6 +595,31 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
                     </svg>
                     Vista previa
                   </button>
+
+                  {/* Controles de zoom */}
+                  <div className="flex items-center gap-1 px-2 py-1 bg-white border border-gray-300 rounded-md">
+                    <button
+                      onClick={() => setScale(s => Math.max(s - 0.1, 0.5))}
+                      className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                      title="Reducir zoom"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                      </svg>
+                    </button>
+                    <span className="px-2 min-w-[4rem] text-center text-sm font-medium">
+                      {Math.round(scale * 100)}%
+                    </span>
+                    <button
+                      onClick={() => setScale(s => Math.min(s + 0.1, 2))}
+                      className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+                      title="Aumentar zoom"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -663,6 +689,7 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
                   onDropInContainer={handleDropInContainer}
                   selectedFormat={selectedFormat}
                   isLandscape={isLandscape}
+                  scale={scale}
                 />
               </div>
             </div>

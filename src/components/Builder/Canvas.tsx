@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { Block } from './Block';
-import { ZoomControls } from './ZoomControls';
 import Rulers from './Rulers';
 import { Block as BlockType, PaperFormat } from '../../types/builder';
 import { PAPER_FORMATS } from '../../constants/paperFormats';
+import '../../styles/scrollbar.css';
 
 interface CanvasProps {
   blocks: BlockType[];
@@ -11,6 +11,7 @@ interface CanvasProps {
   onDropInContainer: (containerId: string, blockId: string, position: { x: number, y: number }) => void;
   selectedFormat?: PaperFormat;
   isLandscape?: boolean;
+  scale: number;
 }
 
 export default function Canvas({ 
@@ -18,10 +19,10 @@ export default function Canvas({
   setBlocks, 
   onDropInContainer, 
   selectedFormat = PAPER_FORMATS[2], // A4 por defecto
-  isLandscape = false 
+  isLandscape = false,
+  scale = 1
 }: CanvasProps) {
   const GRID_SIZE = 20;
-  const [scale, setScale] = useState(1);
 
   const handleDelete = useCallback((id: string) => {
     setBlocks(prev => {
@@ -125,14 +126,9 @@ export default function Canvas({
       id="builder-canvas-area"
       className="h-full w-full relative bg-gray-100 rounded-lg shadow-lg overflow-hidden"
     >
-      <ZoomControls
-        scale={scale}
-        onZoomIn={() => setScale(s => Math.min(s + 0.1, 2))}
-        onZoomOut={() => setScale(s => Math.max(s - 0.1, 0.5))}
-      />
       <Rulers gridSize={GRID_SIZE * scale} />
       <div 
-        className="builder-canvas relative w-[calc(100%-20px)] h-[calc(100%-20px)] ml-[20px] mt-[20px] overflow-auto"
+        className="builder-canvas relative w-[calc(100%-20px)] h-[calc(100%-20px)] ml-[20px] mt-[20px] overflow-auto scrollbar-custom"
         style={{
           transform: `scale(${scale})`,
           transformOrigin: '0 0',
