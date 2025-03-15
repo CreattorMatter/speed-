@@ -1177,9 +1177,9 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
             <h2 className="text-2xl font-medium text-gray-900">Editor de Cartelería Digital</h2>
             <button
               onClick={() => setShowSearchModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-violet-500 text-white rounded-md hover:from-blue-600 hover:to-violet-600 transform hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg"
             >
-              <Search className="w-5 h-5" />
+              <Search className="w-5 h-5 animate-pulse" />
               Buscar Playlist
             </button>
           </div>
