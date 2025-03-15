@@ -23,6 +23,7 @@ export default function Canvas({
   scale = 1
 }: CanvasProps) {
   const GRID_SIZE = 20;
+  const RULER_SIZE = 20;
 
   const handleDelete = useCallback((id: string) => {
     setBlocks(prev => {
@@ -128,8 +129,12 @@ export default function Canvas({
     >
       <Rulers gridSize={GRID_SIZE * scale} />
       <div 
-        className="builder-canvas relative w-[calc(100%-20px)] h-[calc(100%-20px)] ml-[20px] mt-[20px] overflow-auto scrollbar-custom"
+        className="builder-canvas relative overflow-auto scrollbar-custom"
         style={{
+          width: `calc(100% - ${RULER_SIZE}px)`,
+          height: `calc(100% - ${RULER_SIZE}px)`,
+          marginLeft: `${RULER_SIZE}px`,
+          marginTop: `${RULER_SIZE}px`,
           transform: `scale(${scale})`,
           transformOrigin: '0 0',
           backgroundColor: '#f3f4f6',
@@ -144,9 +149,8 @@ export default function Canvas({
           style={{
             width: paperWidth + 'px',
             height: paperHeight + 'px',
-            left: '50%',
-            top: '100px',
-            transform: 'translateX(-50%)',
+            left: RULER_SIZE + 'px',
+            top: RULER_SIZE + 'px',
             backgroundImage: `
               linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
               linear-gradient(to bottom, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
