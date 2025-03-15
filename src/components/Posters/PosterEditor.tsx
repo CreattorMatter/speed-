@@ -233,8 +233,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [company, setCompany] = useState('');
-  const [region, setRegion] = useState<string[]>([]);
-  const [cc, setCC] = useState<string[]>([]);
   const [promotion, setPromotion] = useState(initialPromotion?.id || '');
   const [selectedProducts, setSelectedProducts] = useState<string[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -260,58 +258,30 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   console.log('COMPANIES imported:', COMPANIES); // Debug
   console.log('Productos disponibles:', products);
 
-  // Limpiar región y CC cuando cambia la empresa
+  // Limpiar empresa cuando cambia
   const handleCompanyChange = (newCompany: string) => {
     setCompany(newCompany);
-    setRegion([]);
-    setCC([]);
   };
 
-  // Filtrar ubicaciones basado en la empresa y región seleccionadas
-  const filteredLocations = React.useMemo(() => {
-    let locations = [...LOCATIONS];
-    console.log('Company selected:', company); // Debug
-    console.log('All locations:', locations); // Debug
-
-    // Filtrar por empresa si hay una seleccionada y no es "TODAS"
-    if (company && company !== 'no-logo') {
-      locations = locations.filter(loc => {
-        const matches = loc.id.startsWith(company.toLowerCase());
-        console.log(`Checking location ${loc.id} against ${company.toLowerCase()}: ${matches}`); // Debug
-        return matches;
-      });
-    }
-
-    console.log('Filtered by company:', locations); // Debug
-
-    // Filtrar por regiones seleccionadas
-    if (region.length > 0 && !region.includes('todos')) {
-      locations = locations.filter(loc => region.includes(loc.region));
-    }
-
-    console.log('Final filtered locations:', locations); // Debug
-    return locations;
-  }, [company, region]);
-
-  // Obtener regiones únicas basadas en las ubicaciones filtradas por empresa
+  // Filtrar ubicaciones basado en la empresa seleccionada
   const availableRegions = React.useMemo(() => {
-    console.log('Calculating regions for company:', company); // Debug
+    console.log('Calculating regions for company:', company);
     const locations = company && company !== 'no-logo'
       ? LOCATIONS.filter(loc => {
           const matches = loc.id.startsWith(company.toLowerCase());
-          console.log(`Checking location ${loc.id} for regions: ${matches}`); // Debug
+          console.log(`Checking location ${loc.id} for regions: ${matches}`);
           return matches;
         })
       : LOCATIONS;
       
     const regions = new Set(locations.map(loc => loc.region));
-    console.log('Available regions:', regions); // Debug
+    console.log('Available regions:', regions);
     
     const result = [
       { id: 'todos', name: 'Todas las Regiones' },
       ...REGIONS.filter(r => r.id !== 'todos' && regions.has(r.id))
     ];
-    console.log('Final regions list:', result); // Debug
+    console.log('Final regions list:', result);
     return result;
   }, [company]);
 
@@ -341,6 +311,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   };
 
   const companyDetails = COMPANIES.find(c => c.id === company);
+  const empresaId = companyDetails?.empresaId || 0;
+  console.log('Company selected:', company);
+  console.log('Company details:', companyDetails);
+  console.log('Empresa ID:', empresaId);
 
   const handlePreview = (product: Product) => {
     navigate('/poster-preview', {
@@ -468,12 +442,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
 
   // Agregar el handler para enviar a sucursales
   const handleSendToLocations = () => {
-    if (!cc.length) {
-      alert('Por favor seleccione al menos una sucursal');
-      return;
-    }
-    if (!selectedProducts.length) {
-      alert('Por favor seleccione al menos un producto');
+    if (!selectedProducts.length || !company) {
+      alert('Por favor seleccione al menos un producto y una empresa');
       return;
     }
 
@@ -578,8 +548,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200">
-              {/* Primera fila: Empresa, Región y CC en línea */}
-              <div className="grid grid-cols-3 gap-4">
+              {/* Primera fila: Solo empresa */}
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-white/70 mb-1">
                     Empresa
@@ -589,36 +559,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                     onChange={handleCompanyChange}
                     companies={COMPANIES}
                     className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-1">
-                    Región
-                  </label>
-                  <RegionSelect
-                    value={region}
-                    onChange={(values) => {
-                      setRegion(values);
-                      setCC([]);
-                    }}
-                    regions={availableRegions}
-                    isMulti={true}
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-1">
-                    CC:
-                  </label>
-                  <LocationSelect
-                    value={cc}
-                    onChange={handleCCChange}
-                    locations={filteredLocations}
-                    disabled={region.length === 0}
-                    isMulti={true}
-                    className="bg-white/10 border-white/20 text-white placeholder-white/50 focus:border-white/30"
                   />
                 </div>
               </div>
@@ -920,9 +860,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   <div className="flex items-center gap-3">
                     <button
                       onClick={handleSendToLocations}
-                      disabled={!cc.length || !selectedProducts.length}
+                      disabled={!selectedProducts.length || !company}
                       className={`px-4 py-2 rounded-lg font-medium transition-colors
-                        ${(!cc.length || !selectedProducts.length)
+                        ${(!selectedProducts.length || !company)
                           ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                           : 'bg-indigo-600 text-white hover:bg-indigo-700'
                         }`}
@@ -1002,8 +942,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             <SendingModal
               isOpen={isSendingModalOpen}
               onClose={() => setIsSendingModalOpen(false)}
-              locations={filteredLocations.filter(loc => cc.includes(loc.id))}
               productsCount={selectedProducts.length}
+              company={company}
+              empresaId={empresaId}
             />
 
             <PosterModal

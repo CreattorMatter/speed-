@@ -5,6 +5,7 @@ interface Location {
   id: string;
   name: string;
   region: string;
+  direccion?: string;
   coordinates?: [number, number];
   address?: string;
 }
@@ -13,6 +14,7 @@ interface Option {
   value: string;
   label: string;
   region?: string;
+  direccion?: string;
 }
 
 interface LocationSelectProps {
@@ -35,13 +37,15 @@ export const LocationSelect: React.FC<LocationSelectProps> = ({
   const options: Option[] = locations.map(l => ({
     value: l.id,
     label: l.name,
-    region: l.region
+    region: l.region,
+    direccion: l.direccion
   }));
 
-  const formatOptionLabel = ({ label, region }: Option) => (
-    <div className="flex flex-col">
-      <div>{label}</div>
+  const formatOptionLabel = ({ label, region, direccion }: Option) => (
+    <div className="flex flex-col py-1">
+      <div className="font-medium">{label}</div>
       {region && <div className="text-sm text-gray-500">{region}</div>}
+      {direccion && <div className="text-sm text-gray-600 mt-0.5">{direccion}</div>}
     </div>
   );
 
