@@ -2,15 +2,24 @@ import React, { useState, useCallback } from 'react';
 import { Block } from './Block';
 import { ZoomControls } from './ZoomControls';
 import Rulers from './Rulers';
-import { Block as BlockType } from '../../types/builder';
+import { Block as BlockType, PaperFormat } from '../../types/builder';
+import { PAPER_FORMATS } from '../../constants/paperFormats';
 
 interface CanvasProps {
   blocks: BlockType[];
   setBlocks: React.Dispatch<React.SetStateAction<BlockType[]>>;
   onDropInContainer: (containerId: string, blockId: string, position: { x: number, y: number }) => void;
+  selectedFormat?: PaperFormat;
+  isLandscape?: boolean;
 }
 
-export default function Canvas({ blocks, setBlocks, onDropInContainer }: CanvasProps) {
+export default function Canvas({ 
+  blocks, 
+  setBlocks, 
+  onDropInContainer, 
+  selectedFormat = PAPER_FORMATS[2], // A4 por defecto
+  isLandscape = false 
+}: CanvasProps) {
   const GRID_SIZE = 20;
   const [scale, setScale] = useState(1);
 
@@ -107,10 +116,14 @@ export default function Canvas({ blocks, setBlocks, onDropInContainer }: CanvasP
 
   console.log('Renderizando bloques en Canvas:', sortedBlocks);
 
+  // Calcular el tamaño del papel en píxeles
+  const paperWidth = isLandscape ? selectedFormat.height : selectedFormat.width;
+  const paperHeight = isLandscape ? selectedFormat.width : selectedFormat.height;
+
   return (
     <div 
       id="builder-canvas-area"
-      className="h-full w-full relative bg-white rounded-lg shadow-lg overflow-hidden"
+      className="h-full w-full relative bg-gray-100 rounded-lg shadow-lg overflow-hidden"
     >
       <ZoomControls
         scale={scale}
@@ -123,32 +136,54 @@ export default function Canvas({ blocks, setBlocks, onDropInContainer }: CanvasP
         style={{
           transform: `scale(${scale})`,
           transformOrigin: '0 0',
-          backgroundImage: `linear-gradient(to right, rgba(99, 102, 241, 0.1) 1px, transparent 1px),
-                           linear-gradient(to bottom, rgba(99, 102, 241, 0.1) 1px, transparent 1px)`,
-          backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
-          backgroundColor: 'white',
-          minWidth: '3000px',
-          minHeight: '2000px',
+          backgroundColor: '#f3f4f6',
+          minWidth: Math.max(paperWidth * 1.2, 1000) + 'px',
+          minHeight: Math.max(paperHeight * 1.2, 800) + 'px',
           position: 'relative'
         }}
       >
-        {sortedBlocks.length > 0 ? (
-          sortedBlocks.map(block => (
-            <Block
-              key={block.id}
-              block={block}
-              onDelete={handleDelete}
-              onResize={handleResize}
-              onMove={handleMove}
-              onImageUpload={handleImageUpload}
-              onDropInContainer={onDropInContainer}
-            />
-          ))
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-            Arrastra elementos aquí para comenzar
+        {/* Área del papel */}
+        <div
+          className="absolute bg-white shadow-lg"
+          style={{
+            width: paperWidth + 'px',
+            height: paperHeight + 'px',
+            left: '50%',
+            top: '100px',
+            transform: 'translateX(-50%)',
+            backgroundImage: `
+              linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+              linear-gradient(to right, rgba(99, 102, 241, 0.1) ${GRID_SIZE}px, transparent ${GRID_SIZE}px),
+              linear-gradient(to bottom, rgba(99, 102, 241, 0.1) ${GRID_SIZE}px, transparent ${GRID_SIZE}px)
+            `,
+            backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px, ${GRID_SIZE}px ${GRID_SIZE}px, ${GRID_SIZE * 5}px ${GRID_SIZE * 5}px, ${GRID_SIZE * 5}px ${GRID_SIZE * 5}px`
+          }}
+        >
+          {/* Información del formato */}
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white px-3 py-1 rounded-t-lg shadow text-sm text-gray-600 flex items-center gap-2">
+            <span className="font-medium">{selectedFormat.name}</span>
+            <span className="text-gray-400">({selectedFormat.originalSize})</span>
           </div>
-        )}
+
+          {sortedBlocks.length > 0 ? (
+            sortedBlocks.map(block => (
+              <Block
+                key={block.id}
+                block={block}
+                onDelete={handleDelete}
+                onResize={handleResize}
+                onMove={handleMove}
+                onImageUpload={handleImageUpload}
+                onDropInContainer={onDropInContainer}
+              />
+            ))
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+              Arrastra elementos aquí para comenzar
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

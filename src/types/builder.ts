@@ -41,4 +41,12 @@ export interface BlockPresets {
     medium: PresetSize;
     large: PresetSize;
   };
+}
+
+export interface PaperFormat {
+  id: string;
+  width: number;
+  height: number;
+  name: string;
+  originalSize: string;
 } 

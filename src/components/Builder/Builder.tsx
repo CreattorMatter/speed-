@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { ArrowLeft, Layout, LayoutTemplate, Tag, Image, DollarSign, Percent, Gift, Square, Box } from 'lucide-react';
+import { ArrowLeft, Layout, LayoutTemplate, Tag, Image as ImageIcon, DollarSign, Percent, Gift, Square, Box } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Toolbar from './Toolbar';
 import Canvas from './Canvas';
@@ -16,6 +16,8 @@ import { toast } from 'react-hot-toast';
 import html2canvas from 'html2canvas/dist/html2canvas.min.js';
 import { AIGeneratingModal } from './AIGeneratingModal';
 import { builderService } from '../../lib/builderService';
+import { PaperFormatSelector } from './PaperFormatSelector';
+import { PAPER_FORMATS } from '../../constants/paperFormats';
 
 interface BuilderProps {
   onBack: () => void;
@@ -67,6 +69,8 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState(PAPER_FORMATS[2]); // A4 por defecto
+  const [isLandscape, setIsLandscape] = useState(false);
   
   // Agregar estados para el canvas
   const [canvasSettings, setCanvasSettings] = useState({
@@ -552,58 +556,117 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
 
   return (
     <HeaderProvider userEmail={userEmail} userName={userName} userRole={userRole}>
-      <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
         <Header onBack={onBack} onLogout={handleLogout} />
-        {/* Toolbar */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4">
-            <Toolbar 
-              onSave={handleSaveClick} 
-              onPreview={() => setShowPreview(true)}
-              onSearch={() => setIsSearchModalOpen(true)}
-              onGenerateAI={handleGenerateAI}
-              isSaving={isSaving}
-            />
-          </div>
-        </div>
+        <div className="min-h-screen flex flex-col bg-white">
+          <main className="flex-1 flex flex-col">
+            {/* Barra de herramientas */}
+            <div className="bg-white border-b border-gray-200 px-4 py-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSaveClick}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-md hover:from-blue-600 hover:to-indigo-600 transform hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSaving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                        </svg>
+                        Guardar
+                      </>
+                    )}
+                  </button>
 
-        {/* Elementos */}
-        <div className="bg-white border-b border-gray-200 py-3">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex items-center gap-3 overflow-x-auto pb-2">
-              {blockTypes.map((type) => (
-                <motion.button
-                  key={type}
-                  whileHover={{ scale: 1.03, y: -2 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => handleAddBlock(type)}
-                  className="flex flex-col items-center p-2.5 bg-white rounded-xl border border-gray-100
-                           hover:border-indigo-500/20 hover:bg-indigo-50/50 hover:shadow-md 
-                           transition-all duration-200 min-w-[85px] group"
-                >
-                  <div className="p-2 rounded-lg mb-2 group-hover:bg-white transition-colors duration-200">
-                    {getBlockIcon(type)}
-                  </div>
-                  <span className="text-xs font-medium text-gray-600 group-hover:text-indigo-600 transition-colors duration-200">
-                    {getBlockLabel(type)}
-                  </span>
-                </motion.button>
-              ))}
+                  <button
+                    onClick={() => setShowPreview(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-all duration-300"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    Vista previa
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsSearchModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-all duration-300"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Buscar plantilla
+                  </button>
+
+                  <button
+                    onClick={handleGenerateAI}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-md hover:from-purple-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Generar con IA
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        
-        {/* Canvas */}
-        <div className="flex-1 overflow-hidden p-6">
-          <div className="h-full">
-            <ErrorBoundary>
-              <Canvas 
-                blocks={blocks} 
-                setBlocks={setBlocks}
-                onDropInContainer={handleDropInContainer}
-              />
-            </ErrorBoundary>
-          </div>
+
+            {/* Área principal */}
+            <div className="flex-1 flex">
+              {/* Panel de herramientas */}
+              <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col">
+                <div className="space-y-4">
+                  {/* Selector de formato de papel */}
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-gray-900">Formato de papel</h3>
+                    <PaperFormatSelector
+                      selectedFormat={selectedFormat}
+                      onFormatChange={setSelectedFormat}
+                      isLandscape={isLandscape}
+                      onToggleLandscape={() => setIsLandscape(!isLandscape)}
+                    />
+                  </div>
+
+                  {/* Bloques disponibles */}
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-gray-900">Bloques disponibles</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {blockTypes.map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => handleAddBlock(type)}
+                          className="p-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-2"
+                        >
+                          {getBlockIcon(type)}
+                          <span className="capitalize">{type}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Área de trabajo */}
+              <div className="flex-1 bg-gray-50 p-4">
+                <Canvas
+                  blocks={blocks}
+                  setBlocks={setBlocks}
+                  onDropInContainer={handleDropInContainer}
+                  selectedFormat={selectedFormat}
+                  isLandscape={isLandscape}
+                />
+              </div>
+            </div>
+          </main>
         </div>
 
         <Preview 
@@ -659,7 +722,7 @@ function getBlockIcon(type: BlockType) {
     case 'sku':
       return <Tag className={iconClass} />;
     case 'image':
-      return <Image className={iconClass} />;
+      return <ImageIcon className={iconClass} />;
     case 'price':
       return <DollarSign className={iconClass} />;
     case 'discount':
@@ -667,7 +730,7 @@ function getBlockIcon(type: BlockType) {
     case 'promotion':
       return <Gift className={iconClass} />;
     case 'logo':
-      return <Image className={iconClass} />;
+      return <ImageIcon className={iconClass} />;
     default:
       return <Square className={iconClass} />;
   }
