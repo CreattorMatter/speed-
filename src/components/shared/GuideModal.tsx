@@ -5,7 +5,7 @@ import {
   Image, Type, Palette, ChevronRight, ArrowLeft,
   MousePointer2, Layers, Grid3X3, PenTool, ImagePlus,
   TextSelect, Palette as ColorPalette, Move, ZoomIn,
-  MonitorPlay
+  MonitorPlay, ShoppingCart, Tag, BarChart, Settings
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -52,39 +52,80 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
 
   const sections = [
     {
-      title: 'Editor de Carteles',
+      title: 'Bienvenido a SPID Plus',
       items: [
         {
           icon: <Layout className="w-5 h-5" />,
-          title: 'Gestión de Carteles',
-          description: 'Aprende a crear y gestionar carteles para tus promociones.',
+          title: 'Descripción General',
+          description: 'Conoce la plataforma y sus módulos principales.',
           detailedGuide: {
-            title: 'Guía del Editor de Carteles',
-            description: 'Aprende a utilizar todas las funciones del editor de carteles para crear promociones efectivas.',
+            title: 'SPID Plus - Plataforma de Gestión de Carteles',
+            description: 'SPID Plus es una plataforma integral para la gestión de carteles y contenido digital para retail, que consta de tres módulos principales y sistemas complementarios.',
+            steps: [
+              {
+                title: 'Módulos Principales',
+                description: 'La plataforma se compone de tres módulos core:',
+                tip: 'Cada módulo está diseñado para una función específica pero trabajan en conjunto, Módulo de Contrucción de Carteles, Módulo de Carteles Digitales y Módulo de Builder.'
+              },
+              {
+                title: '1. Editor de Carteles (PosterEditor)',
+                description: 'Crea y gestiona carteles promocionales, ofertas y comunicaciones visuales para tu negocio.',
+                tip: 'Ideal para promociones bancarias, descuentos y ofertas especiales.'
+              },
+              {
+                title: '2. Cartelería Digital (DigitalCarouselEditor)',
+                description: 'Gestiona contenido digital para pantallas y dispositivos en tienda, creando playlists dinámicas.',
+                tip: 'Perfecto para videowalls, pantallas de caja y kioscos digitales.'
+              },
+              {
+                title: '3. Constructor de Diseños (Builder)',
+                description: 'Editor visual avanzado para crear diseños personalizados con múltiples elementos.',
+                tip: 'Usa bloques predefinidos o crea tus propios diseños desde cero.'
+              },
+              {
+                title: 'Módulos Complementarios',
+                description: 'Sistemas integrados que potencian la funcionalidad:',
+                tip: 'Estos módulos se conectan con sistemas externos para enriquecer las capacidades de la plataforma, por ejemplo nos conectamos a SAP para la analitica de los datos.'
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      title: 'Módulos Principales',
+      items: [
+        {
+          icon: <Layout className="w-5 h-5" />,
+          title: 'Editor de Carteles',
+          description: 'Crea y gestiona carteles promocionales.',
+          detailedGuide: {
+            title: 'Editor de Carteles (PosterEditor)',
+            description: 'Herramienta completa para la creación y gestión de carteles promocionales.',
             steps: [
               {
                 title: 'Selección de Empresa y Promoción',
-                description: 'Comienza seleccionando la empresa y el tipo de promoción que deseas crear. Puedes filtrar promociones por categoría y banco.',
-                tip: 'Usa los filtros de búsqueda para encontrar rápidamente la promoción deseada.'
+                description: 'Comienza seleccionando la empresa y el tipo de promoción. Filtra por categoría y banco.',
+                tip: 'Usa los filtros para encontrar rápidamente lo que necesitas.'
               },
               {
-                title: 'Configuración de Plantilla',
-                description: 'Selecciona una plantilla prediseñada o personaliza una existente. Puedes agregar financiación y configurar diferentes aspectos visuales.',
-                tip: 'Las plantillas se pueden personalizar con los colores de tu marca.'
+                title: 'Gestión de Productos',
+                description: 'Agrega y organiza productos en tu cartel. Filtra por categoría y selecciona múltiples productos.',
+                tip: 'La vista en lista te permite ver más detalles de cada producto.'
               },
               {
-                title: 'Selección de Productos',
-                description: 'Agrega productos a tu cartel filtrando por categoría. Puedes seleccionar múltiples productos para crear carteles en lote.',
-                tip: 'Usa la vista en lista para ver más detalles de los productos.'
+                title: 'Personalización',
+                description: 'Ajusta tamaño, orientación, zoom y escala. Controla la visibilidad de elementos.',
+                tip: 'Usa los controles de zoom para una edición precisa.'
               },
               {
-                title: 'Personalización del Cartel',
-                description: 'Ajusta el tamaño, orientación, zoom y escala del cartel. Controla la visibilidad del logo y otros elementos.',
-                tip: 'Usa los controles de zoom para una vista más detallada.'
+                title: 'Opciones de Financiación',
+                description: 'Configura opciones de pago y promociones bancarias.',
+                tip: 'Puedes combinar múltiples medios de pago.'
               },
               {
-                title: 'Exportación y Guardado',
-                description: 'Descarga tus carteles en formato PNG o guárdalos en el sistema para uso futuro. También puedes enviarlos directamente a las sucursales.',
+                title: 'Exportación y Distribución',
+                description: 'Descarga, guarda y envía tus carteles a las sucursales.',
                 tip: 'Los carteles se guardan en alta resolución para impresión.'
               }
             ],
@@ -98,30 +139,30 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
         {
           icon: <MonitorPlay className="w-5 h-5" />,
           title: 'Cartelería Digital',
-          description: 'Gestiona contenido digital para pantallas y dispositivos.',
+          description: 'Gestiona contenido digital para pantallas.',
           detailedGuide: {
-            title: 'Guía de Cartelería Digital',
-            description: 'Aprende a crear y gestionar contenido digital para diferentes dispositivos y pantallas.',
+            title: 'Cartelería Digital (DigitalCarouselEditor)',
+            description: 'Sistema de gestión de contenido digital para pantallas y dispositivos en tienda.',
             steps: [
               {
                 title: 'Creación de Playlist',
-                description: 'Crea listas de reproducción con imágenes y videos. Configura la duración y orden de cada elemento.',
-                tip: 'Puedes previsualizar la playlist antes de enviarla.'
+                description: 'Crea listas de reproducción combinando imágenes y videos.',
+                tip: 'Previsualiza tu playlist antes de publicar.'
               },
               {
-                title: 'Selección de Dispositivos',
-                description: 'Elige los dispositivos donde se mostrará el contenido: videowalls, pantallas de caja, kioscos digitales, etc.',
+                title: 'Gestión de Dispositivos',
+                description: 'Administra diferentes tipos de pantallas: videowalls, cajas, kioscos, etc.',
                 tip: 'Cada dispositivo puede tener contenido específico.'
               },
               {
                 title: 'Programación',
-                description: 'Configura fechas y horarios de reproducción. Establece la duración de cada elemento en la playlist.',
-                tip: 'Usa la programación para mostrar contenido en horarios específicos.'
+                description: 'Define fechas y horarios de reproducción para cada contenido.',
+                tip: 'Programa contenido específico para diferentes momentos del día.'
               },
               {
-                title: 'Distribución',
-                description: 'Envía el contenido a las sucursales seleccionadas. Monitorea el estado del envío en tiempo real.',
-                tip: 'Puedes enviar a múltiples sucursales simultáneamente.'
+                title: 'Monitoreo',
+                description: 'Supervisa el estado de tus dispositivos y contenido en tiempo real.',
+                tip: 'Recibe notificaciones sobre el estado de la reproducción.'
               }
             ]
           }
@@ -129,40 +170,29 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
         {
           icon: <PenTool className="w-5 h-5" />,
           title: 'Constructor de Diseños',
-          description: 'Crea diseños personalizados con el constructor visual.',
+          description: 'Crea diseños personalizados.',
           detailedGuide: {
-            title: 'Guía del Constructor de Diseños',
-            description: 'Aprende a utilizar el constructor visual para crear diseños personalizados.',
+            title: 'Constructor de Diseños (Builder)',
+            description: 'Editor visual avanzado para crear diseños personalizados.',
             steps: [
               {
                 title: 'Bloques de Construcción',
-                description: 'Utiliza diferentes tipos de bloques: contenedores, encabezados, imágenes, precios, etc. Arrastra y suelta para construir tu diseño.',
+                description: 'Usa diferentes tipos de bloques para construir tu diseño.',
                 tip: 'Los contenedores pueden anidar otros elementos.'
               },
               {
                 title: 'Formato y Tamaño',
-                description: 'Selecciona el formato de papel y orientación. Ajusta el zoom y escala para una edición precisa.',
-                tip: 'Usa las guías para alinear elementos perfectamente.'
-              },
-              {
-                title: 'Personalización',
-                description: 'Modifica colores, fuentes, tamaños y posiciones. Agrega efectos y estilos a los elementos.',
-                tip: 'Guarda tus diseños como plantillas para uso futuro.'
+                description: 'Configura el formato de papel y orientación.',
+                tip: 'Usa las guías para alinear elementos.'
               },
               {
                 title: 'Generación con IA',
-                description: 'Utiliza la generación automática con IA para crear diseños rápidamente.',
-                tip: 'La IA puede sugerir diferentes layouts basados en tu contenido.'
-              },
-              {
-                title: 'Exportación',
-                description: 'Exporta tus diseños en diferentes formatos: PNG, PDF, SVG. Configura la calidad y resolución.',
-                tip: 'Usa la vista previa para verificar el resultado final.'
+                description: 'Crea diseños automáticamente con inteligencia artificial.',
+                tip: 'La IA aprende de tus preferencias de diseño.'
               }
             ],
             shortcuts: [
               { key: '⌘/Ctrl + D', action: 'Duplicar elemento' },
-              { key: '⌘/Ctrl + G', action: 'Agrupar elementos' },
               { key: 'Delete', action: 'Eliminar elemento' },
               { key: 'Space + Drag', action: 'Mover vista' }
             ]
@@ -171,46 +201,93 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
       ]
     },
     {
-      title: 'Herramientas Avanzadas',
+      title: 'Módulos Complementarios',
       items: [
         {
-          icon: <Wand2 className="w-5 h-5" />,
-          title: 'Generación con IA',
-          description: 'Utiliza inteligencia artificial para generar diseños automáticamente.',
+          icon: <ShoppingCart className="w-5 h-5" />,
+          title: 'Productos',
+          description: 'Gestión de productos y catálogo.',
           detailedGuide: {
-            title: 'Uso de IA en Diseños',
-            description: 'Aprende a aprovechar la inteligencia artificial para crear diseños eficientes.',
+            title: 'Sistema de Productos',
+            description: 'Integración con sistemas de gestión de productos y catálogos.',
             steps: [
               {
-                title: 'Generación de Layouts',
-                description: 'La IA puede generar diferentes layouts basados en tu contenido y requisitos.',
-                tip: 'Especifica tus preferencias para mejores resultados.'
+                title: 'Catálogo de Productos',
+                description: 'Accede a la base de datos de productos actualizada en tiempo real.',
+                tip: 'Usa filtros avanzados para encontrar productos específicos.'
               },
               {
-                title: 'Sugerencias de Diseño',
-                description: 'Recibe sugerencias inteligentes para mejorar tus diseños.',
-                tip: 'La IA aprende de tus preferencias anteriores.'
+                title: 'Información de Productos',
+                description: 'Visualiza precios, stock, descripciones y más.',
+                tip: 'La información se sincroniza automáticamente.'
               }
             ]
           }
         },
         {
-          icon: <Search className="w-5 h-5" />,
-          title: 'Búsqueda Avanzada',
-          description: 'Encuentra rápidamente plantillas y diseños guardados.',
+          icon: <Tag className="w-5 h-5" />,
+          title: 'Promociones',
+          description: 'Sistema de gestión de promociones.',
           detailedGuide: {
-            title: 'Búsqueda y Filtrado',
-            description: 'Aprende a utilizar las funciones de búsqueda avanzada.',
+            title: 'Gestión de Promociones',
+            description: 'Administra y configura promociones y ofertas.',
             steps: [
               {
-                title: 'Filtros de Búsqueda',
-                description: 'Utiliza filtros por tipo, fecha, empresa o categoría.',
-                tip: 'Combina filtros para búsquedas más precisas.'
+                title: 'Tipos de Promociones',
+                description: 'Configura descuentos, ofertas bancarias y promociones especiales.',
+                tip: 'Programa promociones con fechas específicas.'
               },
               {
-                title: 'Guardado y Organización',
-                description: 'Organiza tus diseños en carpetas y categorías.',
-                tip: 'Usa etiquetas para una mejor organización.'
+                title: 'Condiciones',
+                description: 'Define reglas y condiciones para cada promoción.',
+                tip: 'Establece límites y restricciones según necesites.'
+              }
+            ]
+          }
+        },
+        {
+          icon: <BarChart className="w-5 h-5" />,
+          title: 'Analítica',
+          description: 'Estadísticas y análisis de datos.',
+          detailedGuide: {
+            title: 'Sistema de Analítica',
+            description: 'Monitorea y analiza el rendimiento de tus carteles y promociones.',
+            steps: [
+              {
+                title: 'Métricas Clave',
+                description: 'Visualiza estadísticas de uso y efectividad.',
+                tip: 'Exporta reportes personalizados.'
+              },
+              {
+                title: 'Seguimiento',
+                description: 'Monitorea el impacto de tus campañas y promociones.',
+                tip: 'Usa los datos para optimizar futuras campañas.'
+              }
+            ]
+          }
+        },
+        {
+          icon: <Settings className="w-5 h-5" />,
+          title: 'Configuración',
+          description: 'Ajustes y personalización del sistema.',
+          detailedGuide: {
+            title: 'Configuración del Sistema',
+            description: 'Personaliza y configura todos los aspectos de SPID Plus.',
+            steps: [
+              {
+                title: 'Ajustes Generales',
+                description: 'Configura preferencias globales del sistema.',
+                tip: 'Personaliza según las necesidades de tu empresa.'
+              },
+              {
+                title: 'Gestión de Usuarios',
+                description: 'Administra permisos y roles de usuario.',
+                tip: 'Asigna permisos específicos por módulo.'
+              },
+              {
+                title: 'Integraciones',
+                description: 'Configura conexiones con sistemas externos.',
+                tip: 'Mantén tus datos sincronizados automáticamente.'
               }
             ]
           }
