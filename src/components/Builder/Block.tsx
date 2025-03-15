@@ -19,8 +19,6 @@ export function Block({ block, onDelete, onResize, onMove, onImageUpload, onDrop
   const resizeRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  console.log('Renderizando bloque:', block);
-
   const handleDragOver = (e: React.DragEvent) => {
     if (block.isContainer) {
       e.preventDefault();
@@ -80,9 +78,6 @@ export function Block({ block, onDelete, onResize, onMove, onImageUpload, onDrop
         height: block.size.height,
         zIndex: block.isContainer ? 0 : 1,
         transform: block.rotation ? `rotate(${block.rotation}deg)` : undefined,
-        ...(block.scale && {
-          transform: `${block.rotation ? `rotate(${block.rotation}deg) ` : ''}scale(${block.scale.x}, ${block.scale.y})`
-        }),
         ...block.styles
       }}
       onMouseDown={(e) => onMove(e, block.id)}
@@ -90,18 +85,10 @@ export function Block({ block, onDelete, onResize, onMove, onImageUpload, onDrop
       onDrop={handleDrop}
       draggable={!block.isContainer}
       onDragStart={handleDragStart}
-      data-block-id={block.id}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2 }}
     >
-      {/* Etiqueta del contenedor */}
-      {block.isContainer && (
-        <div className="absolute -top-6 left-0 text-xs text-indigo-500 font-medium bg-white px-2 py-1 rounded-t-md border border-indigo-200">
-          Contenedor
-        </div>
-      )}
-
       {/* Botón de eliminar */}
       <button
         onClick={() => onDelete(block.id)}

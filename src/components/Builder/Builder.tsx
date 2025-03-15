@@ -563,8 +563,8 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
           <main className="flex-1 flex flex-col">
             {/* Barra de herramientas */}
             <div className="bg-white border-b border-gray-200 px-4 py-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between max-w-[1000px] mx-auto">
+                <div className="flex items-center space-x-2">
                   <button
                     onClick={handleSaveClick}
                     disabled={isSaving}
@@ -622,7 +622,7 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setIsSearchModalOpen(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-all duration-300"

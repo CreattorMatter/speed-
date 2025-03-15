@@ -8,7 +8,11 @@ export interface BlockContent {
 export interface Block {
   id: string;
   type: BlockType;
-  content: BlockContent;
+  content: {
+    text?: string;
+    imageUrl?: string;
+    data?: any;
+  };
   position: {
     x: number;
     y: number;
@@ -17,17 +21,21 @@ export interface Block {
     width: number;
     height: number;
   };
-  isContainer?: boolean;
-  parentId?: string;
-  children?: Block[];
-  zIndex?: number;
-  layerOrder?: number;
   rotation?: number;
   scale?: {
     x: number;
     y: number;
   };
-  styles?: Record<string, any>;
+  styles?: {
+    [key: string]: string | number;
+  };
+  isContainer?: boolean;
+  parentId?: string;
+  children?: Block[];
+  zIndex?: number;
+  locked?: boolean;
+  visible?: boolean;
+  opacity?: number;
 }
 
 export interface PresetSize {
