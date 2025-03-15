@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { ArrowLeft, Layout, LayoutTemplate, Tag, Image as ImageIcon, DollarSign, Percent, Gift, Square, Box } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Toolbar from './Toolbar';
@@ -18,6 +18,7 @@ import { AIGeneratingModal } from './AIGeneratingModal';
 import { builderService } from '../../lib/builderService';
 import { PaperFormatSelector } from './PaperFormatSelector';
 import { PAPER_FORMATS } from '../../constants/paperFormats';
+import { ExportModal } from './ExportModal';
 
 interface BuilderProps {
   onBack: () => void;
@@ -79,6 +80,9 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
     height: 1200,
     background: '#ffffff'
   });
+
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   // Efecto para verificar y mantener la sesión
   React.useEffect(() => {
@@ -642,6 +646,16 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
                     </svg>
                     Generar con IA
                   </button>
+
+                  <button
+                    onClick={() => setIsExportModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 hover:border-gray-400 transition-all duration-300"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Exportar
+                  </button>
                 </div>
               </div>
             </div>
@@ -690,6 +704,7 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
                   selectedFormat={selectedFormat}
                   isLandscape={isLandscape}
                   scale={scale}
+                  canvasRef={canvasRef}
                 />
               </div>
             </div>
@@ -725,6 +740,12 @@ export default function Builder({ onBack, userEmail, userName, userRole = 'admin
         <AIGeneratingModal 
           isOpen={isGeneratingAI}
           onFinish={handleFinishGeneration}
+        />
+
+        <ExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          canvasRef={canvasRef}
         />
       </div>
     </HeaderProvider>

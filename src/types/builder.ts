@@ -21,18 +21,17 @@ export interface Block {
     width: number;
     height: number;
   };
+  isContainer?: boolean;
+  parentId?: string;
+  children?: Block[];
+  zIndex?: number;
+  layerOrder?: number;
   rotation?: number;
   scale?: {
     x: number;
     y: number;
   };
-  styles?: {
-    [key: string]: string | number;
-  };
-  isContainer?: boolean;
-  parentId?: string;
-  children?: Block[];
-  zIndex?: number;
+  styles?: Record<string, any>;
   locked?: boolean;
   visible?: boolean;
   opacity?: number;

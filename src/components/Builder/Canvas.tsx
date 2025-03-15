@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Block } from './Block';
 import Rulers from './Rulers';
 import { Block as BlockType, PaperFormat } from '../../types/builder';
@@ -12,6 +12,7 @@ interface CanvasProps {
   selectedFormat?: PaperFormat;
   isLandscape?: boolean;
   scale: number;
+  canvasRef?: React.RefObject<HTMLDivElement>;
 }
 
 export default function Canvas({ 
@@ -20,8 +21,11 @@ export default function Canvas({
   onDropInContainer, 
   selectedFormat = PAPER_FORMATS[2], // A4 por defecto
   isLandscape = false,
-  scale = 1
+  scale = 1,
+  canvasRef
 }: CanvasProps) {
+  const localCanvasRef = useRef<HTMLDivElement>(null);
+  const finalCanvasRef = canvasRef || localCanvasRef;
   const GRID_SIZE = 20;
   const RULER_SIZE = 20;
 
@@ -129,6 +133,7 @@ export default function Canvas({
     >
       <Rulers gridSize={GRID_SIZE * scale} />
       <div 
+        ref={finalCanvasRef}
         className="builder-canvas relative overflow-auto scrollbar-custom"
         style={{
           width: `calc(100% - ${RULER_SIZE}px)`,
