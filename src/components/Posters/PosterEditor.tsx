@@ -58,7 +58,10 @@ const PROMOTIONS: Promotion[] = [
     startDate: '2024-01-01',
     endDate: '2024-12-31',
     bank: 'American Express',
-    cardType: 'Todas las tarjetas'
+    cardType: 'Todas las tarjetas',
+    isActive: true,
+    selectedBanks: ['American Express'],
+    cardOptions: ['Todas las tarjetas']
   },
   {
     id: '2',
@@ -69,7 +72,10 @@ const PROMOTIONS: Promotion[] = [
     category: 'Especial',
     conditions: ['Válido solo los jueves'],
     startDate: '2024-01-01',
-    endDate: '2024-12-31'
+    endDate: '2024-12-31',
+    isActive: true,
+    selectedBanks: [],
+    cardOptions: []
   },
   {
     id: '3',
@@ -81,7 +87,10 @@ const PROMOTIONS: Promotion[] = [
     conditions: ['Válido solo los miércoles'],
     startDate: '2024-01-01',
     endDate: '2024-12-31',
-    bank: 'Cencosud'
+    bank: 'Cencosud',
+    isActive: true,
+    selectedBanks: ['Cencosud'],
+    cardOptions: ['Todas las tarjetas']
   },
   {
     id: '4',
@@ -92,7 +101,10 @@ const PROMOTIONS: Promotion[] = [
     category: 'Especial',
     conditions: ['Valido solo comprando dos productos iguales el segundo al 70%'],
     startDate: '2024-01-01',
-    endDate: '2024-12-31'
+    endDate: '2024-12-31',
+    isActive: true,
+    selectedBanks: [],
+    cardOptions: []
   },
   {
     id: '5',
@@ -104,7 +116,10 @@ const PROMOTIONS: Promotion[] = [
     conditions: ['Válido solo los jueves'],
     startDate: '2024-01-01',
     endDate: '2024-12-31',
-    bank: 'Banco Nación'
+    bank: 'Banco Nación',
+    isActive: true,
+    selectedBanks: ['Banco Nación'],
+    cardOptions: ['Todas las tarjetas']
   },
   {
     id: '6',
@@ -116,7 +131,10 @@ const PROMOTIONS: Promotion[] = [
     conditions: ['Válido solo los días'],
     startDate: '2024-01-01',
     endDate: '2024-12-31',
-    bank: 'Santander'
+    bank: 'Santander',
+    isActive: true,
+    selectedBanks: ['Santander'],
+    cardOptions: ['Todas las tarjetas']
   },
   {
     id: '7',
@@ -128,7 +146,10 @@ const PROMOTIONS: Promotion[] = [
     conditions: ['Válido solo los jueves'],
     startDate: '2024-01-01',
     endDate: '2024-12-31',
-    bank: 'BBVA'
+    bank: 'BBVA',
+    isActive: true,
+    selectedBanks: ['BBVA'],
+    cardOptions: ['Todas las tarjetas']
   },
   {
     id: '8',
@@ -140,7 +161,10 @@ const PROMOTIONS: Promotion[] = [
     conditions: ['Válido solo los miércoles y sábados'],
     startDate: '2024-01-01',
     endDate: '2024-12-31',
-    bank: 'Banco Provincia'
+    bank: 'Banco Provincia',
+    isActive: true,
+    selectedBanks: ['Banco Provincia'],
+    cardOptions: ['Todas las tarjetas']
   },
   {
     id: '9',
@@ -152,7 +176,10 @@ const PROMOTIONS: Promotion[] = [
     conditions: ['Válido solo los jueves'],
     startDate: '2024-01-01',
     endDate: '2024-12-31',
-    bank: 'Banco Nación'
+    bank: 'Banco Nación',
+    isActive: true,
+    selectedBanks: ['Banco Nación'],
+    cardOptions: ['Todas las tarjetas']
   },
   {
     id: '10',
@@ -164,7 +191,10 @@ const PROMOTIONS: Promotion[] = [
     conditions: ['Válido en la compra de dos unidades iguales', 'Productos seleccionados'],
     startDate: '2024-01-01',
     endDate: '2024-12-31',
-    type: 'second-70'
+    type: 'second-70',
+    isActive: true,
+    selectedBanks: [],
+    cardOptions: []
   },
   {
     id: '11',
@@ -176,7 +206,10 @@ const PROMOTIONS: Promotion[] = [
     conditions: ['Válido en productos seleccionados', 'Llevando dos unidades iguales'],
     startDate: '2024-01-01',
     endDate: '2024-12-31',
-    type: '2x1'
+    type: '2x1',
+    isActive: true,
+    selectedBanks: [],
+    cardOptions: []
   },
   {
     id: '12',
@@ -188,7 +221,10 @@ const PROMOTIONS: Promotion[] = [
     conditions: ['Válido en productos seleccionados', 'Llevando tres unidades iguales'],
     startDate: '2024-01-01',
     endDate: '2024-12-31',
-    type: '3x2'
+    type: '3x2',
+    isActive: true,
+    selectedBanks: [],
+    cardOptions: []
   }
 ];
 
@@ -516,24 +552,77 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     return null;
   };
 
-  const handleDigitalSignageClick = () => {
-    // Preparamos los datos del cartel actual
-    const currentPosterData = {
-      products: mappedProducts,
-      category: selectedCategory,
-      promotion: selectedPromotion,
-      company: companyDetails,
-      showLogo,
-      financing: selectedFinancing,
-      template: selectedTemplate
-    };
+  // Agregar la función de descarga
+  const handleDownload = async () => {
+    try {
+      const toastId = toast.loading('Preparando descarga...');
 
-    // Abrimos en nueva pestaña
-    const newWindow = window.open('/digital-signage', '_blank');
-    if (newWindow) {
-      // Guardamos los datos en sessionStorage para recuperarlos en la nueva vista
-      sessionStorage.setItem('currentPosterData', JSON.stringify(currentPosterData));
-      newWindow.focus();
+      // Buscar el contenedor del cartel
+      const posterContent = document.querySelector('.poster-content');
+      if (!posterContent) {
+        throw new Error('No se encontró el contenido del cartel');
+      }
+
+      // Crear un contenedor temporal para la captura
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      document.body.appendChild(tempContainer);
+
+      // Clonar el contenido del cartel al contenedor temporal
+      const clone = posterContent.cloneNode(true) as HTMLElement;
+      tempContainer.appendChild(clone);
+
+      // Ajustar el estilo del clon
+      clone.style.transform = 'none';
+      clone.style.margin = '0';
+      clone.style.padding = '0';
+      clone.style.width = 'fit-content';
+      clone.style.height = 'fit-content';
+      clone.style.position = 'static';
+
+      // Remover fondos y ajustar estilos
+      const elementsWithBackground = clone.querySelectorAll('[style*="background"]');
+      elementsWithBackground.forEach((element) => {
+        (element as HTMLElement).style.backgroundImage = 'none';
+        (element as HTMLElement).style.backgroundColor = 'white';
+      });
+
+      // Configurar html2canvas con opciones específicas
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        removeContainer: true,
+        imageTimeout: 0,
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.querySelector('.poster-content');
+          if (clonedElement) {
+            (clonedElement as HTMLElement).style.transform = 'none';
+            (clonedElement as HTMLElement).style.margin = '0';
+            (clonedElement as HTMLElement).style.padding = '0';
+          }
+        }
+      });
+
+      // Limpiar el contenedor temporal
+      document.body.removeChild(tempContainer);
+
+      // Crear el enlace de descarga
+      const link = document.createElement('a');
+      link.download = `cartel-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('Cartel descargado exitosamente', { id: toastId });
+    } catch (error: any) {
+      console.error('Error al descargar el cartel:', error);
+      toast.error(error.message || 'Error al descargar el cartel');
     }
   };
 
@@ -872,9 +961,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
 
                     {/* Botones agrupados */}
                     <div className="flex items-center gap-2">
-                      {/* Botón de Cartelería Digital */}
+                      {/* Botón de Descargar */}
                       <button
-                        onClick={handleDigitalSignageClick}
+                        onClick={handleDownload}
                         className="px-4 py-2 rounded-lg font-medium bg-emerald-600 text-white 
                                   hover:bg-emerald-700 transition-colors flex items-center gap-2"
                       >
@@ -888,13 +977,13 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                             strokeLinecap="round" 
                             strokeLinejoin="round" 
                             strokeWidth={2} 
-                            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                           />
                         </svg>
-                        Cartelería Digital
+                        Descargar
                       </button>
 
-                      {/* Nuevo botón de Guardar Cartel */}
+                      {/* Botón de Guardar Cartel */}
                       <button
                         onClick={handleSavePosters}
                         className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white 
