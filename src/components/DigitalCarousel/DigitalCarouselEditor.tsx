@@ -504,35 +504,43 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                 </button>
               </div>
             </div>
-            <div className={`p-4 overflow-auto ${viewMode === 'grid' ? 'grid grid-cols-3 gap-4' : 'space-y-2'}`}>
+            <div className={`p-4 ${viewMode === 'grid' ? 'grid grid-cols-3 gap-4 overflow-y-auto max-h-[calc(75vh-100px)]' : 'space-y-2 overflow-y-auto'}`}>
               {availableImages.map((image) => (
                 viewMode === 'grid' ? (
                   <div
                     key={image.name}
-                    className="relative rounded-lg overflow-hidden border-2"
+                    className="relative rounded-lg overflow-hidden border group bg-white hover:border-blue-500 transition-colors"
                   >
                     <div
                       className={`cursor-pointer ${
                         selectedImages.some(i => i.name === image.name) 
-                          ? 'border-blue-500' 
-                          : 'border-transparent'
+                          ? 'border-2 border-blue-500' 
+                          : 'border border-gray-100'
                       }`}
                       onClick={() => handleImageSelection(image)}
                     >
-                      <img
-                        src={image.url}
-                        alt={image.name}
-                        className="w-full h-48 object-cover"
-                      />
+                      <div className="relative flex items-center justify-center bg-gray-50">
+                        <img
+                          src={image.url}
+                          alt={image.name}
+                          className="w-full h-full object-contain"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+                      </div>
+                      <div className="p-2 border-t border-gray-100 bg-white">
+                        <p className="text-xs font-medium text-gray-900 truncate" title={image.name}>
+                          {image.name}
+                        </p>
+                      </div>
                     </div>
                     {selectedImages.some(i => i.name === image.name) && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-white p-2">
+                      <div className="absolute bottom-0 left-0 right-0 bg-white p-2 border-t border-gray-200">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">Duración:</span>
+                          <span className="text-xs text-gray-600">Duración:</span>
                           <select
                             value={selectedImages.find(i => i.name === image.name)?.duration || 3}
                             onChange={(e) => updateImageDuration(image.name, Number(e.target.value))}
-                            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                            className="flex-1 px-1 py-0.5 border border-gray-300 rounded text-xs"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {[2, 3, 5, 8, 10, 15, 20, 30].map(value => (
