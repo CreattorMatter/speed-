@@ -9,6 +9,7 @@ import {
   Volume2, VolumeX
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import guideVideo from '../../assets/video/hombre.mp4';
 
 interface GuideModalProps {
   isOpen: boolean;
@@ -409,7 +410,7 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
               <video
                 ref={videoRef}
                 className="absolute top-0 left-0 w-full h-full object-cover"
-                src="/public/video/hombre.mp4"
+                src={guideVideo}
                 autoPlay
                 muted={isMuted}
                 playsInline
