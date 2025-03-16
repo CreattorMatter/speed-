@@ -265,6 +265,20 @@ const FINANCING_OPTIONS: FinancingOption[] = [
     cardName: 'Mastercard',
     cardImage: '/images/banks/mastercard-logo.png',
     plan: 'Hasta 3 cuotas sin interés'
+  },
+  {
+    bank: 'Cencosud',
+    logo: '/images/banks/cencosud-logo.png',
+    cardName: 'Tarjeta Cencosud',
+    cardImage: '/images/banks/cencosud-logo.png',
+    plan: '20% OFF + 6 cuotas sin interés'
+  },
+  {
+    bank: 'CencoPay',
+    logo: '/images/banks/cencopay-logo.png',
+    cardName: 'CencoPay',
+    cardImage: '/images/banks/cencopay-logo.png',
+    plan: '25% OFF + 3 cuotas sin interés'
   }
 ];
 

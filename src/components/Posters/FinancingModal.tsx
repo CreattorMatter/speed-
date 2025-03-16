@@ -60,6 +60,28 @@ const FINANCING_OPTIONS = [
         plans: ['Hasta 3 cuotas sin interés']
       }
     ]
+  },
+  {
+    bank: 'Cencosud',
+    logo: '/images/banks/cencosud.png',
+    cards: [
+      {
+        name: 'Tarjeta Cencosud',
+        image: '/images/banks/cencosud.png',
+        plans: ['20% OFF + 6 cuotas sin interés']
+      }
+    ]
+  },
+  {
+    bank: 'CencoPay',
+    logo: '/images/banks/cencopay.png',
+    cards: [
+      {
+        name: 'CencoPay',
+        image: '/images/banks/cencopay.png',
+        plans: ['25% OFF + 3 cuotas sin interés']
+      }
+    ]
   }
 ];
 
