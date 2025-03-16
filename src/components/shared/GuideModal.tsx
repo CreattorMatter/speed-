@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Dialog } from '@headlessui/react';
 import {
   X, Edit3, Save, Download, Search, Wand2, Layout,
   Image, Type, Palette, ChevronRight, ArrowLeft,
   MousePointer2, Layers, Grid3X3, PenTool, ImagePlus,
   TextSelect, Palette as ColorPalette, Move, ZoomIn,
-  MonitorPlay, ShoppingCart, Tag, BarChart, Settings
+  MonitorPlay, ShoppingCart, Tag, BarChart, Settings,
+  Volume2, VolumeX
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -49,6 +50,15 @@ interface GuideSection {
 export function GuideModal({ isOpen, onClose }: GuideModalProps) {
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [showingDetails, setShowingDetails] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(!isMuted);
+    }
+  };
 
   const sections = [
     {
@@ -370,91 +380,119 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
       onClose={onClose}
       className="fixed inset-0 z-50 overflow-y-auto"
     >
-      <div className="flex items-center justify-center min-h-screen p-4">
-        <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+      <div className="flex items-center justify-center min-h-screen px-4">
+        <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
 
-        <div className="relative bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-            <div className="flex items-center gap-3">
-              {showingDetails && (
-                <button
-                  onClick={() => setShowingDetails(false)}
-                  className="p-2 text-gray-400 hover:text-gray-500 transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-              )}
-              <Dialog.Title className="text-xl font-semibold text-gray-900">
-                {showingDetails ? selectedItem : '📖 Guía de Uso'}
-              </Dialog.Title>
+        <div className="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          <div className="flex flex-col items-center pt-8 pb-4 flex-shrink-0 bg-white">
+            <div className="relative w-40 h-40 rounded-full overflow-hidden border-4 border-white shadow-lg">
+              <video
+                ref={videoRef}
+                className="absolute top-0 left-0 w-full h-full object-cover"
+                src="/public/video/hombre.mp4"
+                autoPlay
+                loop
+                muted={isMuted}
+                playsInline
+              />
+              <button
+                onClick={toggleMute}
+                className="absolute bottom-2 right-2 p-2 bg-white/90 rounded-full hover:bg-white transition-colors shadow-md"
+              >
+                {isMuted ? (
+                  <VolumeX className="w-5 h-5 text-gray-600" />
+                ) : (
+                  <Volume2 className="w-5 h-5 text-gray-600" />
+                )}
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-500 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
           </div>
 
-          <div className="px-6 py-4">
-            <AnimatePresence mode="wait">
-              {!showingDetails ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="space-y-8"
-                >
-                  {sections.map((section, index) => (
-                    <div key={index} className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {section.title}
-                      </h3>
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        {section.items.map((item, itemIndex) => (
-                          <motion.button
-                            key={itemIndex}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => {
-                              setSelectedItem(item.title);
-                              setShowingDetails(true);
-                            }}
-                            className="flex gap-4 p-4 rounded-lg border border-gray-200 hover:border-indigo-500 transition-all text-left w-full group"
-                          >
-                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
-                              {item.icon}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-medium text-gray-900">
-                                  {item.title}
-                                </h4>
-                                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+              <div className="flex items-center gap-3">
+                {showingDetails && (
+                  <button
+                    onClick={() => setShowingDetails(false)}
+                    className="p-2 text-gray-400 hover:text-gray-500 transition-colors"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                )}
+                <Dialog.Title className="text-xl font-semibold text-gray-900">
+                  {showingDetails ? selectedItem : '📖 Guía de Uso'}
+                </Dialog.Title>
+              </div>
+            </div>
+
+            <div className="px-6 py-4">
+              <AnimatePresence mode="wait">
+                {!showingDetails ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="space-y-8 pb-6"
+                  >
+                    {sections.map((section, index) => (
+                      <div key={index} className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {section.title}
+                        </h3>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {section.items.map((item, itemIndex) => (
+                            <motion.button
+                              key={itemIndex}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => {
+                                setSelectedItem(item.title);
+                                setShowingDetails(true);
+                              }}
+                              className="flex gap-4 p-4 rounded-lg border border-gray-200 hover:border-indigo-500 transition-all text-left w-full group"
+                            >
+                              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                {item.icon}
                               </div>
-                              <p className="mt-1 text-sm text-gray-500">
-                                {item.description}
-                              </p>
-                            </div>
-                          </motion.button>
-                        ))}
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-medium text-gray-900">
+                                    {item.title}
+                                  </h4>
+                                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+                                </div>
+                                <p className="mt-1 text-sm text-gray-500">
+                                  {item.description}
+                                </p>
+                              </div>
+                            </motion.button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                >
-                  {sections.map(section =>
-                    section.items.find(item => item.title === selectedItem)?.detailedGuide &&
-                    renderDetailedView(section.items.find(item => item.title === selectedItem)!.detailedGuide!)
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    ))}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="pb-6"
+                  >
+                    {sections.map(section =>
+                      section.items.find(item => item.title === selectedItem)?.detailedGuide &&
+                      renderDetailedView(section.items.find(item => item.title === selectedItem)!.detailedGuide!)
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
