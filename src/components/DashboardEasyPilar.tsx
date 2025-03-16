@@ -162,7 +162,7 @@ const recentActivity = [
   },
   {
     id: '4',
-    title: 'Ofertas Herramientas Eléctricas',
+    title: 'Ofertas en Electro',
     type: 'impresion',
     status: 'success',
     locations: [
@@ -178,7 +178,7 @@ const recentActivity = [
   },
   {
     id: '5',
-    title: 'Descuentos Jardín y Aire Libre',
+    title: 'Cenco Pay',
     type: 'envio',
     status: 'pending',
     locations: [
@@ -194,7 +194,7 @@ const recentActivity = [
   },
   {
     id: '6',
-    title: 'Promoción Pinturas Interior',
+    title: 'Solo los Martes',
     type: 'impresion',
     status: 'success',
     locations: [
@@ -210,7 +210,7 @@ const recentActivity = [
   },
   {
     id: '7',
-    title: 'Ofertas Iluminación LED',
+    title: 'Ofertas Lunes a Viernes',
     type: 'impresion',
     status: 'success',
     locations: [
@@ -226,7 +226,7 @@ const recentActivity = [
   },
   {
     id: '8',
-    title: 'Promoción Muebles de Exterior',
+    title: 'Promoción Renova tu casa',
     type: 'envio',
     status: 'pending',
     locations: [
