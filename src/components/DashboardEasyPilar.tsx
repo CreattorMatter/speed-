@@ -165,13 +165,24 @@ const recentActivity = [
 // Definimos los tipos de impresoras disponibles
 const availablePrinters = [
   {
+    id: 'hp-designjet',
+    name: 'HP DesignJet T650',
+    location: 'Área de Impresión',
+    paperSizes: ['A1', 'A0', '24"', '36"'],
+    type: 'Plotter',
+    status: 'Disponible',
+    icon: '🖨️',
+    printTime: 6 // tiempo estimado de impresión en segundos
+  },
+  {
     id: 'hp-9015e',
     name: 'HP OfficeJet Pro 9015e',
     location: 'Oficina Principal',
     paperSizes: ['A4', 'A3', 'Carta'],
     type: 'Inyección de tinta',
     status: 'Disponible',
-    icon: '🖨️'
+    icon: '🖨️',
+    printTime: 5
   },
   {
     id: 'epson-l14150',
@@ -180,7 +191,8 @@ const availablePrinters = [
     paperSizes: ['A4', 'A3', 'A3+', 'Tabloide'],
     type: 'Tanque de tinta',
     status: 'Disponible',
-    icon: '🖨️'
+    icon: '🖨️',
+    printTime: 4
   },
   {
     id: 'canon-gp555',
@@ -189,7 +201,8 @@ const availablePrinters = [
     paperSizes: ['A4', 'A3', 'A3+', '13x19"'],
     type: 'Inyección de tinta profesional',
     status: 'Ocupada',
-    icon: '🖨️'
+    icon: '🖨️',
+    printTime: 7
   },
   {
     id: 'xerox-7800',
@@ -198,7 +211,8 @@ const availablePrinters = [
     paperSizes: ['A4', 'A3', 'SRA3', 'Tabloide'],
     type: 'Láser Color',
     status: 'Disponible',
-    icon: '🖨️'
+    icon: '🖨️',
+    printTime: 4
   }
 ];
 
@@ -344,7 +358,10 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 // Eliminamos el PosterModal y modificamos el ActivityItem
-const ActivityItem: React.FC<{ activity: typeof recentActivity[0] }> = ({ activity }) => {
+const ActivityItem: React.FC<{ 
+  activity: typeof recentActivity[0];
+  onPrintComplete?: () => void;
+}> = ({ activity, onPrintComplete }) => {
   const [posterUrl, setPosterUrl] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -352,6 +369,10 @@ const ActivityItem: React.FC<{ activity: typeof recentActivity[0] }> = ({ activi
   const [showPrinterModal, setShowPrinterModal] = useState(false);
   const [selectedPrinter, setSelectedPrinter] = useState<string>('');
   const [selectedPaperSize, setSelectedPaperSize] = useState<string>('');
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [printProgress, setPrintProgress] = useState(0);
+  const [printed, setPrinted] = useState(activity.locations[0].printed);
+  const [printedDate, setPrintedDate] = useState<Date | null>(activity.printedDate);
 
   const loadPosterUrl = async () => {
     if (!posterUrl && !isLoading) {
@@ -373,31 +394,61 @@ const ActivityItem: React.FC<{ activity: typeof recentActivity[0] }> = ({ activi
       return;
     }
     
-    // Aquí iría la lógica de impresión
-    console.log(`Imprimiendo en ${selectedPrinter} en tamaño ${selectedPaperSize}`);
-    setShowPrinterModal(false);
-    // Actualizar el estado de impresión
+    const printer = availablePrinters.find(p => p.id === selectedPrinter);
+    if (!printer) return;
+
+    setIsPrinting(true);
+    setPrintProgress(0);
+
+    // Calculamos los intervalos para la animación
+    const printTime = printer.printTime * 1000; // convertir a milisegundos
+    const startTime = Date.now();
+    let animationFrame: number;
+
+    const updateProgress = () => {
+      const currentTime = Date.now();
+      const elapsed = currentTime - startTime;
+      const progress = Math.min((elapsed / printTime) * 100, 100);
+
+      setPrintProgress(progress);
+
+      if (progress < 100) {
+        animationFrame = requestAnimationFrame(updateProgress);
+      } else {
+        // Completar la impresión
+        setTimeout(() => {
+          setIsPrinting(false);
+          setPrinted(true);
+          const now = new Date();
+          setPrintedDate(now);
+          setShowPrinterModal(false);
+          if (onPrintComplete) onPrintComplete();
+        }, 500);
+      }
+    };
+
+    // Iniciamos la animación
+    animationFrame = requestAnimationFrame(updateProgress);
+
+    // Limpiamos la animación si el componente se desmonta
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
   };
 
   return (
     <>
-      <div 
-        className="relative"
-        onMouseEnter={() => {
-          setShowPreview(true);
-          loadPosterUrl();
-        }}
-        onMouseLeave={() => setShowPreview(false)}
-      >
+      <div className="relative" onMouseEnter={() => {
+        setShowPreview(true);
+        loadPosterUrl();
+      }} onMouseLeave={() => setShowPreview(false)}>
         <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
               <div className="mt-1">
-                <img 
-                  src="/images/Easy_Logo.png" 
-                  alt="Easy Logo" 
-                  className="w-8 h-8 object-contain"
-                />
+                <img src="/images/Easy_Logo.png" alt="Easy Logo" className="w-8 h-8 object-contain" />
               </div>
               <div>
                 <h4 className="text-sm font-medium text-gray-900">{activity.title}</h4>
@@ -411,22 +462,22 @@ const ActivityItem: React.FC<{ activity: typeof recentActivity[0] }> = ({ activi
                   <p className="text-xs text-gray-500">
                     Válido hasta: <span className="font-medium text-gray-700">{format(activity.validUntil, "dd/MM/yyyy", { locale: es })}</span>
                   </p>
-                  {activity.printedDate && (
+                  {printedDate && (
                     <p className="text-xs text-green-600">
-                      Impreso el: <span className="font-medium">{format(activity.printedDate, "dd/MM/yyyy 'a las' HH:mm 'hs'", { locale: es })}</span>
+                      Impreso el: <span className="font-medium">{format(printedDate, "dd/MM/yyyy 'a las' HH:mm 'hs'", { locale: es })}</span>
                     </p>
                   )}
                 </div>
                 <div className="mt-3 flex items-center gap-2">
                   <button
-                    onClick={() => !activity.locations[0].printed && setShowPrinterModal(true)}
+                    onClick={() => !printed && setShowPrinterModal(true)}
                     className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                      activity.locations[0].printed
+                      printed
                         ? 'bg-green-100 text-green-800 border border-green-200'
                         : 'bg-yellow-100 text-yellow-800 border border-yellow-200 hover:bg-yellow-200 transition-colors cursor-pointer'
                     }`}
                   >
-                    {activity.locations[0].printed ? 'Impreso' : 'Pendiente'}
+                    {printed ? 'Impreso' : 'Pendiente'}
                     <Printer className="w-4 h-4 ml-1.5" />
                   </button>
                   <button
@@ -474,106 +525,148 @@ const ActivityItem: React.FC<{ activity: typeof recentActivity[0] }> = ({ activi
         )}
       </div>
 
-      {/* Modal de selección de impresora */}
+      {/* Modal de selección de impresora con animación de impresión */}
       {showPrinterModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPrinterModal(false)}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => !isPrinting && setShowPrinterModal(false)}>
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="p-4 border-b border-gray-200">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <Printer className="w-6 h-6 text-indigo-600" />
-                  <h3 className="text-lg font-medium text-gray-900">Seleccionar Impresora</h3>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {isPrinting ? 'Imprimiendo...' : 'Seleccionar Impresora'}
+                  </h3>
                 </div>
-                <button
-                  onClick={() => setShowPrinterModal(false)}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                {!isPrinting && (
+                  <button
+                    onClick={() => setShowPrinterModal(false)}
+                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
               </div>
             </div>
             
             <div className="p-6">
-              <div className="grid grid-cols-1 gap-4">
-                {availablePrinters.map((printer) => (
-                  <div 
-                    key={printer.id}
-                    className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                      selectedPrinter === printer.id 
-                        ? 'border-indigo-600 bg-indigo-50' 
-                        : 'border-gray-200 hover:border-indigo-200'
-                    }`}
-                    onClick={() => {
-                      setSelectedPrinter(printer.id);
-                      setSelectedPaperSize('');
-                    }}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">{printer.icon}</span>
-                          <h4 className="font-medium text-gray-900">{printer.name}</h4>
-                          <span className={`px-2 py-0.5 text-xs rounded-full ${
-                            printer.status === 'Disponible' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {printer.status}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-500 mt-1">{printer.location}</p>
-                        <p className="text-sm text-gray-500">{printer.type}</p>
+              {isPrinting ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center">
+                    <div className="animate-bounce">
+                      <Printer className="w-12 h-12 text-indigo-600" />
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-medium text-gray-900 mb-2">
+                      Imprimiendo cartel...
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Por favor, espere mientras se completa la impresión
+                    </p>
+                  </div>
+                  <div className="relative pt-1">
+                    <div className="overflow-hidden h-2.5 text-xs flex rounded-full bg-gray-200">
+                      <motion.div
+                        className="bg-indigo-600 rounded-full transition-all"
+                        initial={{ width: "0%" }}
+                        animate={{ width: `${printProgress}%` }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="text-sm font-semibold text-indigo-600">
+                        {Math.round(printProgress)}%
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {selectedPrinter && availablePrinters.find(p => p.id === selectedPrinter)?.name}
                       </div>
                     </div>
-                    
-                    {selectedPrinter === printer.id && (
-                      <div className="mt-4 border-t border-gray-100 pt-4">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Tamaño de papel:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {printer.paperSizes.map((size) => (
-                            <button
-                              key={size}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedPaperSize(size);
-                              }}
-                              className={`px-3 py-1 rounded-full text-sm ${
-                                selectedPaperSize === size
-                                  ? 'bg-indigo-600 text-white'
-                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                              }`}
-                            >
-                              {size}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
-                ))}
-              </div>
-              
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  onClick={() => setShowPrinterModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handlePrint}
-                  disabled={!selectedPrinter || !selectedPaperSize}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    selectedPrinter && selectedPaperSize
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  Imprimir
-                </button>
-              </div>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 gap-4">
+                    {availablePrinters.map((printer) => (
+                      <div 
+                        key={printer.id}
+                        className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                          selectedPrinter === printer.id 
+                            ? 'border-indigo-600 bg-indigo-50' 
+                            : 'border-gray-200 hover:border-indigo-200'
+                        }`}
+                        onClick={() => {
+                          setSelectedPrinter(printer.id);
+                          setSelectedPaperSize('');
+                        }}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">{printer.icon}</span>
+                              <h4 className="font-medium text-gray-900">{printer.name}</h4>
+                              <span className={`px-2 py-0.5 text-xs rounded-full ${
+                                printer.status === 'Disponible' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {printer.status}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-500 mt-1">{printer.location}</p>
+                            <p className="text-sm text-gray-500">{printer.type}</p>
+                          </div>
+                        </div>
+                        
+                        {selectedPrinter === printer.id && (
+                          <div className="mt-4 border-t border-gray-100 pt-4">
+                            <p className="text-sm font-medium text-gray-700 mb-2">Tamaño de papel:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {printer.paperSizes.map((size) => (
+                                <button
+                                  key={size}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedPaperSize(size);
+                                  }}
+                                  className={`px-3 py-1 rounded-full text-sm ${
+                                    selectedPaperSize === size
+                                      ? 'bg-indigo-600 text-white'
+                                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                  }`}
+                                >
+                                  {size}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      onClick={() => setShowPrinterModal(false)}
+                      className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handlePrint}
+                      disabled={!selectedPrinter || !selectedPaperSize}
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        selectedPrinter && selectedPaperSize
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      Imprimir
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
