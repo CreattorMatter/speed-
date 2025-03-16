@@ -24,7 +24,11 @@ const FINANCING_OPTIONS = [
       {
         name: 'American Express',
         image: '/images/banks/amex-logo.png',
-        plans: ['25% OFF']
+        plans: [
+          '3 cuotas sin interés',
+          '6 cuotas sin interés',
+          '12 cuotas con Interés'
+        ]
       }
     ]
   },
@@ -35,7 +39,11 @@ const FINANCING_OPTIONS = [
       {
         name: 'Banco Nación',
         image: '/images/banks/banco-nacion-logo.png',
-        plans: ['Hasta 12 cuotas sin interés']
+        plans: [
+          '3 cuotas sin interés',
+          '6 cuotas sin interés',
+          '12 cuotas sin Interés'
+        ]
       }
     ]
   },
@@ -46,7 +54,11 @@ const FINANCING_OPTIONS = [
       {
         name: 'Visa',
         image: '/images/banks/visa-logo.png',
-        plans: ['Hasta 6 cuotas sin interés']
+        plans: [
+          '3 cuotas sin interés',
+          '6 cuotas con interés',
+          '12 cuotas con Interés'
+        ]
       }
     ]
   },
@@ -57,7 +69,11 @@ const FINANCING_OPTIONS = [
       {
         name: 'Mastercard',
         image: '/images/banks/mastercard-logo.png',
-        plans: ['Hasta 3 cuotas sin interés']
+        plans: [
+          '3 cuotas sin interés',
+          '6 cuotas con interés',
+          '12 cuotas con Interés'
+        ]
       }
     ]
   },
@@ -68,7 +84,11 @@ const FINANCING_OPTIONS = [
       {
         name: 'Tarjeta Cencosud',
         image: '/images/banks/cencosud.png',
-        plans: ['20% OFF + 6 cuotas sin interés']
+        plans: [
+          '6 cuotas sin interés',
+          '12 cuotas sin interés',
+          '18 cuotas sin Interés'
+        ]
       }
     ]
   },
@@ -79,7 +99,11 @@ const FINANCING_OPTIONS = [
       {
         name: 'CencoPay',
         image: '/images/banks/cencopay.png',
-        plans: ['25% OFF + 3 cuotas sin interés']
+        plans: [
+          '6 cuotas sin interés',
+          '12 cuotas sin interés',
+          '18 cuotas sin Interés'
+        ]
       }
     ]
   }
@@ -164,46 +188,35 @@ export const FinancingModal: React.FC<FinancingModalProps> = ({ isOpen, onClose,
                         <h3 className="text-lg font-medium text-gray-900">{option.bank}</h3>
                       </div>
 
-                      {option.cards.map((card) => (
-                        <div key={card.name} className="bg-gray-50 rounded-lg p-4 space-y-3">
-                          <div className="flex items-center gap-4">
-                            <img 
-                              src={card.image} 
-                              alt={card.name}
-                              className="h-12 object-contain"
-                            />
-                            <h4 className="font-medium text-gray-800">{card.name}</h4>
-                          </div>
+                      <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                        {option.cards[0].plans.map((plan) => {
+                          const isSelected = selectedOptions.some(opt => 
+                            opt.bank === option.bank && 
+                            opt.cardName === option.cards[0].name && 
+                            opt.plan === plan
+                          );
 
-                          {card.plans.map((plan) => {
-                            const isSelected = selectedOptions.some(opt => 
-                              opt.bank === option.bank && 
-                              opt.cardName === card.name && 
-                              opt.plan === plan
-                            );
-
-                            return (
-                              <li 
-                                key={plan}
-                                onClick={() => handleSelect(option.bank, option.logo, card, plan)}
-                                className={`flex items-center justify-between p-2 rounded-lg cursor-pointer
-                                  ${isSelected 
-                                    ? 'bg-indigo-50 text-indigo-700'
-                                    : 'hover:bg-gray-100'
-                                  }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
-                                  {plan}
-                                </div>
-                                {isSelected && (
-                                  <Check className="w-5 h-5 text-indigo-600" />
-                                )}
-                              </li>
-                            );
-                          })}
-                        </div>
-                      ))}
+                          return (
+                            <li 
+                              key={plan}
+                              onClick={() => handleSelect(option.bank, option.logo, option.cards[0], plan)}
+                              className={`flex items-center justify-between p-2 rounded-lg cursor-pointer
+                                ${isSelected 
+                                  ? 'bg-indigo-50 text-indigo-700'
+                                  : 'hover:bg-gray-100'
+                                }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                                {plan}
+                              </div>
+                              {isSelected && (
+                                <Check className="w-5 h-5 text-indigo-600" />
+                              )}
+                            </li>
+                          );
+                        })}
+                      </div>
                     </div>
                   ))}
                 </div>
