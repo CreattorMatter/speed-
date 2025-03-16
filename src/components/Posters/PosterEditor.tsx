@@ -730,8 +730,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               {/* Botón de Buscar Cartel */}
               <button
                 onClick={handleSearchPosters}
-                className="px-6 py-2.5 rounded-lg font-medium bg-indigo-600 text-white 
-                          hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-sm"
+                className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 
+                          text-white font-medium hover:from-indigo-600 hover:to-indigo-700 
+                          transition-all flex items-center gap-2 shadow-md"
               >
                 <Search className="w-5 h-5" />
                 Buscar Cartel
@@ -1202,7 +1203,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                             </p>
                             <button
                               className="mt-2 w-full px-3 py-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 
-                                        bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
+                                          bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
                             >
                               Editar Cartel
                             </button>
