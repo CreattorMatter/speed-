@@ -20,6 +20,7 @@ import { CameraCapture } from './components/shared/CameraCapture';
 import { toast } from 'react-hot-toast';
 import { DigitalSignageView } from './components/DigitalSignage/DigitalSignageView';
 import { CarouselView } from './components/DigitalCarousel/CarouselView';
+import DashboardEasyPilar from './components/DashboardEasyPilar';
 
 export interface DashboardProps {
   onLogout: () => void;
@@ -272,6 +273,43 @@ function AppContent() {
     }
   };
 
+  const isEasyPilarUser = (email?: string) => {
+    return email?.toLowerCase() === 'easypilar@cenco.com';
+  };
+
+  const renderDashboard = () => {
+    if (isEasyPilarUser(user?.email)) {
+      return (
+        <DashboardEasyPilar
+          onLogout={handleLogout}
+          onProducts={() => navigate('/products')}
+          onPromotions={() => navigate('/promotions')}
+          onBack={handleBack}
+          userEmail={user?.email || ''}
+          onSettings={handleSettings}
+          onAnalytics={handleAnalytics}
+          onDigitalPoster={handleDigitalPoster}
+        />
+      );
+    }
+
+    return (
+      <Dashboard
+        onLogout={handleLogout}
+        onNewTemplate={() => navigate('/builder')}
+        onNewPoster={handleNewPoster}
+        onProducts={() => navigate('/products')}
+        onPromotions={() => navigate('/promotions')}
+        onBack={handleBack}
+        userEmail={user?.email || ''}
+        onSettings={handleSettings}
+        userRole={userRole}
+        onAnalytics={handleAnalytics}
+        onDigitalPoster={handleDigitalPoster}
+      />
+    );
+  };
+
   if (loading) {
     return <div>Cargando...</div>;
   }
@@ -373,21 +411,7 @@ function AppContent() {
       <Routes>
         <Route
           path="/"
-          element={
-            <Dashboard
-              onLogout={handleLogout}
-              onNewTemplate={() => navigate('/builder')}
-              onNewPoster={handleNewPoster}
-              onProducts={() => navigate('/products')}
-              onPromotions={() => navigate('/promotions')}
-              onBack={handleBack}
-              userEmail={user?.email || ''}
-              onSettings={handleSettings}
-              userRole={userRole}
-              onAnalytics={handleAnalytics}
-              onDigitalPoster={handleDigitalPoster}
-            />
-          }
+          element={renderDashboard()}
         />
         
         <Route
