@@ -159,6 +159,86 @@ const recentActivity = [
     sentDate: new Date('2024-01-15 08:00'),
     validUntil: new Date('2024-01-18'),
     printedDate: null
+  },
+  {
+    id: '4',
+    title: 'Ofertas Herramientas Eléctricas',
+    type: 'impresion',
+    status: 'success',
+    locations: [
+      { name: 'Easy Pilar', printed: true }
+    ],
+    timestamp: new Date('2024-01-15 08:15'),
+    totalLocations: 1,
+    sender: 'Casa Central',
+    senderEmail: 'marketing@easy.com.ar',
+    sentDate: new Date('2024-01-14 15:30'),
+    validUntil: new Date('2024-01-21'),
+    printedDate: new Date('2024-01-14 16:20')
+  },
+  {
+    id: '5',
+    title: 'Descuentos Jardín y Aire Libre',
+    type: 'envio',
+    status: 'pending',
+    locations: [
+      { name: 'Easy Pilar', printed: false }
+    ],
+    timestamp: new Date('2024-01-14 17:45'),
+    totalLocations: 1,
+    sender: 'Casa Central',
+    senderEmail: 'promociones@easy.com.ar',
+    sentDate: new Date('2024-01-14 14:30'),
+    validUntil: new Date('2024-01-20'),
+    printedDate: null
+  },
+  {
+    id: '6',
+    title: 'Promoción Pinturas Interior',
+    type: 'impresion',
+    status: 'success',
+    locations: [
+      { name: 'Easy Pilar', printed: true }
+    ],
+    timestamp: new Date('2024-01-14 16:30'),
+    totalLocations: 1,
+    sender: 'Casa Central',
+    senderEmail: 'marketing@easy.com.ar',
+    sentDate: new Date('2024-01-14 12:00'),
+    validUntil: new Date('2024-01-19'),
+    printedDate: new Date('2024-01-14 13:15')
+  },
+  {
+    id: '7',
+    title: 'Ofertas Iluminación LED',
+    type: 'impresion',
+    status: 'success',
+    locations: [
+      { name: 'Easy Pilar', printed: true }
+    ],
+    timestamp: new Date('2024-01-14 15:20'),
+    totalLocations: 1,
+    sender: 'Casa Central',
+    senderEmail: 'marketing@easy.com.ar',
+    sentDate: new Date('2024-01-14 11:00'),
+    validUntil: new Date('2024-01-22'),
+    printedDate: new Date('2024-01-14 11:45')
+  },
+  {
+    id: '8',
+    title: 'Promoción Muebles de Exterior',
+    type: 'envio',
+    status: 'pending',
+    locations: [
+      { name: 'Easy Pilar', printed: false }
+    ],
+    timestamp: new Date('2024-01-14 14:10'),
+    totalLocations: 1,
+    sender: 'Casa Central',
+    senderEmail: 'promociones@easy.com.ar',
+    sentDate: new Date('2024-01-14 10:30'),
+    validUntil: new Date('2024-01-21'),
+    printedDate: null
   }
 ];
 
@@ -749,6 +829,23 @@ const DashboardEasyPilar: React.FC<DashboardEasyPilarProps> = ({
   onDigitalPoster
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<'all' | CategoryType>('all');
+  const [activities, setActivities] = useState(recentActivity);
+
+  const handlePrintComplete = (activityId: string) => {
+    setActivities(currentActivities => 
+      currentActivities.map(activity => 
+        activity.id === activityId
+          ? {
+              ...activity,
+              locations: [{ ...activity.locations[0], printed: true }],
+              printedDate: new Date()
+            }
+          : activity
+      )
+    );
+  };
+
+  const pendingCount = activities.filter(a => !a.locations[0].printed).length;
 
   const handleLogoutClick = () => {
     if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) {
@@ -873,7 +970,7 @@ const DashboardEasyPilar: React.FC<DashboardEasyPilarProps> = ({
               </div>
               <div className="flex items-center gap-4">
                 <div className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
-                  {recentActivity.filter(a => !a.locations[0].printed).length} pendientes
+                  {pendingCount} pendientes
                 </div>
                 <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
                   Ver todo
@@ -883,9 +980,12 @@ const DashboardEasyPilar: React.FC<DashboardEasyPilarProps> = ({
           </div>
 
           <div className="divide-y divide-gray-200">
-            {recentActivity.map((activity) => (
+            {activities.map((activity) => (
               <div key={activity.id} className="p-4">
-                <ActivityItem activity={activity} />
+                <ActivityItem 
+                  activity={activity} 
+                  onPrintComplete={() => handlePrintComplete(activity.id)}
+                />
               </div>
             ))}
           </div>
