@@ -354,25 +354,44 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   useEffect(() => {
     const loadImages = async () => {
       try {
+        setLoading(true);
         const { data: files, error } = await supabaseAdmin.storage
           .from('posters')
           .list();
 
         if (error) throw error;
 
-        const images = files
+        const imagePromises = files
           .filter(file => file.name.match(/\.(jpg|jpeg|png|gif)$/i))
-          .map(file => ({
-            name: file.name,
-            url: `${supabaseAdmin.storage.from('posters').getPublicUrl(file.name).data.publicUrl}`,
-            type: 'image' as const,
-            duration: 3 // Duración por defecto para imágenes
-          }));
+          .map(async file => {
+            const { data: urlData } = supabaseAdmin.storage
+              .from('posters')
+              .getPublicUrl(file.name);
 
+            // Verificar que la imagen sea válida
+            try {
+              const response = await fetch(urlData.publicUrl);
+              if (!response.ok) throw new Error('Error al cargar la imagen');
+              
+              return {
+                name: file.name,
+                url: urlData.publicUrl,
+                type: 'image' as const,
+                duration: 3
+              };
+            } catch (err) {
+              console.error(`Error al verificar imagen ${file.name}:`, err);
+              return null;
+            }
+          });
+
+        const images = (await Promise.all(imagePromises)).filter((img): img is SelectedImage => img !== null);
         setAvailableImages(images);
       } catch (error) {
         console.error('Error al cargar imágenes:', error);
         toast.error('Error al cargar las imágenes disponibles');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -442,16 +461,36 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   };
 
   const handleImageSelection = (image: Omit<SelectedImage, 'duration'>) => {
-    if (selectedImages.some(i => i.name === image.name)) {
-      setSelectedImages(selectedImages.filter(i => i.name !== image.name));
-    } else {
-      setSelectedImages([...selectedImages, { ...image, duration: 3 }]);
+    try {
+      // Verificar que la imagen sea accesible
+      fetch(image.url)
+        .then(response => {
+          if (!response.ok) throw new Error('Error al acceder a la imagen');
+          
+          if (selectedImages.some(i => i.name === image.name)) {
+            setSelectedImages(selectedImages.filter(i => i.name !== image.name));
+            toast.success('Imagen removida de la playlist');
+          } else {
+            setSelectedImages([...selectedImages, { ...image, duration: 3 }]);
+            toast.success('Imagen agregada a la playlist');
+          }
+        })
+        .catch(error => {
+          console.error('Error al verificar la imagen:', error);
+          toast.error('Error al acceder a la imagen');
+        });
+    } catch (error) {
+      console.error('Error al seleccionar la imagen:', error);
+      toast.error('Error al seleccionar la imagen');
     }
   };
 
   const handleLocalImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
+
+    const toastId = toast.loading('Subiendo imágenes...');
+    const uploadedImages: SelectedImage[] = [];
 
     try {
       for (const file of files) {
@@ -461,26 +500,57 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
           continue;
         }
 
-        // Crear URL temporal para la imagen
-        const imageUrl = URL.createObjectURL(file);
-        const newImage: SelectedImage = {
-          name: file.name,
-          url: imageUrl,
-          type: 'image',
-          duration: 3
-        };
+        // Verificar tamaño (máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`${file.name} excede el tamaño máximo de 5MB`);
+          continue;
+        }
 
-        // Agregar la imagen a la lista de seleccionadas
-        setSelectedImages(prev => [...prev, newImage]);
+        try {
+          // Crear un objeto URL temporal para verificar la imagen
+          const objectUrl = URL.createObjectURL(file);
+          await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = objectUrl;
+          });
+
+          // Si llegamos aquí, la imagen es válida
+          const newImage: SelectedImage = {
+            name: file.name,
+            url: objectUrl,
+            type: 'image',
+            duration: 3
+          };
+
+          uploadedImages.push(newImage);
+        } catch (error) {
+          console.error(`Error al procesar ${file.name}:`, error);
+          toast.error(`Error al procesar ${file.name}`);
+          continue;
+        }
       }
 
-      // Limpiar el input
-      event.target.value = '';
-      toast.success('Imágenes agregadas exitosamente');
+      if (uploadedImages.length > 0) {
+        setSelectedImages(prev => [...prev, ...uploadedImages]);
+        toast.success(`${uploadedImages.length} imágenes agregadas exitosamente`, {
+          id: toastId
+        });
+      } else {
+        toast.error('No se pudo agregar ninguna imagen', {
+          id: toastId
+        });
+      }
     } catch (error) {
       console.error('Error al cargar imágenes locales:', error);
-      toast.error('Error al cargar las imágenes');
+      toast.error('Error al cargar las imágenes', {
+        id: toastId
+      });
     }
+
+    // Limpiar el input
+    event.target.value = '';
   };
 
   const updateImageDuration = (name: string, duration: number) => {
@@ -502,200 +572,137 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     return (
       <AnimatePresence>
         {showImageModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+              className="bg-white rounded-xl max-w-5xl w-full max-h-[85vh] overflow-hidden flex flex-col"
             >
-              <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 className="text-lg font-medium">Seleccionar Imágenes</h3>
-                <div className="flex items-center gap-4">
-                  {/* Toggle de vista */}
-                  <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+              {/* Header */}
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-medium text-gray-900">Seleccionar Imágenes</h3>
+                  <div className="flex items-center gap-4">
+                    {/* Vista Grid/Lista */}
+                    <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+                      <button
+                        onClick={() => setViewMode('grid')}
+                        className={`p-2 rounded-md transition-colors ${
+                          viewMode === 'grid' 
+                            ? 'bg-white shadow-sm text-gray-900' 
+                            : 'text-gray-500 hover:bg-gray-200'
+                        }`}
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => setViewMode('list')}
+                        className={`p-2 rounded-md transition-colors ${
+                          viewMode === 'list' 
+                            ? 'bg-white shadow-sm text-gray-900' 
+                            : 'text-gray-500 hover:bg-gray-200'
+                        }`}
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                      </button>
+                    </div>
                     <button
-                      onClick={() => setViewMode('grid')}
-                      className={`p-2 rounded-md transition-colors ${
-                        viewMode === 'grid' 
-                          ? 'bg-white shadow-sm' 
-                          : 'hover:bg-gray-200'
-                      }`}
-                      title="Vista en cuadrícula"
+                      onClick={() => setShowImageModal(false)}
+                      className="text-gray-400 hover:text-gray-500"
                     >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/>
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => setViewMode('list')}
-                      className={`p-2 rounded-md transition-colors ${
-                        viewMode === 'list' 
-                          ? 'bg-white shadow-sm' 
-                          : 'hover:bg-gray-200'
-                      }`}
-                      title="Vista en lista"
-                    >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M4 6h16M4 12h16M4 18h16"/>
-                      </svg>
+                      <X className="w-6 h-6" />
                     </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      setShowImageModal(false);
-                      setLocalSearchTerm('');
-                    }}
-                    className="text-gray-400 hover:text-gray-500"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                </div>
+
+                {/* Barra de búsqueda */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={localSearchTerm}
+                    onChange={(e) => setLocalSearchTerm(e.target.value)}
+                    placeholder="Buscar imágenes por nombre..."
+                    className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 </div>
               </div>
 
-              {/* Barra de búsqueda */}
-              <div className="p-4 border-b border-gray-200">
-                <div className="relative flex gap-2">
-                  <div className="flex-1 relative">
-                    <input
-                      type="text"
-                      value={localSearchTerm}
-                      onChange={(e) => setLocalSearchTerm(e.target.value)}
-                      placeholder="Buscar imágenes por nombre..."
-                      className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  </div>
-                </div>
-              </div>
-
-              <div className={`p-4 ${viewMode === 'grid' ? 'grid grid-cols-3 gap-4 overflow-y-auto max-h-[calc(75vh-100px)]' : 'space-y-2 overflow-y-auto'}`}>
+              {/* Grid de imágenes con scroll */}
+              <div className="flex-1 overflow-y-auto p-6">
                 {filteredImages.length === 0 ? (
-                  <div className="col-span-3 text-center py-8 text-gray-500">
-                    No se encontraron imágenes que coincidan con la búsqueda
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">No se encontraron imágenes</p>
                   </div>
-                ) : (
-                  filteredImages.map((image) => (
-                    viewMode === 'grid' ? (
+                ) : viewMode === 'grid' ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {filteredImages.map((image) => (
                       <div
                         key={image.name}
-                        className="relative rounded-lg overflow-hidden border group bg-white hover:border-blue-500 transition-colors"
-                      >
-                        <div
-                          className={`cursor-pointer ${
-                            selectedImages.some(i => i.name === image.name) 
-                              ? 'border-2 border-blue-500' 
-                              : 'border border-gray-100'
+                        onClick={() => handleImageSelection(image)}
+                        className={`group relative aspect-video rounded-lg overflow-hidden border cursor-pointer transition-all
+                          ${selectedImages.some(i => i.name === image.name)
+                            ? 'border-blue-500 ring-2 ring-blue-500 ring-opacity-50'
+                            : 'border-gray-200 hover:border-blue-500'
                           }`}
-                          onClick={() => handleImageSelection(image)}
-                        >
-                          <div className="relative flex items-center justify-center bg-gray-50">
-                            <img
-                              src={image.url}
-                              alt={image.name}
-                              className="w-full h-full object-contain"
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
-                          </div>
-                          <div className="p-2 border-t border-gray-100 bg-white">
-                            <p className="text-xs font-medium text-gray-900 truncate" title={image.name}>
-                              {image.name}
-                            </p>
-                          </div>
+                      >
+                        <img
+                          src={image.url}
+                          alt={image.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+                          <p className="text-xs text-white truncate">{image.name}</p>
                         </div>
                         {selectedImages.some(i => i.name === image.name) && (
-                          <div className="absolute bottom-0 left-0 right-0 bg-white p-2 border-t border-gray-200">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-600">Duración:</span>
-                              <select
-                                value={selectedImages.find(i => i.name === image.name)?.duration || 3}
-                                onChange={(e) => updateImageDuration(image.name, Number(e.target.value))}
-                                className="flex-1 px-1 py-0.5 border border-gray-300 rounded text-xs"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {[2, 3, 5, 8, 10, 15, 20, 30].map(value => (
-                                  <option key={value} value={value}>{value} segundos</option>
-                                ))}
-                              </select>
+                          <div className="absolute top-2 right-2">
+                            <div className="bg-blue-500 text-white rounded-full p-1">
+                              <Check className="w-4 h-4" />
                             </div>
                           </div>
                         )}
                       </div>
-                    ) : (
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredImages.map((image) => (
                       <div
                         key={image.name}
-                        className={`relative group rounded-lg border p-3 transition-colors cursor-pointer
-                          ${selectedImages.some(i => i.name === image.name)
-                            ? 'bg-blue-50 border-blue-500'
-                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                          }`}
                         onClick={() => handleImageSelection(image)}
+                        className={`flex items-center gap-4 p-3 rounded-lg border cursor-pointer transition-all
+                          ${selectedImages.some(i => i.name === image.name)
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-500 hover:bg-gray-50'
+                          }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
-                              <img
-                                src={image.url}
-                                alt={image.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div>
-                              <div className="font-medium text-gray-900">{image.name}</div>
-                              <div className="text-sm text-gray-500">
-                                {selectedImages.some(i => i.name === image.name)
-                                  ? `Duración: ${selectedImages.find(i => i.name === image.name)?.duration || 3}s`
-                                  : 'No seleccionada'}
-                              </div>
-                            </div>
-                          </div>
-                          {selectedImages.some(i => i.name === image.name) && (
-                            <select
-                              value={selectedImages.find(i => i.name === image.name)?.duration || 3}
-                              onChange={(e) => updateImageDuration(image.name, Number(e.target.value))}
-                              className="px-2 py-1 border border-gray-300 rounded text-sm"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {[2, 3, 5, 8, 10, 15, 20, 30].map(value => (
-                                <option key={value} value={value}>{value} segundos</option>
-                              ))}
-                            </select>
-                          )}
+                        <div className="w-20 h-12 rounded overflow-hidden flex-shrink-0">
+                          <img
+                            src={image.url}
+                            alt={image.name}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
-
-                        {/* Preview en hover */}
-                        <div 
-                          className="fixed transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 z-50"
-                          style={{
-                            left: 'calc(100% + 0.5rem)',
-                            top: '50%'
-                          }}
-                        >
-                          <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-2">
-                            <div className="relative">
-                              <img
-                                src={image.url}
-                                alt={image.name}
-                                className="w-80 h-56 object-contain bg-gray-100 rounded"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-tr from-black/5 to-transparent rounded pointer-events-none" />
-                            </div>
-                            <div className="mt-2 px-1">
-                              <p className="text-sm font-medium text-gray-900 truncate">{image.name}</p>
-                              <p className="text-xs text-gray-500">
-                                {selectedImages.some(i => i.name === image.name)
-                                  ? `Seleccionada - ${selectedImages.find(i => i.name === image.name)?.duration || 3}s`
-                                  : 'No seleccionada'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 transform">
-                            <div className="w-2 h-2 rotate-45 bg-white border-l border-t border-gray-200" />
-                          </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{image.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {selectedImages.some(i => i.name === image.name) ? 'Seleccionada' : 'No seleccionada'}
+                          </p>
                         </div>
+                        {selectedImages.some(i => i.name === image.name) && (
+                          <div className="bg-blue-500 text-white rounded-full p-1">
+                            <Check className="w-4 h-4" />
+                          </div>
+                        )}
                       </div>
-                    )
-                  ))
+                    ))}
+                  </div>
                 )}
               </div>
             </motion.div>
