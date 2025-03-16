@@ -59,8 +59,8 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
           title: 'Descripción General',
           description: 'Conoce la plataforma y sus módulos principales.',
           detailedGuide: {
-            title: 'SPID Plus - Plataforma de Gestión de Carteles',
-            description: 'SPID Plus es una plataforma integral para la gestión de carteles y contenido digital para retail, que consta de tres módulos principales y sistemas complementarios.',
+            title: 'SPID Plus - Plataforma de Gestión de Carteles Físicos y Digitales',
+            description: 'SPID Plus es una plataforma integral para la gestión de carteles físicos y digitales para retail, que consta de tres módulos principales y módulos complementarios que se integran con sistemas externos para extender las capacidades de la plataforma.',
             steps: [
               {
                 title: 'Módulos Principales',
