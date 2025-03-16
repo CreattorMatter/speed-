@@ -1123,6 +1123,11 @@ const isPilarUser = (email?: string) => {
   return email?.toLowerCase().includes('pilar');
 };
 
+// Agregar después de isPilarUser
+const isEasyPilarUser = (email?: string) => {
+  return email?.toLowerCase().includes('easypilar');
+};
+
 // Primero, agreguemos un componente para agrupar actividades por fecha
 const ActivityGroup: React.FC<{
   date: string;
@@ -2043,6 +2048,7 @@ export default function Dashboard({
 
         {/* Action Buttons Section */}
         <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8 lg:gap-12 mb-8 sm:mb-12 py-6 sm:py-12 px-4">
+          {/* Botón de Productos - Siempre activo para easypilar */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -2055,19 +2061,20 @@ export default function Dashboard({
               delay: 0.1
             }}
             onClick={onProducts}
-            className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+            className="group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
               bg-gradient-to-br from-white to-gray-50 border-gray-100 shadow-[0_0_20px_rgba(0,0,0,0.1)]
-              transition-all duration-300`}
+              transition-all duration-300"
           >
             <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600
               transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
               <Package2 className="w-10 h-10 text-white" />
             </div>
-            <span className={`text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent`}>
+            <span className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
               Productos
             </span>
           </motion.button>
 
+          {/* Botón de Promociones - Siempre activo para easypilar */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -2080,117 +2087,130 @@ export default function Dashboard({
               delay: 0.2
             }}
             onClick={onPromotions}
-            className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+            className="group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
               bg-gradient-to-br from-white to-gray-50 border-gray-100 shadow-[0_0_20px_rgba(0,0,0,0.1)]
-              transition-all duration-300`}
+              transition-all duration-300"
           >
             <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600
               transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
               <Tags className="w-10 h-10 text-white" />
             </div>
-            <span className={`text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent`}>
+            <span className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
               Promociones
             </span>
           </motion.button>
 
+          {/* Botón de Cartel */}
           <motion.button
-            whileHover={userRole === 'admin' ? { scale: 1.05 } : {}}
-            whileTap={userRole === 'admin' ? { scale: 0.95 } : {}}
-            onClick={userRole === 'admin' ? onNewPoster : undefined}
+            whileHover={!isEasyPilarUser(userEmail) ? { scale: 1.05 } : {}}
+            whileTap={!isEasyPilarUser(userEmail) ? { scale: 0.95 } : {}}
+            onClick={!isEasyPilarUser(userEmail) ? onNewPoster : undefined}
             className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
-              ${userRole === 'admin' 
-                ? 'bg-gradient-to-br from-violet-500 to-violet-600 text-white hover:shadow-[0_0_35px_rgba(139,92,246,0.4)]' 
+              ${!isEasyPilarUser(userEmail)
+                ? 'bg-gradient-to-br from-violet-500 to-violet-600 text-white hover:shadow-[0_0_35px_rgba(139,92,246,0.4)]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+            disabled={isEasyPilarUser(userEmail)}
           >
-            <div className="mb-4 p-4 rounded-2xl bg-white/20
-              transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300
-              backdrop-blur-lg">
-              <FileText className="w-10 h-10 text-white" />
+            <div className={`mb-4 p-4 rounded-2xl ${
+              !isEasyPilarUser(userEmail)
+                ? 'bg-white/20 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
+                : 'bg-gray-300'
+            }`}>
+              <FileText className={`w-10 h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
             </div>
             <span className="text-xl font-semibold">
               Cartel
             </span>
           </motion.button>
 
-          {/* Nuevo botón de Cartel Digital */}
+          {/* Botón de Cartel Digital */}
           <motion.button
-            whileHover={userRole === 'admin' ? { scale: 1.05 } : {}}
-            whileTap={userRole === 'admin' ? { scale: 0.95 } : {}}
-            onClick={userRole === 'admin' ? onDigitalPoster : undefined}
+            whileHover={!isEasyPilarUser(userEmail) ? { scale: 1.05 } : {}}
+            whileTap={!isEasyPilarUser(userEmail) ? { scale: 0.95 } : {}}
+            onClick={!isEasyPilarUser(userEmail) ? onDigitalPoster : undefined}
             className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
-              ${userRole === 'admin' 
-                ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white hover:shadow-[0_0_35px_rgba(16,185,129,0.4)]' 
+              ${!isEasyPilarUser(userEmail)
+                ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white hover:shadow-[0_0_35px_rgba(16,185,129,0.4)]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+            disabled={isEasyPilarUser(userEmail)}
           >
-            <div className="mb-4 p-4 rounded-2xl bg-white/20
-              transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300
-              backdrop-blur-lg">
-              <Monitor className="w-10 h-10 text-white" />
+            <div className={`mb-4 p-4 rounded-2xl ${
+              !isEasyPilarUser(userEmail)
+                ? 'bg-white/20 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
+                : 'bg-gray-300'
+            }`}>
+              <Monitor className={`w-10 h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
             </div>
             <span className="text-xl font-semibold">
               Cartel Digital
             </span>
           </motion.button>
 
+          {/* Botón de Builder */}
           <motion.button
-            whileHover={userRole === 'admin' ? { scale: 1.05 } : {}}
-            whileTap={userRole === 'admin' ? { scale: 0.95 } : {}}
-            onClick={userRole === 'admin' ? onNewTemplate : undefined}
+            whileHover={!isEasyPilarUser(userEmail) ? { scale: 1.05 } : {}}
+            whileTap={!isEasyPilarUser(userEmail) ? { scale: 0.95 } : {}}
+            onClick={!isEasyPilarUser(userEmail) ? onNewTemplate : undefined}
             className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
-              ${userRole === 'admin' 
-                ? 'bg-gradient-to-br from-white to-gray-100 border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg' 
+              ${!isEasyPilarUser(userEmail)
+                ? 'bg-gradient-to-br from-white to-gray-100 border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+            disabled={isEasyPilarUser(userEmail)}
           >
-            <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600
-              transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-              <LayoutTemplate className="w-10 h-10 text-white" />
+            <div className={`mb-4 p-4 rounded-2xl ${
+              !isEasyPilarUser(userEmail)
+                ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
+                : 'bg-gray-300'
+            }`}>
+              <LayoutTemplate className={`w-10 h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
             </div>
-            <span className={`text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent`}>
+            <span className={`text-xl font-semibold ${!isEasyPilarUser(userEmail) ? 'bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent' : ''}`}>
               Builder
             </span>
           </motion.button>
 
+          {/* Botón de Config */}
           <motion.button
-            whileHover={userRole === 'admin' ? { scale: 1.05 } : {}}
-            whileTap={userRole === 'admin' ? { scale: 0.95 } : {}}
-            onClick={userRole === 'admin' ? onSettings : undefined}
+            whileHover={!isEasyPilarUser(userEmail) ? { scale: 1.05 } : {}}
+            whileTap={!isEasyPilarUser(userEmail) ? { scale: 0.95 } : {}}
+            onClick={!isEasyPilarUser(userEmail) ? onSettings : undefined}
             className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
-              ${userRole === 'admin' 
-                ? 'bg-gradient-to-br from-white to-gray-100 border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg' 
+              ${!isEasyPilarUser(userEmail)
+                ? 'bg-gradient-to-br from-white to-gray-100 border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+            disabled={isEasyPilarUser(userEmail)}
           >
-            <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-yellow-500 to-yellow-600
-              transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-              <Settings className="w-10 h-10 text-white" />
+            <div className={`mb-4 p-4 rounded-2xl ${
+              !isEasyPilarUser(userEmail)
+                ? 'bg-gradient-to-br from-yellow-500 to-yellow-600 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
+                : 'bg-gray-300'
+            }`}>
+              <Settings className={`w-10 h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
             </div>
-            <span className={`text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent`}>
+            <span className={`text-xl font-semibold ${!isEasyPilarUser(userEmail) ? 'bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent' : ''}`}>
               Config
             </span>
           </motion.button>
 
+          {/* Botón de Analítica */}
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              type: "spring",
-              stiffness: 260,
-              damping: 20,
-              delay: 0.2
-            }}
-            onClick={onAnalytics}
+            whileHover={!isEasyPilarUser(userEmail) ? { scale: 1.05 } : {}}
+            whileTap={!isEasyPilarUser(userEmail) ? { scale: 0.95 } : {}}
+            onClick={!isEasyPilarUser(userEmail) ? onAnalytics : undefined}
             className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
-              bg-gradient-to-br from-white to-gray-100 border border-gray-200 
-              shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg
-              transition-all duration-300`}
+              ${!isEasyPilarUser(userEmail)
+                ? 'bg-gradient-to-br from-white to-gray-100 border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+            disabled={isEasyPilarUser(userEmail)}
           >
-            <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600
-              transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-              <BarChart3 className="w-10 h-10 text-white" />
+            <div className={`mb-4 p-4 rounded-2xl ${
+              !isEasyPilarUser(userEmail)
+                ? 'bg-gradient-to-br from-purple-500 to-purple-600 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
+                : 'bg-gray-300'
+            }`}>
+              <BarChart3 className={`w-10 h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
             </div>
-            <span className={`text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 
-              bg-clip-text text-transparent`}>
+            <span className={`text-xl font-semibold ${!isEasyPilarUser(userEmail) ? 'bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent' : ''}`}>
               Analítica
             </span>
           </motion.button>
