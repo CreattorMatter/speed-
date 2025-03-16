@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from '../shared/Header';
 import { CompanySelect } from '../Posters/CompanySelect';
 import { LocationSelect } from '../Posters/LocationSelect';
-import { ArrowLeft, Monitor, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2, Video, ShoppingCart, Tablet, MonitorSmartphone, Layers, TouchpadOff, Search } from 'lucide-react';
+import { ArrowLeft, Monitor, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2, Video, ShoppingCart, Tablet, MonitorSmartphone, Layers, TouchpadOff, Search, Upload } from 'lucide-react';
 import { getEmpresas, getSucursalesPorEmpresa, type Empresa, type Sucursal } from '../../lib/supabaseClient-sucursales';
 import { toast } from 'react-hot-toast';
 import Select from 'react-select';
@@ -445,6 +445,40 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
       setSelectedImages(selectedImages.filter(i => i.name !== image.name));
     } else {
       setSelectedImages([...selectedImages, { ...image, duration: 3 }]);
+    }
+  };
+
+  const handleLocalImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      for (const file of files) {
+        // Verificar si es una imagen
+        if (!file.type.startsWith('image/')) {
+          toast.error(`${file.name} no es una imagen válida`);
+          continue;
+        }
+
+        // Crear URL temporal para la imagen
+        const imageUrl = URL.createObjectURL(file);
+        const newImage: SelectedImage = {
+          name: file.name,
+          url: imageUrl,
+          type: 'image',
+          duration: 3
+        };
+
+        // Agregar la imagen a la lista de seleccionadas
+        setSelectedImages(prev => [...prev, newImage]);
+      }
+
+      // Limpiar el input
+      event.target.value = '';
+      toast.success('Imágenes agregadas exitosamente');
+    } catch (error) {
+      console.error('Error al cargar imágenes locales:', error);
+      toast.error('Error al cargar las imágenes');
     }
   };
 
@@ -1383,6 +1417,23 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                       <ImageIcon className="w-5 h-5" />
                       Agregar Imágenes ({selectedImages.filter(item => item.type === 'image').length})
                     </button>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleLocalImageUpload}
+                        className="hidden"
+                        id="local-image-upload"
+                      />
+                      <label
+                        htmlFor="local-image-upload"
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer"
+                      >
+                        <Upload className="w-5 h-5" />
+                        Agregar Imagen Local
+                      </label>
+                    </div>
                     <button
                       onClick={() => setShowVideoModal(true)}
                       className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
