@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from '../shared/Header';
 import { CompanySelect } from '../Posters/CompanySelect';
 import { LocationSelect } from '../Posters/LocationSelect';
-import { ArrowLeft, Monitor, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2, Video, ShoppingCart, Tablet, MonitorSmartphone, Layers, TouchpadOff, Search, Upload } from 'lucide-react';
+import { ArrowLeft, Monitor, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2, Video, ShoppingCart, Tablet, MonitorSmartphone, Layers, TouchpadOff, Search, Upload, Mail } from 'lucide-react';
 import { getEmpresas, getSucursalesPorEmpresa, type Empresa, type Sucursal } from '../../lib/supabaseClient-sucursales';
 import { toast } from 'react-hot-toast';
 import Select from 'react-select';
@@ -27,37 +27,37 @@ const devices: Device[] = [
   { 
     value: 'videowall', 
     label: 'Videowall', 
-    icon: <Layers className="w-5 h-5" /> 
+    icon: <Layers className="w-5 h-5" />
   },
   { 
     value: 'caja-registradora', 
     label: 'Pantalla de Caja Registradora', 
-    icon: <Monitor className="w-5 h-5" /> 
+    icon: <Monitor className="w-5 h-5" />
   },
   { 
     value: 'self-checkout', 
     label: 'Self-Checkout (Caja de Autopago)', 
-    icon: <ShoppingCart className="w-5 h-5" /> 
+    icon: <ShoppingCart className="w-5 h-5" />
   },
   { 
     value: 'kiosko-digital', 
     label: 'Kiosco Digital', 
-    icon: <MonitorSmartphone className="w-5 h-5" /> 
+    icon: <MonitorSmartphone className="w-5 h-5" />
   },
   { 
     value: 'tablet-carrito', 
     label: 'Tablet/Pantalla en Carrito', 
-    icon: <Tablet className="w-5 h-5" /> 
+    icon: <Tablet className="w-5 h-5" />
   },
   { 
     value: 'pantalla-interactiva', 
     label: 'Pantalla Interactiva', 
-    icon: <TouchpadOff className="w-5 h-5" /> 
+    icon: <TouchpadOff className="w-5 h-5" />
   },
   { 
     value: 'punta-gondola', 
     label: 'Punta de Góndola', 
-    icon: <Layout className="w-5 h-5" /> 
+    icon: <Layout className="w-5 h-5" />
   }
 ];
 
@@ -257,6 +257,7 @@ const CarouselPreview: React.FC<{
 
 interface SendingProgress {
   sucursal: string;
+  email: string;
   status: 'pending' | 'sending' | 'success' | 'error';
 }
 
@@ -842,7 +843,11 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
   const handleSendToSucursal = async (sucursalId: string, sucursalName: string) => {
     setSendingProgress(prev => ({
       ...prev,
-      [sucursalId]: { sucursal: sucursalName, status: 'sending' }
+      [sucursalId]: { 
+        sucursal: sucursalName, 
+        email: `${sucursalName.toLowerCase().replace(/\s/g, '.')}@empresa.com`,
+        status: 'sending' 
+      }
     }));
 
     try {
@@ -851,13 +856,21 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
       
       setSendingProgress(prev => ({
         ...prev,
-        [sucursalId]: { sucursal: sucursalName, status: 'success' }
+        [sucursalId]: { 
+          sucursal: sucursalName, 
+          email: `${sucursalName.toLowerCase().replace(/\s/g, '.')}@empresa.com`,
+          status: 'success' 
+        }
       }));
       toast.success(`Enviado exitosamente a ${sucursalName}`);
     } catch (error) {
       setSendingProgress(prev => ({
         ...prev,
-        [sucursalId]: { sucursal: sucursalName, status: 'error' }
+        [sucursalId]: { 
+          sucursal: sucursalName, 
+          email: `${sucursalName.toLowerCase().replace(/\s/g, '.')}@empresa.com`,
+          status: 'error' 
+        }
       }));
       toast.error(`Error al enviar a ${sucursalName}`);
     }
@@ -897,6 +910,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                 {selectedSucursales.map((sucId) => {
                   const sucursal = sucursales.find(s => s.id.toString() === sucId);
                   const progress = sendingProgress[sucId];
+                  const email = progress?.email || `${sucursal?.email.toLowerCase().replace(/\s/g, '.')}`;
                   
                   return (
                     <motion.div
@@ -906,14 +920,20 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                       className="bg-gray-50 rounded-lg p-4"
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            !progress ? 'bg-gray-400' :
-                            progress.status === 'sending' ? 'bg-blue-500' :
-                            progress.status === 'success' ? 'bg-green-500' :
-                            'bg-red-500'
-                          }`} />
-                          <span className="font-medium">{sucursal?.direccion}</span>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              !progress ? 'bg-gray-400' :
+                              progress.status === 'sending' ? 'bg-blue-500' :
+                              progress.status === 'success' ? 'bg-green-500' :
+                              'bg-red-500'
+                            }`} />
+                            <span className="font-medium">{sucursal?.direccion}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-sm text-gray-500 ml-4">
+                            <Mail className="w-4 h-4" />
+                            <span>{email}</span>
+                          </div>
                         </div>
                         <button
                           onClick={() => handleSendToSucursal(sucId, sucursal?.direccion || '')}
@@ -926,13 +946,31 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                               : 'bg-blue-500 text-white hover:bg-blue-600'
                             }`}
                         >
-                          {progress?.status === 'success' ? (
-                            <Check className="w-4 h-4" />
-                          ) : progress?.status === 'sending' ? (
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <Send className="w-4 h-4" />
-                          )}
+                          <div className="relative">
+                            {progress?.status === 'success' ? (
+                              <Check className="w-4 h-4" />
+                            ) : progress?.status === 'sending' ? (
+                              <>
+                                <Mail className="w-4 h-4 animate-bounce" />
+                                <motion.div
+                                  className="absolute -right-1 -top-1 w-2 h-2 bg-white rounded-full"
+                                  animate={{
+                                    scale: [1, 0],
+                                    opacity: [1, 0],
+                                    x: [0, 10],
+                                    y: [-10, -20]
+                                  }}
+                                  transition={{
+                                    duration: 1,
+                                    repeat: Infinity,
+                                    ease: "easeOut"
+                                  }}
+                                />
+                              </>
+                            ) : (
+                              <Send className="w-4 h-4" />
+                            )}
+                          </div>
                           {progress?.status === 'success' ? 'Enviado' : 
                            progress?.status === 'sending' ? 'Enviando...' : 'Enviar'}
                         </button>
