@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, LayoutGrid, List, Minus, Plus, LayoutTemplate } from 'lucide-react';
+import { ArrowLeft, LayoutGrid, List, Minus, Plus, LayoutTemplate, Search } from 'lucide-react';
 import { CompanySelect } from './CompanySelect';
 import { RegionSelect } from './RegionSelect';
 import { LocationSelect } from './LocationSelect';
@@ -323,6 +323,12 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [isFinancingModalOpen, setIsFinancingModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [selectedFinancing, setSelectedFinancing] = useState<FinancingOption[]>([]);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<Array<{
+    name: string;
+    url: string;
+    created_at: string;
+  }>>([]);
 
   console.log('LOCATIONS imported:', LOCATIONS); // Debug
   console.log('COMPANIES imported:', COMPANIES); // Debug
@@ -631,14 +637,105 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     }
   };
 
+  const handleSearchPosters = async () => {
+    let toastId: string | undefined;
+    try {
+      setIsSearchModalOpen(true);
+      toastId = toast.loading('Buscando carteles...');
+      
+      const { data, error } = await supabase
+        .storage
+        .from('posters')
+        .list();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        const sortedResults = await Promise.all(data
+          .filter(file => file.name.endsWith('.png'))
+          .map(async file => {
+            const { data: urlData } = supabase.storage.from('posters').getPublicUrl(file.name);
+            return {
+              name: file.name,
+              url: urlData.publicUrl,
+              created_at: file.created_at || ''
+            };
+          }));
+
+        const orderedResults = sortedResults
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setSearchResults(orderedResults);
+        if (toastId) {
+          toast.success(`Se encontraron ${orderedResults.length} carteles`, { id: toastId });
+        }
+      }
+    } catch (error: any) {
+      console.error('Error al buscar carteles:', error);
+      if (toastId) {
+        toast.error(error.message || 'Error al buscar carteles', { id: toastId });
+      }
+      setIsSearchModalOpen(false);
+    }
+  };
+
+  const handlePosterSelect = async (poster: { name: string; url: string }) => {
+    try {
+      const toastId = toast.loading('Cargando cartel...');
+      
+      // Extraer información del nombre del archivo
+      const [companyName, ...rest] = poster.name.split('_');
+      
+      // Si es un cartel de categoría
+      if (rest.includes('categoria')) {
+        const categoryName = rest[rest.length - 1].replace('.png', '');
+        setSelectedCategory(categoryName);
+        setSelectedProducts([]);
+      } else {
+        // Si es un cartel de producto
+        const sku = rest[rest.length - 1].replace('.png', '');
+        const product = products.find(p => p.sku === sku || p.id === sku);
+        if (product) {
+          setSelectedProducts([product.id]);
+          setSelectedCategory(product.category);
+        }
+      }
+      
+      // Establecer la empresa
+      const company = COMPANIES.find(c => 
+        cleanFileName(c.name).toLowerCase() === companyName.toLowerCase()
+      );
+      if (company) {
+        setCompany(company.id);
+      }
+      
+      setIsSearchModalOpen(false);
+      toast.success('Cartel cargado exitosamente', { id: toastId });
+    } catch (error) {
+      console.error('Error al cargar el cartel:', error);
+      toast.error('Error al cargar el cartel');
+    }
+  };
+
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
         <Header onBack={onBack} onLogout={onLogout} />
         <div className="poster-editor-container min-h-screen flex flex-col bg-white">
           <main className="pt-10 px-6 pb-6 max-w-7xl mx-auto space-y-6 min-h-[1000px]">
-            <div className="flex items-center gap-4 mb-8">
+            <div className="flex items-center justify-between gap-4 mb-8">
               <h2 className="text-2xl font-medium text-gray-900">Editor de Carteles</h2>
+              {/* Botón de Buscar Cartel */}
+              <button
+                onClick={handleSearchPosters}
+                className="px-6 py-2.5 rounded-lg font-medium bg-indigo-600 text-white 
+                          hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-sm"
+              >
+                <Search className="w-5 h-5" />
+                Buscar Cartel
+              </button>
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200">
@@ -1062,6 +1159,66 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               value={selectedTemplate}
               onChange={setSelectedTemplate}
             />
+
+            {/* Modal de Búsqueda de Carteles */}
+            {isSearchModalOpen && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full mx-4 overflow-hidden">
+                  <div className="p-6 border-b border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium text-gray-900">
+                        Carteles Guardados
+                      </h3>
+                      <button
+                        onClick={() => setIsSearchModalOpen(false)}
+                        className="text-gray-400 hover:text-gray-500 transition-colors"
+                      >
+                        <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+                    <div className="grid grid-cols-4 gap-4">
+                      {searchResults.map((poster, index) => (
+                        <div 
+                          key={index}
+                          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-indigo-500 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                          onClick={() => handlePosterSelect(poster)}
+                        >
+                          <img 
+                            src={poster.url}
+                            alt={poster.name}
+                            className="w-full h-48 object-contain mb-3 bg-gray-50 rounded"
+                          />
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {poster.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(poster.created_at).toLocaleDateString()}
+                            </p>
+                            <button
+                              className="mt-2 w-full px-3 py-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 
+                                        bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
+                            >
+                              Editar Cartel
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      {searchResults.length === 0 && (
+                        <div className="col-span-4 text-center py-12">
+                          <p className="text-gray-500">No se encontraron carteles</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </main>
         </div>
       </div>
