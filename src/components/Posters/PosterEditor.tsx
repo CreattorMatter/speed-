@@ -24,10 +24,13 @@ import { POSTER_TEMPLATES } from '../../constants/templates';
 import { HeaderProvider } from '../shared/HeaderProvider';
 import { toast } from 'react-hot-toast';
 import { uploadToBucket } from '../../lib/supabaseClient-carteles';
-import html2canvas from 'html2canvas';
+import domtoimage from 'dom-to-image-improved';
 import { Product } from '../../types/product';
 import { Promotion } from '../../types/promotion';
 import { supabase } from '../../lib/supabaseClient';
+import { ExportPoster } from './ExportPoster';
+import ReactDOM from 'react-dom/client';
+import { FinancingOption } from '../../types/financing';
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -236,27 +239,44 @@ console.log('Categorías encontradas:', CATEGORIES);
 
 const FINANCING_OPTIONS: FinancingOption[] = [
   {
-    bank: 'Visa',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png',
-    cardName: 'Visa',
-    cardImage: 'https://www.visa.com.ar/dam/VCOM/regional/lac/SPA/Default/Pay%20With%20Visa/Find%20a%20Card/Credit%20cards/Classic/visa_classic_card_400x225.jpg',
+    bank: 'American Express',
+    logo: '/images/banks/amex-logo.png',
+    cardName: 'American Express',
+    cardImage: '/images/banks/amex-logo.png',
+    plan: '25% OFF'
+  },
+  {
+    bank: 'Banco Nación',
+    logo: '/images/banks/banco-nacion-logo.png',
+    cardName: 'Banco Nación',
+    cardImage: '/images/banks/banco-nacion-logo.png',
     plan: 'Hasta 12 cuotas sin interés'
   },
   {
-    bank: 'Mastercard',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png',
-    cardName: 'Mastercard',
-    cardImage: 'https://www.mastercard.com.ar/content/dam/public/mastercardcom/lac/ar/home/consumidores/encontra-tu-tarjeta/tarjetas-credito/platinum-card.png',
+    bank: 'Visa',
+    logo: '/images/banks/visa-logo.png',
+    cardName: 'Visa',
+    cardImage: '/images/banks/visa-logo.png',
     plan: 'Hasta 6 cuotas sin interés'
   },
   {
-    bank: 'American Express',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/American_Express_logo.svg/1200px-American_Express_logo.svg.png',
-    cardName: 'American Express',
-    cardImage: 'https://www.americanexpress.com/content/dam/amex/es-ar/negocios/corp_green_ar_960x608.png',
-    plan: '25% OFF'
+    bank: 'Mastercard',
+    logo: '/images/banks/mastercard-logo.png',
+    cardName: 'Mastercard',
+    cardImage: '/images/banks/mastercard-logo.png',
+    plan: 'Hasta 3 cuotas sin interés'
   }
 ];
+
+// Función para limpiar el texto para el nombre del archivo
+const cleanFileName = (text: string): string => {
+  return text
+    .toLowerCase()
+    .replace(/[áéíóúñü]/g, c => ({ 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ñ': 'n', 'ü': 'u' })[c] || c)
+    .replace(/[^a-z0-9]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+};
 
 export const PosterEditor: React.FC<PosterEditorProps> = ({ 
   onBack, 
@@ -381,81 +401,43 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Modificar handleSavePosters para mejorar el escalado y eliminar los espacios en blanco innecesarios
+  // Modificar handleSavePosters para usar dom-to-image en lugar de html2canvas
   const handleSavePosters = async () => {
     try {
+      setIsLoading(true);
       const toastId = toast.loading('Guardando cartel...');
 
-      // Buscar el contenedor del cartel (el elemento que contiene el contenido real)
-      const posterContent = document.querySelector('.poster-content');
-      if (!posterContent) {
-        throw new Error('No se encontró el contenido del cartel para guardar');
+      const posterElement = document.querySelector('.poster-content');
+      
+      if (!posterElement) {
+        throw new Error('No se encontró el elemento del cartel');
       }
 
-      // Crear un contenedor temporal para la captura
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'fixed';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      document.body.appendChild(tempContainer);
+      // Esperar a que todas las imágenes estén cargadas
+      const images = Array.from(posterElement.getElementsByTagName('img'));
+      await Promise.all(images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+      }));
 
-      // Clonar el contenido del cartel al contenedor temporal
-      const clone = posterContent.cloneNode(true) as HTMLElement;
-      tempContainer.appendChild(clone);
-
-      // Ajustar el estilo del clon
-      clone.style.transform = 'none';
-      clone.style.margin = '0';
-      clone.style.padding = '0';
-      clone.style.width = 'fit-content';
-      clone.style.height = 'fit-content';
-      clone.style.position = 'static';
-
-      // Remover fondos y ajustar estilos
-      const elementsWithBackground = clone.querySelectorAll('[style*="background"]');
-      elementsWithBackground.forEach((element) => {
-        (element as HTMLElement).style.backgroundImage = 'none';
-        (element as HTMLElement).style.backgroundColor = 'white';
-      });
-
-      // Configurar html2canvas con opciones específicas
-      const canvas = await html2canvas(clone, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        removeContainer: true,
-        imageTimeout: 0,
-        onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.querySelector('.poster-content');
-          if (clonedElement) {
-            (clonedElement as HTMLElement).style.transform = 'none';
-            (clonedElement as HTMLElement).style.margin = '0';
-            (clonedElement as HTMLElement).style.padding = '0';
-          }
+      const result = await domtoimage.toPng(posterElement, {
+        quality: 1,
+        bgcolor: '#ffffff',
+        cacheBust: true,
+        scale: window.devicePixelRatio * 2,
+        style: {
+          transform: 'none'
         }
       });
 
-      // Limpiar el contenedor temporal
-      document.body.removeChild(tempContainer);
+      // Convertir dataUrl a Blob
+      const response = await fetch(result);
+      const blob = await response.blob();
 
-      // Convertir a blob con calidad máxima
-      const blob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob((blob) => resolve(blob as Blob), 'image/png', 1.0);
-      });
-
-      // Función para limpiar el texto para el nombre del archivo
-      const cleanFileName = (text: string) => {
-        return text
-          .toLowerCase()
-          .replace(/[áéíóúñü]/g, c => ({ 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ñ': 'n', 'ü': 'u' })[c] || c)
-          .replace(/[^a-z0-9]/g, '_')
-          .replace(/_+/g, '_')
-          .replace(/^_|_$/g, '');
-      };
-
-      // Formar el nombre del archivo
+      // Generar nombre de archivo y guardar
       const companyName = companyDetails?.name || 'sin_empresa';
       const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
       const fileName = `${cleanFileName(companyName)}_${timestamp}.png`;
@@ -465,6 +447,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     } catch (error: any) {
       console.error('Error al guardar el cartel:', error);
       toast.error(error.message || 'Error al guardar el cartel');
+    } finally {
+      setIsLoading(false);
     }
   };
 

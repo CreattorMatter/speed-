@@ -18,35 +18,46 @@ interface FinancingOption {
 
 const FINANCING_OPTIONS = [
   {
-    bank: 'Banco Nación',
-    logo: 'https://www.ccres.org.ar/site/wp-content/uploads/2023/09/logo-banco-nacion.jpg',
-    cards: [
-      {
-        name: 'Visa Classic',
-        image: 'https://www.visa.com.ar/dam/VCOM/regional/lac/SPA/Default/Pay%20With%20Visa/Find%20a%20Card/Credit%20cards/Classic/visa_classic_card_400x225.jpg',
-        plans: ['3 cuotas sin interés', '6 cuotas sin interés', '12 cuotas con 10% interés']
-      }
-    ]
-  },
-  {
     bank: 'American Express',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/American_Express_logo_%282018%29.svg/2052px-American_Express_logo_%282018%29.svg.png',
+    logo: '/images/banks/amex-logo.png',
     cards: [
       {
-        name: 'Corporate',
-        image: 'https://www.americanexpress.com/content/dam/amex/es-ar/negocios/corp_green_ar_960x608.png',
-        plans: ['3 cuotas sin interés', '6 cuotas con 5% interés']
+        name: 'American Express',
+        image: '/images/banks/amex-logo.png',
+        plans: ['25% OFF']
       }
     ]
   },
   {
-    bank: 'Naranja',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/f/f5/Logo_Naranja.png',
+    bank: 'Banco Nación',
+    logo: '/images/banks/banco-nacion-logo.png',
     cards: [
       {
-        name: 'Naranja X',
-        image: 'https://upload.wikimedia.org/wikipedia/commons/f/f5/Logo_Naranja.png',
-        plans: ['3 cuotas sin interés', '6 cuotas sin interés', '12 cuotas con 15% interés']
+        name: 'Banco Nación',
+        image: '/images/banks/banco-nacion-logo.png',
+        plans: ['Hasta 12 cuotas sin interés']
+      }
+    ]
+  },
+  {
+    bank: 'Visa',
+    logo: '/images/banks/visa-logo.png',
+    cards: [
+      {
+        name: 'Visa',
+        image: '/images/banks/visa-logo.png',
+        plans: ['Hasta 6 cuotas sin interés']
+      }
+    ]
+  },
+  {
+    bank: 'Mastercard',
+    logo: '/images/banks/mastercard-logo.png',
+    cards: [
+      {
+        name: 'Mastercard',
+        image: '/images/banks/mastercard-logo.png',
+        plans: ['Hasta 3 cuotas sin interés']
       }
     ]
   }

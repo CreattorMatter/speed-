@@ -206,6 +206,11 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
     );
   };
 
+  // Función para renderizar el logo del banco (la eliminaremos ya que está duplicada)
+  const renderBankLogo = () => {
+    return null; // Ya no renderizamos el logo aquí
+  };
+
   // Función para renderizar el contenido principal
   const renderContent = () => {
     if (product) {
@@ -291,13 +296,41 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
   const renderPriceSection = () => {
     if (!product) return null;
 
+    const strikeStyles = {
+      textDecoration: 'line-through',
+      textDecorationThickness: '1.5px',
+      color: '#6B7280',
+      opacity: '0.8',
+      fontSize: '50px',
+      fontWeight: '400',
+      display: 'inline-block'
+    };
+
+    const discountStyles = {
+      backgroundColor: '#DC2626',
+      color: '#FBBF24',
+      padding: '0.5rem 1rem',
+      borderRadius: '9999px',
+      fontSize: '1.5rem',
+      fontWeight: '600',
+      display: 'inline-block'
+    };
+
     return (
       <div className="flex-1 flex flex-col items-center justify-center min-h-[160px] relative">
         <div className="flex items-center gap-4 mb-4">
-          <span className="text-[50px] text-gray-400 line-through">
+          <span style={strikeStyles}>
             ${product.price.toLocaleString('es-AR')}
           </span>
         </div>
+
+        {promotion && (
+          <div className="flex items-center justify-center mb-4">
+            <div style={discountStyles}>
+              {promotion.discount}
+            </div>
+          </div>
+        )}
 
         <div className="text-center">
           <span className="text-[90px] font-black leading-none block">
@@ -391,7 +424,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
 
   // Renderizado normal cuando no es modal
   return (
-    <div className="poster-preview relative bg-white shadow-lg rounded-lg overflow-hidden">
+    <div className="poster-preview relative">
       <div className={`flex justify-center items-center ${fullscreen ? 'min-h-screen' : ''}`}>
         <div className="flex gap-4 items-start">
           <div 
@@ -408,7 +441,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
           >
             <div className="relative">
               <div 
-                className="bg-white shadow-xl relative transition-transform poster-container"
+                className="relative transition-transform poster-container"
                 style={{ 
                   width: isLandscape ? selectedFormat.height : selectedFormat.width, 
                   height: isLandscape ? selectedFormat.width : selectedFormat.height,
@@ -426,12 +459,11 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                   style={{
                     margin: 0,
                     padding: 0,
-                    transform: 'none',
-                    backgroundColor: 'white'
+                    transform: 'none'
                   }}
                 >
                   <div 
-                    className="transform bg-white rounded-lg shadow-2xl overflow-hidden"
+                    className="transform rounded-lg overflow-hidden"
                     style={{ 
                       transform: `scale(${cardSize})`,
                       transformOrigin: 'center center',
@@ -439,7 +471,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                       height: '600px',
                       margin: 0,
                       padding: 0,
-                      position: 'relative'
+                      position: 'relative',
+                      backgroundColor: 'white'
                     }}
                   >
                     {/* Logo superior */}
@@ -546,6 +579,10 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                             src={financing[0].logo}
                             alt={financing[0].bank}
                             className="w-32 h-auto object-contain mb-4"
+                            onError={(e) => {
+                              console.error(`Error loading bank logo: ${financing[0].logo}`);
+                              e.currentTarget.style.display = 'none';
+                            }}
                           />
                           {/* Condiciones debajo del logo del banco */}
                           {promotion && (

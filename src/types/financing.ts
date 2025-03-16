@@ -1,8 +1,9 @@
 export interface FinancingOption {
-  bankId: string;
-  bankName: string;
-  bankLogo: string;
-  cards: CardOption[];
+  bank: string;
+  logo: string;
+  cardName: string;
+  cardImage: string;
+  plan: string;
 }
 
 export interface CardOption {
