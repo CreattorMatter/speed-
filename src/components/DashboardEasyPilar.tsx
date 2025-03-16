@@ -114,36 +114,91 @@ const complianceData = [
 const recentActivity = [
   {
     id: '1',
-    title: 'Carteles Herramientas',
+    title: 'Black Friday',
     type: 'envio',
     status: 'pending',
     locations: [
       { name: 'Easy Pilar', printed: false }
     ],
     timestamp: new Date('2024-01-15 11:30'),
-    totalLocations: 1
+    totalLocations: 1,
+    sender: 'Casa Central',
+    senderEmail: 'marketing@easy.com.ar',
+    sentDate: new Date('2024-01-15 09:00'),
+    validUntil: new Date('2024-01-20'),
+    printedDate: null
   },
   {
     id: '2',
-    title: 'Carteles Jardín',
+    title: 'Cyber Week',
     type: 'impresion',
     status: 'success',
     locations: [
       { name: 'Easy Pilar', printed: true }
     ],
     timestamp: new Date('2024-01-15 10:45'),
-    totalLocations: 1
+    totalLocations: 1,
+    sender: 'Casa Central',
+    senderEmail: 'promociones@easy.com.ar',
+    sentDate: new Date('2024-01-14 16:30'),
+    validUntil: new Date('2024-01-19'),
+    printedDate: new Date('2024-01-14 17:45')
   },
   {
     id: '3',
-    title: 'Carteles Pintura',
+    title: 'Liquidación Fin de Semana Easy',
     type: 'envio',
     status: 'pending',
     locations: [
       { name: 'Easy Pilar', printed: false }
     ],
     timestamp: new Date('2024-01-15 09:30'),
-    totalLocations: 1
+    totalLocations: 1,
+    sender: 'Casa Central',
+    senderEmail: 'marketing@easy.com.ar',
+    sentDate: new Date('2024-01-15 08:00'),
+    validUntil: new Date('2024-01-18'),
+    printedDate: null
+  }
+];
+
+// Definimos los tipos de impresoras disponibles
+const availablePrinters = [
+  {
+    id: 'hp-9015e',
+    name: 'HP OfficeJet Pro 9015e',
+    location: 'Oficina Principal',
+    paperSizes: ['A4', 'A3', 'Carta'],
+    type: 'Inyección de tinta',
+    status: 'Disponible',
+    icon: '🖨️'
+  },
+  {
+    id: 'epson-l14150',
+    name: 'Epson EcoTank L14150',
+    location: 'Área de Marketing',
+    paperSizes: ['A4', 'A3', 'A3+', 'Tabloide'],
+    type: 'Tanque de tinta',
+    status: 'Disponible',
+    icon: '🖨️'
+  },
+  {
+    id: 'canon-gp555',
+    name: 'Canon PIXMA GP555',
+    location: 'Área de Diseño',
+    paperSizes: ['A4', 'A3', 'A3+', '13x19"'],
+    type: 'Inyección de tinta profesional',
+    status: 'Ocupada',
+    icon: '🖨️'
+  },
+  {
+    id: 'xerox-7800',
+    name: 'Xerox Phaser 7800',
+    location: 'Área de Impresión',
+    paperSizes: ['A4', 'A3', 'SRA3', 'Tabloide'],
+    type: 'Láser Color',
+    status: 'Disponible',
+    icon: '🖨️'
   }
 ];
 
@@ -294,6 +349,9 @@ const ActivityItem: React.FC<{ activity: typeof recentActivity[0] }> = ({ activi
   const [isLoading, setIsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showPrinterModal, setShowPrinterModal] = useState(false);
+  const [selectedPrinter, setSelectedPrinter] = useState<string>('');
+  const [selectedPaperSize, setSelectedPaperSize] = useState<string>('');
 
   const loadPosterUrl = async () => {
     if (!posterUrl && !isLoading) {
@@ -307,6 +365,18 @@ const ActivityItem: React.FC<{ activity: typeof recentActivity[0] }> = ({ activi
         setIsLoading(false);
       }
     }
+  };
+
+  const handlePrint = () => {
+    if (!selectedPrinter || !selectedPaperSize) {
+      alert('Por favor selecciona una impresora y un tamaño de papel');
+      return;
+    }
+    
+    // Aquí iría la lógica de impresión
+    console.log(`Imprimiendo en ${selectedPrinter} en tamaño ${selectedPaperSize}`);
+    setShowPrinterModal(false);
+    // Actualizar el estado de impresión
   };
 
   return (
@@ -331,17 +401,34 @@ const ActivityItem: React.FC<{ activity: typeof recentActivity[0] }> = ({ activi
               </div>
               <div>
                 <h4 className="text-sm font-medium text-gray-900">{activity.title}</h4>
-                <div className="mt-2 flex items-center gap-2">
-                  <span
+                <div className="mt-1 space-y-1">
+                  <p className="text-xs text-gray-500">
+                    Enviado por: <span className="font-medium text-gray-700">{activity.sender}</span> ({activity.senderEmail})
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Fecha de envío: <span className="font-medium text-gray-700">{format(activity.sentDate, "dd/MM/yyyy 'a las' HH:mm 'hs'", { locale: es })}</span>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Válido hasta: <span className="font-medium text-gray-700">{format(activity.validUntil, "dd/MM/yyyy", { locale: es })}</span>
+                  </p>
+                  {activity.printedDate && (
+                    <p className="text-xs text-green-600">
+                      Impreso el: <span className="font-medium">{format(activity.printedDate, "dd/MM/yyyy 'a las' HH:mm 'hs'", { locale: es })}</span>
+                    </p>
+                  )}
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    onClick={() => !activity.locations[0].printed && setShowPrinterModal(true)}
                     className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                       activity.locations[0].printed
                         ? 'bg-green-100 text-green-800 border border-green-200'
-                        : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                        : 'bg-yellow-100 text-yellow-800 border border-yellow-200 hover:bg-yellow-200 transition-colors cursor-pointer'
                     }`}
                   >
                     {activity.locations[0].printed ? 'Impreso' : 'Pendiente'}
                     <Printer className="w-4 h-4 ml-1.5" />
-                  </span>
+                  </button>
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -386,6 +473,111 @@ const ActivityItem: React.FC<{ activity: typeof recentActivity[0] }> = ({ activi
           </div>
         )}
       </div>
+
+      {/* Modal de selección de impresora */}
+      {showPrinterModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPrinterModal(false)}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <Printer className="w-6 h-6 text-indigo-600" />
+                  <h3 className="text-lg font-medium text-gray-900">Seleccionar Impresora</h3>
+                </div>
+                <button
+                  onClick={() => setShowPrinterModal(false)}
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 gap-4">
+                {availablePrinters.map((printer) => (
+                  <div 
+                    key={printer.id}
+                    className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                      selectedPrinter === printer.id 
+                        ? 'border-indigo-600 bg-indigo-50' 
+                        : 'border-gray-200 hover:border-indigo-200'
+                    }`}
+                    onClick={() => {
+                      setSelectedPrinter(printer.id);
+                      setSelectedPaperSize('');
+                    }}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{printer.icon}</span>
+                          <h4 className="font-medium text-gray-900">{printer.name}</h4>
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${
+                            printer.status === 'Disponible' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {printer.status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">{printer.location}</p>
+                        <p className="text-sm text-gray-500">{printer.type}</p>
+                      </div>
+                    </div>
+                    
+                    {selectedPrinter === printer.id && (
+                      <div className="mt-4 border-t border-gray-100 pt-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Tamaño de papel:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {printer.paperSizes.map((size) => (
+                            <button
+                              key={size}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedPaperSize(size);
+                              }}
+                              className={`px-3 py-1 rounded-full text-sm ${
+                                selectedPaperSize === size
+                                  ? 'bg-indigo-600 text-white'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowPrinterModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handlePrint}
+                  disabled={!selectedPrinter || !selectedPaperSize}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    selectedPrinter && selectedPaperSize
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  Imprimir
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal para ver el cartel */}
       {showModal && posterUrl && (
