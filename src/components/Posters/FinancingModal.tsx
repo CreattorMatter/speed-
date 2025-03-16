@@ -26,8 +26,7 @@ const FINANCING_OPTIONS = [
         image: '/images/banks/amex-logo.png',
         plans: [
           '3 cuotas sin interés',
-          '6 cuotas sin interés',
-          '12 cuotas con Interés'
+          '6 cuotas sin interés'
         ]
       }
     ]
@@ -41,7 +40,6 @@ const FINANCING_OPTIONS = [
         image: '/images/banks/banco-nacion-logo.png',
         plans: [
           '3 cuotas sin interés',
-          '6 cuotas sin interés',
           '12 cuotas sin Interés'
         ]
       }
@@ -55,7 +53,6 @@ const FINANCING_OPTIONS = [
         name: 'Visa',
         image: '/images/banks/visa-logo.png',
         plans: [
-          '3 cuotas sin interés',
           '6 cuotas con interés',
           '12 cuotas con Interés'
         ]
@@ -70,7 +67,6 @@ const FINANCING_OPTIONS = [
         name: 'Mastercard',
         image: '/images/banks/mastercard-logo.png',
         plans: [
-          '3 cuotas sin interés',
           '6 cuotas con interés',
           '12 cuotas con Interés'
         ]

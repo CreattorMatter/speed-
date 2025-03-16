@@ -12,7 +12,7 @@ interface SendingModalProps {
   empresaId: number;
 }
 
-type SendingStep = 'selection' | 'preparing' | 'sending' | 'complete';
+type SendingStep = 'selection' | 'sending' | 'complete';
 
 const PRINTERS = [
   {
@@ -20,6 +20,7 @@ const PRINTERS = [
     name: 'HP Color LaserJet',
     type: 'laser',
     formats: ['A4', 'Carta'],
+    status: 'Disponible',
     icon: <PrinterIcon className="w-6 h-6 text-blue-600" />
   },
   {
@@ -27,6 +28,7 @@ const PRINTERS = [
     name: 'Brother HL-L8360CDW',
     type: 'a3',
     formats: ['A3'],
+    status: 'Disponible',
     icon: <Printer className="w-6 h-6 text-purple-600" />
   },
   {
@@ -34,6 +36,7 @@ const PRINTERS = [
     name: 'HP DesignJet',
     type: 'plotter',
     formats: ['Plotter'],
+    status: 'Mantenimiento',
     icon: <svg className="w-6 h-6 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M3 6h18M3 12h18M3 18h18M19 3v18M5 3v18"/>
     </svg>
@@ -43,6 +46,7 @@ const PRINTERS = [
     name: 'Brother QL-820NWB',
     type: 'termica',
     formats: ['Etiquetas'],
+    status: 'Sin papel',
     icon: <svg className="w-6 h-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/>
       <path d="M8 14h8"/>
@@ -66,6 +70,14 @@ export const SendingModal: React.FC<SendingModalProps> = ({
   const [selectedPrinter, setSelectedPrinter] = useState<string>('');
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const locationOptions = sucursales.map(s => ({
+    id: s.id.toString(),
+    name: s.nombre,
+    region: s.region,
+    direccion: s.direccion,
+    email: s.email
+  }));
 
   useEffect(() => {
     if (isOpen) {
@@ -97,29 +109,21 @@ export const SendingModal: React.FC<SendingModalProps> = ({
   }, [isOpen, empresaId]);
 
   useEffect(() => {
-    if (step === 'preparing') {
-      // Solo preparación por 1 segundo y luego directo a envío
-      const preparingTimeout = setTimeout(() => {
-        setStep('sending');
-        // Iniciar el envío inmediatamente
-        const interval = setInterval(() => {
-          setCurrentLocation(prev => {
-            if (prev < selectedLocations.length) {
-              setSentLocations(current => new Set([...current, selectedLocations[prev]]));
-              return prev + 1;
-            }
-            clearInterval(interval);
-            setStep('complete');
-            return prev;
-          });
-        }, 500);
+    if (step === 'sending') {
+      // Iniciar el envío inmediatamente
+      const interval = setInterval(() => {
+        setCurrentLocation(prev => {
+          if (prev < selectedLocations.length) {
+            setSentLocations(current => new Set([...current, selectedLocations[prev]]));
+            return prev + 1;
+          }
+          clearInterval(interval);
+          setStep('complete');
+          return prev;
+        });
+      }, 500);
 
-        return () => clearInterval(interval);
-      }, 1000);
-
-      return () => {
-        clearTimeout(preparingTimeout);
-      };
+      return () => clearInterval(interval);
     }
   }, [step, selectedLocations]);
 
@@ -132,180 +136,13 @@ export const SendingModal: React.FC<SendingModalProps> = ({
       alert('Por favor seleccione una impresora');
       return;
     }
-    setStep('preparing');
+    setStep('sending');
   };
 
   const handleCancel = () => {
     setStep('selection');
     setSentLocations(new Set());
     setCurrentLocation(0);
-  };
-
-  const renderSelectionStep = () => {
-    if (step !== 'selection') return null;
-
-    // Convertir las sucursales al formato que espera LocationSelect
-    const locationOptions = sucursales.map(s => ({
-      id: s.id.toString(),
-      name: s.nombre,
-      region: s.region,
-      direccion: s.direccion
-    }));
-
-    return (
-      <div className="p-6 space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Seleccionar Sucursales
-          </label>
-          {loading ? (
-            <div className="flex items-center justify-center p-4">
-              <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />
-            </div>
-          ) : (
-            <LocationSelect
-              value={selectedLocations}
-              onChange={setSelectedLocations}
-              locations={locationOptions}
-              disabled={false}
-              isMulti={true}
-              className="bg-white border-gray-300"
-            />
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Seleccionar Impresora
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            {PRINTERS.map((printer) => (
-              <button
-                key={printer.id}
-                onClick={() => setSelectedPrinter(printer.id)}
-                className={`flex items-center p-3 border rounded-lg transition-colors ${
-                  selectedPrinter === printer.id
-                    ? 'border-indigo-600 bg-indigo-50'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <div className="mr-3">
-                  {printer.icon}
-                </div>
-                <div className="text-left">
-                  <div className="font-medium text-gray-900">{printer.name}</div>
-                  <div className="text-sm text-gray-500">{printer.formats.join(', ')}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <button
-            onClick={handleStartSending}
-            disabled={selectedLocations.length === 0 || !selectedPrinter}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors
-              ${(selectedLocations.length === 0 || !selectedPrinter)
-                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700'
-              }`}
-          >
-            Comenzar envío
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderPreparationStep = () => {
-    if (step === 'selection' || step === 'sending' || step === 'complete') return null;
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        className="flex flex-col items-center justify-center p-12 space-y-6"
-      >
-        <motion.div
-          animate={{ 
-            scale: [1, 1.2, 1]
-          }}
-          transition={{ 
-            duration: 1,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="w-20 h-20 flex items-center justify-center bg-indigo-100 rounded-full"
-        >
-          <Package className="w-10 h-10 text-indigo-600" />
-        </motion.div>
-        <h3 className="text-xl font-medium text-gray-900">
-          Preparando envío...
-        </h3>
-        <p className="text-sm text-gray-500">
-          {productsCount} {productsCount === 1 ? 'cartel' : 'carteles'} seleccionados
-        </p>
-        <button
-          onClick={handleCancel}
-          className="mt-4 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          Cancelar
-        </button>
-      </motion.div>
-    );
-  };
-
-  const renderLocationsList = () => {
-    if (step !== 'sending' && step === 'complete') return null;
-
-    const selectedLocationDetails = sucursales.filter(loc => 
-      selectedLocations.includes(loc.id.toString())
-    );
-
-    return (
-      <div className="p-6 max-h-[400px] overflow-y-auto">
-        <div className="space-y-4">
-          {selectedLocationDetails.map((location, index) => (
-            <motion.div
-              key={location.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="flex items-center justify-between p-4 rounded-lg bg-gray-50"
-            >
-              <div className="flex-1">
-                <h4 className="font-medium text-gray-900">{location.nombre}</h4>
-                <p className="text-sm text-gray-500">{location.region}</p>
-                <p className="text-sm text-gray-600 mt-1">{location.direccion}</p>
-              </div>
-              <div className="w-8 h-8 flex items-center justify-center ml-4">
-                {sentLocations.has(location.id.toString()) ? (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 10 }}
-                    className="bg-green-100 p-2 rounded-full"
-                  >
-                    <Check className="w-4 h-4 text-green-600" />
-                  </motion.div>
-                ) : currentLocation === index ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Loader2 className="w-5 h-5 text-indigo-600" />
-                  </motion.div>
-                ) : (
-                  <div className="w-5 h-5 rounded-full border-2 border-gray-200" />
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    );
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -325,7 +162,7 @@ export const SendingModal: React.FC<SendingModalProps> = ({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 overflow-hidden"
+            className="bg-white rounded-xl shadow-xl max-w-5xl w-full mx-4 overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
             {/* Header */}
@@ -333,7 +170,6 @@ export const SendingModal: React.FC<SendingModalProps> = ({
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium text-gray-900">
                   {step === 'selection' && 'Seleccionar sucursales'}
-                  {step === 'preparing' && 'Preparando envío'}
                   {(step === 'sending' || step === 'complete') && 'Enviando a sucursales'}
                 </h3>
                 {(step === 'selection' || step === 'complete') && (
@@ -348,9 +184,259 @@ export const SendingModal: React.FC<SendingModalProps> = ({
             </div>
 
             {/* Content */}
-            {renderSelectionStep()}
-            {renderPreparationStep()}
-            {renderLocationsList()}
+            {step === 'selection' && (
+              <div className="grid grid-cols-5 gap-6">
+                {/* Columna izquierda: Selección */}
+                <div className="col-span-3 border-r border-gray-200">
+                  <div className="p-6 space-y-6">
+                    {/* Sección de Sucursales */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-lg font-medium text-gray-900">
+                          Seleccionar Sucursales
+                        </label>
+                        {selectedLocations.length > 0 && (
+                          <span className="text-sm text-gray-500">
+                            {selectedLocations.length} {selectedLocations.length === 1 ? 'sucursal seleccionada' : 'sucursales seleccionadas'}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {loading ? (
+                        <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="flex flex-col items-center gap-3">
+                            <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                            <p className="text-sm text-gray-600">Cargando sucursales...</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-white rounded-lg border border-gray-200">
+                          <LocationSelect
+                            value={selectedLocations}
+                            onChange={setSelectedLocations}
+                            locations={locationOptions}
+                            disabled={false}
+                            isMulti={true}
+                            className="bg-white border-gray-300"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Sección de Impresoras */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-lg font-medium text-gray-900">
+                          Seleccionar Impresora
+                        </label>
+                        {selectedPrinter && (
+                          <span className="text-sm text-gray-500">
+                            {PRINTERS.find(p => p.id === selectedPrinter)?.name}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        {PRINTERS.map((printer) => {
+                          const isAvailable = printer.status === 'Disponible';
+                          return (
+                            <button
+                              key={printer.id}
+                              onClick={() => isAvailable && setSelectedPrinter(printer.id)}
+                              disabled={!isAvailable}
+                              className={`flex items-start p-4 border rounded-lg transition-colors ${
+                                selectedPrinter === printer.id
+                                  ? 'border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600'
+                                  : isAvailable
+                                    ? 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                    : 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                              }`}
+                            >
+                              <div className="mr-4 mt-1">
+                                {printer.icon}
+                              </div>
+                              <div className="text-left flex-1">
+                                <div className="font-medium text-gray-900">{printer.name}</div>
+                                <div className="text-sm text-gray-500 mt-1">
+                                  Formatos: {printer.formats.join(', ')}
+                                </div>
+                                <div className={`text-sm mt-2 ${
+                                  isAvailable ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {printer.status}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Columna derecha: Resumen */}
+                <div className="col-span-2">
+                  <div className="p-6 space-y-6">
+                    <div>
+                      <h4 className="text-lg font-medium text-gray-900 mb-4">Resumen de envío</h4>
+                      {selectedLocations.length > 0 ? (
+                        <div className="space-y-4">
+                          <div className="bg-indigo-50 rounded-lg p-4">
+                            <div className="flex items-center gap-3 text-indigo-600 mb-2">
+                              <Package className="w-5 h-5" />
+                              <span className="font-medium">Detalles del envío</span>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              {productsCount} {productsCount === 1 ? 'cartel' : 'carteles'} para {selectedLocations.length} {selectedLocations.length === 1 ? 'sucursal' : 'sucursales'}
+                            </p>
+                          </div>
+
+                          <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-200 max-h-[calc(100vh-400px)] overflow-y-auto">
+                            {selectedLocations.map(locId => {
+                              const sucursal = sucursales.find(s => s.id.toString() === locId);
+                              return sucursal ? (
+                                <div key={locId} className="p-4 space-y-2">
+                                  <div className="flex items-start gap-3">
+                                    <span className="w-2 h-2 mt-2 rounded-full bg-indigo-500 shrink-0" />
+                                    <div className="space-y-1 flex-1">
+                                      <p className="font-medium text-gray-900">{sucursal.nombre}</p>
+                                      <p className="text-sm text-gray-500">{sucursal.direccion}</p>
+                                      <div className="flex items-center gap-2 text-gray-600">
+                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        <span className="text-sm">{sucursal.email}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : null;
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                          <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500">
+                            Selecciona las sucursales para ver el resumen
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {(step === 'sending' || step === 'complete') && (
+              <div className="p-6">
+                <div className="max-w-4xl mx-auto space-y-8">
+                  <div className="text-center mb-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      {step === 'complete' ? 'Envío completado' : 'Enviando carteles...'}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {step === 'complete' 
+                        ? `Se han enviado ${productsCount} carteles a ${selectedLocations.length} sucursales`
+                        : `Enviando ${productsCount} carteles a ${selectedLocations.length} sucursales`}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-8">
+                    {/* Columna de Impresión */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 text-gray-900">
+                        <PrinterIcon className="w-5 h-5" />
+                        <h4 className="font-medium">Estado de impresión</h4>
+                      </div>
+                      <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+                        {selectedLocations.map((locId, index) => {
+                          const sucursal = sucursales.find(s => s.id.toString() === locId);
+                          const isPrinted = currentLocation > index;
+                          const isPrinting = currentLocation === index;
+                          
+                          return sucursal && (
+                            <div key={`print-${locId}`} className="p-4 flex items-center justify-between">
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-900">{sucursal.nombre}</p>
+                                <p className="text-sm text-gray-500">{sucursal.direccion}</p>
+                              </div>
+                              <div className="ml-4">
+                                {isPrinted ? (
+                                  <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="bg-green-100 p-2 rounded-full"
+                                  >
+                                    <Check className="w-4 h-4 text-green-600" />
+                                  </motion.div>
+                                ) : isPrinting ? (
+                                  <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                  >
+                                    <Loader2 className="w-5 h-5 text-indigo-600" />
+                                  </motion.div>
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full border-2 border-gray-200" />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Columna de Notificaciones */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 text-gray-900">
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <h4 className="font-medium">Notificaciones por email</h4>
+                      </div>
+                      <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+                        {selectedLocations.map((locId, index) => {
+                          const sucursal = sucursales.find(s => s.id.toString() === locId);
+                          const isNotified = currentLocation > index;
+                          const isNotifying = currentLocation === index;
+                          
+                          return sucursal && (
+                            <div key={`email-${locId}`} className="p-4 flex items-center justify-between">
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-900">{sucursal.nombre}</p>
+                                <div className="flex items-center gap-2 text-gray-500 mt-1">
+                                  <span className="text-sm">{sucursal.email}</span>
+                                </div>
+                              </div>
+                              <div className="ml-4">
+                                {isNotified ? (
+                                  <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="bg-green-100 p-2 rounded-full"
+                                  >
+                                    <Check className="w-4 h-4 text-green-600" />
+                                  </motion.div>
+                                ) : isNotifying ? (
+                                  <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                  >
+                                    <Loader2 className="w-5 h-5 text-indigo-600" />
+                                  </motion.div>
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full border-2 border-gray-200" />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Footer */}
             <div className="p-6 border-t border-gray-200 bg-gray-50">
@@ -361,9 +447,22 @@ export const SendingModal: React.FC<SendingModalProps> = ({
                     ? 'Envío completado'
                     : step === 'sending'
                     ? `Enviando a ${currentLocation + 1} de ${selectedLocations.length} sucursales...`
-                    : 'Preparando envío...'}
+                    : ''}
                 </div>
-                {step === 'complete' && (
+                {step === 'selection' ? (
+                  <button
+                    onClick={handleStartSending}
+                    disabled={selectedLocations.length === 0 || !selectedPrinter}
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2
+                      ${(selectedLocations.length === 0 || !selectedPrinter)
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
+                  >
+                    <Send className="w-4 h-4" />
+                    Comenzar envío
+                  </button>
+                ) : step === 'complete' && (
                   <motion.button
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
