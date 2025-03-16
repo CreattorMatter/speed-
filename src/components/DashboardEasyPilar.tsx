@@ -554,8 +554,34 @@ const ActivityItem: React.FC<{
               {isPrinting ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-center">
-                    <div className="animate-bounce">
-                      <Printer className="w-12 h-12 text-indigo-600" />
+                    <div className="relative w-24 h-24">
+                      {/* Impresora */}
+                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gray-800 rounded-lg">
+                        {/* Ranura de la impresora */}
+                        <div className="absolute inset-x-4 top-0 h-1 bg-gray-700" />
+                      </div>
+                      {/* Hoja de papel animada */}
+                      <motion.div
+                        className="absolute left-4 bg-white border border-gray-200 w-16 h-20"
+                        initial={{ y: "0%" }}
+                        animate={{ 
+                          y: ["-10%", "-60%", "-10%"],
+                          x: ["0%", "0%", "0%"],
+                          rotate: [0, -2, 2, 0]
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      >
+                        {/* Líneas de texto simuladas */}
+                        <div className="p-2 space-y-1">
+                          <div className="h-0.5 w-8 bg-gray-300 rounded" />
+                          <div className="h-0.5 w-10 bg-gray-300 rounded" />
+                          <div className="h-0.5 w-6 bg-gray-300 rounded" />
+                        </div>
+                      </motion.div>
                     </div>
                   </div>
                   <div className="text-center">
