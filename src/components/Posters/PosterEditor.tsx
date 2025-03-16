@@ -557,64 +557,55 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     try {
       const toastId = toast.loading('Preparando descarga...');
 
-      // Buscar el contenedor del cartel
-      const posterContent = document.querySelector('.poster-content');
-      if (!posterContent) {
-        throw new Error('No se encontró el contenido del cartel');
+      const posterElement = document.querySelector('.poster-content');
+      if (!posterElement) {
+        throw new Error('No se encontró el elemento del cartel');
       }
 
-      // Crear un contenedor temporal para la captura
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'fixed';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      document.body.appendChild(tempContainer);
+      // Esperar a que todas las imágenes estén cargadas
+      const images = Array.from(posterElement.getElementsByTagName('img'));
+      await Promise.all(images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+      }));
 
-      // Clonar el contenido del cartel al contenedor temporal
-      const clone = posterContent.cloneNode(true) as HTMLElement;
-      tempContainer.appendChild(clone);
-
-      // Ajustar el estilo del clon
-      clone.style.transform = 'none';
-      clone.style.margin = '0';
-      clone.style.padding = '0';
-      clone.style.width = 'fit-content';
-      clone.style.height = 'fit-content';
-      clone.style.position = 'static';
-
-      // Remover fondos y ajustar estilos
-      const elementsWithBackground = clone.querySelectorAll('[style*="background"]');
-      elementsWithBackground.forEach((element) => {
-        (element as HTMLElement).style.backgroundImage = 'none';
-        (element as HTMLElement).style.backgroundColor = 'white';
-      });
-
-      // Configurar html2canvas con opciones específicas
-      const canvas = await html2canvas(clone, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        removeContainer: true,
-        imageTimeout: 0,
-        onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.querySelector('.poster-content');
-          if (clonedElement) {
-            (clonedElement as HTMLElement).style.transform = 'none';
-            (clonedElement as HTMLElement).style.margin = '0';
-            (clonedElement as HTMLElement).style.padding = '0';
-          }
+      const result = await domtoimage.toPng(posterElement as HTMLElement, {
+        quality: 1,
+        bgcolor: '#ffffff',
+        cacheBust: true,
+        scale: window.devicePixelRatio * 2,
+        style: {
+          transform: 'none'
         }
       });
 
-      // Limpiar el contenedor temporal
-      document.body.removeChild(tempContainer);
-
       // Crear el enlace de descarga
       const link = document.createElement('a');
-      link.download = `cartel-${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
+      
+      // Generar nombre del archivo
+      const companyName = companyDetails?.name || 'sin_empresa';
+      let fileName;
+
+      if (selectedProducts.length > 0) {
+        const product = products.find(p => p.id === selectedProducts[0]);
+        if (product) {
+          const productName = cleanFileName(product.name);
+          const sku = product.sku || product.id;
+          fileName = `${cleanFileName(companyName)}_${productName}_${sku}.png`;
+        } else {
+          fileName = `${cleanFileName(companyName)}_cartel.png`;
+        }
+      } else if (selectedCategory) {
+        fileName = `${cleanFileName(companyName)}_categoria_${cleanFileName(selectedCategory)}.png`;
+      } else {
+        fileName = `${cleanFileName(companyName)}_cartel.png`;
+      }
+
+      link.download = fileName;
+      link.href = result;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
