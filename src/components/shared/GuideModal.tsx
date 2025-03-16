@@ -50,13 +50,26 @@ interface GuideSection {
 export function GuideModal({ isOpen, onClose }: GuideModalProps) {
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [showingDetails, setShowingDetails] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const toggleMute = () => {
     if (videoRef.current) {
       videoRef.current.muted = !videoRef.current.muted;
       setIsMuted(!isMuted);
+    }
+  };
+
+  const handleVideoClick = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play();
+    }
+  };
+
+  const handleVideoEnd = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
     }
   };
 
@@ -392,18 +405,21 @@ export function GuideModal({ isOpen, onClose }: GuideModalProps) {
           </button>
 
           <div className="flex flex-col items-center pt-8 pb-4 flex-shrink-0 bg-white">
-            <div className="relative w-40 h-40 rounded-full overflow-hidden border-4 border-white shadow-lg">
+            <div className="relative w-40 h-40 rounded-full overflow-hidden border-4 border-white shadow-lg cursor-pointer" onClick={handleVideoClick}>
               <video
                 ref={videoRef}
                 className="absolute top-0 left-0 w-full h-full object-cover"
                 src="/public/video/hombre.mp4"
                 autoPlay
-                loop
                 muted={isMuted}
                 playsInline
+                onEnded={handleVideoEnd}
               />
               <button
-                onClick={toggleMute}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleMute();
+                }}
                 className="absolute bottom-2 right-2 p-2 bg-white/90 rounded-full hover:bg-white transition-colors shadow-md"
               >
                 {isMuted ? (
