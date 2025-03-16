@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Header } from './shared/Header';
 import { Package2, Tags, Monitor, BarChart3, Clock, Printer, FileWarning } from 'lucide-react';
@@ -830,6 +830,14 @@ const DashboardEasyPilar: React.FC<DashboardEasyPilarProps> = ({
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<'all' | CategoryType>('all');
   const [activities, setActivities] = useState(recentActivity);
+  const [showNewsModal, setShowNewsModal] = useState(true);
+
+  useEffect(() => {
+    const hasSeenNews = localStorage.getItem('hasSeenNews');
+    if (!hasSeenNews) {
+      setShowNewsModal(true);
+    }
+  }, []);
 
   const handlePrintComplete = (activityId: string) => {
     setActivities(currentActivities => 
@@ -846,6 +854,12 @@ const DashboardEasyPilar: React.FC<DashboardEasyPilarProps> = ({
   };
 
   const pendingCount = activities.filter(a => !a.locations[0].printed).length;
+  const pendingActivities = activities.filter(a => !a.locations[0].printed);
+
+  const handleCloseNewsModal = () => {
+    setShowNewsModal(false);
+    localStorage.setItem('hasSeenNews', 'true');
+  };
 
   const handleLogoutClick = () => {
     if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) {
@@ -857,6 +871,105 @@ const DashboardEasyPilar: React.FC<DashboardEasyPilarProps> = ({
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header onBack={onBack} onLogout={handleLogoutClick} />
+
+      {/* Modal de Novedades */}
+      {showNewsModal && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg">
+                    <img 
+                      src="/images/Easy_Logo.png" 
+                      alt="Easy Logo" 
+                      className="w-8 h-8 object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-medium text-gray-900">Bienvenido a Easy Pilar</h2>
+                    <p className="text-sm text-gray-500">Resumen de novedades</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCloseNewsModal}
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {/* KPI de Cumplimiento */}
+              <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl p-6 border border-indigo-100">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">KPI: Cumplimiento de Impresión</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-sm text-gray-500">Cumplimiento General</p>
+                    <p className="text-3xl font-bold text-indigo-600">
+                      {EASY_PILAR_DATA.compliance.all.compliance}%
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-sm text-gray-500">Carteles Impresos</p>
+                    <p className="text-3xl font-bold text-green-600">
+                      {EASY_PILAR_DATA.compliance.all.printed}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <p className="text-sm text-gray-500">Carteles Pendientes</p>
+                    <p className="text-3xl font-bold text-yellow-600">
+                      {pendingCount}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Carteles Pendientes */}
+              <div className="bg-white rounded-xl border border-gray-200">
+                <div className="p-4 border-b border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900">Carteles Pendientes de Impresión</h3>
+                  <p className="text-sm text-gray-500">Se requiere acción inmediata</p>
+                </div>
+                <div className="divide-y divide-gray-200">
+                  {pendingActivities.map((activity) => (
+                    <div key={activity.id} className="p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-yellow-50 rounded-lg">
+                          <Printer className="w-5 h-5 text-yellow-600" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900">{activity.title}</h4>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Enviado el {format(activity.sentDate, "dd/MM/yyyy 'a las' HH:mm 'hs'", { locale: es })}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Válido hasta {format(activity.validUntil, "dd/MM/yyyy", { locale: es })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 border-t border-gray-200">
+              <div className="flex justify-end">
+                <button
+                  onClick={handleCloseNewsModal}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Entendido
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 py-8 w-full">
         {/* Título */}
