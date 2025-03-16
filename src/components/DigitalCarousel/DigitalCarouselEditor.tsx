@@ -454,184 +454,221 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     ));
   };
 
-  const ImageModal = () => (
-    <AnimatePresence>
-      {showImageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col"
-          >
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium">Seleccionar Imágenes</h3>
-              <div className="flex items-center gap-4">
-                {/* Toggle de vista */}
-                <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+  const ImageModal = () => {
+    const [localSearchTerm, setLocalSearchTerm] = useState('');
+    
+    const filteredImages = React.useMemo(() => {
+      const searchTermLower = localSearchTerm.toLowerCase();
+      return availableImages.filter(image => 
+        image.name.toLowerCase().includes(searchTermLower)
+      );
+    }, [localSearchTerm, availableImages]);
+
+    return (
+      <AnimatePresence>
+        {showImageModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+            >
+              <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-medium">Seleccionar Imágenes</h3>
+                <div className="flex items-center gap-4">
+                  {/* Toggle de vista */}
+                  <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-2 rounded-md transition-colors ${
+                        viewMode === 'grid' 
+                          ? 'bg-white shadow-sm' 
+                          : 'hover:bg-gray-200'
+                      }`}
+                      title="Vista en cuadrícula"
+                    >
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/>
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`p-2 rounded-md transition-colors ${
+                        viewMode === 'list' 
+                          ? 'bg-white shadow-sm' 
+                          : 'hover:bg-gray-200'
+                      }`}
+                      title="Vista en lista"
+                    >
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M4 6h16M4 12h16M4 18h16"/>
+                      </svg>
+                    </button>
+                  </div>
                   <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'grid' 
-                        ? 'bg-white shadow-sm' 
-                        : 'hover:bg-gray-200'
-                    }`}
-                    title="Vista en cuadrícula"
+                    onClick={() => {
+                      setShowImageModal(false);
+                      setLocalSearchTerm('');
+                    }}
+                    className="text-gray-400 hover:text-gray-500"
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/>
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'list' 
-                        ? 'bg-white shadow-sm' 
-                        : 'hover:bg-gray-200'
-                    }`}
-                    title="Vista en lista"
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
-                <button
-                  onClick={() => setShowImageModal(false)}
-                  className="text-gray-400 hover:text-gray-500"
-                >
-                  <X className="w-5 h-5" />
-                </button>
               </div>
-            </div>
-            <div className={`p-4 ${viewMode === 'grid' ? 'grid grid-cols-3 gap-4 overflow-y-auto max-h-[calc(75vh-100px)]' : 'space-y-2 overflow-y-auto'}`}>
-              {availableImages.map((image) => (
-                viewMode === 'grid' ? (
-                  <div
-                    key={image.name}
-                    className="relative rounded-lg overflow-hidden border group bg-white hover:border-blue-500 transition-colors"
-                  >
-                    <div
-                      className={`cursor-pointer ${
-                        selectedImages.some(i => i.name === image.name) 
-                          ? 'border-2 border-blue-500' 
-                          : 'border border-gray-100'
-                      }`}
-                      onClick={() => handleImageSelection(image)}
-                    >
-                      <div className="relative flex items-center justify-center bg-gray-50">
-                        <img
-                          src={image.url}
-                          alt={image.name}
-                          className="w-full h-full object-contain"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
-                      </div>
-                      <div className="p-2 border-t border-gray-100 bg-white">
-                        <p className="text-xs font-medium text-gray-900 truncate" title={image.name}>
-                          {image.name}
-                        </p>
-                      </div>
-                    </div>
-                    {selectedImages.some(i => i.name === image.name) && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-white p-2 border-t border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-600">Duración:</span>
-                          <select
-                            value={selectedImages.find(i => i.name === image.name)?.duration || 3}
-                            onChange={(e) => updateImageDuration(image.name, Number(e.target.value))}
-                            className="flex-1 px-1 py-0.5 border border-gray-300 rounded text-xs"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {[2, 3, 5, 8, 10, 15, 20, 30].map(value => (
-                              <option key={value} value={value}>{value} segundos</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    )}
+
+              {/* Barra de búsqueda */}
+              <div className="p-4 border-b border-gray-200">
+                <div className="relative flex gap-2">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={localSearchTerm}
+                      onChange={(e) => setLocalSearchTerm(e.target.value)}
+                      placeholder="Buscar imágenes por nombre..."
+                      className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  </div>
+                </div>
+              </div>
+
+              <div className={`p-4 ${viewMode === 'grid' ? 'grid grid-cols-3 gap-4 overflow-y-auto max-h-[calc(75vh-100px)]' : 'space-y-2 overflow-y-auto'}`}>
+                {filteredImages.length === 0 ? (
+                  <div className="col-span-3 text-center py-8 text-gray-500">
+                    No se encontraron imágenes que coincidan con la búsqueda
                   </div>
                 ) : (
-                  <div
-                    key={image.name}
-                    className={`relative group rounded-lg border p-3 transition-colors cursor-pointer
-                      ${selectedImages.some(i => i.name === image.name)
-                        ? 'bg-blue-50 border-blue-500'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                      }`}
-                    onClick={() => handleImageSelection(image)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
-                          <img
-                            src={image.url}
-                            alt={image.name}
-                            className="w-full h-full object-cover"
-                          />
+                  filteredImages.map((image) => (
+                    viewMode === 'grid' ? (
+                      <div
+                        key={image.name}
+                        className="relative rounded-lg overflow-hidden border group bg-white hover:border-blue-500 transition-colors"
+                      >
+                        <div
+                          className={`cursor-pointer ${
+                            selectedImages.some(i => i.name === image.name) 
+                              ? 'border-2 border-blue-500' 
+                              : 'border border-gray-100'
+                          }`}
+                          onClick={() => handleImageSelection(image)}
+                        >
+                          <div className="relative flex items-center justify-center bg-gray-50">
+                            <img
+                              src={image.url}
+                              alt={image.name}
+                              className="w-full h-full object-contain"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+                          </div>
+                          <div className="p-2 border-t border-gray-100 bg-white">
+                            <p className="text-xs font-medium text-gray-900 truncate" title={image.name}>
+                              {image.name}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{image.name}</div>
-                          <div className="text-sm text-gray-500">
-                            {selectedImages.some(i => i.name === image.name)
-                              ? `Duración: ${selectedImages.find(i => i.name === image.name)?.duration || 3}s`
-                              : 'No seleccionada'}
+                        {selectedImages.some(i => i.name === image.name) && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-white p-2 border-t border-gray-200">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-600">Duración:</span>
+                              <select
+                                value={selectedImages.find(i => i.name === image.name)?.duration || 3}
+                                onChange={(e) => updateImageDuration(image.name, Number(e.target.value))}
+                                className="flex-1 px-1 py-0.5 border border-gray-300 rounded text-xs"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {[2, 3, 5, 8, 10, 15, 20, 30].map(value => (
+                                  <option key={value} value={value}>{value} segundos</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        key={image.name}
+                        className={`relative group rounded-lg border p-3 transition-colors cursor-pointer
+                          ${selectedImages.some(i => i.name === image.name)
+                            ? 'bg-blue-50 border-blue-500'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        onClick={() => handleImageSelection(image)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
+                              <img
+                                src={image.url}
+                                alt={image.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">{image.name}</div>
+                              <div className="text-sm text-gray-500">
+                                {selectedImages.some(i => i.name === image.name)
+                                  ? `Duración: ${selectedImages.find(i => i.name === image.name)?.duration || 3}s`
+                                  : 'No seleccionada'}
+                              </div>
+                            </div>
+                          </div>
+                          {selectedImages.some(i => i.name === image.name) && (
+                            <select
+                              value={selectedImages.find(i => i.name === image.name)?.duration || 3}
+                              onChange={(e) => updateImageDuration(image.name, Number(e.target.value))}
+                              className="px-2 py-1 border border-gray-300 rounded text-sm"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {[2, 3, 5, 8, 10, 15, 20, 30].map(value => (
+                                <option key={value} value={value}>{value} segundos</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+
+                        {/* Preview en hover */}
+                        <div 
+                          className="fixed transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 z-50"
+                          style={{
+                            left: 'calc(100% + 0.5rem)',
+                            top: '50%'
+                          }}
+                        >
+                          <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-2">
+                            <div className="relative">
+                              <img
+                                src={image.url}
+                                alt={image.name}
+                                className="w-80 h-56 object-contain bg-gray-100 rounded"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-tr from-black/5 to-transparent rounded pointer-events-none" />
+                            </div>
+                            <div className="mt-2 px-1">
+                              <p className="text-sm font-medium text-gray-900 truncate">{image.name}</p>
+                              <p className="text-xs text-gray-500">
+                                {selectedImages.some(i => i.name === image.name)
+                                  ? `Seleccionada - ${selectedImages.find(i => i.name === image.name)?.duration || 3}s`
+                                  : 'No seleccionada'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 transform">
+                            <div className="w-2 h-2 rotate-45 bg-white border-l border-t border-gray-200" />
                           </div>
                         </div>
                       </div>
-                      {selectedImages.some(i => i.name === image.name) && (
-                        <select
-                          value={selectedImages.find(i => i.name === image.name)?.duration || 3}
-                          onChange={(e) => updateImageDuration(image.name, Number(e.target.value))}
-                          className="px-2 py-1 border border-gray-300 rounded text-sm"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {[2, 3, 5, 8, 10, 15, 20, 30].map(value => (
-                            <option key={value} value={value}>{value} segundos</option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-
-                    {/* Preview en hover */}
-                    <div 
-                      className="fixed transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 z-50"
-                      style={{
-                        left: 'calc(100% + 0.5rem)',
-                        top: '50%'
-                      }}
-                    >
-                      <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-2">
-                        <div className="relative">
-                          <img
-                            src={image.url}
-                            alt={image.name}
-                            className="w-80 h-56 object-contain bg-gray-100 rounded"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-tr from-black/5 to-transparent rounded pointer-events-none" />
-                        </div>
-                        <div className="mt-2 px-1">
-                          <p className="text-sm font-medium text-gray-900 truncate">{image.name}</p>
-                          <p className="text-xs text-gray-500">
-                            {selectedImages.some(i => i.name === image.name)
-                              ? `Seleccionada - ${selectedImages.find(i => i.name === image.name)?.duration || 3}s`
-                              : 'No seleccionada'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 transform">
-                        <div className="w-2 h-2 rotate-45 bg-white border-l border-t border-gray-200" />
-                      </div>
-                    </div>
-                  </div>
-                )
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
-  );
+                    )
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    );
+  };
 
   const VideoModal = () => (
     <AnimatePresence>
