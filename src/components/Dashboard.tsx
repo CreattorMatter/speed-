@@ -56,10 +56,12 @@ interface DashboardStats {
     active: number;
     expiringSoon: number;
   };
-  templates: {
+  carteles: {
     total: number;
-    recentlyUsed: number;
-    mostUsed: string;
+    fisicos: number;
+    digitales: number;
+    playlists: number;
+    lastWeek: number;
   };
 }
 
@@ -1820,10 +1822,12 @@ export default function Dashboard({
       active: 24,
       expiringSoon: 5
     },
-    templates: {
-      total: 12,
-      recentlyUsed: 3,
-      mostUsed: 'Promoción Bancaria'
+    carteles: {
+      total: 856,
+      fisicos: 650,
+      digitales: 206,
+      playlists: 45,
+      lastWeek: 28
     }
   };
 
@@ -2305,7 +2309,7 @@ export default function Dashboard({
             </div>
           </motion.div>
 
-          {/* Templates Stats */}
+          {/* Templates Stats - Reemplazar por Carteles Stats */}
           <motion.div
             whileHover={{ scale: 1.02 }}
             className={`rounded-xl p-6 transition-colors border
@@ -2314,11 +2318,14 @@ export default function Dashboard({
             <div className="flex items-center gap-4 mb-6">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 
                             flex items-center justify-center shadow-lg shadow-violet-500/20">
-                <FileText className="w-6 h-6 text-white" />
+                <Monitor className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className={`text-lg font-medium text-slate-900`}>
-                  Templates
+                <h3 className={`text-lg font-medium text-slate-900 flex items-center gap-2`}>
+                  Carteles
+                  <span className="text-xs px-2 py-0.5 bg-violet-100 text-violet-600 rounded-full">
+                    Físicos y Digitales
+                  </span>
                 </h3>
                 <p className={`text-slate-500`}>
                   Vista general
@@ -2330,18 +2337,30 @@ export default function Dashboard({
                 <div className="flex justify-between items-center mb-1">
                   <span className={`text-slate-500`}>Total</span>
                   <span className={`text-2xl font-semibold text-slate-900`}>
-                    {stats.templates.total}
+                    {stats.carteles.total}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className={`text-slate-500`}>Recientes</span>
+                  <span className={`text-slate-500`}>Físicos</span>
                   <span className="text-slate-900">
-                    {stats.templates.recentlyUsed}
+                    {stats.carteles.fisicos}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className={`text-slate-500`}>Digitales</span>
+                  <span className="text-slate-900">
+                    {stats.carteles.digitales}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className={`text-slate-500`}>Playlists</span>
+                  <span className="text-slate-900">
+                    {stats.carteles.playlists}
                   </span>
                 </div>
               </div>
               <div className={`text-sm text-slate-500`}>
-                Más usado: <span className="text-slate-900">{stats.templates.mostUsed}</span>
+                <span className="text-emerald-400">+{stats.carteles.lastWeek}</span> nuevos esta semana
               </div>
             </div>
           </motion.div>
