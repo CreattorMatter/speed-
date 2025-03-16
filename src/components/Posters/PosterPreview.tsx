@@ -459,7 +459,8 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                   style={{
                     margin: 0,
                     padding: 0,
-                    transform: 'none'
+                    transform: 'none',
+                    height: 'fit-content'
                   }}
                 >
                   <div 
@@ -468,7 +469,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                       transform: `scale(${cardSize})`,
                       transformOrigin: 'center center',
                       width: '900px',
-                      height: '600px',
+                      height: 'fit-content',
                       margin: 0,
                       padding: 0,
                       position: 'relative',
@@ -481,7 +482,7 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                         <img 
                           src={company.logo}
                           alt={company.name}
-                          className="h-20 w-auto object-contain"
+                          className="h-16 w-auto object-contain"
                         />
                       </div>
                     )}
@@ -509,14 +510,14 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                     )}
 
                     {/* Contenido principal */}
-                    <div className="flex flex-col h-full relative" style={roundedFontStyle}>
+                    <div className="flex flex-col relative" style={roundedFontStyle}>
                       {/* Título del producto */}
-                      <div className="text-[48px] font-black text-black tracking-tight leading-none uppercase text-center mt-24 mb-4 px-8">
+                      <div className="text-[48px] font-black text-black tracking-tight leading-none uppercase text-center mt-8 mb-4 px-8">
                         {product?.name}
                       </div>
 
                       {/* Sección de precios */}
-                      <div className="flex-1 flex flex-col items-center justify-center relative">
+                      <div className="flex flex-col items-center justify-center relative py-4">
                         {/* Precio tachado */}
                         <div className="text-[42px] text-gray-400 line-through mb-2">
                           ${product?.price.toLocaleString('es-AR')}
@@ -530,40 +531,40 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                         )}
 
                         {/* Precio final */}
-                        <div className="text-[80px] font-black leading-none">
+                        <div className="text-[80px] font-black leading-none mb-4">
                           ${Math.round(priceInfo.finalPrice).toLocaleString('es-AR')}
                         </div>
 
                         {/* Cuotas */}
                         {financing && financing.length > 0 && (
-                          <div className="mt-4">
+                          <div className="mb-4">
                             <div className="bg-indigo-600 text-white py-2 px-6 rounded-full text-[24px] font-medium">
-                              12 cuotas con 10% interés
+                              {financing[0].plan}
                             </div>
                           </div>
                         )}
                       </div>
 
                       {/* Sección inferior */}
-                      <div className="h-[120px] flex justify-between items-end p-8">
+                      <div className="flex justify-between items-end p-4 bg-white">
                         <div className="flex flex-col items-start">
-                          <div className="text-[18px] font-medium mb-2">
+                          <div className="text-[16px] font-medium mb-1">
                             ORIGEN: {origin}
                           </div>
-                          <div className="text-[18px]">
+                          <div className="text-[16px]">
                             SKU: {barcode}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-8">
-                          <div className="text-[18px] font-bold text-right">
+                        <div className="flex items-center gap-4">
+                          <div className="text-[16px] font-bold text-right">
                             SUMÁ {points} PUNTOS JUMBO MÁS
                           </div>
                           <div className="flex items-center gap-2">
                             <img 
                               src={qrUrl}
                               alt="QR Code"
-                              className="w-16 h-16 rounded bg-white"
+                              className="w-14 h-14 rounded bg-white"
                             />
                             <span className="text-xs text-gray-500 text-left">
                               más información<br />del producto
@@ -584,7 +585,6 @@ export const PosterPreview: React.FC<PosterPreviewProps> = ({
                               e.currentTarget.style.display = 'none';
                             }}
                           />
-                          {/* Condiciones debajo del logo del banco */}
                           {promotion && (
                             <div className="text-right">
                               <div className="text-[14px]" style={roundedFontStyle}>
