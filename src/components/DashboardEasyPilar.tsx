@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Header } from './shared/Header';
-import { Package2, Tags, Monitor, BarChart3, Clock, Printer } from 'lucide-react';
+import { Package2, Tags, Monitor, BarChart3, Clock, Printer, FileWarning } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, Tooltip } from 'recharts';
+import { getPosterUrl } from '../lib/supabaseClient-cartelEasyPilar';
 
 interface DashboardEasyPilarProps {
   onLogout: () => void;
@@ -117,13 +118,10 @@ const recentActivity = [
     type: 'envio',
     status: 'pending',
     locations: [
-      { name: 'San Martín', printed: false },
-      { name: 'Villa Lynch', printed: false },
-      { name: 'Villa Ballester', printed: false },
-      { name: 'San Andrés', printed: false }
+      { name: 'Easy Pilar', printed: false }
     ],
     timestamp: new Date('2024-01-15 11:30'),
-    totalLocations: 4
+    totalLocations: 1
   },
   {
     id: '2',
@@ -140,14 +138,12 @@ const recentActivity = [
     id: '3',
     title: 'Carteles Pintura',
     type: 'envio',
-    status: 'partial',
+    status: 'pending',
     locations: [
-      { name: 'Easy Pilar', printed: true },
-      { name: 'San Isidro', printed: false },
-      { name: 'Vicente López', printed: false }
+      { name: 'Easy Pilar', printed: false }
     ],
     timestamp: new Date('2024-01-15 09:30'),
-    totalLocations: 3
+    totalLocations: 1
   }
 ];
 
@@ -292,57 +288,142 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-// Componente para mostrar cada actividad
+// Eliminamos el PosterModal y modificamos el ActivityItem
 const ActivityItem: React.FC<{ activity: typeof recentActivity[0] }> = ({ activity }) => {
-  const printedCount = activity.locations.filter(loc => loc.printed).length;
-  
+  const [posterUrl, setPosterUrl] = useState<string>();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+
+  const loadPosterUrl = async () => {
+    if (!posterUrl && !isLoading) {
+      try {
+        setIsLoading(true);
+        const url = await getPosterUrl(activity.id);
+        setPosterUrl(url);
+      } catch (error) {
+        console.error('Error al obtener el cartel:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   return (
-    <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3">
-          <div className="mt-1">
-            <img 
-              src="/images/Easy_Logo.png" 
-              alt="Easy Logo" 
-              className="w-8 h-8 object-contain"
-            />
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-gray-900">{activity.title}</h4>
-            <p className="text-xs text-gray-500">
-              {activity.locations.length} sucursales
-            </p>
-            <div className="mt-1 flex flex-wrap gap-1">
-              {activity.locations.map((location, idx) => (
-                <span
-                  key={idx}
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    location.printed
-                      ? 'bg-green-100 text-green-800 border border-green-200'
-                      : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-                  }`}
-                >
-                  {location.name}
-                  <Printer className="w-3 h-3 ml-1" />
-                </span>
-              ))}
+    <>
+      <div 
+        className="relative"
+        onMouseEnter={() => {
+          setShowPreview(true);
+          loadPosterUrl();
+        }}
+        onMouseLeave={() => setShowPreview(false)}
+      >
+        <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-3">
+              <div className="mt-1">
+                <img 
+                  src="/images/Easy_Logo.png" 
+                  alt="Easy Logo" 
+                  className="w-8 h-8 object-contain"
+                />
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-900">{activity.title}</h4>
+                <div className="mt-2 flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      activity.locations[0].printed
+                        ? 'bg-green-100 text-green-800 border border-green-200'
+                        : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                    }`}
+                  >
+                    {activity.locations[0].printed ? 'Impreso' : 'Pendiente'}
+                    <Printer className="w-4 h-4 ml-1.5" />
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      loadPosterUrl();
+                      setShowModal(true);
+                    }}
+                    className="px-3 py-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-full transition-colors"
+                  >
+                    Ver cartel
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col items-end">
+              <time className="text-xs text-gray-500">
+                {format(activity.timestamp, "HH:mm 'hs'", { locale: es })}
+              </time>
+              {isLoading && (
+                <div className="mt-2 text-xs text-indigo-600">
+                  Cargando...
+                </div>
+              )}
             </div>
           </div>
         </div>
-        <div className="flex flex-col items-end">
-          <time className="text-xs text-gray-500">
-            {format(activity.timestamp, "HH:mm 'hs'", { locale: es })}
-          </time>
-          <div className={`mt-1 px-2 py-1 rounded-full text-xs font-medium ${
-            activity.status === 'success' ? 'bg-green-100 text-green-800' :
-            activity.status === 'partial' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-red-100 text-red-800'
-          }`}>
-            {printedCount}/{activity.totalLocations} impresos
+
+        {/* Preview del cartel en hover */}
+        {showPreview && posterUrl && (
+          <div className="absolute right-0 top-0 z-50 transform translate-x-full -translate-y-1/4 p-2">
+            <div className="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden" style={{ width: '300px' }}>
+              <div className="aspect-[4/3] relative">
+                <img 
+                  src={posterUrl} 
+                  alt={activity.title}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="p-2 bg-gray-50 border-t border-gray-100">
+                <p className="text-xs text-gray-600 font-medium truncate">{activity.title}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Modal para ver el cartel */}
+      {showModal && posterUrl && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <img 
+                    src="/images/Easy_Logo.png" 
+                    alt="Easy Logo" 
+                    className="w-6 h-6 object-contain"
+                  />
+                  <h3 className="text-lg font-medium text-gray-900">{activity.title}</h3>
+                </div>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="aspect-[4/3] relative bg-gray-100 rounded-lg overflow-hidden">
+                <img 
+                  src={posterUrl} 
+                  alt={activity.title}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 
@@ -426,7 +507,7 @@ const DashboardEasyPilar: React.FC<DashboardEasyPilarProps> = ({
         {/* Compliance Section */}
         <div className="bg-white rounded-xl p-6 shadow-lg">
           <div className="flex flex-col">
-            <h3 className="text-lg font-medium">Cumplimiento de Impresión por Categoría</h3>
+            <h3 className="text-lg font-medium">KPI: Cumplimiento de Impresión por Categoría</h3>
             <p className="text-sm text-gray-500 mb-4">Easy Pilar - General</p>
           </div>
           
@@ -455,10 +536,10 @@ const DashboardEasyPilar: React.FC<DashboardEasyPilarProps> = ({
 
           {/* Información adicional */}
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600">
+            <p className="text-lg text-gray-600 font-bold font-mono">
               Cumplimiento general: {EASY_PILAR_DATA.compliance.all.compliance}%
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-00">
               Total de carteles impresos: {EASY_PILAR_DATA.compliance.all.printed} de {EASY_PILAR_DATA.compliance.all.total}
             </p>
           </div>
@@ -475,15 +556,13 @@ const DashboardEasyPilar: React.FC<DashboardEasyPilarProps> = ({
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">Actividad Reciente</h3>
                   <p className="text-sm text-gray-500">
-                    Seguimiento de las últimas actualizaciones y cambios
+                    Seguimiento de las últimas actualizaciones
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
-                  {recentActivity.filter(a => 
-                    a.locations.some(l => !l.printed)
-                  ).length} pendientes
+                  {recentActivity.filter(a => !a.locations[0].printed).length} pendientes
                 </div>
                 <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
                   Ver todo
