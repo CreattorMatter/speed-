@@ -329,6 +329,12 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     url: string;
     created_at: string;
   }>>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [allPosters, setAllPosters] = useState<Array<{
+    name: string;
+    url: string;
+    created_at: string;
+  }>>([]);
 
   console.log('LOCATIONS imported:', LOCATIONS); // Debug
   console.log('COMPANIES imported:', COMPANIES); // Debug
@@ -667,6 +673,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
         const orderedResults = sortedResults
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+        setAllPosters(orderedResults);
         setSearchResults(orderedResults);
         if (toastId) {
           toast.success(`Se encontraron ${orderedResults.length} carteles`, { id: toastId });
@@ -679,6 +686,19 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       }
       setIsSearchModalOpen(false);
     }
+  };
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    if (!term.trim()) {
+      setSearchResults(allPosters);
+      return;
+    }
+    
+    const filtered = allPosters.filter(poster => 
+      poster.name.toLowerCase().includes(term.toLowerCase())
+    );
+    setSearchResults(filtered);
   };
 
   const handlePosterSelect = async (poster: { name: string; url: string }) => {
@@ -1171,13 +1191,29 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         Carteles Guardados
                       </h3>
                       <button
-                        onClick={() => setIsSearchModalOpen(false)}
+                        onClick={() => {
+                          setIsSearchModalOpen(false);
+                          setSearchTerm('');
+                        }}
                         className="text-gray-400 hover:text-gray-500 transition-colors"
                       >
                         <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                         </svg>
                       </button>
+                    </div>
+                    <div className="mt-4">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={searchTerm}
+                          onChange={(e) => handleSearch(e.target.value)}
+                          placeholder="Buscar cartel por nombre..."
+                          className="w-full px-4 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg 
+                                   focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                        <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                      </div>
                     </div>
                   </div>
                   
@@ -1203,7 +1239,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                             </p>
                             <button
                               className="mt-2 w-full px-3 py-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 
-                                          bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
+                                        bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
                             >
                               Editar Cartel
                             </button>
