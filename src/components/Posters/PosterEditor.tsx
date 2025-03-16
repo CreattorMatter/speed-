@@ -437,13 +437,29 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       const response = await fetch(result);
       const blob = await response.blob();
 
-      // Generar nombre de archivo y guardar
+      // Obtener los detalles necesarios para el nombre del archivo
       const companyName = companyDetails?.name || 'sin_empresa';
-      const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
-      const fileName = `${cleanFileName(companyName)}_${timestamp}.png`;
+      
+      // Si hay productos seleccionados, crear un archivo por cada producto
+      if (selectedProducts.length > 0) {
+        for (const productId of selectedProducts) {
+          const product = products.find(p => p.id === productId);
+          if (product) {
+            const productName = cleanFileName(product.name);
+            const sku = product.sku || product.id;
+            const fileName = `${cleanFileName(companyName)}_${productName}_${sku}.png`;
 
-      await uploadToBucket(fileName, blob);
-      toast.success('Cartel guardado correctamente', { id: toastId });
+            await uploadToBucket(fileName, blob);
+            toast.success(`Cartel guardado: ${fileName}`, { id: toastId });
+          }
+        }
+      } else if (selectedCategory) {
+        // Si es un cartel de categoría
+        const fileName = `${cleanFileName(companyName)}_categoria_${cleanFileName(selectedCategory)}.png`;
+        await uploadToBucket(fileName, blob);
+        toast.success(`Cartel guardado: ${fileName}`, { id: toastId });
+      }
+
     } catch (error: any) {
       console.error('Error al guardar el cartel:', error);
       toast.error(error.message || 'Error al guardar el cartel');
