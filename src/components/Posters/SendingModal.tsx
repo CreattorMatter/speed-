@@ -110,20 +110,20 @@ export const SendingModal: React.FC<SendingModalProps> = ({
 
   useEffect(() => {
     if (step === 'sending') {
-      // Iniciar el envío inmediatamente
-      const interval = setInterval(() => {
-        setCurrentLocation(prev => {
-          if (prev < selectedLocations.length) {
-            setSentLocations(current => new Set([...current, selectedLocations[prev]]));
-            return prev + 1;
-          }
-          clearInterval(interval);
-          setStep('complete');
-          return prev;
-        });
-      }, 500);
+        // Iniciar el envío inmediatamente
+        const interval = setInterval(() => {
+          setCurrentLocation(prev => {
+            if (prev < selectedLocations.length) {
+              setSentLocations(current => new Set([...current, selectedLocations[prev]]));
+              return prev + 1;
+            }
+            clearInterval(interval);
+            setStep('complete');
+            return prev;
+          });
+        }, 500);
 
-      return () => clearInterval(interval);
+        return () => clearInterval(interval);
     }
   }, [step, selectedLocations]);
 
