@@ -577,7 +577,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-xl max-w-5xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+              className="bg-white rounded-xl max-w-7xl w-full max-h-[85vh] overflow-hidden flex flex-col"
             >
               {/* Header */}
               <div className="p-6 border-b border-gray-200">
@@ -852,7 +852,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
       ...prev,
       [sucursalId]: { 
         sucursal: sucursalName, 
-        email: `${sucursalName.toLowerCase().replace(/\s/g, '.')}@empresa.com`,
+        email: `${sucursalName.toLowerCase().replace(/\s/g, '.')}`,
         status: 'sending' 
       }
     }));
@@ -865,7 +865,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
         ...prev,
         [sucursalId]: { 
           sucursal: sucursalName, 
-          email: `${sucursalName.toLowerCase().replace(/\s/g, '.')}@empresa.com`,
+          email: `${sucursalName.toLowerCase().replace(/\s/g, '.')}`,
           status: 'success' 
         }
       }));
@@ -875,7 +875,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
         ...prev,
         [sucursalId]: { 
           sucursal: sucursalName, 
-          email: `${sucursalName.toLowerCase().replace(/\s/g, '.')}@empresa.com`,
+          email: `${sucursalName.toLowerCase().replace(/\s/g, '.')}`,
           status: 'error' 
         }
       }));
@@ -887,7 +887,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
     for (const sucId of selectedSucursales) {
       const sucursal = sucursales.find(s => s.id.toString() === sucId);
       if (sucursal) {
-        await handleSendToSucursal(sucId, sucursal.direccion);
+        await handleSendToSucursal(sucId, sucursal.direccion || '');
       }
     }
   };
@@ -927,7 +927,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                       className="bg-gray-50 rounded-lg p-4"
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full ${
                               !progress ? 'bg-gray-400' :
@@ -935,15 +935,21 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                               progress.status === 'success' ? 'bg-green-500' :
                               'bg-red-500'
                             }`} />
-                            <span className="font-medium">{sucursal?.direccion}</span>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-gray-900">{sucursal?.nombre}</span>
+                              <span className="text-sm text-gray-600">{sucursal?.direccion}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 text-sm text-gray-500 ml-4">
+                          <div className="flex items-center gap-1 text-sm text-gray-500 ml-4 mt-1">
                             <Mail className="w-4 h-4" />
-                            <span>{email}</span>
+                            <span className="text-blue-600 hover:underline cursor-pointer">
+                              {email}
+                            </span>
                           </div>
                         </div>
+
                         <button
-                          onClick={() => handleSendToSucursal(sucId, sucursal?.direccion || '')}
+                          onClick={() => handleSendToSucursal(sucId, sucursal?.email || '')}
                           disabled={progress?.status === 'sending' || progress?.status === 'success'}
                           className={`px-3 py-1 rounded-md text-sm flex items-center gap-1
                             ${progress?.status === 'success' 
@@ -1210,7 +1216,7 @@ export const DigitalCarouselEditor: React.FC<DigitalCarouselEditorProps> = ({
                                     className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full cursor-help"
                                     title={carousel.sucursales.map(sucId => {
                                       const sucursal = sucursales.find(s => s.id.toString() === sucId);
-                                      return sucursal?.direccion || 'Sucursal no encontrada';
+                                      return sucursal?.email || 'Sucursal no encontrada';
                                     }).join('\n')}
                                   >
                                     {carousel.sucursales.length} sucursales
