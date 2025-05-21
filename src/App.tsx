@@ -51,22 +51,22 @@ function AppContent() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showBuilder, setShowBuilder] = useState(false);
-  const [showProducts, setShowProducts] = useState(false);
-  const [showPromotions, setShowPromotions] = useState(false);
-  const [showPosterEditor, setShowPosterEditor] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
-  const [promotion, setPromotion] = useState<number | undefined>(undefined);
+  //const [showBuilder, setShowBuilder] = useState(false);
+  //const [showProducts, setShowProducts] = useState(false);
+  //const [showPromotions, setShowPromotions] = useState(false);
+  //const [showPosterEditor, setShowPosterEditor] = useState(false);
+  //const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+  //const [promotion, setPromotion] = useState<number | undefined>(undefined);
   const navigate = useNavigate();
   const location = useLocation();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'limited'>('admin');
-  const [showAnalytics, setShowAnalytics] = useState(false);
+  //const [showAnalytics, setShowAnalytics] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
-  const [showDigitalCarousel, setShowDigitalCarousel] = useState(false);
+  //const [showDigitalCarousel, setShowDigitalCarousel] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -178,11 +178,11 @@ function AppContent() {
       setEmail('');
       setPassword('');
       setError('');
-      setShowBuilder(false);
-      setShowProducts(false);
-      setShowPromotions(false);
-      setShowPosterEditor(false);
-      setShowAnalytics(false);
+      //setShowBuilder(false);
+      //setShowProducts(false);
+      //setShowPromotions(false);
+      //setShowPosterEditor(false);
+      //setShowAnalytics(false);
       setIsConfigOpen(false);
       
       // Redirigir al login
@@ -195,12 +195,12 @@ function AppContent() {
 
   React.useEffect(() => {
     if (location.state?.showPosterEditor) {
-      setShowPosterEditor(true);
+      //setShowPosterEditor(true);
       if (location.state.selectedProducts) {
-        setSelectedProducts(location.state.selectedProducts);
+        //setSelectedProducts(location.state.selectedProducts);
       }
       if (location.state.selectedPromotion) {
-        setPromotion(location.state.selectedPromotion.id);
+        //setPromotion(location.state.selectedPromotion.id);
       }
     }
   }, [location.state]);
@@ -449,10 +449,8 @@ function AppContent() {
           path="/poster-editor"
           element={
             <PosterEditor 
-              onBack={handleBack}
+              onBack={handleBack} 
               onLogout={handleLogout}
-              initialProducts={location.state?.selectedProducts}
-              initialPromotion={location.state?.selectedPromotion}
               userEmail={user?.email || ''}
               userName={user?.name || ''}
             />

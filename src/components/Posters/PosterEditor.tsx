@@ -1,36 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, LayoutGrid, List, Minus, Plus, LayoutTemplate, Search } from 'lucide-react';
-import { CompanySelect } from './CompanySelect';
-import { RegionSelect } from './RegionSelect';
-import { LocationSelect } from './LocationSelect';
-import { PromotionSelect } from './PromotionSelect';
-import { ProductSelect } from './ProductSelect';
-import { CategorySelect } from './CategorySelect';
-import { PosterPreview } from './PosterPreview';
-import { useNavigate } from 'react-router-dom';
-import { Header } from '../shared/Header';
-import { useTheme } from '../../hooks/useTheme';
-import { ProductSelectorModal } from '../Products/ProductSelectorModal';
-import { PosterModal } from './PosterModal';
-import { COMPANIES } from '../../data/companies';
-import { LOCATIONS, REGIONS } from '../../data/locations';
-import { LoadingModal } from '../LoadingModal';
-import { products } from '../../data/products';
-import { SendingModal } from './SendingModal';
-import { TemplateSelect } from './TemplateSelect';
-import { FinancingModal } from './FinancingModal';
-import { CreditCard } from 'lucide-react';
-import { POSTER_TEMPLATES } from '../../constants/templates';
-import { HeaderProvider } from '../shared/HeaderProvider';
-import { toast } from 'react-hot-toast';
-import { uploadToBucket } from '../../lib/supabaseClient-carteles';
-import domtoimage from 'dom-to-image-improved';
-import { Product } from '../../types/product';
-import { Promotion } from '../../types/promotion';
-import { supabase } from '../../lib/supabaseClient';
-import { ExportPoster } from './ExportPoster';
-import ReactDOM from 'react-dom/client';
-import { FinancingOption } from '../../types/financing';
+import React, { useState, useEffect } from "react";
+import { Search } from "lucide-react";
+import { CompanySelect } from "./CompanySelect";
+import { PromotionSelect } from "./PromotionSelect";
+import { ProductSelect } from "./ProductSelect";
+import { CategorySelect } from "./CategorySelect";
+import { PosterPreview } from "./PosterPreview";
+import { useNavigate } from "react-router-dom";
+import { Header } from "../shared/Header";
+import { COMPANIES } from "../../data/companies";
+import { products } from "../../data/products";
+import { HeaderProvider } from "../shared/HeaderProvider";
+import { toast } from "react-hot-toast";
+
+import { Product } from "../../types/product";
+import { Promotion } from "../../types/promotion";
+import { supabase } from "../../lib/supabaseClient";
+import { ExportPoster } from "./ExportPoster";
+import ReactDOM from "react-dom/client";
+import { FinancingOption } from "../../types/financing";
+import { PlantillaSelect } from "./PlantillaSelect";
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -41,275 +29,331 @@ interface PosterEditorProps {
   userName: string;
 }
 
+const PLANTILLAS = [
+  { label: "Superprecio", value: "Superprecio" },
+  { label: "Feria de descuentos", value: "Feria de descuentos" },
+  { label: "Financiación", value: "Financiación" },
+  { label: "Troncales", value: "Troncales" },
+  { label: "Nuevo", value: "Nuevo" },
+  { label: "Temporada", value: "Temporada" },
+  { label: "Hot Sale", value: "Hot Sale" },
+  { label: "Precios que la rompen", value: "Precios que la rompen" },
+  { label: "Ladrillazos", value: "Ladrillazos" },
+  { label: "Mundo Experto", value: "Mundo Experto" },
+  { label: "Constructor", value: "Constructor" },
+];
+
 const PAPER_FORMATS = [
-  { id: 'A2', width: '420mm', height: '594mm', name: 'A2 (420 × 594 mm)' },
-  { id: 'A3', width: '297mm', height: '420mm', name: 'A3 (297 × 420 mm)' },
-  { id: 'A4', width: '210mm', height: '297mm', name: 'A4 (210 × 297 mm)' },
-  { id: 'letter', width: '215.9mm', height: '279.4mm', name: 'Carta (215.9 × 279.4 mm)' },
-  { id: 'legal', width: '215.9mm', height: '355.6mm', name: 'Legal (215.9 × 355.6 mm)' }
+  { id: "A2", width: "420mm", height: "594mm", name: "A2 (420 × 594 mm)" },
+  { id: "A3", width: "297mm", height: "420mm", name: "A3 (297 × 420 mm)" },
+  { id: "A4", width: "210mm", height: "297mm", name: "A4 (210 × 297 mm)" },
+  {
+    id: "letter",
+    width: "215.9mm",
+    height: "279.4mm",
+    name: "Carta (215.9 × 279.4 mm)",
+  },
+  {
+    id: "legal",
+    width: "215.9mm",
+    height: "355.6mm",
+    name: "Legal (215.9 × 355.6 mm)",
+  },
 ];
 
 const PROMOTIONS: Promotion[] = [
   {
-    id: '1',
-    title: 'American Express 25% OFF',
-    description: 'Comprá cuando quieras y programá tu entrega los días Jueves.',
-    discount: '25% OFF',
-    imageUrl: 'https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?w=500&auto=format&fit=crop&q=60',
-    category: 'Bancaria',
-    conditions: ['Tope de reintegro $2000', 'Válido solo los jueves'],
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-    bank: 'American Express',
-    cardType: 'Todas las tarjetas',
+    id: "1",
+    title: "American Express 25% OFF",
+    description: "Comprá cuando quieras y programá tu entrega los días Jueves.",
+    discount: "25% OFF",
+    imageUrl:
+      "https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?w=500&auto=format&fit=crop&q=60",
+    category: "Bancaria",
+    conditions: ["Tope de reintegro $2000", "Válido solo los jueves"],
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+    bank: "American Express",
+    cardType: "Todas las tarjetas",
     isActive: true,
-    selectedBanks: ['American Express'],
-    cardOptions: ['Todas las tarjetas']
+    selectedBanks: ["American Express"],
+    cardOptions: ["Todas las tarjetas"],
   },
   {
-    id: '2',
-    title: 'Hasta 40% OFF en Especiales de la semana',
-    description: 'Descuentos especiales en productos seleccionados',
-    discount: 'Hasta 40% OFF',
-    imageUrl: 'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=500&auto=format&fit=crop&q=60',
-    category: 'Especial',
-    conditions: ['Válido solo los jueves'],
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
+    id: "2",
+    title: "Hasta 40% OFF en Especiales de la semana",
+    description: "Descuentos especiales en productos seleccionados",
+    discount: "Hasta 40% OFF",
+    imageUrl:
+      "https://images.unsplash.com/photo-1607082349566-187342175e2f?w=500&auto=format&fit=crop&q=60",
+    category: "Especial",
+    conditions: ["Válido solo los jueves"],
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
     isActive: true,
     selectedBanks: [],
-    cardOptions: []
+    cardOptions: [],
   },
   {
-    id: '3',
-    title: 'Tarjeta Cencosud 20% OFF',
-    description: 'Realizá tus compras los días Miércoles',
-    discount: '20% OFF',
-    imageUrl: 'https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=500&auto=format&fit=crop&q=60',
-    category: 'Bancaria',
-    conditions: ['Válido solo los miércoles'],
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-    bank: 'Cencosud',
+    id: "3",
+    title: "Tarjeta Cencosud 20% OFF",
+    description: "Realizá tus compras los días Miércoles",
+    discount: "20% OFF",
+    imageUrl:
+      "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=500&auto=format&fit=crop&q=60",
+    category: "Bancaria",
+    conditions: ["Válido solo los miércoles"],
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+    bank: "Cencosud",
     isActive: true,
-    selectedBanks: ['Cencosud'],
-    cardOptions: ['Todas las tarjetas']
+    selectedBanks: ["Cencosud"],
+    cardOptions: ["Todas las tarjetas"],
   },
   {
-    id: '4',
-    title: '2do al 70% en Almacén, Bebidas y más',
-    description: 'En la segunda unidad de productos seleccionados',
-    discount: '70% OFF',
-    imageUrl: 'https://images.unsplash.com/photo-1579113800032-c38bd7635818?w=500&auto=format&fit=crop&q=60',
-    category: 'Especial',
-    conditions: ['Valido solo comprando dos productos iguales el segundo al 70%'],
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-    isActive: true,
-    selectedBanks: [],
-    cardOptions: []
-  },
-  {
-    id: '5',
-    title: 'Hasta 35% y Hasta 12 CSI',
-    description: 'Descuentos especiales en productos seleccionados con cuotas sin interés',
-    discount: '35% OFF',
-    imageUrl: 'https://images.unsplash.com/photo-1556742044-3c52d6e88c62?w=500&auto=format&fit=crop&q=60',
-    category: 'Bancaria',
-    conditions: ['Válido solo los jueves'],
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-    bank: 'Banco Nación',
-    isActive: true,
-    selectedBanks: ['Banco Nación'],
-    cardOptions: ['Todas las tarjetas']
-  },
-  {
-    id: '6',
-    title: 'Santander 30% OFF',
-    description: 'Todos los días con Tarjetas Santander',
-    discount: '30% OFF',
-    imageUrl: 'https://images.unsplash.com/photo-1556742393-d75f468bfcb0?w=500&auto=format&fit=crop&q=60',
-    category: 'Bancaria',
-    conditions: ['Válido solo los días'],
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-    bank: 'Santander',
-    isActive: true,
-    selectedBanks: ['Santander'],
-    cardOptions: ['Todas las tarjetas']
-  },
-  {
-    id: '7',
-    title: 'BBVA 25% OFF',
-    description: 'Descuentos exclusivos para clientes BBVA',
-    discount: '25% OFF',
-    imageUrl: 'https://images.unsplash.com/photo-1556742111-a301076d9d18?w=500&auto=format&fit=crop&q=60',
-    category: 'Bancaria',
-    conditions: ['Válido solo los jueves'],
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-    bank: 'BBVA',
-    isActive: true,
-    selectedBanks: ['BBVA'],
-    cardOptions: ['Todas las tarjetas']
-  },
-  {
-    id: '8',
-    title: 'Banco Provincia 30% OFF',
-    description: 'Miércoles y Sábados con Banco Provincia',
-    discount: '30% OFF',
-    imageUrl: 'https://images.unsplash.com/photo-1556741533-6e6a62bd8b49?w=500&auto=format&fit=crop&q=60',
-    category: 'Bancaria',
-    conditions: ['Válido solo los miércoles y sábados'],
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-    bank: 'Banco Provincia',
-    isActive: true,
-    selectedBanks: ['Banco Provincia'],
-    cardOptions: ['Todas las tarjetas']
-  },
-  {
-    id: '9',
-    title: 'Banco Nación 25% OFF',
-    description: 'Descuentos especiales con Banco Nación',
-    discount: '25% OFF',
-    imageUrl: 'https://images.unsplash.com/photo-1556742205-e7530469f4eb?w=500&auto=format&fit=crop&q=60',
-    category: 'Bancaria',
-    conditions: ['Válido solo los jueves'],
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-    bank: 'Banco Nación',
-    isActive: true,
-    selectedBanks: ['Banco Nación'],
-    cardOptions: ['Todas las tarjetas']
-  },
-  {
-    id: '10',
-    title: '2da Unidad 70% OFF',
-    description: 'En la segunda unidad de productos seleccionados',
-    discount: '70% OFF',
-    imageUrl: 'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=500&auto=format&fit=crop&q=60',
-    category: 'Especial',
-    conditions: ['Válido en la compra de dos unidades iguales', 'Productos seleccionados'],
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-    type: 'second-70',
+    id: "4",
+    title: "2do al 70% en Almacén, Bebidas y más",
+    description: "En la segunda unidad de productos seleccionados",
+    discount: "70% OFF",
+    imageUrl:
+      "https://images.unsplash.com/photo-1579113800032-c38bd7635818?w=500&auto=format&fit=crop&q=60",
+    category: "Especial",
+    conditions: [
+      "Valido solo comprando dos productos iguales el segundo al 70%",
+    ],
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
     isActive: true,
     selectedBanks: [],
-    cardOptions: []
+    cardOptions: [],
   },
   {
-    id: '11',
-    title: '2x1 en Productos Seleccionados',
-    description: 'Llevá 2 y pagá 1 en productos seleccionados',
-    discount: '2x1',
-    imageUrl: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&auto=format&fit=crop&q=60',
-    category: 'Especial',
-    conditions: ['Válido en productos seleccionados', 'Llevando dos unidades iguales'],
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-    type: '2x1',
+    id: "5",
+    title: "Hasta 35% y Hasta 12 CSI",
+    description:
+      "Descuentos especiales en productos seleccionados con cuotas sin interés",
+    discount: "35% OFF",
+    imageUrl:
+      "https://images.unsplash.com/photo-1556742044-3c52d6e88c62?w=500&auto=format&fit=crop&q=60",
+    category: "Bancaria",
+    conditions: ["Válido solo los jueves"],
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+    bank: "Banco Nación",
     isActive: true,
-    selectedBanks: [],
-    cardOptions: []
+    selectedBanks: ["Banco Nación"],
+    cardOptions: ["Todas las tarjetas"],
   },
   {
-    id: '12',
-    title: '3x2 en Productos Seleccionados',
-    description: 'Llevá 3 y pagá 2 en productos seleccionados',
-    discount: '3x2',
-    imageUrl: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&auto=format&fit=crop&q=60',
-    category: 'Especial',
-    conditions: ['Válido en productos seleccionados', 'Llevando tres unidades iguales'],
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-    type: '3x2',
+    id: "6",
+    title: "Santander 30% OFF",
+    description: "Todos los días con Tarjetas Santander",
+    discount: "30% OFF",
+    imageUrl:
+      "https://images.unsplash.com/photo-1556742393-d75f468bfcb0?w=500&auto=format&fit=crop&q=60",
+    category: "Bancaria",
+    conditions: ["Válido solo los días"],
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+    bank: "Santander",
+    isActive: true,
+    selectedBanks: ["Santander"],
+    cardOptions: ["Todas las tarjetas"],
+  },
+  {
+    id: "7",
+    title: "BBVA 25% OFF",
+    description: "Descuentos exclusivos para clientes BBVA",
+    discount: "25% OFF",
+    imageUrl:
+      "https://images.unsplash.com/photo-1556742111-a301076d9d18?w=500&auto=format&fit=crop&q=60",
+    category: "Bancaria",
+    conditions: ["Válido solo los jueves"],
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+    bank: "BBVA",
+    isActive: true,
+    selectedBanks: ["BBVA"],
+    cardOptions: ["Todas las tarjetas"],
+  },
+  {
+    id: "8",
+    title: "Banco Provincia 30% OFF",
+    description: "Miércoles y Sábados con Banco Provincia",
+    discount: "30% OFF",
+    imageUrl:
+      "https://images.unsplash.com/photo-1556741533-6e6a62bd8b49?w=500&auto=format&fit=crop&q=60",
+    category: "Bancaria",
+    conditions: ["Válido solo los miércoles y sábados"],
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+    bank: "Banco Provincia",
+    isActive: true,
+    selectedBanks: ["Banco Provincia"],
+    cardOptions: ["Todas las tarjetas"],
+  },
+  {
+    id: "9",
+    title: "Banco Nación 25% OFF",
+    description: "Descuentos especiales con Banco Nación",
+    discount: "25% OFF",
+    imageUrl:
+      "https://images.unsplash.com/photo-1556742205-e7530469f4eb?w=500&auto=format&fit=crop&q=60",
+    category: "Bancaria",
+    conditions: ["Válido solo los jueves"],
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+    bank: "Banco Nación",
+    isActive: true,
+    selectedBanks: ["Banco Nación"],
+    cardOptions: ["Todas las tarjetas"],
+  },
+  {
+    id: "10",
+    title: "2da Unidad 70% OFF",
+    description: "En la segunda unidad de productos seleccionados",
+    discount: "70% OFF",
+    imageUrl:
+      "https://images.unsplash.com/photo-1607082349566-187342175e2f?w=500&auto=format&fit=crop&q=60",
+    category: "Especial",
+    conditions: [
+      "Válido en la compra de dos unidades iguales",
+      "Productos seleccionados",
+    ],
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+    type: "second-70",
     isActive: true,
     selectedBanks: [],
-    cardOptions: []
-  }
+    cardOptions: [],
+  },
+  {
+    id: "11",
+    title: "2x1 en Productos Seleccionados",
+    description: "Llevá 2 y pagá 1 en productos seleccionados",
+    discount: "2x1",
+    imageUrl:
+      "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&auto=format&fit=crop&q=60",
+    category: "Especial",
+    conditions: [
+      "Válido en productos seleccionados",
+      "Llevando dos unidades iguales",
+    ],
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+    type: "2x1",
+    isActive: true,
+    selectedBanks: [],
+    cardOptions: [],
+  },
+  {
+    id: "12",
+    title: "3x2 en Productos Seleccionados",
+    description: "Llevá 3 y pagá 2 en productos seleccionados",
+    discount: "3x2",
+    imageUrl:
+      "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&auto=format&fit=crop&q=60",
+    category: "Especial",
+    conditions: [
+      "Válido en productos seleccionados",
+      "Llevando tres unidades iguales",
+    ],
+    startDate: "2024-01-01",
+    endDate: "2024-12-31",
+    type: "3x2",
+    isActive: true,
+    selectedBanks: [],
+    cardOptions: [],
+  },
 ];
 
-console.log('Importación de productos:', { products });
+console.log("Importación de productos:", { products });
 
 // Extraer categorías únicas de los productos
-const CATEGORIES = Array.from(new Set(products.map(p => p.category)));
-console.log('Categorías encontradas:', CATEGORIES);
+const CATEGORIES = Array.from(new Set(products.map((p) => p.category)));
+console.log("Categorías encontradas:", CATEGORIES);
 
 const FINANCING_OPTIONS: FinancingOption[] = [
   {
-    bank: 'American Express',
-    logo: '/images/banks/amex-logo.png',
-    cardName: 'American Express',
-    cardImage: '/images/banks/amex-logo.png',
-    plan: '25% OFF'
+    bank: "American Express",
+    logo: "/images/banks/amex-logo.png",
+    cardName: "American Express",
+    cardImage: "/images/banks/amex-logo.png",
+    plan: "25% OFF",
   },
   {
-    bank: 'Banco Nación',
-    logo: '/images/banks/banco-nacion-logo.png',
-    cardName: 'Banco Nación',
-    cardImage: '/images/banks/banco-nacion-logo.png',
-    plan: 'Hasta 12 cuotas sin interés'
+    bank: "Banco Nación",
+    logo: "/images/banks/banco-nacion-logo.png",
+    cardName: "Banco Nación",
+    cardImage: "/images/banks/banco-nacion-logo.png",
+    plan: "Hasta 12 cuotas sin interés",
   },
   {
-    bank: 'Visa',
-    logo: '/images/banks/visa-logo.png',
-    cardName: 'Visa',
-    cardImage: '/images/banks/visa-logo.png',
-    plan: 'Hasta 6 cuotas sin interés'
+    bank: "Visa",
+    logo: "/images/banks/visa-logo.png",
+    cardName: "Visa",
+    cardImage: "/images/banks/visa-logo.png",
+    plan: "Hasta 6 cuotas sin interés",
   },
   {
-    bank: 'Mastercard',
-    logo: '/images/banks/mastercard-logo.png',
-    cardName: 'Mastercard',
-    cardImage: '/images/banks/mastercard-logo.png',
-    plan: 'Hasta 3 cuotas sin interés'
+    bank: "Mastercard",
+    logo: "/images/banks/mastercard-logo.png",
+    cardName: "Mastercard",
+    cardImage: "/images/banks/mastercard-logo.png",
+    plan: "Hasta 3 cuotas sin interés",
   },
   {
-    bank: 'Cencosud',
-    logo: '/images/banks/cencosud-logo.png',
-    cardName: 'Tarjeta Cencosud',
-    cardImage: '/images/banks/cencosud-logo.png',
-    plan: '20% OFF + 6 cuotas sin interés'
+    bank: "Cencosud",
+    logo: "/images/banks/cencosud-logo.png",
+    cardName: "Tarjeta Cencosud",
+    cardImage: "/images/banks/cencosud-logo.png",
+    plan: "20% OFF + 6 cuotas sin interés",
   },
   {
-    bank: 'CencoPay',
-    logo: '/images/banks/cencopay-logo.png',
-    cardName: 'CencoPay',
-    cardImage: '/images/banks/cencopay-logo.png',
-    plan: '25% OFF + 3 cuotas sin interés'
-  }
+    bank: "CencoPay",
+    logo: "/images/banks/cencopay-logo.png",
+    cardName: "CencoPay",
+    cardImage: "/images/banks/cencopay-logo.png",
+    plan: "25% OFF + 3 cuotas sin interés",
+  },
 ];
 
 // Función para limpiar el texto para el nombre del archivo
 const cleanFileName = (text: string): string => {
   return text
     .toLowerCase()
-    .replace(/[áéíóúñü]/g, c => ({ 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ñ': 'n', 'ü': 'u' })[c] || c)
-    .replace(/[^a-z0-9]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '');
+    .replace(
+      /[áéíóúñü]/g,
+      (c) =>
+        ({ á: "a", é: "e", í: "i", ó: "o", ú: "u", ñ: "n", ü: "u" }[c] || c)
+    )
+    .replace(/[^a-z0-9]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
 };
 
-export const PosterEditor: React.FC<PosterEditorProps> = ({ 
-  onBack, 
-  onLogout, 
-  initialProducts = [], 
+export const PosterEditor: React.FC<PosterEditorProps> = ({
+  onBack,
+  onLogout,
+  initialProducts = [],
   initialPromotion,
   userEmail,
-  userName
+  userName,
 }) => {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
-  const [company, setCompany] = useState('');
-  const [promotion, setPromotion] = useState(initialPromotion?.id || '');
-  const [selectedProducts, setSelectedProducts] = useState<string[]>(initialProducts);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  // -------------------
+  // Preview dinámico de plantillas y modelos
+  // -------------------
+
+  const [promotion, setPromotion] = useState(initialPromotion?.id || "");
+  const [selectedProducts, setSelectedProducts] =
+    useState<string[]>(initialProducts);
+  const [selectedCategory, setSelectedCategory] = useState("");
+
+
   const navigate = useNavigate();
   const [showLogo, setShowLogo] = useState(true);
   const [showPesosCheck, setShowPesosCheck] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSendingModalOpen, setIsSendingModalOpen] = useState(false);
@@ -319,26 +363,168 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [zoom, setZoom] = useState(1);
   const [cardSize, setCardSize] = useState(0.85);
   const [isLandscape, setIsLandscape] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState("");
   const [isFinancingModalOpen, setIsFinancingModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-  const [selectedFinancing, setSelectedFinancing] = useState<FinancingOption[]>([]);
+  const [selectedFinancing, setSelectedFinancing] = useState<FinancingOption[]>(
+    []
+  );
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [searchResults, setSearchResults] = useState<Array<{
-    name: string;
-    url: string;
-    created_at: string;
-  }>>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [allPosters, setAllPosters] = useState<Array<{
-    name: string;
-    url: string;
-    created_at: string;
-  }>>([]);
+  const [searchResults, setSearchResults] = useState<
+    Array<{
+      name: string;
+      url: string;
+      created_at: string;
+    }>
+  >([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [allPosters, setAllPosters] = useState<
+    Array<{
+      name: string;
+      url: string;
+      created_at: string;
+    }>
+  >([]);
+  const [plantillaSeleccionada, setPlantillaSeleccionada] =
+    useState<PlantillaOption | null>(null);
+  const [modeloSeleccionado, setModeloSeleccionado] = useState<string | null>(
+    null
+  );
 
-  console.log('LOCATIONS imported:', LOCATIONS); // Debug
-  console.log('COMPANIES imported:', COMPANIES); // Debug
-  console.log('Productos disponibles:', products);
+  console.log("LOCATIONS imported:", LOCATIONS); // Debug
+  console.log("COMPANIES imported:", COMPANIES); // Debug
+  console.log("Productos disponibles:", products);
+
+  // Mockups visuales base (puedes personalizarlos luego)
+  const MockupSuperprecio1 = () => (
+    <div className="bg-gray-100 p-4 rounded flex flex-col items-center w-full h-32 justify-center">
+      <div className="text-2xl font-bold">XXX</div>
+      <div className="text-lg text-gray-400 mt-2">$XXX</div>
+      <div className="bg-indigo-200 text-indigo-700 px-2 py-1 rounded mt-2">
+        %XXX OFF
+      </div>
+    </div>
+  );
+
+  const MockupSuperprecio2 = () => (
+    <div className="bg-gray-200 p-4 rounded flex flex-col items-center w-full h-32 justify-center">
+      <div className="text-3xl font-extrabold text-indigo-600">XXX</div>
+      <div className="text-md text-gray-500 mt-2">Oferta $XXX</div>
+    </div>
+  );
+
+  const MockupFeria1 = () => (
+    <div className="bg-yellow-100 p-4 rounded flex flex-col items-center w-full h-32 justify-center">
+      <div className="text-2xl font-bold">XXX</div>
+      <div className="bg-yellow-300 text-yellow-800 px-2 py-1 rounded mt-2">
+        Descuento XXX%
+      </div>
+    </div>
+  );
+
+  const MockupFeria2 = () => (
+    <div className="bg-yellow-200 p-4 rounded flex flex-col items-center w-full h-32 justify-center">
+      <div className="text-xl font-semibold">XXX</div>
+      <div className="mt-2 text-sm text-gray-500">Promo $XXX</div>
+    </div>
+  );
+
+  const MockupSuperprecio = () => (
+    <div className="bg-yellow-200 border-2 border-yellow-500 p-4 rounded w-full h-40 flex flex-col items-center justify-center">
+      <div className="bg-red-600 text-yellow-200 font-bold text-3xl px-4 py-1 rounded mb-2">
+        SUPERprecio
+      </div>
+      <div className="text-xl font-bold">XXX XXX XXX</div>
+      <div className="text-3xl font-extrabold">$XXX.XXX</div>
+      <div className="text-sm mt-2">XX/XX/XXXX - XX/XX/XXXX</div>
+    </div>
+  );
+
+  const MockupHotSake = () => (
+    <div className="bg-orange-100 border-2 border-orange-400 p-4 rounded w-full h-40 flex flex-col items-center justify-center">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="bg-red-500 text-white font-bold px-3 py-1 rounded">
+          easy
+        </div>
+        <div className="bg-orange-400 text-white font-bold px-3 py-1 rounded">
+          hot sake
+        </div>
+        <div className="text-orange-600 text-3xl font-bold">XX%</div>
+      </div>
+      <div className="text-lg font-bold">XXX DE DESCUENTO</div>
+      <div className="text-2xl font-extrabold">$XXX.XXX</div>
+      <div className="line-through text-gray-400">$XXX.XXX</div>
+    </div>
+  );
+
+  const MockupSuperprecio2daUnidad = () => (
+    <div className="bg-yellow-100 border-2 border-yellow-400 p-4 rounded w-full h-40 flex flex-col items-center justify-center">
+      <div className="bg-red-600 text-yellow-200 font-bold text-2xl px-4 py-1 rounded mb-1">
+        SUPERprecio
+      </div>
+      <div className="flex items-center gap-2 mb-2">
+        <div className="bg-yellow-400 text-black font-bold px-2 py-1 rounded text-xl">
+          XX%
+        </div>
+        <div className="text-black text-lg font-bold">
+          DESCUENTO EN LA 2da UNIDAD
+        </div>
+      </div>
+      <div className="flex gap-4">
+        <div>
+          <div className="text-lg">$XXX</div>
+          <div className="text-xs">X UNIDAD</div>
+        </div>
+        <div>
+          <div className="text-lg">$XXX</div>
+          <div className="text-xs">LA 2da UNIDAD</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const MockupTroncal = () => (
+    <div className="bg-red-100 border-2 border-red-400 p-4 rounded w-full h-40 flex flex-col items-center justify-center">
+      <div className="flex gap-2 mb-2">
+        <div className="bg-red-600 text-white font-bold px-3 py-1 rounded">
+          e
+        </div>
+        <div className="bg-red-600 text-white font-bold px-3 py-1 rounded">
+          e
+        </div>
+        <div className="bg-red-600 text-white font-bold px-3 py-1 rounded">
+          e
+        </div>
+      </div>
+      <div className="text-lg font-bold">XXX XXX XXX</div>
+      <div className="text-3xl font-extrabold">$XXX.XXX</div>
+      <div className="text-sm mt-2">XX/XX/XXXX - XX/XX/XXXX</div>
+    </div>
+  );
+
+  const PLANTILLA_MODELOS: Record<
+    string,
+    { id: string; render: () => JSX.Element }[]
+  > = {
+    Superprecio: [
+      { id: "superprecio-1", render: MockupSuperprecio },
+      { id: "superprecio-2", render: MockupSuperprecio },
+      { id: "superprecio-3", render: MockupSuperprecio },
+      { id: "superprecio-4", render: MockupSuperprecio },
+      { id: "superprecio-5", render: MockupSuperprecio },
+      { id: "superprecio-6", render: MockupSuperprecio },
+      { id: "superprecio-7", render: MockupSuperprecio },
+      { id: "superprecio-8", render: MockupSuperprecio },
+      { id: "superprecio-9", render: MockupSuperprecio },
+      { id: "superprecio-10", render: MockupSuperprecio },
+    ],
+    "Hot sake": [{ id: "hotsake-1", render: MockupHotSake }],
+    "Super precio 2da unidad": [
+      { id: "superprecio2da-1", render: MockupSuperprecio2daUnidad },
+    ],
+    Troncales: [{ id: "troncal-1", render: MockupTroncal }],
+    // Puedes agregar más plantillas y mockups aquí
+  };
 
   // Limpiar empresa cuando cambia
   const handleCompanyChange = (newCompany: string) => {
@@ -347,72 +533,77 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
 
   // Filtrar ubicaciones basado en la empresa seleccionada
   const availableRegions = React.useMemo(() => {
-    console.log('Calculating regions for company:', company);
-    const locations = company && company !== 'no-logo'
-      ? LOCATIONS.filter(loc => {
-          const matches = loc.id.startsWith(company.toLowerCase());
-          console.log(`Checking location ${loc.id} for regions: ${matches}`);
-          return matches;
-        })
-      : LOCATIONS;
-      
-    const regions = new Set(locations.map(loc => loc.region));
-    console.log('Available regions:', regions);
-    
+    console.log("Calculating regions for company:", company);
+    const locations =
+      company && company !== "no-logo"
+        ? LOCATIONS.filter((loc) => {
+            const matches = loc.id.startsWith(company.toLowerCase());
+            console.log(`Checking location ${loc.id} for regions: ${matches}`);
+            return matches;
+          })
+        : LOCATIONS;
+
+    const regions = new Set(locations.map((loc) => loc.region));
+    console.log("Available regions:", regions);
+
     const result = [
-      { id: 'todos', name: 'Todas las Regiones' },
-      ...REGIONS.filter(r => r.id !== 'todos' && regions.has(r.id))
+      { id: "todos", name: "Todas las Regiones" },
+      ...REGIONS.filter((r) => r.id !== "todos" && regions.has(r.id)),
     ];
-    console.log('Final regions list:', result);
+    console.log("Final regions list:", result);
     return result;
   }, [company]);
 
-  const selectedPromotion = PROMOTIONS.find(p => p.id === promotion) as Promotion | undefined;
+  const selectedPromotion = PROMOTIONS.find((p) => p.id === promotion) as
+    | Promotion
+    | undefined;
 
   // Modificar el mapeo de productos para asegurar que tienen todos los campos requeridos
-  const mappedProducts = selectedProducts.map(productId => {
-    const product = products.find(p => p.id === productId);
-    if (product) {
-      // Asegurarnos de que el producto tiene todos los campos requeridos
-      return {
-        ...product,
-        description: product.description || product.name,
-        sku: product.sku || product.id,
-        imageUrl: product.imageUrl || product.image || '',
-      } as Product;
-    }
-    return undefined;
-  }).filter((p): p is Product => p !== undefined);
+  const mappedProducts = selectedProducts
+    .map((productId) => {
+      const product = products.find((p) => p.id === productId);
+      if (product) {
+        // Asegurarnos de que el producto tiene todos los campos requeridos
+        return {
+          ...product,
+          description: product.description || product.name,
+          sku: product.sku || product.id,
+          imageUrl: product.imageUrl || product.image || "",
+        } as Product;
+      }
+      return undefined;
+    })
+    .filter((p): p is Product => p !== undefined);
 
   const handlePrint = () => {
     const printData = {
       products: mappedProducts,
-      promotion: selectedPromotion
+      promotion: selectedPromotion,
     };
-    navigate('/print-view', { state: printData });
+    navigate("/print-view", { state: printData });
   };
 
-  const companyDetails = COMPANIES.find(c => c.id === company);
+  const companyDetails = COMPANIES.find((c) => c.id === company);
   const empresaId = companyDetails?.empresaId || 0;
-  console.log('Company selected:', company);
-  console.log('Company details:', companyDetails);
-  console.log('Empresa ID:', empresaId);
+  console.log("Company selected:", company);
+  console.log("Company details:", companyDetails);
+  console.log("Empresa ID:", empresaId);
 
   const handlePreview = (product: Product) => {
-    navigate('/poster-preview', {
+    navigate("/poster-preview", {
       state: {
         product,
         promotion: selectedPromotion,
         company: companyDetails,
-        showLogo
-      }
+        showLogo,
+      },
     });
   };
 
   const handleSelectProduct = (productId: string) => {
-    setSelectedProducts(prev => {
+    setSelectedProducts((prev) => {
       if (prev.includes(productId)) {
-        return prev.filter(id => id !== productId);
+        return prev.filter((id) => id !== productId);
       }
       return [...prev, productId];
     });
@@ -431,32 +622,34 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const handleSavePosters = async () => {
     try {
       setIsLoading(true);
-      const toastId = toast.loading('Guardando cartel...');
+      const toastId = toast.loading("Guardando cartel...");
 
-      const posterElement = document.querySelector('.poster-content');
-      
+      const posterElement = document.querySelector(".poster-content");
+
       if (!posterElement) {
-        throw new Error('No se encontró el elemento del cartel');
+        throw new Error("No se encontró el elemento del cartel");
       }
 
       // Esperar a que todas las imágenes estén cargadas
-      const images = Array.from(posterElement.getElementsByTagName('img'));
-      await Promise.all(images.map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-        });
-      }));
+      const images = Array.from(posterElement.getElementsByTagName("img"));
+      await Promise.all(
+        images.map((img) => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+          });
+        })
+      );
 
       const result = await domtoimage.toPng(posterElement, {
         quality: 1,
-        bgcolor: '#ffffff',
+        bgcolor: "#ffffff",
         cacheBust: true,
         scale: window.devicePixelRatio * 2,
         style: {
-          transform: 'none'
-        }
+          transform: "none",
+        },
       });
 
       // Convertir dataUrl a Blob
@@ -464,16 +657,18 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       const blob = await response.blob();
 
       // Obtener los detalles necesarios para el nombre del archivo
-      const companyName = companyDetails?.name || 'sin_empresa';
-      
+      const companyName = companyDetails?.name || "sin_empresa";
+
       // Si hay productos seleccionados, crear un archivo por cada producto
       if (selectedProducts.length > 0) {
         for (const productId of selectedProducts) {
-          const product = products.find(p => p.id === productId);
+          const product = products.find((p) => p.id === productId);
           if (product) {
             const productName = cleanFileName(product.name);
             const sku = product.sku || product.id;
-            const fileName = `${cleanFileName(companyName)}_${productName}_${sku}.png`;
+            const fileName = `${cleanFileName(
+              companyName
+            )}_${productName}_${sku}.png`;
 
             await uploadToBucket(fileName, blob);
             toast.success(`Cartel guardado: ${fileName}`, { id: toastId });
@@ -481,31 +676,33 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
         }
       } else if (selectedCategory) {
         // Si es un cartel de categoría
-        const fileName = `${cleanFileName(companyName)}_categoria_${cleanFileName(selectedCategory)}.png`;
+        const fileName = `${cleanFileName(
+          companyName
+        )}_categoria_${cleanFileName(selectedCategory)}.png`;
         await uploadToBucket(fileName, blob);
         toast.success(`Cartel guardado: ${fileName}`, { id: toastId });
       }
-
     } catch (error: any) {
-      console.error('Error al guardar el cartel:', error);
-      toast.error(error.message || 'Error al guardar el cartel');
+      console.error("Error al guardar el cartel:", error);
+      toast.error(error.message || "Error al guardar el cartel");
     } finally {
       setIsLoading(false);
     }
   };
 
   // Modificar donde se usan los productos
-  const filteredProducts = selectedCategory === 'Todos' || !selectedCategory 
-    ? products
-    : products.filter(p => p.category === selectedCategory);
+  const filteredProducts =
+    selectedCategory === "Todos" || !selectedCategory
+      ? products
+      : products.filter((p) => p.category === selectedCategory);
 
-  console.log('Categoría seleccionada:', selectedCategory);
-  console.log('Productos filtrados:', filteredProducts);
+  console.log("Categoría seleccionada:", selectedCategory);
+  console.log("Productos filtrados:", filteredProducts);
 
   // Agregar el handler para enviar a sucursales
   const handleSendToLocations = () => {
     if (!selectedProducts.length || !company) {
-      alert('Por favor seleccione al menos un producto y una empresa');
+      alert("Por favor seleccione al menos un producto y una empresa");
       return;
     }
 
@@ -517,8 +714,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   };
 
   // Agregar las funciones de zoom
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 2));
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
+  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.1, 2));
+  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.1, 0.5));
 
   const handleCardSizeChange = (newSize: number) => {
     // Redondeamos al múltiplo de 5 más cercano
@@ -531,13 +728,20 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     setCC(selectedIds);
   };
 
-  const selectedTemplateDetails = POSTER_TEMPLATES.find(t => t.id === selectedTemplate);
+  const selectedTemplateDetails = POSTER_TEMPLATES.find(
+    (t) => t.id === selectedTemplate
+  );
 
   const renderPosters = () => {
     if (selectedProducts.length > 0) {
       // Renderizar carteles de productos seleccionados
-      return mappedProducts.map(product => (
-        <div key={product.id} className={`flex justify-center ${viewMode === 'list' ? 'bg-gray-100 rounded-lg p-4' : ''}`}>
+      return mappedProducts.map((product) => (
+        <div
+          key={product.id}
+          className={`flex justify-center ${
+            viewMode === "list" ? "bg-gray-100 rounded-lg p-4" : ""
+          }`}
+        >
           <PosterPreview
             product={product}
             promotion={selectedPromotion}
@@ -547,7 +751,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             points="49"
             origin="ARGENTINA"
             barcode="7790895000782"
-            compact={viewMode === 'list'}
+            compact={viewMode === "list"}
             selectedFormat={selectedFormat}
             zoom={zoom}
             cardSize={cardSize}
@@ -574,49 +778,51 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
         </div>
       );
     }
-    
+
     return null;
   };
 
   // Agregar la función de descarga
   const handleDownload = async () => {
     try {
-      const toastId = toast.loading('Preparando descarga...');
+      const toastId = toast.loading("Preparando descarga...");
 
-      const posterElement = document.querySelector('.poster-content');
+      const posterElement = document.querySelector(".poster-content");
       if (!posterElement) {
-        throw new Error('No se encontró el elemento del cartel');
+        throw new Error("No se encontró el elemento del cartel");
       }
 
       // Esperar a que todas las imágenes estén cargadas
-      const images = Array.from(posterElement.getElementsByTagName('img'));
-      await Promise.all(images.map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-        });
-      }));
+      const images = Array.from(posterElement.getElementsByTagName("img"));
+      await Promise.all(
+        images.map((img) => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+          });
+        })
+      );
 
       const result = await domtoimage.toPng(posterElement as HTMLElement, {
         quality: 1,
-        bgcolor: '#ffffff',
+        bgcolor: "#ffffff",
         cacheBust: true,
         scale: window.devicePixelRatio * 2,
         style: {
-          transform: 'none'
-        }
+          transform: "none",
+        },
       });
 
       // Crear el enlace de descarga
-      const link = document.createElement('a');
-      
+      const link = document.createElement("a");
+
       // Generar nombre del archivo
-      const companyName = companyDetails?.name || 'sin_empresa';
+      const companyName = companyDetails?.name || "sin_empresa";
       let fileName;
 
       if (selectedProducts.length > 0) {
-        const product = products.find(p => p.id === selectedProducts[0]);
+        const product = products.find((p) => p.id === selectedProducts[0]);
         if (product) {
           const productName = cleanFileName(product.name);
           const sku = product.sku || product.id;
@@ -625,7 +831,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
           fileName = `${cleanFileName(companyName)}_cartel.png`;
         }
       } else if (selectedCategory) {
-        fileName = `${cleanFileName(companyName)}_categoria_${cleanFileName(selectedCategory)}.png`;
+        fileName = `${cleanFileName(companyName)}_categoria_${cleanFileName(
+          selectedCategory
+        )}.png`;
       } else {
         fileName = `${cleanFileName(companyName)}_cartel.png`;
       }
@@ -636,10 +844,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       link.click();
       document.body.removeChild(link);
 
-      toast.success('Cartel descargado exitosamente', { id: toastId });
+      toast.success("Cartel descargado exitosamente", { id: toastId });
     } catch (error: any) {
-      console.error('Error al descargar el cartel:', error);
-      toast.error(error.message || 'Error al descargar el cartel');
+      console.error("Error al descargar el cartel:", error);
+      toast.error(error.message || "Error al descargar el cartel");
     }
   };
 
@@ -647,42 +855,49 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     let toastId: string | undefined;
     try {
       setIsSearchModalOpen(true);
-      toastId = toast.loading('Buscando carteles...');
-      
-      const { data, error } = await supabase
-        .storage
-        .from('posters')
-        .list();
+      toastId = toast.loading("Buscando carteles...");
+
+      const { data, error } = await supabase.storage.from("posters").list();
 
       if (error) {
         throw error;
       }
 
       if (data) {
-        const sortedResults = await Promise.all(data
-          .filter(file => file.name.endsWith('.png'))
-          .map(async file => {
-            const { data: urlData } = supabase.storage.from('posters').getPublicUrl(file.name);
-            return {
-              name: file.name,
-              url: urlData.publicUrl,
-              created_at: file.created_at || ''
-            };
-          }));
+        const sortedResults = await Promise.all(
+          data
+            .filter((file) => file.name.endsWith(".png"))
+            .map(async (file) => {
+              const { data: urlData } = supabase.storage
+                .from("posters")
+                .getPublicUrl(file.name);
+              return {
+                name: file.name,
+                url: urlData.publicUrl,
+                created_at: file.created_at || "",
+              };
+            })
+        );
 
-        const orderedResults = sortedResults
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const orderedResults = sortedResults.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
 
         setAllPosters(orderedResults);
         setSearchResults(orderedResults);
         if (toastId) {
-          toast.success(`Se encontraron ${orderedResults.length} carteles`, { id: toastId });
+          toast.success(`Se encontraron ${orderedResults.length} carteles`, {
+            id: toastId,
+          });
         }
       }
     } catch (error: any) {
-      console.error('Error al buscar carteles:', error);
+      console.error("Error al buscar carteles:", error);
       if (toastId) {
-        toast.error(error.message || 'Error al buscar carteles', { id: toastId });
+        toast.error(error.message || "Error al buscar carteles", {
+          id: toastId,
+        });
       }
       setIsSearchModalOpen(false);
     }
@@ -694,59 +909,20 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       setSearchResults(allPosters);
       return;
     }
-    
-    const filtered = allPosters.filter(poster => 
-      poster.name.toLowerCase().includes(term.toLowerCase())
+
+    const filtered = allPosters.filter((poster) =>
     );
-    setSearchResults(filtered);
-  };
-
-  const handlePosterSelect = async (poster: { name: string; url: string }) => {
-    try {
-      const toastId = toast.loading('Cargando cartel...');
-      
-      // Extraer información del nombre del archivo
-      const [companyName, ...rest] = poster.name.split('_');
-      
-      // Si es un cartel de categoría
-      if (rest.includes('categoria')) {
-        const categoryName = rest[rest.length - 1].replace('.png', '');
-        setSelectedCategory(categoryName);
-        setSelectedProducts([]);
-      } else {
-        // Si es un cartel de producto
-        const sku = rest[rest.length - 1].replace('.png', '');
-        const product = products.find(p => p.sku === sku || p.id === sku);
-        if (product) {
-          setSelectedProducts([product.id]);
-          setSelectedCategory(product.category);
-        }
-      }
-      
-      // Establecer la empresa
-      const company = COMPANIES.find(c => 
-        cleanFileName(c.name).toLowerCase() === companyName.toLowerCase()
-      );
-      if (company) {
-        setCompany(company.id);
-      }
-      
-      setIsSearchModalOpen(false);
-      toast.success('Cartel cargado exitosamente', { id: toastId });
-    } catch (error) {
-      console.error('Error al cargar el cartel:', error);
-      toast.error('Error al cargar el cartel');
+    if (company) {
+      setCompany(company.id);
     }
-  };
 
-  return (
-    <HeaderProvider userEmail={userEmail} userName={userName}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
-        <Header onBack={onBack} onLogout={onLogout} />
-        <div className="poster-editor-container min-h-screen flex flex-col bg-white">
-          <main className="pt-10 px-6 pb-6 max-w-7xl mx-auto space-y-6 min-h-[1000px]">
-            <div className="flex items-center justify-between gap-4 mb-8">
-              <h2 className="text-2xl font-medium text-gray-900">Editor de Carteles</h2>
+    setIsSearchModalOpen(false);
+    toast.success("Cartel cargado exitosamente", { id: toastId });
+  } catch (error) {
+    console.error("Error al cargar el cartel:", error);
+    toast.error("Error al cargar el cartel");
+  }
+};
               {/* Botón de Buscar Cartel */}
               <button
                 onClick={handleSearchPosters}
@@ -759,138 +935,40 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               </button>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200">
-              {/* Primera fila: Solo empresa */}
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-white/70 mb-1">
-                    Empresa
-                  </label>
-                  <CompanySelect
-                    value={company}
-                    onChange={handleCompanyChange}
-                    companies={COMPANIES}
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                  />
-                </div>
-              </div>
-
-              {/* Segunda fila: Plantilla y botón de Financiación */}
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setIsTemplateModalOpen(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 
-                        rounded-lg hover:bg-gray-50 transition-colors text-gray-700 w-64"
-                    >
-                      <LayoutTemplate className="w-5 h-5 text-gray-500 shrink-0" />
-                      <span className="truncate">
-                        {selectedTemplateDetails?.name || "Seleccionar plantilla..."}
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => setIsFinancingModalOpen(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 
-                        rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                    >
-                      <CreditCard className="w-5 h-5 text-gray-500" />
-                      <span>
-                        {selectedFinancing.length > 0
-                          ? `${selectedFinancing.length} financiación${selectedFinancing.length > 1 ? 'es' : ''}`
-                          : "Ver financiación"
-                        }
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 pt-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Promoción:
-                  </label>
-                  <PromotionSelect
-                    value={promotion}
-                    onChange={setPromotion}
-                    promotions={PROMOTIONS}
-                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                  />
-                </div>
-
-                {selectedPromotion && (
-                  <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-                    <div className="flex items-start gap-6">
-                      <img 
-                        src={selectedPromotion.imageUrl}
-                        alt={selectedPromotion.title}
-                        className="w-32 h-32 object-cover rounded-lg"
+            <div className="grid grid-cols-4 gap-4 h-full">
+              <div className="col-span-1 h-full flex flex-col">
+                <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200 h-full flex flex-col">
+                  {/* Primera fila: Solo empresa */}
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-white/70 mb-1">
+                        Empresa
+                      </label>
+                      <CompanySelect
+                        value={company}
+                        onChange={handleCompanyChange}
+                        companies={COMPANIES}
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
                       />
-                      <div className="flex-1 space-y-4">
-                        <div>
-                          <div className="flex items-center gap-3">
-                            <h3 className="text-lg font-medium text-gray-900">
-                              {selectedPromotion.title}
-                            </h3>
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                              {selectedPromotion.category}
-                            </span>
-                          </div>
-                          <p className="text-gray-600 mt-1">{selectedPromotion.description}</p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-1">Descuento</h4>
-                            <p className="text-2xl font-bold text-indigo-600">{selectedPromotion.discount}</p>
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-1">Vigencia</h4>
-                            <p className="text-gray-900">
-                              {new Date(selectedPromotion.startDate).toLocaleDateString()} - {new Date(selectedPromotion.endDate).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-
-                        {selectedPromotion.category === 'Bancaria' && (
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-700 mb-1">Banco</h4>
-                              <p className="text-gray-900">{selectedPromotion.bank}</p>
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-700 mb-1">Tarjetas</h4>
-                              <p className="text-gray-900">{selectedPromotion.cardType}</p>
-                            </div>
-                          </div>
-                        )}
-
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Condiciones</h4>
-                          <ul className="space-y-1">
-                            {selectedPromotion.conditions.map((condition, index) => (
-                              <li key={index} className="text-gray-600 text-sm flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                                {condition}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
                     </div>
                   </div>
-                )}
-              </div>
-
-              <div className="border-t border-gray-200 pt-6">
-                <div className="grid grid-cols-4 gap-4">
-                  <div className="col-span-1">
+                  {/* Selección visual de Plantilla y Modelo */}
+                  <div className="border-t border-gray-200 pt-6">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Categoría:
+                      Plantillas:
+                    </label>
+                    <PlantillaSelect
+                      value={plantillaSeleccionada}
+                      onChange={setPlantillaSeleccionada}
+                      opciones={PLANTILLAS}
+                      className="bg-white/10 border-white/20 text-black placeholder:text-white/50 focus:border-white/30"
+                    />
+                  </div>
+
+                  {/* Selección visual de Categoria */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Categorias:
                     </label>
                     <CategorySelect
                       value={selectedCategory}
@@ -899,11 +977,13 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
                     />
                   </div>
-                  <div className="col-span-3">
+
+                  {/* Selección visual de Productos */}
+                  <div className="border-t border-gray-200 pt-6">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Productos:
                     </label>
-                    <div className="relative">
+                    <div className="relative max-h-[200px]">
                       <ProductSelect
                         value={selectedProducts}
                         onChange={setSelectedProducts}
@@ -913,6 +993,159 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       />
                     </div>
                   </div>
+
+                  {/* Tercera fila: Promoción */}
+                  <div className="border-t border-gray-200 pt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Promoción:
+                      </label>
+                      <PromotionSelect
+                        value={promotion}
+                        onChange={setPromotion}
+                        promotions={PROMOTIONS}
+                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
+                      />
+                    </div>
+
+                    {selectedPromotion && (
+                      <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+                        <div className="flex items-start gap-6">
+                          <img
+                            src={selectedPromotion.imageUrl}
+                            alt={selectedPromotion.title}
+                            className="w-32 h-32 object-cover rounded-lg"
+                          />
+                          <div className="flex-1 space-y-4">
+                            <div>
+                              <div className="flex items-center gap-3">
+                                <h3 className="text-lg font-medium text-gray-900">
+                                  {selectedPromotion.title}
+                                </h3>
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                                  {selectedPromotion.category}
+                                </span>
+                              </div>
+                              <p className="text-gray-600 mt-1">
+                                {selectedPromotion.description}
+                              </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-700 mb-1">
+                                  Descuento
+                                </h4>
+                                <p className="text-2xl font-bold text-indigo-600">
+                                  {selectedPromotion.discount}
+                                </p>
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-700 mb-1">
+                                  Vigencia
+                                </h4>
+                                <p className="text-gray-900">
+                                  {new Date(
+                                    selectedPromotion.startDate
+                                  ).toLocaleDateString()}{" "}
+                                  -{" "}
+                                  {new Date(
+                                    selectedPromotion.endDate
+                                  ).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+
+                            {selectedPromotion.category === "Bancaria" && (
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="text-sm font-medium text-gray-700 mb-1">
+                                    Banco
+                                  </h4>
+                                  <p className="text-gray-900">
+                                    {selectedPromotion.bank}
+                                  </p>
+                                </div>
+                                <div>
+                                  <h4 className="text-sm font-medium text-gray-700 mb-1">
+                                    Tarjetas
+                                  </h4>
+                                  <p className="text-gray-900">
+                                    {selectedPromotion.cardType}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-700 mb-2">
+                                Condiciones
+                              </h4>
+                              <ul className="space-y-1">
+                                {selectedPromotion.conditions.map(
+                                  (condition, index) => (
+                                    <li
+                                      key={index}
+                                      className="text-gray-600 text-sm flex items-center gap-2"
+                                    >
+                                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                                      {condition}
+                                    </li>
+                                  )
+                                )}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {/* Segunda fila: Plantilla y botón de Financiación */}
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1"></label>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setIsFinancingModalOpen(true)}
+                          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 
+                        rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+                        >
+                          <CreditCard className="w-5 h-5 text-gray-500" />
+                          <span>
+                            {selectedFinancing.length > 0
+                              ? `${selectedFinancing.length} financiación${
+                                  selectedFinancing.length > 1 ? "es" : ""
+                                }`
+                              : "Ver financiación"}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto max-h-[600px]">
+                <div className="grid grid-cols-3 gap-4">
+                  
+                  {(PLANTILLA_MODELOS[plantillaSeleccionada?.value] || []).map(
+                    (modelo) => (
+                      <div
+                        key={modelo.id}
+                        className={`cursor-pointer p-2 border rounded-lg flex flex-col items-center justify-center transition-all ${
+                          modeloSeleccionado === modelo.id
+                            ? "ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50"
+                            : "hover:border-indigo-400"
+                        }`}
+                        onClick={() => setModeloSeleccionado(modelo.id)}
+                      >
+                        {/* Mini preview del modelo. Si tu función render acepta un prop "small", mejor */}
+                        {typeof modelo.render === "function"
+                          ? modelo.render({ small: true })
+                          : null}
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
             </div>
@@ -926,17 +1159,21 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       {/* Vista grilla/lista */}
                       <div className="flex bg-gray-200 rounded-lg p-1">
                         <button
-                          onClick={() => setViewMode('grid')}
+                          onClick={() => setViewMode("grid")}
                           className={`p-2 rounded-md transition-colors ${
-                            viewMode === 'grid' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
+                            viewMode === "grid"
+                              ? "bg-gray-300 text-gray-700"
+                              : "text-gray-500 hover:text-gray-700"
                           }`}
                         >
                           <LayoutGrid className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => setViewMode('list')}
+                          onClick={() => setViewMode("list")}
                           className={`p-2 rounded-md transition-colors ${
-                            viewMode === 'list' ? 'bg-gray-300 text-gray-700' : 'text-gray-500 hover:text-gray-700'
+                            viewMode === "list"
+                              ? "bg-gray-300 text-gray-700"
+                              : "text-gray-500 hover:text-gray-700"
                           }`}
                         >
                           <List className="w-4 h-4" />
@@ -949,22 +1186,32 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       {/* Selector de formato */}
                       <div className="relative">
                         <button
-                          onClick={() => setShowFormatSelector(!showFormatSelector)}
+                          onClick={() =>
+                            setShowFormatSelector(!showFormatSelector)
+                          }
                           className="bg-gray-200 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors flex items-center gap-2"
                         >
                           {selectedFormat.id}
                           <span className="text-xs text-gray-500">
                             {selectedFormat.width} × {selectedFormat.height}
                           </span>
-                          <svg className="w-4 h-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                          <svg
+                            className="w-4 h-4 text-gray-500"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                              clipRule="evenodd"
+                            />
                           </svg>
                         </button>
 
                         {/* Menú desplegable de formatos */}
                         {showFormatSelector && (
                           <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-64 z-50">
-                            {PAPER_FORMATS.map(format => (
+                            {PAPER_FORMATS.map((format) => (
                               <button
                                 key={format.id}
                                 onClick={() => {
@@ -972,10 +1219,14 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                                   setShowFormatSelector(false);
                                 }}
                                 className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center justify-between ${
-                                  selectedFormat.id === format.id ? 'bg-gray-50 text-indigo-600' : 'text-gray-700'
+                                  selectedFormat.id === format.id
+                                    ? "bg-gray-50 text-indigo-600"
+                                    : "text-gray-700"
                                 }`}
                               >
-                                <span className="font-medium">{format.name}</span>
+                                <span className="font-medium">
+                                  {format.name}
+                                </span>
                                 <span className="text-xs text-gray-500">
                                   {format.width} × {format.height}
                                 </span>
@@ -993,16 +1244,25 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         onClick={() => setIsLandscape(!isLandscape)}
                         className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors flex items-center gap-2"
                       >
-                        <svg 
-                          className={`w-4 h-4 transition-transform ${isLandscape ? 'rotate-90' : ''}`} 
-                          viewBox="0 0 24 24" 
-                          fill="none" 
+                        <svg
+                          className={`w-4 h-4 transition-transform ${
+                            isLandscape ? "rotate-90" : ""
+                          }`}
+                          viewBox="0 0 24 24"
+                          fill="none"
                           stroke="currentColor"
                         >
-                          <rect x="4" y="5" width="16" height="14" rx="2" strokeWidth="2"/>
+                          <rect
+                            x="4"
+                            y="5"
+                            width="16"
+                            height="14"
+                            rx="2"
+                            strokeWidth="2"
+                          />
                         </svg>
                         <span className="text-sm">
-                          {isLandscape ? 'Horizontal' : 'Vertical'}
+                          {isLandscape ? "Horizontal" : "Vertical"}
                         </span>
                       </button>
 
@@ -1063,7 +1323,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       onChange={(e) => setShowLogo(e.target.checked)}
                       className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <label htmlFor="show-logo" className="text-sm text-gray-700">
+                    <label
+                      htmlFor="show-logo"
+                      className="text-sm text-gray-700"
+                    >
                       Mostrar logo
                     </label>
                   </div>
@@ -1074,9 +1337,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       onClick={handleSendToLocations}
                       disabled={!selectedProducts.length || !company}
                       className={`px-4 py-2 rounded-lg font-medium transition-colors
-                        ${(!selectedProducts.length || !company)
-                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                        ${
+                          !selectedProducts.length || !company
+                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                            : "bg-indigo-600 text-white hover:bg-indigo-700"
                         }`}
                     >
                       Enviar a Sucursales
@@ -1090,16 +1354,16 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         className="px-4 py-2 rounded-lg font-medium bg-emerald-600 text-white 
                                   hover:bg-emerald-700 transition-colors flex items-center gap-2"
                       >
-                        <svg 
-                          className="w-5 h-5" 
-                          fill="none" 
-                          stroke="currentColor" 
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
                           viewBox="0 0 24 24"
                         >
-                          <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth={2} 
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
                             d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                           />
                         </svg>
@@ -1112,16 +1376,16 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white 
                                   hover:bg-blue-700 transition-colors flex items-center gap-2"
                       >
-                        <svg 
-                          className="w-5 h-5" 
-                          fill="none" 
-                          stroke="currentColor" 
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
                           viewBox="0 0 24 24"
                         >
-                          <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth={2} 
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
                             d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
                           />
                         </svg>
@@ -1133,8 +1397,11 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               </div>
             )}
 
-            <div id="poster-container" className="h-[800px] w-[1080px] mx-auto overflow-y-auto">
-              <div className={viewMode === 'grid' ? 'space-y-8' : 'space-y-4'}>
+            <div
+              id="poster-container"
+              className="h-[800px] w-[1080px] mx-auto overflow-y-auto"
+            >
+              <div className={viewMode === "grid" ? "space-y-8" : "space-y-4"}>
                 {renderPosters()}
               </div>
             </div>
@@ -1142,9 +1409,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
             <ProductSelectorModal
               isOpen={isProductSelectorOpen}
               onClose={() => setIsProductSelectorOpen(false)}
-              products={selectedCategory === 'Todos' || !selectedCategory 
-                ? products
-                : products.filter(p => p.category === selectedCategory)
+              products={
+                selectedCategory === "Todos" || !selectedCategory
+                  ? products
+                  : products.filter((p) => p.category === selectedCategory)
               }
               selectedProducts={selectedProducts}
               onSelectProduct={handleSelectProduct}
@@ -1193,12 +1461,20 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       <button
                         onClick={() => {
                           setIsSearchModalOpen(false);
-                          setSearchTerm('');
+                          setSearchTerm("");
                         }}
                         className="text-gray-400 hover:text-gray-500 transition-colors"
                       >
-                        <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        <svg
+                          className="w-5 h-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       </button>
                     </div>
@@ -1216,16 +1492,16 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
                     <div className="grid grid-cols-4 gap-4">
                       {searchResults.map((poster, index) => (
-                        <div 
+                        <div
                           key={index}
                           className="bg-white border border-gray-200 rounded-lg p-4 hover:border-indigo-500 transition-all cursor-pointer shadow-sm hover:shadow-md"
                           onClick={() => handlePosterSelect(poster)}
                         >
-                          <img 
+                          <img
                             src={poster.url}
                             alt={poster.name}
                             className="w-full h-48 object-contain mb-3 bg-gray-50 rounded"
@@ -1248,7 +1524,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       ))}
                       {searchResults.length === 0 && (
                         <div className="col-span-4 text-center py-12">
-                          <p className="text-gray-500">No se encontraron carteles</p>
+                          <p className="text-gray-500">
+                            No se encontraron carteles
+                          </p>
                         </div>
                       )}
                     </div>
@@ -1261,4 +1539,4 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       </div>
     </HeaderProvider>
   );
-}; 
+};

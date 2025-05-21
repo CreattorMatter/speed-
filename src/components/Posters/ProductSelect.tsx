@@ -24,6 +24,7 @@ interface ProductOption {
   category: string;
 }
 
+
 // Función para transformar un producto en una opción del selector
 const mapProductToOption = (product: Product): ProductOption => ({
   value: product.id,
@@ -67,18 +68,22 @@ export const ProductSelect: React.FC<ProductSelectProps> = ({
         control: (base) => ({
           ...base,
           backgroundColor: 'white',
+          maxHeight: '120px',
+          overflowY: 'auto'
         }),
         option: (base, state) => ({
           ...base,
           backgroundColor: state.isFocused ? '#f3f4f6' : 'white',
           color: 'black',
           '&:hover': {
-            backgroundColor: '#f3f4f6'
+            backgroundColor: '#f3f4f6',
+
           }
         }),
         multiValue: (base) => ({
           ...base,
-          backgroundColor: '#f3f4f6'
+          backgroundColor: '#f3f4f6',
+
         }),
         multiValueLabel: (base) => ({
           ...base,
