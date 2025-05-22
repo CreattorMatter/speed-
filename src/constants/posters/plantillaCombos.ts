@@ -1,5 +1,6 @@
 // Mapeo de plantillas a sus tipos de promoción disponibles
 import { COMBOS, Combos } from './combos';
+import { PLANTILLAS, TemplateOption } from './templates';
 
 // Define qué combos (tipos de promoción) están disponibles para cada plantilla
 export const PLANTILLA_COMBOS: Record<string, string[]> = {
@@ -72,4 +73,18 @@ export const getCombosPorPlantilla = (plantillaValue: string | undefined): Combo
   if (comboIds.length === 0) return COMBOS; // Si no hay combos definidos para esta plantilla, devolver todos
   
   return COMBOS.filter(combo => comboIds.includes(combo.value));
+};
+
+// Función para obtener las plantillas disponibles para un tipo de promoción específico
+export const getPlantillasPorCombo = (comboValue: string | undefined): TemplateOption[] => {
+  if (!comboValue) return PLANTILLAS; // Si no hay combo seleccionado, devolver todas las plantillas
+  
+  // Buscar todas las plantillas que incluyen este combo
+  const plantillasCompatibles = Object.entries(PLANTILLA_COMBOS)
+    .filter(([_, combos]) => combos.includes(comboValue))
+    .map(([plantilla]) => plantilla);
+  
+  if (plantillasCompatibles.length === 0) return PLANTILLAS; // Si no hay plantillas compatibles, devolver todas
+  
+  return PLANTILLAS.filter(plantilla => plantillasCompatibles.includes(plantilla.value));
 };

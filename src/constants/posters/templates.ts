@@ -45,8 +45,9 @@ export const PLANTILLA_MODELOS: Record<string, TemplateModel[]> = {
   ],
   "Ladrillazos": [
     { id: "ladrillazos-1", componentPath: "Ladrillazos/Ladrillazos1" },
-    { id: "ladrillazos-2", componentPath: "Ladrillazos/Ladrillazos1" },
-    { id: "ladrillazos-3", componentPath: "Ladrillazos/Ladrillazos1" },
+    { id: "ladrillazos-2", componentPath: "Ladrillazos/Ladrillazos2" }, // Template para antes_ahora_dto
+    { id: "ladrillazos-3", componentPath: "Ladrillazos/Ladrillazos3" }, // Template para combo_dto
+    { id: "ladrillazos-4", componentPath: "Ladrillazos/Ladrillazos4" }, // Template para descuento_plano_categoria
   ],
   "Mundo Experto": [
     { id: "mundo-experto-1", componentPath: "mundoExperto/MundoExperto1" },

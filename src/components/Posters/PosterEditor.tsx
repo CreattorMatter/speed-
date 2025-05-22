@@ -49,7 +49,7 @@ import {
   Combos,
   COMBOS,
 } from "@/constants/posters";
-import { getCombosPorPlantilla } from "@/constants/posters/plantillaCombos";
+import { getCombosPorPlantilla, getPlantillasPorCombo } from "@/constants/posters/plantillaCombos";
 
 // Definimos las interfaces necesarias
 interface PlantillaOption {
@@ -226,6 +226,11 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const combosDisponibles = useMemo(() => {
     return getCombosPorPlantilla(plantillaSeleccionada?.value);
   }, [plantillaSeleccionada]);
+  
+  // Filtrar las plantillas disponibles según el tipo de promoción seleccionado
+  const plantillasDisponibles = useMemo(() => {
+    return getPlantillasPorCombo(comboSeleccionado?.value);
+  }, [comboSeleccionado]);
   const [modeloSeleccionado, setModeloSeleccionado] = useState<string | null>(
     null
   );
@@ -717,8 +722,14 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                     </label>
                     <PlantillaSelect
                       value={plantillaSeleccionada}
-                      onChange={setPlantillaSeleccionada}
-                      opciones={PLANTILLAS}
+                      onChange={(option) => {
+                        setPlantillaSeleccionada(option);
+                        // Si cambia la plantilla y el combo seleccionado no es compatible, resetear el combo
+                        if (option && comboSeleccionado && !getCombosPorPlantilla(option.value).some(c => c.value === comboSeleccionado.value)) {
+                          setComboSeleccionado(null);
+                        }
+                      }}
+                      opciones={plantillasDisponibles}
                       className="bg-white/10 border-white/20 text-black placeholder:text-white/50 focus:border-white/30"
                     />
                   </div>
@@ -730,7 +741,13 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                     </label>
                     <ComboSelect
                       value={comboSeleccionado}
-                      onChange={setComboSeleccionado}
+                      onChange={(option) => {
+                        setComboSeleccionado(option);
+                        // Si cambia el tipo de promoción y la plantilla seleccionada no es compatible, resetear la plantilla
+                        if (option && plantillaSeleccionada && !getPlantillasPorCombo(option.value).some(p => p.value === plantillaSeleccionada.value)) {
+                          setPlantillaSeleccionada(null);
+                        }
+                      }}
                       options={combosDisponibles}
                       placeholder="Seleccionar tipo de promoción..."
                     />
@@ -920,12 +937,32 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                             </div>
                           );
                         })
-                      : // Comportamiento normal cuando no hay mu00faltiples productos seleccionados
-                        (
-                          PLANTILLA_MODELOS[
-                            plantillaSeleccionada?.value || ""
-                          ] || []
-                        ).map((modelo: ModeloOption) => {
+                      : // Comportamiento normal cuando no hay múltiples productos seleccionados
+                        (PLANTILLA_MODELOS[plantillaSeleccionada?.value || ""] || []).filter(modelo => {
+                          // Si no hay tipo de promoción seleccionado, mostrar todos los modelos
+                          if (!comboSeleccionado) return true;
+                          
+                          // Filtrar solo para Ladrillazos por ahora
+                          if (plantillaSeleccionada?.value === 'Ladrillazos') {
+                            // Extraer el número del modelo (ejemplo: ladrillazos-2 -> 2)
+                            const modeloNum = parseInt(modelo.id.split('-')[1]);
+                            
+                            // Mapeo de números de modelo a tipos de promoción para Ladrillazos
+                            switch(comboSeleccionado.value) {
+                              case 'antes_ahora_dto':
+                                return modeloNum === 2;
+                              case 'combo_dto':
+                                return modeloNum === 3;
+                              case 'descuento_plano_categoria':
+                                return modeloNum === 4;
+                              default:
+                                return modeloNum === 1;
+                            }
+                          }
+                          
+                          // Para otras plantillas, mostrar todos los modelos por ahora
+                          return true;
+                        }).map((modelo) => {
                           const isSelected = modeloSeleccionado === modelo.id;
                           const isAnySelected = modeloSeleccionado !== null;
                           const Component =
