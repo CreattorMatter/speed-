@@ -40,6 +40,13 @@ import { ExportPoster } from "./ExportPoster";
 import ReactDOM from "react-dom/client";
 import { FinancingOption } from "../../types/financing";
 import { PlantillaSelect } from "./PlantillaSelect";
+import {
+  PAPER_FORMATS,
+  PLANTILLA_MODELOS,
+  PLANTILLAS,
+  PROMOTIONS,
+  loadTemplateComponent,
+} from "@/constants/posters";
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -50,280 +57,11 @@ interface PosterEditorProps {
   userName: string;
 }
 
-const PAPER_FORMATS = [
-  { id: "A2", width: "420mm", height: "594mm", name: "A2 (420 × 594 mm)" },
-  { id: "A3", width: "297mm", height: "420mm", name: "A3 (297 × 420 mm)" },
-  { id: "A4", width: "210mm", height: "297mm", name: "A4 (210 × 297 mm)" },
-  {
-    id: "letter",
-    width: "215.9mm",
-    height: "279.4mm",
-    name: "Carta (215.9 × 279.4 mm)",
-  },
-  {
-    id: "legal",
-    width: "215.9mm",
-    height: "355.6mm",
-    name: "Legal (215.9 × 355.6 mm)",
-  },
-];
-
-const PROMOTIONS: Promotion[] = [
-  {
-    id: "1",
-    title: "American Express 25% OFF",
-    description: "Comprá cuando quieras y programá tu entrega los días Jueves.",
-    discount: "25% OFF",
-    imageUrl:
-      "https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?w=500&auto=format&fit=crop&q=60",
-    category: "Bancaria",
-    conditions: ["Tope de reintegro $2000", "Válido solo los jueves"],
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    bank: "American Express",
-    cardType: "Todas las tarjetas",
-    isActive: true,
-    selectedBanks: ["American Express"],
-    cardOptions: ["Todas las tarjetas"],
-  },
-  {
-    id: "2",
-    title: "Hasta 40% OFF en Especiales de la semana",
-    description: "Descuentos especiales en productos seleccionados",
-    discount: "Hasta 40% OFF",
-    imageUrl:
-      "https://images.unsplash.com/photo-1607082349566-187342175e2f?w=500&auto=format&fit=crop&q=60",
-    category: "Especial",
-    conditions: ["Válido solo los jueves"],
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    isActive: true,
-    selectedBanks: [],
-    cardOptions: [],
-  },
-  {
-    id: "3",
-    title: "Tarjeta Cencosud 20% OFF",
-    description: "Realizá tus compras los días Miércoles",
-    discount: "20% OFF",
-    imageUrl:
-      "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=500&auto=format&fit=crop&q=60",
-    category: "Bancaria",
-    conditions: ["Válido solo los miércoles"],
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    bank: "Cencosud",
-    isActive: true,
-    selectedBanks: ["Cencosud"],
-    cardOptions: ["Todas las tarjetas"],
-  },
-  {
-    id: "4",
-    title: "2do al 70% en Almacén, Bebidas y más",
-    description: "En la segunda unidad de productos seleccionados",
-    discount: "70% OFF",
-    imageUrl:
-      "https://images.unsplash.com/photo-1579113800032-c38bd7635818?w=500&auto=format&fit=crop&q=60",
-    category: "Especial",
-    conditions: [
-      "Valido solo comprando dos productos iguales el segundo al 70%",
-    ],
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    isActive: true,
-    selectedBanks: [],
-    cardOptions: [],
-  },
-  {
-    id: "5",
-    title: "Hasta 35% y Hasta 12 CSI",
-    description:
-      "Descuentos especiales en productos seleccionados con cuotas sin interés",
-    discount: "35% OFF",
-    imageUrl:
-      "https://images.unsplash.com/photo-1556742044-3c52d6e88c62?w=500&auto=format&fit=crop&q=60",
-    category: "Bancaria",
-    conditions: ["Válido solo los jueves"],
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    bank: "Banco Nación",
-    isActive: true,
-    selectedBanks: ["Banco Nación"],
-    cardOptions: ["Todas las tarjetas"],
-  },
-  {
-    id: "6",
-    title: "Santander 30% OFF",
-    description: "Todos los días con Tarjetas Santander",
-    discount: "30% OFF",
-    imageUrl:
-      "https://images.unsplash.com/photo-1556742393-d75f468bfcb0?w=500&auto=format&fit=crop&q=60",
-    category: "Bancaria",
-    conditions: ["Válido solo los días"],
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    bank: "Santander",
-    isActive: true,
-    selectedBanks: ["Santander"],
-    cardOptions: ["Todas las tarjetas"],
-  },
-  {
-    id: "7",
-    title: "BBVA 25% OFF",
-    description: "Descuentos exclusivos para clientes BBVA",
-    discount: "25% OFF",
-    imageUrl:
-      "https://images.unsplash.com/photo-1556742111-a301076d9d18?w=500&auto=format&fit=crop&q=60",
-    category: "Bancaria",
-    conditions: ["Válido solo los jueves"],
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    bank: "BBVA",
-    isActive: true,
-    selectedBanks: ["BBVA"],
-    cardOptions: ["Todas las tarjetas"],
-  },
-  {
-    id: "8",
-    title: "Banco Provincia 30% OFF",
-    description: "Miércoles y Sábados con Banco Provincia",
-    discount: "30% OFF",
-    imageUrl:
-      "https://images.unsplash.com/photo-1556741533-6e6a62bd8b49?w=500&auto=format&fit=crop&q=60",
-    category: "Bancaria",
-    conditions: ["Válido solo los miércoles y sábados"],
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    bank: "Banco Provincia",
-    isActive: true,
-    selectedBanks: ["Banco Provincia"],
-    cardOptions: ["Todas las tarjetas"],
-  },
-  {
-    id: "9",
-    title: "Banco Nación 25% OFF",
-    description: "Descuentos especiales con Banco Nación",
-    discount: "25% OFF",
-    imageUrl:
-      "https://images.unsplash.com/photo-1556742205-e7530469f4eb?w=500&auto=format&fit=crop&q=60",
-    category: "Bancaria",
-    conditions: ["Válido solo los jueves"],
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    bank: "Banco Nación",
-    isActive: true,
-    selectedBanks: ["Banco Nación"],
-    cardOptions: ["Todas las tarjetas"],
-  },
-  {
-    id: "10",
-    title: "2da Unidad 70% OFF",
-    description: "En la segunda unidad de productos seleccionados",
-    discount: "70% OFF",
-    imageUrl:
-      "https://images.unsplash.com/photo-1607082349566-187342175e2f?w=500&auto=format&fit=crop&q=60",
-    category: "Especial",
-    conditions: [
-      "Válido en la compra de dos unidades iguales",
-      "Productos seleccionados",
-    ],
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    type: "second-70",
-    isActive: true,
-    selectedBanks: [],
-    cardOptions: [],
-  },
-  {
-    id: "11",
-    title: "2x1 en Productos Seleccionados",
-    description: "Llevá 2 y pagá 1 en productos seleccionados",
-    discount: "2x1",
-    imageUrl:
-      "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&auto=format&fit=crop&q=60",
-    category: "Especial",
-    conditions: [
-      "Válido en productos seleccionados",
-      "Llevando dos unidades iguales",
-    ],
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    type: "2x1",
-    isActive: true,
-    selectedBanks: [],
-    cardOptions: [],
-  },
-  {
-    id: "12",
-    title: "3x2 en Productos Seleccionados",
-    description: "Llevá 3 y pagá 2 en productos seleccionados",
-    discount: "3x2",
-    imageUrl:
-      "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&auto=format&fit=crop&q=60",
-    category: "Especial",
-    conditions: [
-      "Válido en productos seleccionados",
-      "Llevando tres unidades iguales",
-    ],
-    startDate: "2024-01-01",
-    endDate: "2024-12-31",
-    type: "3x2",
-    isActive: true,
-    selectedBanks: [],
-    cardOptions: [],
-  },
-];
-
 console.log("Importación de productos:", { products });
 
 // Extraer categorías únicas de los productos
 const CATEGORIES = Array.from(new Set(products.map((p) => p.category)));
 console.log("Categorías encontradas:", CATEGORIES);
-
-const FINANCING_OPTIONS: FinancingOption[] = [
-  {
-    bank: "American Express",
-    logo: "/images/banks/amex-logo.png",
-    cardName: "American Express",
-    cardImage: "/images/banks/amex-logo.png",
-    plan: "25% OFF",
-  },
-  {
-    bank: "Banco Nación",
-    logo: "/images/banks/banco-nacion-logo.png",
-    cardName: "Banco Nación",
-    cardImage: "/images/banks/banco-nacion-logo.png",
-    plan: "Hasta 12 cuotas sin interés",
-  },
-  {
-    bank: "Visa",
-    logo: "/images/banks/visa-logo.png",
-    cardName: "Visa",
-    cardImage: "/images/banks/visa-logo.png",
-    plan: "Hasta 6 cuotas sin interés",
-  },
-  {
-    bank: "Mastercard",
-    logo: "/images/banks/mastercard-logo.png",
-    cardName: "Mastercard",
-    cardImage: "/images/banks/mastercard-logo.png",
-    plan: "Hasta 3 cuotas sin interés",
-  },
-  {
-    bank: "Cencosud",
-    logo: "/images/banks/cencosud-logo.png",
-    cardName: "Tarjeta Cencosud",
-    cardImage: "/images/banks/cencosud-logo.png",
-    plan: "20% OFF + 6 cuotas sin interés",
-  },
-  {
-    bank: "CencoPay",
-    logo: "/images/banks/cencopay-logo.png",
-    cardName: "CencoPay",
-    cardImage: "/images/banks/cencopay-logo.png",
-    plan: "25% OFF + 3 cuotas sin interés",
-  },
-];
 
 // Función para limpiar el texto para el nombre del archivo
 const cleanFileName = (text: string): string => {
@@ -393,151 +131,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   console.log("LOCATIONS imported:", LOCATIONS); // Debug
   console.log("COMPANIES imported:", COMPANIES); // Debug
   console.log("Productos disponibles:", products);
-
-  // Mockups visuales base (puedes personalizarlos luego)
-  const MockupSuperprecio1 = () => (
-    <div className="bg-gray-100 p-4 rounded flex flex-col items-center w-full h-32 justify-center">
-      <div className="text-2xl font-bold">XXX</div>
-      <div className="text-lg text-gray-400 mt-2">$XXX</div>
-      <div className="bg-indigo-200 text-indigo-700 px-2 py-1 rounded mt-2">
-        %XXX OFF
-      </div>
-    </div>
-  );
-
-  const MockupSuperprecio2 = () => (
-    <div className="bg-gray-200 p-4 rounded flex flex-col items-center w-full h-32 justify-center">
-      <div className="text-3xl font-extrabold text-indigo-600">XXX</div>
-      <div className="text-md text-gray-500 mt-2">Oferta $XXX</div>
-    </div>
-  );
-
-  const MockupFeria1 = () => (
-    <div className="bg-yellow-100 p-4 rounded flex flex-col items-center w-full h-32 justify-center">
-      <div className="text-2xl font-bold">XXX</div>
-      <div className="bg-yellow-300 text-yellow-800 px-2 py-1 rounded mt-2">
-        Descuento XXX%
-      </div>
-    </div>
-  );
-
-  const MockupFeria2 = () => (
-    <div className="bg-yellow-200 p-4 rounded flex flex-col items-center w-full h-32 justify-center">
-      <div className="text-xl font-semibold">XXX</div>
-      <div className="mt-2 text-sm text-gray-500">Promo $XXX</div>
-    </div>
-  );
-
-  const MockupSuperprecio = () => (
-    <div className="bg-yellow-200 border-2 border-yellow-500 p-4 rounded w-full h-40 flex flex-col items-center justify-center">
-      <div className="bg-red-600 text-yellow-200 font-bold text-3xl px-4 py-1 rounded mb-2">
-        SUPERprecio
-      </div>
-      <div className="text-xl font-bold">XXX XXX XXX</div>
-      <div className="text-3xl font-extrabold">$XXX.XXX</div>
-      <div className="text-sm mt-2">XX/XX/XXXX - XX/XX/XXXX</div>
-    </div>
-  );
-
-  const MockupHotSake = () => (
-    <div className="bg-orange-100 border-2 border-orange-400 p-4 rounded w-full h-40 flex flex-col items-center justify-center">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="bg-red-500 text-white font-bold px-3 py-1 rounded">
-          easy
-        </div>
-        <div className="bg-orange-400 text-white font-bold px-3 py-1 rounded">
-          hot sake
-        </div>
-        <div className="text-orange-600 text-3xl font-bold">XX%</div>
-      </div>
-      <div className="text-lg font-bold">XXX DE DESCUENTO</div>
-      <div className="text-2xl font-extrabold">$XXX.XXX</div>
-      <div className="line-through text-gray-400">$XXX.XXX</div>
-    </div>
-  );
-
-  const MockupSuperprecio2daUnidad = () => (
-    <div className="bg-yellow-100 border-2 border-yellow-400 p-4 rounded w-full h-40 flex flex-col items-center justify-center">
-      <div className="bg-red-600 text-yellow-200 font-bold text-2xl px-4 py-1 rounded mb-1">
-        SUPERprecio
-      </div>
-      <div className="flex items-center gap-2 mb-2">
-        <div className="bg-yellow-400 text-black font-bold px-2 py-1 rounded text-xl">
-          XX%
-        </div>
-        <div className="text-black text-lg font-bold">
-          DESCUENTO EN LA 2da UNIDAD
-        </div>
-      </div>
-      <div className="flex gap-4">
-        <div>
-          <div className="text-lg">$XXX</div>
-          <div className="text-xs">X UNIDAD</div>
-        </div>
-        <div>
-          <div className="text-lg">$XXX</div>
-          <div className="text-xs">LA 2da UNIDAD</div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const MockupTroncal = () => (
-    <div className="bg-red-100 border-2 border-red-400 p-4 rounded w-full h-40 flex flex-col items-center justify-center">
-      <div className="flex gap-2 mb-2">
-        <div className="bg-red-600 text-white font-bold px-3 py-1 rounded">
-          e
-        </div>
-        <div className="bg-red-600 text-white font-bold px-3 py-1 rounded">
-          e
-        </div>
-        <div className="bg-red-600 text-white font-bold px-3 py-1 rounded">
-          e
-        </div>
-      </div>
-      <div className="text-lg font-bold">XXX XXX XXX</div>
-      <div className="text-3xl font-extrabold">$XXX.XXX</div>
-      <div className="text-sm mt-2">XX/XX/XXXX - XX/XX/XXXX</div>
-    </div>
-  );
-
-  const PLANTILLAS = [
-    { label: "Superprecio", value: "Superprecio" },
-    { label: "Feria de descuentos", value: "Feria de descuentos" },
-    { label: "Financiación", value: "Financiación" },
-    { label: "Troncales", value: "Troncales" },
-    { label: "Nuevo", value: "Nuevo" },
-    { label: "Temporada", value: "Temporada" },
-    { label: "Hot Sale", value: "Hot Sale" },
-    { label: "Precios que la rompen", value: "Precios que la rompen" },
-    { label: "Ladrillazos", value: "Ladrillazos" },
-    { label: "Mundo Experto", value: "Mundo Experto" },
-    { label: "Constructor", value: "Constructor" },
-  ];
-
-  const PLANTILLA_MODELOS: Record<
-    string,
-    { id: string; render: () => JSX.Element }[]
-  > = {
-    Superprecio: [
-      { id: "superprecio-1", render: MockupSuperprecio },
-      { id: "superprecio-2", render: MockupSuperprecio },
-      { id: "superprecio-3", render: MockupSuperprecio },
-      { id: "superprecio-4", render: MockupSuperprecio },
-      { id: "superprecio-5", render: MockupSuperprecio },
-      { id: "superprecio-6", render: MockupSuperprecio },
-      { id: "superprecio-7", render: MockupSuperprecio },
-      { id: "superprecio-8", render: MockupSuperprecio },
-      { id: "superprecio-9", render: MockupSuperprecio },
-      { id: "superprecio-10", render: MockupSuperprecio },
-    ],
-    "Hot sake": [{ id: "hotsake-1", render: MockupHotSake }],
-    "Super precio 2da unidad": [
-      { id: "superprecio2da-1", render: MockupSuperprecio2daUnidad },
-    ],
-    Troncales: [{ id: "troncal-1", render: MockupTroncal }],
-    // Puedes agregar más plantillas y mockups aquí
-  };
 
   // Limpiar empresa cuando cambia
   const handleCompanyChange = (newCompany: string) => {
@@ -972,6 +565,44 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     }
   };
 
+  // Dentro del componente PosterEditor
+  const [templateComponents, setTemplateComponents] = useState<
+    Record<string, React.ComponentType<any>>
+  >({});
+
+  // Cargar los componentes al inicializar
+  useEffect(() => {
+    const loadComponents = async () => {
+      try {
+      const components: Record<string, React.ComponentType<any>> = {};
+
+      // Cargar todos los componentes únicos
+      const uniquePaths = new Set<string>();
+      Object.values(PLANTILLA_MODELOS).forEach((models) => {
+        models.forEach((model) => uniquePaths.add(model.componentPath));
+      });
+
+      // Cargar cada componente
+      for (const path of uniquePaths) {
+        console.log(`Cargando componente: ${path}`);
+        const component = await loadTemplateComponent(path);
+        console.log(`Componente cargado: ${path}`, !!component);
+        if (component) {
+          components[path] = component;
+        }
+      }
+
+      setTemplateComponents(components);
+      } catch (error) {
+        console.error("Error al cargar los componentes:", error);
+      }
+    };
+
+    loadComponents();
+  }, []);
+
+  // Luego, al renderizar los modelos:
+
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
@@ -1192,24 +823,38 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                     ).map((modelo) => {
                       const isSelected = modeloSeleccionado === modelo.id;
                       const isAnySelected = modeloSeleccionado !== null;
+                      const Component =
+                        templateComponents[modelo.componentPath];
 
                       return (
                         <div
                           key={modelo.id}
                           className={`
-                            cursor-pointer p-2 border rounded-lg flex items-center justify-center
-                              transition-all duration-500 ease-in-out
-                            ${isSelected ? "col-span-3 row-span-3 scale-105 z-10 bg-indigo-50 ring-2 ring-indigo-500 border-indigo-500" : ""}
-                            ${isAnySelected && !isSelected ? "opacity-0 pointer-events-none scale-95" : "hover:border-indigo-400"}
-                          `}
-                          onClick={() => setModeloSeleccionado(isSelected ? null : modelo.id)}
+        cursor-pointer p-2 border rounded-lg flex items-center justify-center
+        transition-all duration-500 ease-in-out
+        ${
+          isSelected
+            ? "col-span-3 row-span-3 scale-105 z-10 bg-indigo-50 ring-2 ring-indigo-500 border-indigo-500"
+            : ""
+        }
+        ${
+          isAnySelected && !isSelected
+            ? "opacity-0 pointer-events-none scale-95"
+            : "hover:border-indigo-400"
+        }
+      `}
+                          onClick={() =>
+                            setModeloSeleccionado(isSelected ? null : modelo.id)
+                          }
                         >
                           <div className="w-full max-w-[700px] h-auto aspect-[3/1]">
-                            {typeof modelo.render === "function"
-                              ? modelo.render({ small: !isSelected })
-                              : null}
+                            {Component && typeof Component === "function" ? (
+                              <Component small={!isSelected} />
+                            ) : (
+                              <div>Error al cargar el componente</div>
+                            )}
                           </div>
-                        </div>  
+                        </div>
                       );
                     })}
                   </div>
