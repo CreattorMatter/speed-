@@ -2,6 +2,19 @@
 // src/constants/posters/templates.ts
 import React from 'react';
 
+// Importaciones estáticas de todos los componentes de plantillas
+import Superprecio1 from '../templates/superprecio/Superprecio1';
+import Superprecio from '../templates/superprecio/Superprecio';
+import Ladrillazos1 from '../templates/Ladrillazos/Ladrillazos1';
+import Ladrillazos2 from '../templates/Ladrillazos/Ladrillazos2';
+import Ladrillazos3 from '../templates/Ladrillazos/Ladrillazos3';
+import Ladrillazos4 from '../templates/Ladrillazos/Ladrillazos4';
+import MundoExperto1 from '../templates/mundoExperto/MundoExperto1';
+import Constructor1 from '../templates/Constructor/Constructor1';
+import FeriaDescuento1 from '../templates/ferias de desc/FeriaDescuento1';
+import FeriaDescuento2 from '../templates/ferias de desc/FeriaDescuento2';
+import MultiProductos from '../templates/MultiProductos/MultiProductos';
+
 // Definir las interfaces
 export interface TemplateOption {
   label: string;
@@ -77,27 +90,33 @@ export const PLANTILLA_MODELOS: Record<string, TemplateModel[]> = {
   ],
 };
 
-// Caché de componentes para evitar cargas repetidas
-const componentCache: Record<string, React.ComponentType<any>> = {};
+// Mapa de componentes para cargar estáticamente
+const componentMap: Record<string, React.ComponentType<any>> = {
+  'superprecio/Superprecio1': Superprecio1,
+  'superprecio/Superprecio': Superprecio,
+  'Ladrillazos/Ladrillazos1': Ladrillazos1,
+  'Ladrillazos/Ladrillazos2': Ladrillazos2,
+  'Ladrillazos/Ladrillazos3': Ladrillazos3,
+  'Ladrillazos/Ladrillazos4': Ladrillazos4,
+  'mundoExperto/MundoExperto1': MundoExperto1,
+  'Constructor/Constructor1': Constructor1,
+  'ferias de desc/FeriaDescuento1': FeriaDescuento1,
+  'ferias de desc/FeriaDescuento2': FeriaDescuento2,
+  'MultiProductos/MultiProductos': MultiProductos
+};
 
-// Función para cargar dinámicamente un componente
+// Función para cargar componentes usando el mapa estático
 export const loadTemplateComponent = async (componentPath: string): Promise<React.ComponentType<any> | null> => {
   try {
-    // Verificar si ya está en caché
-    if (componentCache[componentPath]) {
-      return componentCache[componentPath];
-    }
+    // Buscar en el mapa de componentes estáticos
+    const component = componentMap[componentPath];
     
-    // Importar dinámicamente con @vite-ignore para evitar problemas en producción
-    const module = await import(/* @vite-ignore */ `../templates/${componentPath}`);
-    const component = module.default;
-    
-    // Guardar en caché
     if (component) {
-      componentCache[componentPath] = component;
+      return component;
+    } else {
+      console.error(`Componente no encontrado en el mapa: ${componentPath}`);
+      return null;
     }
-    
-    return component;
   } catch (error) {
     console.error(`Error al cargar el componente ${componentPath}:`, error);
     return null;
