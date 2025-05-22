@@ -698,11 +698,11 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               </button>
             </div>
 
-            <div className="grid grid-cols-10 gap-10 h-full">
+            <div className="grid grid-cols-10 gap-6 h-full">
               <div className="col-span-3 h-full flex flex-col">
-                <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200 h-full flex flex-col">
-                  {/* Primera fila: Solo empresa */}
-                  <div className="grid grid-cols-1 gap-4">
+                <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200 h-full flex flex-col w-full">
+                  {/* Primera fila: Solo empresa - Comentado temporalmente */}
+                  {/* <div className="grid grid-cols-1 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-white/70 mb-1">
                         Empresa
@@ -714,9 +714,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
                       />
                     </div>
-                  </div>
+                  </div> */}
                   {/* Selección visual de Plantilla y Modelo */}
-                  <div className="border-t border-gray-200 pt-6">
+                  <div className=" border-gray-200 pt-6">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Plantillas:
                     </label>
@@ -881,8 +881,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               </div>
 
               <div className="col-span-7 h-full flex flex-col">
-                <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200 flex flex-1 overflow-y-auto max-h-[700px]">
-                  <div className="grid grid-cols-3 gap-2 transition-all duration-500 h-[800px]">
+                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 flex flex-1 overflow-y-auto max-h-[800px] w-full">
+                  <div className="grid grid-cols-3 gap-10 auto-rows-max transition-all duration-500">
                     {/* Si hay mu00faltiples productos seleccionados y un modelo seleccionado, generar un cartel para cada producto */}
                     {modeloSeleccionado !== null && selectedProducts.length > 1
                       ? // Mapear cada producto seleccionado a un cartel individual
@@ -972,19 +972,19 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                             <div
                               key={modelo.id}
                               className={`
-            cursor-pointer p-2 border rounded-lg flex items-center justify-center
-            transition-all duration-500 ease-in-out overflow-hidden
-            ${
-              isSelected
-                ? "col-span-3 row-span-3 scale-105 z-10 h-[600px] bg-indigo-50 ring-2 ring-indigo-500 border-indigo-500"
-                : ""
-            }
-            ${
-              isAnySelected && !isSelected
-                ? "opacity-0 pointer-events-none scale-95"
-                : "hover:border-indigo-400"
-            }
-          `}
+                                cursor-pointer border rounded-lg flex items-center justify-center
+                                transition-all duration-300 ease-in-out overflow-hidden
+                                ${
+                                  isSelected
+                                    ? "col-span-3 row-span-2 scale-105 z-10 bg-indigo-50 ring-2 ring-indigo-500 border-indigo-500 p-4"
+                                    : "p-3 hover:border-indigo-400 hover:shadow-md"
+                                }
+                                ${
+                                  isAnySelected && !isSelected
+                                    ? "opacity-0 pointer-events-none scale-95"
+                                    : ""
+                                }
+                              `}
                               onClick={() =>
                                 setModeloSeleccionado(
                                   isSelected ? null : modelo.id
@@ -992,9 +992,12 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                               }
                             >
                               <div
-                                className={`w-full h-[320px] ${
-                                  isSelected ? "max-w-[700px]" : "max-w-[320px]"
-                                } aspect-[3/4]`}
+                                className={`
+                                  w-full flex items-center justify-center
+                                  ${isSelected ? "max-w-[600px]" : "max-w-[280px]"}
+                                  ${isSelected ? "h-[400px]" : "h-[280px]"}
+                                  aspect-square
+                                `}
                               >
                                 {Component &&
                                 typeof Component === "function" ? (
