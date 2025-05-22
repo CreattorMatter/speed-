@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   ArrowLeft,
   LayoutGrid,
@@ -23,7 +23,7 @@ import { PosterModal } from "./PosterModal";
 import { COMPANIES } from "../../data/companies";
 import { LOCATIONS, REGIONS } from "../../data/locations";
 import { LoadingModal } from "../LoadingModal";
-import { products } from '../../data/products';
+import { products } from "../../data/products";
 import { SendingModal } from "./SendingModal";
 import { TemplateSelect } from "./TemplateSelect";
 import { FinancingModal } from "./FinancingModal";
@@ -49,6 +49,7 @@ import {
   Combos,
   COMBOS,
 } from "@/constants/posters";
+import { getCombosPorPlantilla } from "@/constants/posters/plantillaCombos";
 
 // Definimos las interfaces necesarias
 interface PlantillaOption {
@@ -76,10 +77,12 @@ interface PosterEditorProps {
 console.log("Importación de productos:", { products });
 
 // Extraer categorías únicas de los productos
-const CATEGORIES = Array.from(new Set(products.map(p => p.category))).map(cat => ({
-  label: cat,
-  value: cat,
-}));
+const CATEGORIES = Array.from(new Set(products.map((p) => p.category))).map(
+  (cat) => ({
+    label: cat,
+    value: cat,
+  })
+);
 console.log("Categorías encontradas:", CATEGORIES);
 
 // Función para limpiar el texto para el nombre del archivo
@@ -108,8 +111,11 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const isDark = theme === "dark";
   const [company, setCompany] = useState("");
   const [promotion, setPromotion] = useState(initialPromotion?.id || "");
-  const [selectedProducts, setSelectedProducts] =
-    useState<Product[]>(initialProducts.map(id => products.find(p => p.id === id)).filter(Boolean) as Product[]);
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>(
+    initialProducts
+      .map((id) => products.find((p) => p.id === id))
+      .filter(Boolean) as Product[]
+  );
   const [selectedCategory, setSelectedCategory] = useState("");
   const navigate = useNavigate();
   const [showLogo, setShowLogo] = useState(true);
@@ -151,7 +157,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     null
   );
   const [formatoSeleccionado, setFormatoSeleccionado] = useState(null);
-  const [selectedProduct, setSelectedProduct] = useState<import('../../types/product').Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<
+    import("../../types/product").Product | null
+  >(null);
   const [maxProductsReached, setMaxProductsReached] = useState<boolean>(false);
 
   console.log("LOCATIONS imported:", LOCATIONS); // Debug
@@ -191,13 +199,13 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     | undefined;
 
   // Modificar el mapeo de productos para asegurar que tienen todos los campos requeridos
-  const mappedProducts = selectedProducts.map(product => {
+  const mappedProducts = selectedProducts.map((product) => {
     // Asegurarnos de que el producto tiene todos los campos requeridos
     return {
       ...product,
       description: product.description || product.name,
       sku: product.sku || product.id,
-      imageUrl: product.imageUrl || (product as any).image || ""
+      imageUrl: product.imageUrl || (product as any).image || "",
     } as Product;
   });
 
@@ -213,6 +221,11 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const empresaId = companyDetails?.empresaId || 0;
   const [plantillaSeleccionada, setPlantillaSeleccionada] =
     useState<PlantillaOption | null>(null);
+    
+  // Filtrar los combos disponibles según la plantilla seleccionada
+  const combosDisponibles = useMemo(() => {
+    return getCombosPorPlantilla(plantillaSeleccionada?.value);
+  }, [plantillaSeleccionada]);
   const [modeloSeleccionado, setModeloSeleccionado] = useState<string | null>(
     null
   );
@@ -232,8 +245,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   };
 
   const handleSelectProduct = (product: Product | Product[] | null) => {
-    console.log('handleSelectProduct recibiendo:', product);
-    
+    console.log("handleSelectProduct recibiendo:", product);
+
     if (Array.isArray(product)) {
       // Si recibimos un array, actualizamos directamente
       setSelectedProducts(product);
@@ -242,10 +255,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     } else if (product) {
       // Si recibimos un solo producto, lo agregamos o quitamos del array
       setSelectedProducts((prev) => {
-        const isSelected = prev.some(p => p.id === product.id);
+        const isSelected = prev.some((p) => p.id === product.id);
         if (isSelected) {
           // Si ya está seleccionado, lo quitamos
-          const newProducts = prev.filter(p => p.id !== product.id);
+          const newProducts = prev.filter((p) => p.id !== product.id);
           setMaxProductsReached(newProducts.length >= 9);
           return newProducts;
         }
@@ -263,7 +276,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       setSelectedProducts([]);
       setMaxProductsReached(false);
     }
-    
+
     // También actualizamos el producto individual seleccionado para plantillas que solo usan uno
     if (product && !Array.isArray(product)) {
       setSelectedProduct(product);
@@ -271,7 +284,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       setSelectedProduct(product[0]);
     } else {
       setSelectedProduct(null);
-      console.log('Productos seleccionados (limpiados): []');
+      console.log("Productos seleccionados (limpiados): []");
     }
   };
 
@@ -713,12 +726,12 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   {/* Selección visual de Plantilla y Modelo */}
                   <div className="border-t border-gray-200 pt-6">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Promocion:
+                      Tipo de Promoción:
                     </label>
                     <ComboSelect
                       value={comboSeleccionado}
                       onChange={setComboSeleccionado}
-                      options={COMBOS}
+                      options={combosDisponibles}
                       placeholder="Seleccionar tipo de promoción..."
                     />
                   </div>
@@ -729,143 +742,91 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       Categorias:
                     </label>
                     <ComboSelect
-  value={CATEGORIES.find(cat => cat.value === selectedCategory) || null}
-  onChange={option => {
-    setSelectedCategory(option ? option.value : null);
-    setSelectedProduct(null);
-  }}
-  options={CATEGORIES}
-  placeholder="Seleccionar categoru00eda..."
-/>
+                      value={
+                        CATEGORIES.find(
+                          (cat) => cat.value === selectedCategory
+                        ) || null
+                      }
+                      onChange={(option) => {
+                        setSelectedCategory(option ? option.value : null);
+                        setSelectedProduct(null);
+                      }}
+                      options={CATEGORIES}
+                      placeholder="Seleccionar categoru00eda..."
+                    />
                   </div>
 
                   {/* Selección visual de Productos */}
                   <div className="mb-4">
                     <div className="flex justify-between items-center">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {plantillaSeleccionada?.value === "multiproductos" || plantillaSeleccionada?.value?.includes("multiproductos") ? "Productos (seleccione hasta 9)" : "Producto"}
+                        {plantillaSeleccionada?.value === "multiproductos" ||
+                        plantillaSeleccionada?.value?.includes("multiproductos")
+                          ? "Productos (seleccione hasta 9)"
+                          : "Producto"}
                       </label>
-                      {(plantillaSeleccionada?.value === "multiproductos" || plantillaSeleccionada?.value?.includes("multiproductos")) && (
+                      {(plantillaSeleccionada?.value === "multiproductos" ||
+                        plantillaSeleccionada?.value?.includes(
+                          "multiproductos"
+                        )) && (
                         <span className="text-xs text-gray-500 mb-1">
-                          {selectedProducts.length}/9 {maxProductsReached && "(Máximo alcanzado)"}
+                          {selectedProducts.length}/9{" "}
+                          {maxProductsReached && "(Máximo alcanzado)"}
                         </span>
                       )}
                     </div>
                     <ProductSelect
-                      products={selectedCategory
-                        ? products.filter(p => p.category === selectedCategory)
-                        : products}
+                      products={
+                        selectedCategory
+                          ? products.filter(
+                              (p) => p.category === selectedCategory
+                            )
+                          : products
+                      }
                       value={
                         selectedProducts.length > 0
-                          ? selectedProducts.map(p => ({
+                          ? selectedProducts.map((p) => ({
                               label: p.name,
-                              value: p
+                              value: p,
                             }))
                           : null
                       }
                       onChange={(selected) => {
-                        console.log('ProductSelect onChange:', selected);
+                        console.log("ProductSelect onChange:", selected);
                         if (Array.isArray(selected)) {
                           // Limitar a 9 productos para MultiProductos
                           const limitedSelection = selected.slice(0, 9);
-                          handleSelectProduct(limitedSelection.map(s => s.value));
+                          handleSelectProduct(
+                            limitedSelection.map((s) => s.value)
+                          );
                         } else {
                           handleSelectProduct(selected ? selected.value : null);
                         }
                       }}
-                      isMulti={plantillaSeleccionada?.value === "multiproductos" || plantillaSeleccionada?.value?.includes("multiproductos")}
+                      isMulti={
+                        plantillaSeleccionada?.value === "multiproductos" ||
+                        plantillaSeleccionada?.value?.includes("multiproductos")
+                      }
                       className="w-full"
-                      placeholder={plantillaSeleccionada?.value === "multiproductos" || plantillaSeleccionada?.value?.includes("multiproductos") ? "Seleccione hasta 9 productos..." : "Seleccionar producto..."}
+                      placeholder={
+                        plantillaSeleccionada?.value === "multiproductos" ||
+                        plantillaSeleccionada?.value?.includes("multiproductos")
+                          ? "Seleccione hasta 9 productos..."
+                          : "Seleccionar producto..."
+                      }
                     />
                     {selectedProducts.length > 0 && (
                       <div className="mt-2 text-sm text-gray-500">
                         {selectedProducts.length} producto(s) seleccionado(s)
-                        {plantillaSeleccionada?.value === "multiproductos" && selectedProducts.length >= 9 && (
-                          <span className="ml-2 text-amber-600 font-medium">
-                            (Máximo alcanzado)
-                          </span>
-                        )}
+                        {plantillaSeleccionada?.value === "multiproductos" &&
+                          selectedProducts.length >= 9 && (
+                            <span className="ml-2 text-amber-600 font-medium">
+                              (Máximo alcanzado)
+                            </span>
+                          )}
                       </div>
                     )}
                   </div>
-
-                  {/* El botón de financiación se ha unificado y ahora solo aparece en la sección de abajo */}
-
-                  {/* Tercera fila: Promoción */}
-                  {/* <div className="border-t border-gray-200 pt-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Promoción:
-                      </label>
-                      <PromotionSelect
-                        value={promotion}
-                        onChange={setPromotion}
-                        promotions={PROMOTIONS}
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                      />
-                    </div>
-
-                    {selectedPromotion && (
-                      <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-                        <div className="flex items-start gap-6">
-                          <img
-                            src={selectedPromotion.imageUrl}
-                            alt={selectedPromotion.title}
-                            className="w-32 h-32 object-cover rounded-lg"
-                          />
-                          <div className="flex-1 space-y-4">
-                            <div>
-                              <div className="flex items-center gap-3">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                  {selectedPromotion.title}
-                                </h3>
-                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                                  {selectedPromotion.category}
-                                </span>
-                              </div>
-                              <p className="text-gray-600 mt-1">
-                                {selectedPromotion.description}
-                              </p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <h4 className="text-sm font-medium text-gray-700 mb-1">
-                                  Descuento
-                                </h4>
-                                <p className="text-2xl font-bold text-indigo-600">
-                                  {selectedPromotion.discount}
-                                </p>
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-medium text-gray-700 mb-1">
-                                  Vigencia
-                                </h4>
-                                <p className="text-gray-900">
-                                  {new Date(
-                                    selectedPromotion.startDate
-                                  ).toLocaleDateString()}{" "}
-                                  -{" "}
-                                  {new Date(
-                                    selectedPromotion.endDate
-                                  ).toLocaleDateString()}
-                                  (condition, index) => (
-                                    <li
-                                      key={index}
-                                      className="text-gray-600 text-sm flex items-center gap-2"
-                                    >
-                                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                                      {condition}
-                                    </li>
-                                  )
-                                )}
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div> */}
                   {/* Segunda fila: Plantilla y botón de Financiación */}
                   <div className="grid grid-cols-1 gap-4">
                     <div>
@@ -905,18 +866,75 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               <div className="col-span-7 h-full flex flex-col">
                 <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200 flex flex-1 overflow-y-auto max-h-[700px]">
                   <div className="grid grid-cols-3 gap-2 transition-all duration-500 h-[800px]">
-                    {(
-                      PLANTILLA_MODELOS[plantillaSeleccionada?.value] || []
-                    ).map((modelo: ModeloOption) => {
-                      const isSelected = modeloSeleccionado === modelo.id;
-                      const isAnySelected = modeloSeleccionado !== null;
-                      const Component =
-                        templateComponents[modelo.componentPath];
+                    {/* Si hay mu00faltiples productos seleccionados y un modelo seleccionado, generar un cartel para cada producto */}
+                    {modeloSeleccionado !== null && selectedProducts.length > 1
+                      ? // Mapear cada producto seleccionado a un cartel individual
+                        selectedProducts.map((product, productIndex) => {
+                          const modelo = (
+                            PLANTILLA_MODELOS[
+                              plantillaSeleccionada?.value || ""
+                            ] || []
+                          ).find(
+                            (m: ModeloOption) => m.id === modeloSeleccionado
+                          );
 
-                      return (
-                        <div
-                          key={modelo.id}
-                          className={`
+                          if (!modelo) return null;
+
+                          const Component =
+                            templateComponents[modelo.componentPath];
+
+                          return (
+                            <div
+                              key={`${modelo.id}-${productIndex}`}
+                              className={`
+                              cursor-pointer p-2 border rounded-lg flex items-center justify-center
+                              transition-all duration-500 ease-in-out overflow-hidden
+                              col-span-1 row-span-1 hover:border-indigo-400
+                            `}
+                            >
+                              <div className="w-full h-[320px] max-w-[320px] aspect-[3/4]">
+                                {Component &&
+                                typeof Component === "function" ? (
+                                  <Component
+                                    small={true}
+                                    nombre={product.name}
+                                    precioActual={product.price?.toString()}
+                                    porcentaje="20"
+                                    sap={product.sku || ""}
+                                    fechasDesde="15/05/2025"
+                                    fechasHasta="18/05/2025"
+                                    origen="ARG"
+                                    precioSinImpuestos={
+                                      product.price
+                                        ? (product.price * 0.83).toFixed(2)
+                                        : ""
+                                    }
+                                    financiacion={selectedFinancing}
+                                    productos={[product]}
+                                    titulo="Ofertas Especiales"
+                                  />
+                                ) : (
+                                  <div>Error al cargar el componente</div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      : // Comportamiento normal cuando no hay mu00faltiples productos seleccionados
+                        (
+                          PLANTILLA_MODELOS[
+                            plantillaSeleccionada?.value || ""
+                          ] || []
+                        ).map((modelo: ModeloOption) => {
+                          const isSelected = modeloSeleccionado === modelo.id;
+                          const isAnySelected = modeloSeleccionado !== null;
+                          const Component =
+                            templateComponents[modelo.componentPath];
+
+                          return (
+                            <div
+                              key={modelo.id}
+                              className={`
             cursor-pointer p-2 border rounded-lg flex items-center justify-center
             transition-all duration-500 ease-in-out overflow-hidden
             ${
@@ -930,297 +948,59 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                 : "hover:border-indigo-400"
             }
           `}
-                          onClick={() =>
-                            setModeloSeleccionado(isSelected ? null : modelo.id)
-                          }
-                        >
-                          <div
-                            className={`w-full h-[320px] ${
-                              isSelected ? "max-w-[700px]" : "max-w-[320px]"
-                            } aspect-[3/4]`}
-                          >
-                            {Component && typeof Component === "function" ? (
-                              <Component
-                                small={!isSelected}
-                                nombre={selectedProduct?.name}
-                                precioActual={selectedProduct?.price?.toString()}
-                                porcentaje="20"
-                                sap={selectedProduct?.sku || ""}
-                                fechasDesde="15/05/2025"
-                                fechasHasta="18/05/2025"
-                                origen="ARG"
-                                precioSinImpuestos={selectedProduct?.price ? (selectedProduct.price * 0.83).toFixed(2) : ""}
-                                financiacion={selectedFinancing}
-                                productos={modelo.componentPath.toLowerCase().includes("multiproductos") ? selectedProducts : selectedProduct ? [selectedProduct] : []}
-                                titulo="Ofertas Especiales"
-                              />
-                            ) : (
-                              <div>Error al cargar el componente</div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                              onClick={() =>
+                                setModeloSeleccionado(
+                                  isSelected ? null : modelo.id
+                                )
+                              }
+                            >
+                              <div
+                                className={`w-full h-[320px] ${
+                                  isSelected ? "max-w-[700px]" : "max-w-[320px]"
+                                } aspect-[3/4]`}
+                              >
+                                {Component &&
+                                typeof Component === "function" ? (
+                                  <Component
+                                    small={!isSelected}
+                                    nombre={selectedProduct?.name}
+                                    precioActual={selectedProduct?.price?.toString()}
+                                    porcentaje="20"
+                                    sap={selectedProduct?.sku || ""}
+                                    fechasDesde="15/05/2025"
+                                    fechasHasta="18/05/2025"
+                                    origen="ARG"
+                                    precioSinImpuestos={
+                                      selectedProduct?.price
+                                        ? (
+                                            selectedProduct.price * 0.83
+                                          ).toFixed(2)
+                                        : ""
+                                    }
+                                    financiacion={selectedFinancing}
+                                    productos={
+                                      // Para plantillas normales, pasar el producto seleccionado
+                                      modelo.componentPath
+                                        .toLowerCase()
+                                        .includes("multiproductos")
+                                        ? selectedProducts
+                                        : selectedProduct
+                                        ? [selectedProduct]
+                                        : []
+                                    }
+                                    titulo="Ofertas Especiales"
+                                  />
+                                ) : (
+                                  <div>Error al cargar el componente</div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                   </div>
                 </div>
               </div>
             </div>
-{/* 
-            {(selectedCategory || mappedProducts.length > 0) && (
-              <div className="border-t border-gray-200 pt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center gap-4">
-                    {/* Controles agrupados 
-                    <div className="flex items-center gap-4">
-                      {/* Vista grilla/lista 
-                      <div className="flex bg-gray-200 rounded-lg p-1">
-                        <button
-                          onClick={() => setViewMode("grid")}
-                          className={`p-2 rounded-md transition-colors ${
-                            viewMode === "grid"
-                              ? "bg-gray-300 text-gray-700"
-                              : "text-gray-500 hover:text-gray-700"
-                          }`}
-                        >
-                          <LayoutGrid className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setViewMode("list")}
-                          className={`p-2 rounded-md transition-colors ${
-                            viewMode === "list"
-                              ? "bg-gray-300 text-gray-700"
-                              : "text-gray-500 hover:text-gray-700"
-                          }`}
-                        >
-                          <List className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Separador vertical 
-                      <div className="h-8 w-px bg-gray-200"></div>
-
-                      {/* Selector de formato 
-                      <div className="relative">
-                        <button
-                          onClick={() =>
-                            setShowFormatSelector(!showFormatSelector)
-                          }
-                          className="bg-gray-200 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors flex items-center gap-2"
-                        >
-                          {selectedFormat.id}
-                          <span className="text-xs text-gray-500">
-                            {selectedFormat.width} × {selectedFormat.height}
-                          </span>
-                          <svg
-                            className="w-4 h-4 text-gray-500"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </button>
-
-                        {/* Menú desplegable de formatos 
-                        {showFormatSelector && (
-                          <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-64 z-50">
-                            {PAPER_FORMATS.map((format) => (
-                              <button
-                                key={format.id}
-                                onClick={() => {
-                                  setSelectedFormat(format);
-                                  setShowFormatSelector(false);
-                                }}
-                                className={`w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center justify-between ${
-                                  selectedFormat.id === format.id
-                                    ? "bg-gray-50 text-indigo-600"
-                                    : "text-gray-700"
-                                }`}
-                              >
-                                <span className="font-medium">
-                                  {format.name}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {format.width} × {format.height}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Separador vertical 
-                      <div className="h-8 w-px bg-gray-200"></div>
-
-                      {/* Control de orientación 
-                      <button
-                        onClick={() => setIsLandscape(!isLandscape)}
-                        className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors flex items-center gap-2"
-                      >
-                        <svg
-                          className={`w-4 h-4 transition-transform ${
-                            isLandscape ? "rotate-90" : ""
-                          }`}
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                        >
-                          <rect
-                            x="4"
-                            y="5"
-                            width="16"
-                            height="14"
-                            rx="2"
-                            strokeWidth="2"
-                          />
-                        </svg>
-                        <span className="text-sm">
-                          {isLandscape ? "Horizontal" : "Vertical"}
-                        </span>
-                      </button>
-
-                      {/* Separador vertical 
-                      <div className="h-8 w-px bg-gray-200"></div>
-
-                      {/* Controles de zoom 
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={handleZoomOut}
-                          className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className="text-sm text-gray-600 min-w-[3rem] text-center">
-                          {Math.round(zoom * 100)}%
-                        </span>
-                        <button
-                          onClick={handleZoomIn}
-                          className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Separador vertical 
-                      <div className="h-8 w-px bg-gray-200"></div>
-
-                      {/* Controles de tamaño del cartel 
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleCardSizeChange(cardSize - 0.05)}
-                          className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className="text-sm text-gray-600 min-w-[3rem] text-center">
-                          {Math.round(cardSize * 100)}%
-                        </span>
-                        <button
-                          onClick={() => handleCardSizeChange(cardSize + 0.05)}
-                          className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Controles del lado derecho 
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="show-logo"
-                      checked={showLogo}
-                      onChange={(e) => setShowLogo(e.target.checked)}
-                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <label
-                      htmlFor="show-logo"
-                      className="text-sm text-gray-700"
-                    >
-                      Mostrar logo
-                    </label>
-                  </div>
-
-                  {/* Botones de acción 
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={handleSendToLocations}
-                      disabled={!selectedProducts.length || !company}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors
-                        ${
-                          !selectedProducts.length || !company
-                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                            : "bg-indigo-600 text-white hover:bg-indigo-700"
-                        }`}
-                    >
-                      Enviar a Sucursales
-                    </button>
-
-                    {/* Botones agrupados 
-                    <div className="flex items-center gap-2">
-                      {/* Botón de Descargar 
-                      <button
-                        onClick={handleDownload}
-                        className="px-4 py-2 rounded-lg font-medium bg-emerald-600 text-white 
-                                  hover:bg-emerald-700 transition-colors flex items-center gap-2"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                          />
-                        </svg>
-                        Descargar
-                      </button>
-
-                      {/* Botón de Guardar Cartel 
-                      <button
-                        onClick={handleSavePosters}
-                        className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white 
-                                  hover:bg-blue-700 transition-colors flex items-center gap-2"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-                          />
-                        </svg>
-                        Guardar Cartel
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div
-              id="poster-container"
-              className="h-[800px] w-[1080px] mx-auto overflow-y-auto"
-            >
-              <div className={viewMode === "grid" ? "space-y-8" : "space-y-4"}>
-                {renderPosters()}
-              </div>
-            </div> */}
 
             <ProductSelectorModal
               isOpen={isProductSelectorOpen}
