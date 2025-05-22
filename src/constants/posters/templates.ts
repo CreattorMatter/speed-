@@ -26,6 +26,7 @@ export const PLANTILLAS: TemplateOption[] = [
   { label: "Ladrillazos", value: "Ladrillazos" },
   { label: "Mundo Experto", value: "Mundo Experto" },
   { label: "Constructor", value: "Constructor" },
+  { label: "Multi Productos", value: "Multi Productos" },
 ];
 
 // Mapeo de plantillas a sus modelos
@@ -42,6 +43,25 @@ export const PLANTILLA_MODELOS: Record<string, TemplateModel[]> = {
     { id: "superprecio-9", componentPath: "superprecio/Superprecio1" },
     { id: "superprecio-10", componentPath: "superprecio/Superprecio1" },
   ],
+  "Ladrillazos": [
+    { id: "ladrillazos-1", componentPath: "Ladrillazos/Ladrillazos1" },
+    { id: "ladrillazos-2", componentPath: "Ladrillazos/Ladrillazos1" },
+    { id: "ladrillazos-3", componentPath: "Ladrillazos/Ladrillazos1" },
+  ],
+  "Mundo Experto": [
+    { id: "mundo-experto-1", componentPath: "mundoExperto/MundoExperto1" },
+    { id: "mundo-experto-2", componentPath: "mundoExperto/MundoExperto1" },
+    { id: "mundo-experto-3", componentPath: "mundoExperto/MundoExperto1" },
+  ],
+  "Constructor": [
+    { id: "constructor-1", componentPath: "Constructor/Constructor1" },
+    { id: "constructor-2", componentPath: "Constructor/Constructor1" },
+    { id: "constructor-3", componentPath: "Constructor/Constructor1" },
+  ],
+  "Feria de descuentos": [
+    { id: "feria-descuento-1", componentPath: "ferias de desc/FeriaDescuento1" },
+    { id: "feria-descuento-2", componentPath: "ferias de desc/FeriaDescuento2" },
+  ],
   "Hot sake": [
     { id: "hotsake-1", componentPath: "HotSake/HotSake" }
   ],
@@ -50,6 +70,9 @@ export const PLANTILLA_MODELOS: Record<string, TemplateModel[]> = {
   ],
   "Troncales": [
     { id: "troncal-1", componentPath: "Troncal/Troncal" }
+  ],
+  "Multi Productos": [
+    { id: "multi-productos-1", componentPath: "MultiProductos/MultiProductos" }
   ],
 };
 

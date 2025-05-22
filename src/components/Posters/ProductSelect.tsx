@@ -1,100 +1,97 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Search } from 'lucide-react';
-import Select from 'react-select';
+import React from "react";
+import Select, { components, OptionProps, MultiValue } from "react-select";
 
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  category: string;
+// Importamos la interfaz Product desde el archivo de tipos
+import { Product } from "../../types/product";
+
+interface ProductOption {
+  label: string;
+  value: Product;
 }
 
 interface ProductSelectProps {
-  value: string[];
-  onChange: (value: string[]) => void;
   products: Product[];
+  value: ProductOption | ProductOption[] | null;
+  onChange: (selectedOption: ProductOption | ProductOption[] | null) => void;
+  className?: string;
+  placeholder?: string;
+  isMulti?: boolean;
 }
 
-interface ProductOption {
-  value: string;
-  label: string;
-  price: number;
-  category: string;
-}
-
-
-// Función para transformar un producto en una opción del selector
-const mapProductToOption = (product: Product): ProductOption => ({
-  value: product.id,
-  label: product.name,
-  price: product.price,
-  category: product.category
-});
+// Componente personalizado para mostrar el SKU junto al nombre
+const CustomOption = (props: OptionProps<ProductOption>) => {
+  const { data } = props;
+  return (
+    <components.Option {...props}>
+      <div className="flex flex-col">
+        <div>{data.label}</div>
+        {data.value.sku && (
+          <div className="text-xs text-gray-500">
+            SKU: {data.value.sku}
+          </div>
+        )}
+      </div>
+    </components.Option>
+  );
+};
 
 export const ProductSelect: React.FC<ProductSelectProps> = ({
+  products,
   value,
   onChange,
-  products,
-  ...props
+  className = "",
+  placeholder = "Seleccionar producto...",
+  isMulti = false,
 }) => {
-  // Transformar productos a opciones
-  const options = products.map(mapProductToOption);
+  // Transformar productos a opciones para react-select
+  const productOptions: ProductOption[] = products.map(product => ({
+    label: product.name,
+    value: product // El objeto producto completo
+  }));
 
-  // Personalizar el renderizado de cada opción
-  const customOption = ({ label, price, category }: ProductOption) => (
-    <div className="flex justify-between items-center py-1">
-      <div>
-        <div className="font-medium text-gray-900">{label}</div>
-        <div className="text-sm text-gray-600">{category}</div>
-      </div>
-      <div className="text-sm font-medium text-gray-900">
-        ${price.toLocaleString('es-AR')}
-      </div>
-    </div>
-  );
+  // Encontrar la opción seleccionada (puede ser múltiple o única)
+  const selectedOption = value
+    ? Array.isArray(value)
+      ? value.map(v => ({ label: v.value.name, value: v.value }))
+      : { label: value.value.name, value: value.value }
+    : null;
+    
+  // Imprimir para depuración
+  console.log('ProductSelect - selectedOption:', selectedOption);
+  console.log('ProductSelect - isMulti:', isMulti);
+
+  // Filtro personalizado para buscar por nombre o SKU
+  const filterOption = (option: any, inputValue: string) => {
+    const product = option.data.value;
+    
+    // Convertir todo a minúsculas para una búsqueda insensible a mayúsculas/minúsculas
+    const input = inputValue.toLowerCase();
+    const name = option.label.toLowerCase();
+    const sku = product.sku?.toLowerCase() || "";
+    
+    // Buscar en nombre o SKU
+    return name.includes(input) || sku.includes(input);
+  };
 
   return (
-    <Select
-      isMulti
-      options={options}
-      value={options.filter(option => value.includes(option.value))}
-      onChange={(selected) => {
-        onChange(selected ? selected.map(option => option.value) : []);
+    <Select<ProductOption, typeof isMulti>
+      value={selectedOption}
+      onChange={(option) => {
+        if (isMulti) {
+          onChange(option as MultiValue<ProductOption>);
+        } else {
+          onChange(option as ProductOption | null);
+        }
       }}
-      formatOptionLabel={customOption}
-      styles={{
-        control: (base) => ({
-          ...base,
-          backgroundColor: 'white',
-          maxHeight: '120px',
-          overflowY: 'auto'
-        }),
-        option: (base, state) => ({
-          ...base,
-          backgroundColor: state.isFocused ? '#f3f4f6' : 'white',
-          color: 'black',
-          '&:hover': {
-            backgroundColor: '#f3f4f6',
-
-          }
-        }),
-        multiValue: (base) => ({
-          ...base,
-          backgroundColor: '#f3f4f6',
-
-        }),
-        multiValueLabel: (base) => ({
-          ...base,
-          color: 'black'
-        }),
-        menu: (base) => ({
-          ...base,
-          backgroundColor: 'white'
-        })
-      }}
-      {...props}
+      options={productOptions}
+      placeholder={placeholder}
+      className={className}
+      isClearable
+      isMulti={isMulti}
+      components={{ Option: CustomOption }}
+      filterOption={filterOption}
     />
   );
-}; 
+};
+
+export default ProductSelect;

@@ -23,7 +23,7 @@ import { PosterModal } from "./PosterModal";
 import { COMPANIES } from "../../data/companies";
 import { LOCATIONS, REGIONS } from "../../data/locations";
 import { LoadingModal } from "../LoadingModal";
-import { products } from "../../data/products";
+import { products } from '../../data/products';
 import { SendingModal } from "./SendingModal";
 import { TemplateSelect } from "./TemplateSelect";
 import { FinancingModal } from "./FinancingModal";
@@ -46,7 +46,23 @@ import {
   PLANTILLAS,
   PROMOTIONS,
   loadTemplateComponent,
+  Combos,
+  COMBOS,
 } from "@/constants/posters";
+
+// Definimos las interfaces necesarias
+interface PlantillaOption {
+  value: string;
+  label: string;
+}
+
+interface ModeloOption {
+  id: string;
+  componentPath: string;
+  name?: string;
+}
+import { ComboSelect } from "./ComboSelect";
+import PaperFormatSelect from "./PaperFormatSelect";
 
 interface PosterEditorProps {
   onBack: () => void;
@@ -60,7 +76,10 @@ interface PosterEditorProps {
 console.log("Importación de productos:", { products });
 
 // Extraer categorías únicas de los productos
-const CATEGORIES = Array.from(new Set(products.map((p) => p.category)));
+const CATEGORIES = Array.from(new Set(products.map(p => p.category))).map(cat => ({
+  label: cat,
+  value: cat,
+}));
 console.log("Categorías encontradas:", CATEGORIES);
 
 // Función para limpiar el texto para el nombre del archivo
@@ -90,7 +109,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const [company, setCompany] = useState("");
   const [promotion, setPromotion] = useState(initialPromotion?.id || "");
   const [selectedProducts, setSelectedProducts] =
-    useState<string[]>(initialProducts);
+    useState<Product[]>(initialProducts.map(id => products.find(p => p.id === id)).filter(Boolean) as Product[]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const navigate = useNavigate();
   const [showLogo, setShowLogo] = useState(true);
@@ -127,6 +146,13 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       created_at: string;
     }>
   >([]);
+
+  const [comboSeleccionado, setComboSeleccionado] = useState<Combos | null>(
+    null
+  );
+  const [formatoSeleccionado, setFormatoSeleccionado] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState<import('../../types/product').Product | null>(null);
+  const [maxProductsReached, setMaxProductsReached] = useState<boolean>(false);
 
   console.log("LOCATIONS imported:", LOCATIONS); // Debug
   console.log("COMPANIES imported:", COMPANIES); // Debug
@@ -165,21 +191,15 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     | undefined;
 
   // Modificar el mapeo de productos para asegurar que tienen todos los campos requeridos
-  const mappedProducts = selectedProducts
-    .map((productId) => {
-      const product = products.find((p) => p.id === productId);
-      if (product) {
-        // Asegurarnos de que el producto tiene todos los campos requeridos
-        return {
-          ...product,
-          description: product.description || product.name,
-          sku: product.sku || product.id,
-          imageUrl: product.imageUrl || product.image || "",
-        } as Product;
-      }
-      return undefined;
-    })
-    .filter((p): p is Product => p !== undefined);
+  const mappedProducts = selectedProducts.map(product => {
+    // Asegurarnos de que el producto tiene todos los campos requeridos
+    return {
+      ...product,
+      description: product.description || product.name,
+      sku: product.sku || product.id,
+      imageUrl: product.imageUrl || (product as any).image || ""
+    } as Product;
+  });
 
   const handlePrint = () => {
     const printData = {
@@ -211,13 +231,48 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     });
   };
 
-  const handleSelectProduct = (productId: string) => {
-    setSelectedProducts((prev) => {
-      if (prev.includes(productId)) {
-        return prev.filter((id) => id !== productId);
-      }
-      return [...prev, productId];
-    });
+  const handleSelectProduct = (product: Product | Product[] | null) => {
+    console.log('handleSelectProduct recibiendo:', product);
+    
+    if (Array.isArray(product)) {
+      // Si recibimos un array, actualizamos directamente
+      setSelectedProducts(product);
+      // Actualizamos el estado de máximo alcanzado
+      setMaxProductsReached(product.length >= 9);
+    } else if (product) {
+      // Si recibimos un solo producto, lo agregamos o quitamos del array
+      setSelectedProducts((prev) => {
+        const isSelected = prev.some(p => p.id === product.id);
+        if (isSelected) {
+          // Si ya está seleccionado, lo quitamos
+          const newProducts = prev.filter(p => p.id !== product.id);
+          setMaxProductsReached(newProducts.length >= 9);
+          return newProducts;
+        }
+        // Si no está seleccionado y no hemos alcanzado el máximo, lo agregamos
+        if (prev.length < 9) {
+          const newProducts = [...prev, product];
+          setMaxProductsReached(newProducts.length >= 9);
+          return newProducts;
+        }
+        // Si ya alcanzamos el máximo, no hacemos nada
+        return prev;
+      });
+    } else {
+      // Si recibimos null, limpiamos la selección
+      setSelectedProducts([]);
+      setMaxProductsReached(false);
+    }
+    
+    // También actualizamos el producto individual seleccionado para plantillas que solo usan uno
+    if (product && !Array.isArray(product)) {
+      setSelectedProduct(product);
+    } else if (Array.isArray(product) && product.length > 0) {
+      setSelectedProduct(product[0]);
+    } else {
+      setSelectedProduct(null);
+      console.log('Productos seleccionados (limpiados): []');
+    }
   };
 
   // Simular carga inicial
@@ -574,25 +629,25 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   useEffect(() => {
     const loadComponents = async () => {
       try {
-      const components: Record<string, React.ComponentType<any>> = {};
+        const components: Record<string, React.ComponentType<any>> = {};
 
-      // Cargar todos los componentes únicos
-      const uniquePaths = new Set<string>();
-      Object.values(PLANTILLA_MODELOS).forEach((models) => {
-        models.forEach((model) => uniquePaths.add(model.componentPath));
-      });
+        // Cargar todos los componentes únicos
+        const uniquePaths = new Set<string>();
+        Object.values(PLANTILLA_MODELOS).forEach((models) => {
+          models.forEach((model) => uniquePaths.add(model.componentPath));
+        });
 
-      // Cargar cada componente
-      for (const path of uniquePaths) {
-        console.log(`Cargando componente: ${path}`);
-        const component = await loadTemplateComponent(path);
-        console.log(`Componente cargado: ${path}`, !!component);
-        if (component) {
-          components[path] = component;
+        // Cargar cada componente
+        for (const path of uniquePaths) {
+          console.log(`Cargando componente: ${path}`);
+          const component = await loadTemplateComponent(path);
+          console.log(`Componente cargado: ${path}`, !!component);
+          if (component) {
+            components[path] = component;
+          }
         }
-      }
 
-      setTemplateComponents(components);
+        setTemplateComponents(components);
       } catch (error) {
         console.error("Error al cargar los componentes:", error);
       }
@@ -607,7 +662,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
         <Header onBack={onBack} onLogout={onLogout} />
-        <div className="poster-editor-container min-h-screen flex flex-col bg-white">
+        <div className="poster-editor-container min-h-screen w-full flex flex-col bg-white">
           <main className="pt-10 px-6 pb-6 max-w-7xl mx-auto space-y-6 min-h-[1000px]">
             <div className="flex items-center justify-between gap-4 mb-8">
               <h2 className="text-2xl font-medium text-gray-900">
@@ -625,8 +680,8 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               </button>
             </div>
 
-            <div className="grid grid-cols-4 gap-4 h-full">
-              <div className="col-span-1 h-full flex flex-col">
+            <div className="grid grid-cols-10 gap-10 h-full">
+              <div className="col-span-3 h-full flex flex-col">
                 <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200 h-full flex flex-col">
                   {/* Primera fila: Solo empresa */}
                   <div className="grid grid-cols-1 gap-4">
@@ -655,37 +710,89 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                     />
                   </div>
 
+                  {/* Selección visual de Plantilla y Modelo */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Promocion:
+                    </label>
+                    <ComboSelect
+                      value={comboSeleccionado}
+                      onChange={setComboSeleccionado}
+                      options={COMBOS}
+                      placeholder="Seleccionar tipo de promoción..."
+                    />
+                  </div>
+
                   {/* Selección visual de Categoria */}
                   <div className="border-t border-gray-200 pt-6">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Categorias:
                     </label>
-                    <CategorySelect
-                      value={selectedCategory}
-                      onChange={setSelectedCategory}
-                      categories={CATEGORIES}
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                    />
+                    <ComboSelect
+  value={CATEGORIES.find(cat => cat.value === selectedCategory) || null}
+  onChange={option => {
+    setSelectedCategory(option ? option.value : null);
+    setSelectedProduct(null);
+  }}
+  options={CATEGORIES}
+  placeholder="Seleccionar categoru00eda..."
+/>
                   </div>
 
                   {/* Selección visual de Productos */}
-                  <div className="border-t border-gray-200 pt-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Productos:
-                    </label>
-                    <div className="relative max-h-[200px]">
-                      <ProductSelect
-                        value={selectedProducts}
-                        onChange={setSelectedProducts}
-                        products={filteredProducts}
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/30"
-                        menuPlacement="top"
-                      />
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {plantillaSeleccionada?.value === "multiproductos" || plantillaSeleccionada?.value?.includes("multiproductos") ? "Productos (seleccione hasta 9)" : "Producto"}
+                      </label>
+                      {(plantillaSeleccionada?.value === "multiproductos" || plantillaSeleccionada?.value?.includes("multiproductos")) && (
+                        <span className="text-xs text-gray-500 mb-1">
+                          {selectedProducts.length}/9 {maxProductsReached && "(Máximo alcanzado)"}
+                        </span>
+                      )}
                     </div>
+                    <ProductSelect
+                      products={selectedCategory
+                        ? products.filter(p => p.category === selectedCategory)
+                        : products}
+                      value={
+                        selectedProducts.length > 0
+                          ? selectedProducts.map(p => ({
+                              label: p.name,
+                              value: p
+                            }))
+                          : null
+                      }
+                      onChange={(selected) => {
+                        console.log('ProductSelect onChange:', selected);
+                        if (Array.isArray(selected)) {
+                          // Limitar a 9 productos para MultiProductos
+                          const limitedSelection = selected.slice(0, 9);
+                          handleSelectProduct(limitedSelection.map(s => s.value));
+                        } else {
+                          handleSelectProduct(selected ? selected.value : null);
+                        }
+                      }}
+                      isMulti={plantillaSeleccionada?.value === "multiproductos" || plantillaSeleccionada?.value?.includes("multiproductos")}
+                      className="w-full"
+                      placeholder={plantillaSeleccionada?.value === "multiproductos" || plantillaSeleccionada?.value?.includes("multiproductos") ? "Seleccione hasta 9 productos..." : "Seleccionar producto..."}
+                    />
+                    {selectedProducts.length > 0 && (
+                      <div className="mt-2 text-sm text-gray-500">
+                        {selectedProducts.length} producto(s) seleccionado(s)
+                        {plantillaSeleccionada?.value === "multiproductos" && selectedProducts.length >= 9 && (
+                          <span className="ml-2 text-amber-600 font-medium">
+                            (Máximo alcanzado)
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
+                  {/* El botón de financiación se ha unificado y ahora solo aparece en la sección de abajo */}
+
                   {/* Tercera fila: Promoción */}
-                  <div className="border-t border-gray-200 pt-4">
+                  {/* <div className="border-t border-gray-200 pt-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Promoción:
@@ -742,37 +849,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                                   {new Date(
                                     selectedPromotion.endDate
                                   ).toLocaleDateString()}
-                                </p>
-                              </div>
-                            </div>
-
-                            {selectedPromotion.category === "Bancaria" && (
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <h4 className="text-sm font-medium text-gray-700 mb-1">
-                                    Banco
-                                  </h4>
-                                  <p className="text-gray-900">
-                                    {selectedPromotion.bank}
-                                  </p>
-                                </div>
-                                <div>
-                                  <h4 className="text-sm font-medium text-gray-700 mb-1">
-                                    Tarjetas
-                                  </h4>
-                                  <p className="text-gray-900">
-                                    {selectedPromotion.cardType}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-700 mb-2">
-                                Condiciones
-                              </h4>
-                              <ul className="space-y-1">
-                                {selectedPromotion.conditions.map(
                                   (condition, index) => (
                                     <li
                                       key={index}
@@ -789,7 +865,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         </div>
                       </div>
                     )}
-                  </div>
+                  </div> */}
                   {/* Segunda fila: Plantilla y botón de Financiación */}
                   <div className="grid grid-cols-1 gap-4">
                     <div>
@@ -812,15 +888,26 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       </div>
                     </div>
                   </div>
+
+                  {/* Selección visual de Plantilla y Modelo */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tamaño de papel:
+                    </label>
+                    <PaperFormatSelect
+                      value={formatoSeleccionado}
+                      onChange={setFormatoSeleccionado}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="col-span-3 h-full flex flex-col">
-                <div className="flex-1 overflow-y-auto max-h-[600px]">
-                  <div className="grid grid-cols-3 gap-4 transition-all duration-500">
+              <div className="col-span-7 h-full flex flex-col">
+                <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200 flex flex-1 overflow-y-auto max-h-[700px]">
+                  <div className="grid grid-cols-3 gap-2 transition-all duration-500 h-[800px]">
                     {(
                       PLANTILLA_MODELOS[plantillaSeleccionada?.value] || []
-                    ).map((modelo) => {
+                    ).map((modelo: ModeloOption) => {
                       const isSelected = modeloSeleccionado === modelo.id;
                       const isAnySelected = modeloSeleccionado !== null;
                       const Component =
@@ -830,26 +917,43 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         <div
                           key={modelo.id}
                           className={`
-        cursor-pointer p-2 border rounded-lg flex items-center justify-center
-        transition-all duration-500 ease-in-out
-        ${
-          isSelected
-            ? "col-span-3 row-span-3 scale-105 z-10 bg-indigo-50 ring-2 ring-indigo-500 border-indigo-500"
-            : ""
-        }
-        ${
-          isAnySelected && !isSelected
-            ? "opacity-0 pointer-events-none scale-95"
-            : "hover:border-indigo-400"
-        }
-      `}
+            cursor-pointer p-2 border rounded-lg flex items-center justify-center
+            transition-all duration-500 ease-in-out overflow-hidden
+            ${
+              isSelected
+                ? "col-span-3 row-span-3 scale-105 z-10 h-[600px] bg-indigo-50 ring-2 ring-indigo-500 border-indigo-500"
+                : ""
+            }
+            ${
+              isAnySelected && !isSelected
+                ? "opacity-0 pointer-events-none scale-95"
+                : "hover:border-indigo-400"
+            }
+          `}
                           onClick={() =>
                             setModeloSeleccionado(isSelected ? null : modelo.id)
                           }
                         >
-                          <div className="w-full max-w-[700px] h-auto aspect-[3/1]">
+                          <div
+                            className={`w-full h-[320px] ${
+                              isSelected ? "max-w-[700px]" : "max-w-[320px]"
+                            } aspect-[3/4]`}
+                          >
                             {Component && typeof Component === "function" ? (
-                              <Component small={!isSelected} />
+                              <Component
+                                small={!isSelected}
+                                nombre={selectedProduct?.name}
+                                precioActual={selectedProduct?.price?.toString()}
+                                porcentaje="20"
+                                sap={selectedProduct?.sku || ""}
+                                fechasDesde="15/05/2025"
+                                fechasHasta="18/05/2025"
+                                origen="ARG"
+                                precioSinImpuestos={selectedProduct?.price ? (selectedProduct.price * 0.83).toFixed(2) : ""}
+                                financiacion={selectedFinancing}
+                                productos={modelo.componentPath.toLowerCase().includes("multiproductos") ? selectedProducts : selectedProduct ? [selectedProduct] : []}
+                                titulo="Ofertas Especiales"
+                              />
                             ) : (
                               <div>Error al cargar el componente</div>
                             )}
@@ -861,14 +965,14 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                 </div>
               </div>
             </div>
-
+{/* 
             {(selectedCategory || mappedProducts.length > 0) && (
               <div className="border-t border-gray-200 pt-6">
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-4">
-                    {/* Controles agrupados */}
+                    {/* Controles agrupados 
                     <div className="flex items-center gap-4">
-                      {/* Vista grilla/lista */}
+                      {/* Vista grilla/lista 
                       <div className="flex bg-gray-200 rounded-lg p-1">
                         <button
                           onClick={() => setViewMode("grid")}
@@ -892,10 +996,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         </button>
                       </div>
 
-                      {/* Separador vertical */}
+                      {/* Separador vertical 
                       <div className="h-8 w-px bg-gray-200"></div>
 
-                      {/* Selector de formato */}
+                      {/* Selector de formato 
                       <div className="relative">
                         <button
                           onClick={() =>
@@ -920,7 +1024,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                           </svg>
                         </button>
 
-                        {/* Menú desplegable de formatos */}
+                        {/* Menú desplegable de formatos 
                         {showFormatSelector && (
                           <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-64 z-50">
                             {PAPER_FORMATS.map((format) => (
@@ -948,10 +1052,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         )}
                       </div>
 
-                      {/* Separador vertical */}
+                      {/* Separador vertical 
                       <div className="h-8 w-px bg-gray-200"></div>
 
-                      {/* Control de orientación */}
+                      {/* Control de orientación 
                       <button
                         onClick={() => setIsLandscape(!isLandscape)}
                         className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors flex items-center gap-2"
@@ -978,10 +1082,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         </span>
                       </button>
 
-                      {/* Separador vertical */}
+                      {/* Separador vertical 
                       <div className="h-8 w-px bg-gray-200"></div>
 
-                      {/* Controles de zoom */}
+                      {/* Controles de zoom 
                       <div className="flex items-center gap-2">
                         <button
                           onClick={handleZoomOut}
@@ -1000,10 +1104,10 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         </button>
                       </div>
 
-                      {/* Separador vertical */}
+                      {/* Separador vertical 
                       <div className="h-8 w-px bg-gray-200"></div>
 
-                      {/* Controles de tamaño del cartel */}
+                      {/* Controles de tamaño del cartel 
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleCardSizeChange(cardSize - 0.05)}
@@ -1025,7 +1129,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                   </div>
                 </div>
 
-                {/* Controles del lado derecho */}
+                {/* Controles del lado derecho 
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <input
@@ -1043,7 +1147,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                     </label>
                   </div>
 
-                  {/* Botones de acción */}
+                  {/* Botones de acción 
                   <div className="flex items-center gap-3">
                     <button
                       onClick={handleSendToLocations}
@@ -1058,9 +1162,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                       Enviar a Sucursales
                     </button>
 
-                    {/* Botones agrupados */}
+                    {/* Botones agrupados 
                     <div className="flex items-center gap-2">
-                      {/* Botón de Descargar */}
+                      {/* Botón de Descargar 
                       <button
                         onClick={handleDownload}
                         className="px-4 py-2 rounded-lg font-medium bg-emerald-600 text-white 
@@ -1082,7 +1186,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                         Descargar
                       </button>
 
-                      {/* Botón de Guardar Cartel */}
+                      {/* Botón de Guardar Cartel 
                       <button
                         onClick={handleSavePosters}
                         className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white 
@@ -1116,7 +1220,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
               <div className={viewMode === "grid" ? "space-y-8" : "space-y-4"}>
                 {renderPosters()}
               </div>
-            </div>
+            </div> */}
 
             <ProductSelectorModal
               isOpen={isProductSelectorOpen}
@@ -1249,6 +1353,15 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
           </main>
         </div>
       </div>
+      {/* Modal de financiación */}
+      <FinancingModal
+        isOpen={isFinancingModalOpen}
+        onClose={() => setIsFinancingModalOpen(false)}
+        onSelect={(options) => {
+          setSelectedFinancing(options);
+          setIsFinancingModalOpen(false);
+        }}
+      />
     </HeaderProvider>
   );
 };
