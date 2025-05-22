@@ -88,8 +88,8 @@ export const loadTemplateComponent = async (componentPath: string): Promise<Reac
       return componentCache[componentPath];
     }
     
-    // Importar dinámicamente
-    const module = await import(`../templates/${componentPath}`);
+    // Importar dinámicamente con @vite-ignore para evitar problemas en producción
+    const module = await import(/* @vite-ignore */ `../templates/${componentPath}`);
     const component = module.default;
     
     // Guardar en caché
