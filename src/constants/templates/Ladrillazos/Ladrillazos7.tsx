@@ -31,15 +31,15 @@ const Ladrillazos7: React.FC<MockupProps> = ({
         <div className="border-2 border-black font-sans w-full bg-white">
           {/* Header con imagen de ladrillo LADRILLAZOS */}
           <div 
-            className="text-white text-xl font-bold text-center py-3 relative"
+            className="text-white text-xl font-bold text-center py-4 relative min-h-[60px]"
             style={{
-              backgroundImage: "url('/images/templates/ladrillazo-header.jpg')",
+              backgroundImage: "url('/images/templates/ladrillazo-header.jpg?v=3')",
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat"
             }}
           >
-            <div className="relative z-10">LADRILLAZOS</div>
+            
           </div>
           
           {/* Producto */}
@@ -82,5 +82,7 @@ const Ladrillazos7: React.FC<MockupProps> = ({
 };
 
 export default Ladrillazos7; 
+
+
 
 

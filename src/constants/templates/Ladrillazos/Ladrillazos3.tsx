@@ -43,18 +43,17 @@ const Ladrillazos3: React.FC<MockupProps> = ({
           small ? "scale-[0.6] max-w-[400px]" : "scale-100 max-w-[600px]"
         } w-full`}
       >
-        <div className="border-2 border-black font-sans w-full bg-white">
+        <div className="border-2 border-black font-sans w-full bg-white min-w-[500px]">
           {/* Header con imagen de ladrillo LADRILLAZOS */}
           <div 
-            className="text-white text-xl font-bold text-center py-3 relative"
+            className="text-white text-xl font-bold text-center py-8 relative min-h-[100px]"
             style={{
-              backgroundImage: "url('/images/templates/ladrillazo-header.jpg')",
+              backgroundImage: "url('/images/templates/ladrillazo-header.jpg?v=3')",
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat"
             }}
           >
-            <div className="relative z-10">LADRILLAZOS</div>
           </div>
           
           {/* COMBO prominente */}
@@ -71,10 +70,10 @@ const Ladrillazos3: React.FC<MockupProps> = ({
           
           {/* Precio principal */}
           <div className="flex items-start justify-center mt-6 px-4">
-            <div className="flex items-start">
-              <div className="text-4xl font-bold text-black mr-4">$</div>
-              <div className="text-6xl font-bold text-gray-500 leading-none">
-                {precioActual?.padStart(3, '0') || "000"}
+            <div className="flex items-start flex-wrap justify-center">
+              <div className="text-4xl font-bold text-black mr-2">$</div>
+              <div className="text-5xl font-bold text-gray-500 leading-none break-all">
+                {precioActual || "999999.99"}
               </div>
             </div>
           </div>
@@ -105,5 +104,7 @@ const Ladrillazos3: React.FC<MockupProps> = ({
 };
 
 export default Ladrillazos3;
+
+
 
 

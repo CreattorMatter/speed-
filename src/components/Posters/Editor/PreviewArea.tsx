@@ -185,7 +185,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
 
                       {/* Contenedor de la plantilla seleccionada */}
                       <div className="flex-1 flex items-center justify-center p-4">
-                        <div className="w-full h-full flex items-center justify-center max-w-[500px] max-h-[600px]">
+                        <div className="w-full h-full flex items-center justify-center max-w-[700px] max-h-[700px]">
                           {Component && typeof Component === "function" ? (
                             <Component
                               small={false}
