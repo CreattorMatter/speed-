@@ -1,4 +1,5 @@
 import React from "react";
+import { getLadrillazoHeaderUrl } from "../../../utils/imageUtils";
 
 interface FinancingOption {
   bank: string;

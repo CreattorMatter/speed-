@@ -1,5 +1,6 @@
-// Plantilla 10: Variante de ANTES/AHORA con DTO
+﻿// Plantilla 10: Variante de ANTES/AHORA con DTO
 import React from "react";
+import { getLadrillazoHeaderUrl } from "../../../utils/imageUtils";
 
 interface FinancingOption {
   bank: string;
@@ -45,7 +46,7 @@ const Ladrillazos10: React.FC<MockupProps> = ({
           <div 
             className="text-white text-xl font-bold text-center py-4 relative min-h-[60px]"
             style={{
-              backgroundImage: "url('/images/templates/ladrillazo-header.jpg?v=3')",
+              backgroundImage: `url('${getLadrillazoHeaderUrl()}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat"
@@ -54,9 +55,9 @@ const Ladrillazos10: React.FC<MockupProps> = ({
             
           </div>
           
-          {/* Descripción del producto */}
+          {/* DescripciÃ³n del producto */}
           <div className="text-center text-lg font-bold mt-4 px-2 leading-tight text-gray-600">
-            {nombre || "DESCRIPCIÓN PRODUCTO"}
+            {nombre || "DESCRIPCIÃ“N PRODUCTO"}
           </div>
           
           {/* Logo Cencopay */}
@@ -65,7 +66,7 @@ const Ladrillazos10: React.FC<MockupProps> = ({
               cencopay
             </div>
             <div className="bg-gray-200 text-black px-2 py-1 rounded-r text-sm font-bold">
-              CRÉDITO
+              CRÃ‰DITO
             </div>
           </div>
           
@@ -75,7 +76,7 @@ const Ladrillazos10: React.FC<MockupProps> = ({
               <div className="text-center">
                 <div className="text-6xl font-bold text-black">$</div>
                 <div className="text-sm font-bold text-black mt-2">PRECIO</div>
-                <div className="text-sm font-bold text-black">REGULAR X M²</div>
+                <div className="text-sm font-bold text-black">REGULAR X MÂ²</div>
               </div>
               
               <div className="text-center">
@@ -96,21 +97,21 @@ const Ladrillazos10: React.FC<MockupProps> = ({
             </div>
           </div>
           
-          {/* Información de financiación */}
+          {/* InformaciÃ³n de financiaciÃ³n */}
           <div className="bg-gray-100 p-2 mt-4 text-xs text-center">
             <div className="font-bold">PRECIO TOTAL FINANCIADO: ${precioActual || "999"}</div>
             <div>TASA EFECTIVA ANUAL: 0,00%</div>
             <div className="text-lg font-bold mt-1">CFT: 0,00%</div>
           </div>
           
-          {/* Información adicional */}
+          {/* InformaciÃ³n adicional */}
           <div className="flex justify-between px-3 text-xs font-bold mt-4">
             <div>{fechasDesde || "23/05/2025"}-{fechasHasta || "23/05/2025"}</div>
             <div>SAP:{sap || "00000000"}</div>
             <div>ORIGEN: {origen || "XXXXXXX"}</div>
           </div>
           
-          {/* Pie de página */}
+          {/* Pie de pÃ¡gina */}
           <div className="text-center text-xs text-gray-700 mt-2 mb-2 px-2 leading-tight">
             PRECIO SIN IMPUESTOS NACIONALES: ${precioSinImpuestos || "0000,00"}<br />
             NO ACUMULABLE CON OTRAS PROMOCIONES Y/O DESCUENTOS
@@ -122,6 +123,8 @@ const Ladrillazos10: React.FC<MockupProps> = ({
 };
 
 export default Ladrillazos10; 
+
+
 
 
 

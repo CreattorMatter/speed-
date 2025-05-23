@@ -1,5 +1,6 @@
 // Plantilla 18: ANTES/AHORA CUOTAS
 import React from "react";
+import { getLadrillazoHeaderUrl, getBankLogoUrl } from "../../../utils/imageUtils";
 
 interface FinancingOption {
   bank: string;
@@ -89,7 +90,7 @@ const Ladrillazos18: React.FC<MockupProps> = ({
               small ? "min-h-[80px]" : "min-h-[140px]"
             }`}
             style={{
-              backgroundImage: "url('/images/templates/ladrillazo-header.jpg?v=3')",
+              backgroundImage: `url('${getLadrillazoHeaderUrl()}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat"
@@ -111,9 +112,13 @@ const Ladrillazos18: React.FC<MockupProps> = ({
               small ? "px-2 py-1 text-xs" : "px-3 py-2 text-sm"
             }`}>
               <img 
-                src={getBankLogo(financiacionActiva?.bank || 'visa')} 
+                src={getBankLogoUrl(financiacionActiva?.bank || 'visa')} 
                 alt="Bank Logo" 
                 className={small ? "h-3 w-auto" : "h-4 w-auto"}
+                onError={(e) => {
+                  // Fallback si no se puede cargar la imagen
+                  e.currentTarget.style.display = 'none';
+                }}
               />
               {getBankText(financiacionActiva?.bank || 'visa')}
             </div>

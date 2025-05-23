@@ -1,4 +1,5 @@
-import React from "react";
+﻿import React from "react";
+import { getLadrillazoHeaderUrl } from "../../../utils/imageUtils";
 
 interface FinancingOption {
   bank: string;
@@ -44,7 +45,7 @@ const Ladrillazos5: React.FC<MockupProps> = ({
           <div 
             className="text-white text-xl font-bold text-center py-12 relative min-h-[150px]"
             style={{
-              backgroundImage: "url('/images/templates/ladrillazo-header.jpg?v=4')",
+              backgroundImage: `url('${getLadrillazoHeaderUrl()}')`,
               backgroundSize: "contain",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat"
@@ -57,9 +58,9 @@ const Ladrillazos5: React.FC<MockupProps> = ({
             {porcentaje || "00"}% DE DESCUENTO
           </div>
           
-          {/* Descripción del producto */}
+          {/* DescripciÃ³n del producto */}
           <div className="text-center text-lg font-bold mt-3 px-2 leading-tight text-gray-600">
-            {nombre || "DESCRIPCIÓN PRODUCTO"}
+            {nombre || "DESCRIPCIÃ“N PRODUCTO"}
           </div>
           
           {/* Precios lado a lado */}
@@ -81,14 +82,14 @@ const Ladrillazos5: React.FC<MockupProps> = ({
             </div>
           </div>
           
-          {/* Información adicional */}
+          {/* InformaciÃ³n adicional */}
           <div className="flex justify-between px-3 text-xs font-bold mt-4">
             <div>{fechasDesde || "23/05/2025"}-{fechasHasta || "23/05/2025"}</div>
             <div>SAP:{sap || "00000000"}</div>
             <div>ORIGEN: {origen || "XXXXXXX"}</div>
           </div>
           
-          {/* Pie de página */}
+          {/* Pie de pÃ¡gina */}
           <div className="text-center text-xs text-gray-700 mt-2 mb-2 px-2 leading-tight">
             PRECIO SIN IMPUESTOS NACIONALES: ${precioSinImpuestos || "0000,00"}<br />
             NO ACUMULABLE CON OTRAS PROMOCIONES Y/O DESCUENTOS
@@ -100,6 +101,8 @@ const Ladrillazos5: React.FC<MockupProps> = ({
 };
 
 export default Ladrillazos5; 
+
+
 
 
 

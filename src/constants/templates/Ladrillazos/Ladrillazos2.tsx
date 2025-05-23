@@ -1,4 +1,5 @@
-import React from "react";
+﻿import React from "react";
+import { getLadrillazoHeaderUrl } from "../../../utils/imageUtils";
 
 interface FinancingOption {
   bank: string;
@@ -44,7 +45,7 @@ const Ladrillazos2: React.FC<MockupProps> = ({
           <div 
             className="text-white text-xl font-bold text-center py-12 relative min-h-[150px]"
             style={{
-              backgroundImage: "url('/images/templates/ladrillazo-header.jpg?v=4')",
+              backgroundImage: `url('${getLadrillazoHeaderUrl()}')`,
               backgroundSize: "contain",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat"
@@ -52,9 +53,9 @@ const Ladrillazos2: React.FC<MockupProps> = ({
           >
           </div>
           
-          {/* Caja naranja con descripción producto */}
+          {/* Caja naranja con descripciÃ³n producto */}
           <div className="bg-red-500 text-white text-lg font-bold text-center py-2 mx-4 mt-4">
-            {nombre || "DESCRIPCIÓN PRODUCTO"}
+            {nombre || "DESCRIPCIÃ“N PRODUCTO"}
           </div>
           
           {/* Precio principal con elementos destacados */}
@@ -75,21 +76,21 @@ const Ladrillazos2: React.FC<MockupProps> = ({
           <div className="flex justify-between px-8 mt-4">
             <div className="text-center">
               <div className="text-sm font-bold text-black">PRECIO REGULAR</div>
-              <div className="text-sm font-bold text-black">X METRO²</div>
+              <div className="text-sm font-bold text-black">X METROÂ²</div>
             </div>
             <div className="text-center">
               <div className="text-sm font-bold text-black">PRECIO REGULAR POR CAJA</div>
             </div>
           </div>
           
-          {/* Información adicional */}
+          {/* InformaciÃ³n adicional */}
           <div className="flex justify-between px-3 text-xs font-bold mt-6">
             <div>{fechasDesde || "23/05/2025"}-{fechasHasta || "23/05/2025"}</div>
             <div className="bg-red-500 text-white px-2 py-1">SAP:{sap || "00000000"}</div>
             <div className="bg-red-500 text-white px-2 py-1">ORIGEN: {origen || "XXXXXXX"}</div>
           </div>
           
-          {/* Pie de página */}
+          {/* Pie de pÃ¡gina */}
           <div className="text-center text-xs text-gray-700 mt-2 mb-2 px-2 leading-tight">
             PRECIO SIN IMPUESTOS NACIONALES: <span className="bg-red-500 text-white px-1">${precioSinImpuestos || "0000,00"}</span><br />
             NO ACUMULABLE CON OTRAS PROMOCIONES Y/O DESCUENTOS
@@ -101,6 +102,8 @@ const Ladrillazos2: React.FC<MockupProps> = ({
 };
 
 export default Ladrillazos2;
+
+
 
 
 

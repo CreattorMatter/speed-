@@ -1,5 +1,6 @@
-// Plantilla 9: Variante de ANTES/AHORA con DTO
+﻿// Plantilla 9: Variante de ANTES/AHORA con DTO
 import React from "react";
+import { getLadrillazoHeaderUrl } from "../../../utils/imageUtils";
 
 interface FinancingOption {
   bank: string;
@@ -45,7 +46,7 @@ const Ladrillazos9: React.FC<MockupProps> = ({
           <div 
             className="text-white text-xl font-bold text-center py-4 relative min-h-[60px]"
             style={{
-              backgroundImage: "url('/images/templates/ladrillazo-header.jpg?v=3')",
+              backgroundImage: `url('${getLadrillazoHeaderUrl()}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat"
@@ -54,16 +55,16 @@ const Ladrillazos9: React.FC<MockupProps> = ({
             
           </div>
           
-          {/* Descripción del producto */}
+          {/* DescripciÃ³n del producto */}
           <div className="text-center text-lg font-bold mt-4 px-2 leading-tight text-gray-600">
-            {nombre || "DESCRIPCIÓN PRODUCTO"}
+            {nombre || "DESCRIPCIÃ“N PRODUCTO"}
           </div>
           
           {/* Precios AHORA y ANTES para flooring */}
           <div className="mt-6">
-            {/* AHORA - precio por m² */}
+            {/* AHORA - precio por mÂ² */}
             <div className="text-center mb-4">
-              <div className="font-bold text-sm text-black mb-1">AHORA PRECIO X M²</div>
+              <div className="font-bold text-sm text-black mb-1">AHORA PRECIO X MÂ²</div>
               <div className="text-4xl font-extrabold text-black">
                 ${precioActual || "000"}<sup className="text-lg align-super">00</sup>
               </div>
@@ -80,7 +81,7 @@ const Ladrillazos9: React.FC<MockupProps> = ({
             {/* ANTES - lado derecho */}
             <div className="flex justify-end px-8">
               <div className="text-center mr-8">
-                <div className="font-bold text-sm text-black mb-1">ANTES X M²</div>
+                <div className="font-bold text-sm text-black mb-1">ANTES X MÂ²</div>
                 <div className="text-lg font-bold text-black line-through">
                   ${Math.round((Number(precioActual) || 999) * 1.25)}<sup className="text-sm align-super">00</sup>
                 </div>
@@ -95,14 +96,14 @@ const Ladrillazos9: React.FC<MockupProps> = ({
             </div>
           </div>
           
-          {/* Información adicional */}
+          {/* InformaciÃ³n adicional */}
           <div className="flex justify-between px-3 text-xs font-bold mt-6">
             <div>{fechasDesde || "23/05/2025"}-{fechasHasta || "23/05/2025"}</div>
             <div>SAP:{sap || "00000000"}</div>
             <div>ORIGEN: {origen || "XXXXXXX"}</div>
           </div>
           
-          {/* Pie de página */}
+          {/* Pie de pÃ¡gina */}
           <div className="text-center text-xs text-gray-700 mt-2 mb-2 px-2 leading-tight">
             PRECIO SIN IMPUESTOS NACIONALES: ${precioSinImpuestos || "0000,00"}<br />
             NO ACUMULABLE CON OTRAS PROMOCIONES Y/O DESCUENTOS
@@ -114,6 +115,8 @@ const Ladrillazos9: React.FC<MockupProps> = ({
 };
 
 export default Ladrillazos9; 
+
+
 
 
 

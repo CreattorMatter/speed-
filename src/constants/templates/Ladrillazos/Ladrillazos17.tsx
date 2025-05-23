@@ -1,5 +1,6 @@
-// Plantilla 17: Promociones Especiales
+﻿// Plantilla 17: Promociones Especiales
 import React from "react";
+import { getLadrillazoHeaderUrl } from "../../../utils/imageUtils";
 
 interface FinancingOption {
   bank: string;
@@ -45,7 +46,7 @@ const Ladrillazos17: React.FC<MockupProps> = ({
           <div 
             className="text-white text-xl font-bold text-center py-4 relative min-h-[60px]"
             style={{
-              backgroundImage: "url('/images/templates/ladrillazo-header.jpg?v=3')",
+              backgroundImage: `url('${getLadrillazoHeaderUrl()}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat"
@@ -53,15 +54,15 @@ const Ladrillazos17: React.FC<MockupProps> = ({
           >
           </div>
           
-          {/* Descripción del producto */}
+          {/* DescripciÃ³n del producto */}
           <div className="text-center text-lg font-bold mt-4 px-2 leading-tight text-gray-600">
-            {nombre || "DESCRIPCIÓN PRODUCTO"}
+            {nombre || "DESCRIPCIÃ“N PRODUCTO"}
           </div>
           
           {/* Logo Cencopay en la esquina superior derecha */}
           <div className="flex justify-end px-4 mt-2">
             <div className="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold">
-              cencopay CRÉDITO
+              cencopay CRÃ‰DITO
             </div>
           </div>
           
@@ -99,7 +100,7 @@ const Ladrillazos17: React.FC<MockupProps> = ({
             </div>
           </div>
           
-          {/* Información de financiación detallada - lado derecho */}
+          {/* InformaciÃ³n de financiaciÃ³n detallada - lado derecho */}
           <div className="bg-gray-100 p-3 mt-4 mx-4 text-xs">
             <div className="text-left space-y-1">
               <div><span className="font-bold">PRECIO TOTAL FINANCIADO:</span> ${precioActual || "0"}</div>
@@ -112,14 +113,14 @@ const Ladrillazos17: React.FC<MockupProps> = ({
             </div>
           </div>
           
-          {/* Información adicional */}
+          {/* InformaciÃ³n adicional */}
           <div className="flex justify-between px-3 text-xs font-bold mt-4">
             <div>{fechasDesde || "23/05/2025"}-{fechasHasta || "23/05/2025"}</div>
             <div>SAP:{sap || "00000000"}</div>
             <div>ORIGEN: {origen || "XXXXXXX"}</div>
           </div>
           
-          {/* Pie de página */}
+          {/* Pie de pÃ¡gina */}
           <div className="text-center text-xs text-gray-700 mt-2 mb-2 px-2 leading-tight">
             PRECIO SIN IMPUESTOS NACIONALES: ${precioSinImpuestos || "0000,00"}<br />
             NO ACUMULABLE CON OTRAS PROMOCIONES Y/O DESCUENTOS
@@ -131,6 +132,8 @@ const Ladrillazos17: React.FC<MockupProps> = ({
 };
 
 export default Ladrillazos17; 
+
+
 
 
 

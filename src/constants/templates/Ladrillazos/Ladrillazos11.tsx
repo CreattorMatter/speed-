@@ -1,4 +1,5 @@
-import React from "react";
+﻿import React from "react";
+import { getLadrillazoHeaderUrl } from "../../../utils/imageUtils";
 
 interface FinancingOption {
   bank: string;
@@ -44,7 +45,7 @@ const Ladrillazos11: React.FC<MockupProps> = ({
           <div 
             className="text-white text-xl font-bold text-center py-4 relative min-h-[60px]"
             style={{
-              backgroundImage: "url('/images/templates/ladrillazo-header.jpg?v=3')",
+              backgroundImage: `url('${getLadrillazoHeaderUrl()}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat"
@@ -53,12 +54,12 @@ const Ladrillazos11: React.FC<MockupProps> = ({
             
           </div>
           
-          {/* Tipo de promoción */}
+          {/* Tipo de promociÃ³n */}
           <div className="bg-gray-200 text-black text-sm font-bold text-center py-1">
             COMBO DTO
           </div>
           
-          {/* Descripción del producto */}
+          {/* DescripciÃ³n del producto */}
           <div className="text-center text-lg font-bold mt-3 px-2 leading-tight">
             {nombre || "Producto de ejemplo"}
           </div>
@@ -87,13 +88,13 @@ const Ladrillazos11: React.FC<MockupProps> = ({
             {porcentaje || "20"}% DE DESCUENTO
           </div>
           
-          {/* Información adicional */}
+          {/* InformaciÃ³n adicional */}
           <div className="text-xs text-center mt-3 px-2 space-y-1">
             <div>
               <span className="font-bold">SAP:</span> {sap || "SKU123"}
             </div>
             <div>
-              <span className="font-bold">Válido:</span> {fechasDesde || "15/05/2025"} - {fechasHasta || "18/05/2025"}
+              <span className="font-bold">VÃ¡lido:</span> {fechasDesde || "15/05/2025"} - {fechasHasta || "18/05/2025"}
             </div>
             <div>
               <span className="font-bold">Origen:</span> {origen || "ARG"}
@@ -105,10 +106,10 @@ const Ladrillazos11: React.FC<MockupProps> = ({
             )}
           </div>
           
-          {/* Financiación */}
+          {/* FinanciaciÃ³n */}
           {financiacion && financiacion.length > 0 && (
             <div className="bg-blue-50 p-2 mt-2 text-xs text-center">
-              <div className="font-bold">FINANCIACIÓN</div>
+              <div className="font-bold">FINANCIACIÃ“N</div>
               <div>{financiacion[0]?.cardName}</div>
             </div>
           )}
@@ -119,6 +120,8 @@ const Ladrillazos11: React.FC<MockupProps> = ({
 };
 
 export default Ladrillazos11; 
+
+
 
 
 

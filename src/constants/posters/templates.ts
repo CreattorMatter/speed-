@@ -9,6 +9,20 @@ import Ladrillazos1 from '../templates/Ladrillazos/Ladrillazos1';
 import Ladrillazos2 from '../templates/Ladrillazos/Ladrillazos2';
 import Ladrillazos3 from '../templates/Ladrillazos/Ladrillazos3';
 import Ladrillazos4 from '../templates/Ladrillazos/Ladrillazos4';
+import Ladrillazos5 from '../templates/Ladrillazos/Ladrillazos5';
+import Ladrillazos6 from '../templates/Ladrillazos/Ladrillazos6';
+import Ladrillazos7 from '../templates/Ladrillazos/Ladrillazos7';
+import Ladrillazos8 from '../templates/Ladrillazos/Ladrillazos8';
+import Ladrillazos9 from '../templates/Ladrillazos/Ladrillazos9';
+import Ladrillazos10 from '../templates/Ladrillazos/Ladrillazos10';
+import Ladrillazos11 from '../templates/Ladrillazos/Ladrillazos11';
+import Ladrillazos12 from '../templates/Ladrillazos/Ladrillazos12';
+import Ladrillazos13 from '../templates/Ladrillazos/Ladrillazos13';
+import Ladrillazos14 from '../templates/Ladrillazos/Ladrillazos14';
+import Ladrillazos15 from '../templates/Ladrillazos/Ladrillazos15';
+import Ladrillazos16 from '../templates/Ladrillazos/Ladrillazos16';
+import Ladrillazos17 from '../templates/Ladrillazos/Ladrillazos17';
+import Ladrillazos18 from '../templates/Ladrillazos/Ladrillazos18';
 import MundoExperto1 from '../templates/mundoExperto/MundoExperto1';
 import Constructor1 from '../templates/Constructor/Constructor1';
 import FeriaDescuento1 from '../templates/ferias de desc/FeriaDescuento1';
@@ -113,6 +127,20 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   'Ladrillazos/Ladrillazos2': Ladrillazos2,
   'Ladrillazos/Ladrillazos3': Ladrillazos3,
   'Ladrillazos/Ladrillazos4': Ladrillazos4,
+  'Ladrillazos/Ladrillazos5': Ladrillazos5,
+  'Ladrillazos/Ladrillazos6': Ladrillazos6,
+  'Ladrillazos/Ladrillazos7': Ladrillazos7,
+  'Ladrillazos/Ladrillazos8': Ladrillazos8,
+  'Ladrillazos/Ladrillazos9': Ladrillazos9,
+  'Ladrillazos/Ladrillazos10': Ladrillazos10,
+  'Ladrillazos/Ladrillazos11': Ladrillazos11,
+  'Ladrillazos/Ladrillazos12': Ladrillazos12,
+  'Ladrillazos/Ladrillazos13': Ladrillazos13,
+  'Ladrillazos/Ladrillazos14': Ladrillazos14,
+  'Ladrillazos/Ladrillazos15': Ladrillazos15,
+  'Ladrillazos/Ladrillazos16': Ladrillazos16,
+  'Ladrillazos/Ladrillazos17': Ladrillazos17,
+  'Ladrillazos/Ladrillazos18': Ladrillazos18,
   'mundoExperto/MundoExperto1': MundoExperto1,
   'Constructor/Constructor1': Constructor1,
   'ferias de desc/FeriaDescuento1': FeriaDescuento1,

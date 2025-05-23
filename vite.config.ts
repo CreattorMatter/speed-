@@ -16,8 +16,26 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     copyPublicDir: true,
+    assetsDir: 'assets',
     commonjsOptions: {
       include: [/html2canvas/, /node_modules/]
+    },
+    rollupOptions: {
+      output: {
+        assetFileNames: (assetInfo) => {
+          // Mantener estructura de carpetas para imágenes
+          if (assetInfo.name && assetInfo.name.includes('images/')) {
+            return assetInfo.name;
+          }
+          return 'assets/[name]-[hash][extname]';
+        }
+      }
+    }
+  },
+  publicDir: 'public',
+  server: {
+    fs: {
+      strict: false
     }
   }
 });

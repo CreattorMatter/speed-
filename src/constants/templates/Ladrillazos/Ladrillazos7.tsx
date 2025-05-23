@@ -1,4 +1,5 @@
-import React from "react";
+﻿import React from "react";
+import { getLadrillazoHeaderUrl } from "../../../utils/imageUtils";
 
 interface MockupProps {
   small?: boolean;
@@ -33,7 +34,7 @@ const Ladrillazos7: React.FC<MockupProps> = ({
           <div 
             className="text-white text-xl font-bold text-center py-4 relative min-h-[60px]"
             style={{
-              backgroundImage: "url('/images/templates/ladrillazo-header.jpg?v=3')",
+              backgroundImage: `url('${getLadrillazoHeaderUrl()}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat"
@@ -82,6 +83,8 @@ const Ladrillazos7: React.FC<MockupProps> = ({
 };
 
 export default Ladrillazos7; 
+
+
 
 
 

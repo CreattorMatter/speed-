@@ -1,6 +1,7 @@
-import React from "react";
+﻿import React from "react";
+import { getLadrillazoHeaderUrl } from "../../../utils/imageUtils";
 
-// Definimos la interfaz para las opciones de financiación
+// Definimos la interfaz para las opciones de financiaciÃ³n
 interface FinancingOption {
   bank: string;
   logo: string;
@@ -46,7 +47,7 @@ const Ladrillazos1: React.FC<MockupProps> = ({
           <div 
             className="text-white text-xl font-bold text-center py-0 relative h-[200px] w-full"
             style={{
-              backgroundImage: "url('/images/templates/ladrillazo-header.jpg?v=5')",
+              backgroundImage: `url('${getLadrillazoHeaderUrl()}')`,
               backgroundSize: "100% 100%",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat"
@@ -54,12 +55,12 @@ const Ladrillazos1: React.FC<MockupProps> = ({
           >
           </div>
           
-          {/* Descripción del producto */}
+          {/* DescripciÃ³n del producto */}
           <div className="text-center text-lg font-bold mt-4 px-2 leading-tight text-gray-600">
-            {nombre || "DESCRIPCIÓN PRODUCTO"}
+            {nombre || "DESCRIPCIÃ“N PRODUCTO"}
           </div>
           
-          {/* Símbolo de peso y precio principal */}
+          {/* SÃ­mbolo de peso y precio principal */}
           <div className="flex items-start justify-center mt-6 px-4">
             <div className="flex items-start flex-wrap justify-center">
               <div className="text-4xl font-bold text-black mr-2">$</div>
@@ -76,14 +77,14 @@ const Ladrillazos1: React.FC<MockupProps> = ({
             </div>
           </div>
           
-          {/* Información adicional */}
+          {/* InformaciÃ³n adicional */}
           <div className="flex justify-between px-3 text-xs font-bold mt-6">
             <div>{fechasDesde || "23/05/2025"}-{fechasHasta || "23/05/2025"}</div>
             <div>SAP:{sap || "00000000"}</div>
             <div>ORIGEN: {origen || "XXXXXXX"}</div>
           </div>
           
-          {/* Pie de página */}
+          {/* Pie de pÃ¡gina */}
           <div className="text-center text-xs text-gray-700 mt-2 mb-2 px-2 leading-tight">
             PRECIO SIN IMPUESTOS NACIONALES: ${precioSinImpuestos || "0000,00"}<br />
             NO ACUMULABLE CON OTRAS PROMOCIONES Y/O DESCUENTOS
@@ -95,6 +96,8 @@ const Ladrillazos1: React.FC<MockupProps> = ({
 };
 
 export default Ladrillazos1;
+
+
 
 
 

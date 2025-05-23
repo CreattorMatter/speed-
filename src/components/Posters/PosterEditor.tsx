@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { preloadCriticalImages } from "../../utils/imageUtils";
 
 // Hooks personalizados
 import { usePosterState } from "../../hooks/usePosterState";
@@ -111,6 +112,9 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   }, [state.setIsLoading]);
 
   useEffect(() => {
+    // Precargar imágenes críticas para mejorar rendimiento
+    preloadCriticalImages();
+    
     const loadComponents = async () => {
       try {
         const components: Record<string, React.ComponentType<unknown>> = {};
