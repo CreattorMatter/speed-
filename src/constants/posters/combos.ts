@@ -16,4 +16,5 @@ export const COMBOS: Combos[] = [
     { label: "PROMO 3x2 PLANO CATEGORIA", value: "promo_3x2_plano_categoria" },
     { label: "DESCUENTO EN LA 2da UNIDAD", value: "descuento_2da_unidad" },
     { label: "DESCUENTO PLANO CATEGORIA", value: "descuento_plano_categoria" },
+    { label: "PROMOCIONES ESPECIALES", value: "promociones_especiales" },
 ];

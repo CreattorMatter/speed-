@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, LayoutTemplate } from 'lucide-react';
-import { POSTER_TEMPLATES } from '../../constants/templates';
+import { POSTER_TEMPLATES } from '../../../../constants/templates';
 
 interface TemplateSelectProps {
   isOpen: boolean;
@@ -54,7 +54,7 @@ export const TemplateSelect: React.FC<TemplateSelectProps> = ({
 
             {/* Grid de plantillas */}
             <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-1">
-              {POSTER_TEMPLATES.map((template) => (
+              {POSTER_TEMPLATES.map((template: { id: string; name: string; description: string }) => (
                 <motion.button
                   key={template.id}
                   whileHover={{ scale: 1.02 }}

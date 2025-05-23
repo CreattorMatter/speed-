@@ -1,0 +1,13 @@
+// Selectores del Editor de Posters
+export { CategorySelect } from './CategorySelect';
+export { ComboSelect } from './ComboSelect';
+export { CompanySelect } from './CompanySelect';
+export { LocationSelect } from './LocationSelect';
+export { PaperFormatSelect } from './PaperFormatSelect';
+export { PlantillaSelect } from './PlantillaSelect';
+export { ProductSelect } from './ProductSelect';
+export { ProductSelector } from './ProductSelector';
+export { PromotionSelect } from './PromotionSelect';
+export { PromoTypeSelect } from './PromoTypeSelect';
+export { RegionSelect } from './RegionSelect';
+export { TemplateSelect } from './TemplateSelect'; 

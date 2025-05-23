@@ -1,5 +1,5 @@
 import React from 'react';
-import Select from 'react-select';
+import Select, { MultiValue, SingleValue } from 'react-select';
 
 interface Location {
   id: string;
@@ -49,7 +49,7 @@ export const LocationSelect: React.FC<LocationSelectProps> = ({
     </div>
   );
 
-  const handleChange = (selectedOptions: any) => {
+  const handleChange = (selectedOptions: MultiValue<Option> | SingleValue<Option>) => {
     if (!selectedOptions) {
       onChange([]);
       return;
@@ -58,7 +58,9 @@ export const LocationSelect: React.FC<LocationSelectProps> = ({
     if (Array.isArray(selectedOptions)) {
       onChange(selectedOptions.map(option => option.value));
     } else {
-      onChange([selectedOptions.value]);
+      // Type assertion for SingleValue<Option> which is always Option
+      const singleOption = selectedOptions as Option;
+      onChange([singleOption.value]);
     }
   };
 

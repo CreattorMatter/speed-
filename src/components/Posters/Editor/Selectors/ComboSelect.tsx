@@ -1,5 +1,5 @@
 import Select from "react-select";
-import { Combos } from "../../constants/posters/combos";
+import { Combos } from "../../../../constants/posters/combos";
 
 interface ComboSelectProps {
     value: Combos | null;

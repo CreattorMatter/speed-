@@ -1,8 +1,8 @@
-import React from "react";
+import React from 'react';
 import Select, { components, OptionProps, MultiValue } from "react-select";
 
 // Importamos la interfaz Product desde el archivo de tipos
-import { Product } from "../../types/product";
+import { type Product } from '../../../../data/products';
 
 interface ProductOption {
   label: string;
@@ -61,7 +61,7 @@ export const ProductSelect: React.FC<ProductSelectProps> = ({
   console.log('ProductSelect - isMulti:', isMulti);
 
   // Filtro personalizado para buscar por nombre o SKU
-  const filterOption = (option: any, inputValue: string) => {
+  const filterOption = (option: { label: string; data: ProductOption }, inputValue: string) => {
     const product = option.data.value;
     
     // Convertir todo a minúsculas para una búsqueda insensible a mayúsculas/minúsculas
@@ -78,7 +78,7 @@ export const ProductSelect: React.FC<ProductSelectProps> = ({
       value={selectedOption}
       onChange={(option) => {
         if (isMulti) {
-          onChange(option as MultiValue<ProductOption>);
+          onChange(option ? [...(option as MultiValue<ProductOption>)] : null);
         } else {
           onChange(option as ProductOption | null);
         }

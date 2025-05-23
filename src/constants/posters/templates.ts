@@ -44,10 +44,31 @@ export const PLANTILLA_MODELOS: Record<string, TemplateModel[]> = {
     { id: "superprecio-10", componentPath: "superprecio/Superprecio1" },
   ],
   "Ladrillazos": [
+    // DESCUENTO PLANO CATEGORIA (4 plantillas)
     { id: "ladrillazos-1", componentPath: "Ladrillazos/Ladrillazos1" },
-    { id: "ladrillazos-2", componentPath: "Ladrillazos/Ladrillazos2" }, // Template para antes_ahora_dto
-    { id: "ladrillazos-3", componentPath: "Ladrillazos/Ladrillazos3" }, // Template para combo_dto
-    { id: "ladrillazos-4", componentPath: "Ladrillazos/Ladrillazos4" }, // Template para descuento_plano_categoria
+    { id: "ladrillazos-2", componentPath: "Ladrillazos/Ladrillazos2" },
+    { id: "ladrillazos-3", componentPath: "Ladrillazos/Ladrillazos3" },
+    { id: "ladrillazos-4", componentPath: "Ladrillazos/Ladrillazos4" },
+    
+    // ANTES/AHORA con DTO (6 plantillas)
+    { id: "ladrillazos-5", componentPath: "Ladrillazos/Ladrillazos5" },
+    { id: "ladrillazos-6", componentPath: "Ladrillazos/Ladrillazos6" },
+    { id: "ladrillazos-7", componentPath: "Ladrillazos/Ladrillazos7" },
+    { id: "ladrillazos-8", componentPath: "Ladrillazos/Ladrillazos8" },
+    { id: "ladrillazos-9", componentPath: "Ladrillazos/Ladrillazos9" },
+    { id: "ladrillazos-10", componentPath: "Ladrillazos/Ladrillazos10" },
+    
+    // COMBO DTO (4 plantillas)
+    { id: "ladrillazos-11", componentPath: "Ladrillazos/Ladrillazos11" },
+    { id: "ladrillazos-12", componentPath: "Ladrillazos/Ladrillazos12" },
+    { id: "ladrillazos-13", componentPath: "Ladrillazos/Ladrillazos13" },
+    { id: "ladrillazos-14", componentPath: "Ladrillazos/Ladrillazos14" },
+    
+    // PROMOCIONES ESPECIALES (4 plantillas)
+    { id: "ladrillazos-15", componentPath: "Ladrillazos/Ladrillazos15" },
+    { id: "ladrillazos-16", componentPath: "Ladrillazos/Ladrillazos16" },
+    { id: "ladrillazos-17", componentPath: "Ladrillazos/Ladrillazos17" },
+    { id: "ladrillazos-18", componentPath: "Ladrillazos/Ladrillazos18" },
   ],
   "Mundo Experto": [
     { id: "mundo-experto-1", componentPath: "mundoExperto/MundoExperto1" },
