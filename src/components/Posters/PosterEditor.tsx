@@ -182,6 +182,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                 selectedFinancing={state.selectedFinancing}
                 PLANTILLA_MODELOS={PLANTILLA_MODELOS as Record<string, TemplateModel[]>}
                 onRemoveProduct={actions.handleRemoveProduct}
+                onRemoveAllProducts={actions.handleRemoveAllProducts}
               />
             </div>
 

@@ -48,6 +48,7 @@ interface PreviewAreaProps {
   selectedFinancing: FinancingOption[];
   PLANTILLA_MODELOS: Record<string, TemplateModel[]>;
   onRemoveProduct?: (productId: string) => void;
+  onRemoveAllProducts?: () => void;
 }
 
 export const PreviewArea: React.FC<PreviewAreaProps> = ({
@@ -60,8 +61,12 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
   selectedProducts,
   selectedFinancing,
   PLANTILLA_MODELOS,
-  onRemoveProduct
+  onRemoveProduct,
+  onRemoveAllProducts
 }) => {
+  // Estado para el producto expandido individualmente
+  const [expandedProductIndex, setExpandedProductIndex] = React.useState<number | null>(null);
+
   // Determinar si estamos en modo multiproductos
   const isMultiProductMode = selectedProducts.length > 1;
   
@@ -306,91 +311,241 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
           )}
 
           {/* Renderizado de múltiples productos */}
-          {isMultiProductMode && filteredModelos.length > 0 && (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 p-2">
-              {selectedProducts.map((product: Product, productIndex: number) => {
-                // Para multiproductos, usar el modelo seleccionado o el primero disponible
-                const modelo = modeloSeleccionado 
-                  ? filteredModelos.find((m: TemplateModel) => m.id === modeloSeleccionado)
-                  : filteredModelos[0];
+          {isMultiProductMode && filteredModelos.length > 0 && expandedProductIndex === null && (
+            <>
+              {/* Header con controles para múltiples productos */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 border-b mb-4">
+                <div className="text-lg font-medium text-gray-800">
+                  {selectedProducts.length} producto{selectedProducts.length !== 1 ? 's' : ''} seleccionado{selectedProducts.length !== 1 ? 's' : ''}
+                </div>
+                
+                {/* Botón eliminar todos */}
+                {onRemoveAllProducts && selectedProducts.length > 0 && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`¿Estás seguro de que deseas eliminar todos los ${selectedProducts.length} productos seleccionados?`)) {
+                        onRemoveAllProducts();
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md"
+                    title="Eliminar todos los productos seleccionados"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <span>Eliminar todos</span>
+                  </button>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 p-2">
+                {selectedProducts.map((product: Product, productIndex: number) => {
+                  // Para multiproductos, usar el modelo seleccionado o el primero disponible
+                  const modelo = modeloSeleccionado 
+                    ? filteredModelos.find((m: TemplateModel) => m.id === modeloSeleccionado)
+                    : filteredModelos[0];
 
-                if (!modelo) {
+                  if (!modelo) {
+                    return (
+                      <div key={`no-template-${productIndex}`} className="p-4 border border-red-200 rounded-lg bg-red-50">
+                        <p className="text-red-600 text-sm">
+                          No hay plantilla disponible para: {product.name}
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  const Component = templateComponents[modelo.componentPath];
+
                   return (
-                    <div key={`no-template-${productIndex}`} className="p-4 border border-red-200 rounded-lg bg-red-50">
-                      <p className="text-red-600 text-sm">
-                        No hay plantilla disponible para: {product.name}
-                      </p>
+                    <div
+                      key={`${product.id}-${productIndex}`}
+                      className="border rounded-lg p-3 hover:border-indigo-400 hover:shadow-md transition-all duration-300 relative bg-white cursor-pointer"
+                      onClick={() => setExpandedProductIndex(productIndex)}
+                      title={`Click para ver ${product.name} en grande`}
+                    >
+                      {/* Número de orden del producto */}
+                      <div className="absolute -top-2 -left-2 w-6 h-6 bg-indigo-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-10">
+                        {productIndex + 1}
+                      </div>
+                      
+                      {/* Botón de eliminar producto */}
+                      {onRemoveProduct && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveProduct(product.id);
+                          }}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-20 hover:bg-red-600 transition-colors shadow-md"
+                          title={`Eliminar ${product.name} de la selección`}
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                      
+                      <div className="w-full h-[280px] flex items-center justify-center overflow-hidden">
+                        {Component && typeof Component === "function" ? (
+                          <div className="max-w-full max-h-full scale-90 transform">
+                            <Component
+                              small={true}
+                              nombre={product.name}
+                              precioActual={product.price?.toString()}
+                              porcentaje="20"
+                              sap={product.sku || ""}
+                              fechasDesde="15/05/2025"
+                              fechasHasta="18/05/2025"
+                              origen="ARG"
+                              precioSinImpuestos={
+                                product.price ? (product.price * 0.83).toFixed(2) : ""
+                              }
+                              financiacion={selectedFinancing}
+                              productos={[product]}
+                              titulo="Ofertas Especiales"
+                            />
+                          </div>
+                        ) : (
+                          <div className="text-red-500 text-sm text-center">
+                            Error al cargar el componente para: {product.name}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Información del producto */}
+                      <div className="mt-2 p-2 bg-gray-50 rounded text-center">
+                        <p className="text-xs font-medium text-gray-800 truncate" title={product.name}>
+                          {product.name}
+                        </p>
+                        <p className="text-xs text-gray-600">SKU: {product.sku || 'N/A'}</p>
+                        <p className="text-sm font-bold text-indigo-600">${product.price}</p>
+                      </div>
+                      
+                      {/* Indicador de que se puede expandir */}
+                      <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-80">
+                        Click para ampliar
+                      </div>
                     </div>
                   );
-                }
+                })}
+              </div>
+            </>
+          )}
 
-                const Component = templateComponents[modelo.componentPath];
+          {/* Vista expandida de producto individual */}
+          {isMultiProductMode && expandedProductIndex !== null && filteredModelos.length > 0 && (
+            (() => {
+              const product = selectedProducts[expandedProductIndex];
+              const modelo = modeloSeleccionado 
+                ? filteredModelos.find((m: TemplateModel) => m.id === modeloSeleccionado)
+                : filteredModelos[0];
 
+              if (!modelo || !product) {
                 return (
-                  <div
-                    key={`${product.id}-${productIndex}`}
-                    className="border rounded-lg p-3 hover:border-indigo-400 hover:shadow-md transition-all duration-300 relative bg-white"
-                  >
-                    {/* Número de orden del producto */}
-                    <div className="absolute -top-2 -left-2 w-6 h-6 bg-indigo-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-10">
-                      {productIndex + 1}
-                    </div>
-                    
-                    {/* Botón de eliminar producto */}
-                    {onRemoveProduct && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRemoveProduct(product.id);
-                        }}
-                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-20 hover:bg-red-600 transition-colors shadow-md"
-                        title={`Eliminar ${product.name} de la selección`}
+                  <div className="flex items-center justify-center h-[500px]">
+                    <div className="text-red-500 text-center">
+                      <p>Error: No se pudo cargar el producto o plantilla</p>
+                      <button 
+                        onClick={() => setExpandedProductIndex(null)}
+                        className="mt-2 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                       >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        Volver
                       </button>
-                    )}
-                    
-                    <div className="w-full h-[280px] flex items-center justify-center overflow-hidden">
-                      {Component && typeof Component === "function" ? (
-                        <div className="max-w-full max-h-full scale-90 transform">
-                          <Component
-                            small={true}
-                            nombre={product.name}
-                            precioActual={product.price?.toString()}
-                            porcentaje="20"
-                            sap={product.sku || ""}
-                            fechasDesde="15/05/2025"
-                            fechasHasta="18/05/2025"
-                            origen="ARG"
-                            precioSinImpuestos={
-                              product.price ? (product.price * 0.83).toFixed(2) : ""
-                            }
-                            financiacion={selectedFinancing}
-                            productos={[product]}
-                            titulo="Ofertas Especiales"
-                          />
-                        </div>
-                      ) : (
-                        <div className="text-red-500 text-sm text-center">
-                          Error al cargar el componente para: {product.name}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Información del producto */}
-                    <div className="mt-2 p-2 bg-gray-50 rounded text-center">
-                      <p className="text-xs font-medium text-gray-800 truncate" title={product.name}>
-                        {product.name}
-                      </p>
-                      <p className="text-xs text-gray-600">SKU: {product.sku || 'N/A'}</p>
-                      <p className="text-sm font-bold text-indigo-600">${product.price}</p>
                     </div>
                   </div>
                 );
-              })}
-            </div>
+              }
+
+              const Component = templateComponents[modelo.componentPath];
+
+              return (
+                <div className="w-full h-full flex flex-col">
+                  {/* Header con información del producto expandido */}
+                  <div className="flex items-center justify-between p-4 bg-gray-50 border-b">
+                    <button
+                      onClick={() => setExpandedProductIndex(null)}
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors shadow-md"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                      Volver al preview
+                    </button>
+                    
+                    <div className="text-center flex-1">
+                      <div className="text-lg font-bold text-gray-800">
+                        Producto {expandedProductIndex + 1} de {selectedProducts.length}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {getPromoTypeFromModelId(modelo.id)} - {product.name}
+                      </div>
+                      <div className="text-xs text-blue-600 mt-1">
+                        SKU: {product.sku} | ${product.price}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      {/* Navegación entre productos */}
+                      <button
+                        onClick={() => setExpandedProductIndex(Math.max(0, expandedProductIndex - 1))}
+                        disabled={expandedProductIndex === 0}
+                        className={`p-2 rounded ${
+                          expandedProductIndex === 0 
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        }`}
+                        title="Producto anterior"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      
+                      <button
+                        onClick={() => setExpandedProductIndex(Math.min(selectedProducts.length - 1, expandedProductIndex + 1))}
+                        disabled={expandedProductIndex === selectedProducts.length - 1}
+                        className={`p-2 rounded ${
+                          expandedProductIndex === selectedProducts.length - 1
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        }`}
+                        title="Producto siguiente"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Contenedor de la plantilla expandida */}
+                  <div className="flex-1 flex items-center justify-center p-4 bg-white">
+                    <div className="flex-1 flex items-center justify-center max-w-[900px] max-h-[800px]">
+                      {Component && typeof Component === "function" ? (
+                        <Component
+                          small={false}
+                          nombre={product.name}
+                          precioActual={product.price?.toString() || "999"}
+                          porcentaje="20"
+                          sap={product.sku || "SKU123"}
+                          fechasDesde="15/05/2025"
+                          fechasHasta="18/05/2025"
+                          origen="ARG"
+                          precioSinImpuestos={
+                            product.price ? (product.price * 0.83).toFixed(2) : "829"
+                          }
+                          financiacion={selectedFinancing}
+                          productos={[product]}
+                          titulo="Ofertas Especiales"
+                        />
+                      ) : (
+                        <div>Error al cargar el componente</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
           )}
         </div>
       </div>

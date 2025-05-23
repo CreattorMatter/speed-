@@ -269,6 +269,13 @@ export const usePosterActions = (state: PosterState) => {
     });
   }, [setSelectedProducts, setMaxProductsReached, setSelectedProduct]);
 
+  // Acción para remover todos los productos de la selección
+  const handleRemoveAllProducts = useCallback(() => {
+    setSelectedProducts([]);
+    setSelectedProduct(null);
+    setMaxProductsReached(false);
+  }, [setSelectedProducts, setSelectedProduct, setMaxProductsReached]);
+
   // Acción para seleccionar poster
   const handlePosterSelect = useCallback(async (poster: { name: string; url: string }) => {
     try {
@@ -309,6 +316,7 @@ export const usePosterActions = (state: PosterState) => {
     handleSearchPosters,
     handleSelectProduct,
     handleRemoveProduct,
+    handleRemoveAllProducts,
     handlePosterSelect,
   };
 }; 
