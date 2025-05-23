@@ -26,13 +26,13 @@ const Ladrillazos1: React.FC<MockupProps> = ({
   small,
   nombre,
   precioActual,
-  porcentaje,
+  porcentaje, // eslint-disable-line @typescript-eslint/no-unused-vars
   sap,
   fechasDesde,
   fechasHasta,
   origen,
   precioSinImpuestos,
-  financiacion
+  financiacion // eslint-disable-line @typescript-eslint/no-unused-vars
 }) => {
   return (
     <div className="w-full h-full flex items-center justify-center bg-white">
@@ -42,49 +42,44 @@ const Ladrillazos1: React.FC<MockupProps> = ({
         } w-full`}
       >
         <div className="border-2 border-black font-sans w-full bg-white">
-          {/* Encabezado */}
-          <div className="bg-red-600 text-yellow-300 text-2xl font-bold text-center py-2">
-            Feria de descuentos
-          </div>
-          
-          {/* Porcentaje de descuento */}
-          <div className="bg-yellow-300 text-black text-xl font-bold text-center py-2">
-            {porcentaje}% DESCUENTO
+          {/* Header negro LADRILLAZOS */}
+          <div className="bg-black text-white text-xl font-bold text-center py-3">
+            LADRILLAZOS
           </div>
           
           {/* Descripción del producto */}
-          <div className="text-center text-base font-bold mt-2 px-2 leading-tight">
-            DESCRIPCIÓN PRODUCTO
+          <div className="text-center text-lg font-bold mt-4 px-2 leading-tight text-gray-600">
+            {nombre || "DESCRIPCIÓN PRODUCTO"}
           </div>
           
-          {/* Información de precio */}
-          <div className="flex justify-between items-center mt-2 px-3">
-            <div className="text-left">
-              <div className="font-bold text-sm">AHORA</div>
-              <div className="text-2xl font-extrabold mt-1">
-                ${precioActual}<sup className="text-sm align-super ml-1">00</sup>
+          {/* Símbolo de peso y precio principal */}
+          <div className="flex items-start justify-center mt-6 px-4">
+            <div className="flex items-start">
+              <div className="text-6xl font-bold text-black mr-4">$</div>
+              <div className="text-8xl font-bold text-gray-500 leading-none">
+                {precioActual?.padStart(3, '0') || "000"}
               </div>
             </div>
-            
-            <div className="text-right">
-              <div className="font-bold text-sm">ANTES</div>
-              <div className="text-lg text-gray-800">
-                <s>${Number(precioActual) * (1 + Number(porcentaje) / 100)}</s>
-              </div>
+          </div>
+          
+          {/* Etiqueta PRECIO CONTADO */}
+          <div className="text-center mt-2">
+            <div className="text-sm font-bold text-black">
+              PRECIO CONTADO
             </div>
           </div>
           
           {/* Información adicional */}
-          <div className="flex justify-between px-3 text-xs font-bold mt-4">
-            <div>{fechasDesde} - {fechasHasta}</div>
-            <div>SAP: {sap}</div>
-            <div>ORIGEN: {origen}</div>
+          <div className="flex justify-between px-3 text-xs font-bold mt-6">
+            <div>{fechasDesde || "23/05/2025"}-{fechasHasta || "23/05/2025"}</div>
+            <div>SAP:{sap || "00000000"}</div>
+            <div>ORIGEN: {origen || "XXXXXXX"}</div>
           </div>
           
           {/* Pie de página */}
-          <div className="text-center text-[10px] text-gray-700 mt-2 mb-2 px-2 leading-tight">
-            PRECIO SIN IMPUESTOS NACIONALES: ${precioSinImpuestos}<br />
-            NO ACUMULABLE CON OTRAS PROMOCIONES
+          <div className="text-center text-xs text-gray-700 mt-2 mb-2 px-2 leading-tight">
+            PRECIO SIN IMPUESTOS NACIONALES: ${precioSinImpuestos || "0000,00"}<br />
+            NO ACUMULABLE CON OTRAS PROMOCIONES Y/O DESCUENTOS
           </div>
         </div>
       </div>

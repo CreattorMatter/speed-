@@ -85,7 +85,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   // Helper para manejar selección de producto desde modal
   const handleProductSelect = (productId: string) => {
     const product = products.find(p => p.id === productId);
-    if (product) {
+          if (product) {
       actions.handleSelectProduct(product);
     }
   };
@@ -239,4 +239,4 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
       <LoadingModal isOpen={state.isLoading} />
     </HeaderProvider>
   );
-}; 
+};

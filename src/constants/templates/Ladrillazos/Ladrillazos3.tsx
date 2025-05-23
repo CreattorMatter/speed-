@@ -1,5 +1,12 @@
 import React from "react";
 
+interface FinancingOption {
+  bank: string;
+  logo: string;
+  cardName: string;
+  plan: string;
+}
+
 interface MockupProps {
   small?: boolean;
   nombre?: string;
@@ -11,47 +18,79 @@ interface MockupProps {
   fechasDesde?: string;
   fechasHasta?: string;
   origen?: string;
+  precioSinImpuestos?: string;
+  financiacion?: FinancingOption[];
 }
 
 const Ladrillazos3: React.FC<MockupProps> = ({
   small,
   nombre,
   precioActual,
-  precioCombo,
-  cantidadCombo = 2,
-  porcentaje,
+  precioCombo, // eslint-disable-line @typescript-eslint/no-unused-vars
+  cantidadCombo = 2, // eslint-disable-line @typescript-eslint/no-unused-vars
+  porcentaje, // eslint-disable-line @typescript-eslint/no-unused-vars
   sap,
   fechasDesde,
   fechasHasta,
   origen,
+  precioSinImpuestos,
+  financiacion // eslint-disable-line @typescript-eslint/no-unused-vars
 }) => {
   return (
-    <div className={`relative ${small ? "w-[300px] h-[200px]" : "w-[400px] h-[300px]"} bg-red-600 rounded-lg p-4 flex flex-col justify-between`}>
-      <div className="absolute top-0 left-0 w-full h-full bg-[url('/images/ladrillazos-bg.jpg')] bg-cover opacity-20 rounded-lg" />
-      
-      <div className="relative z-10">
-        <div className="text-white font-bold text-2xl mb-2">LADRILLAZOS</div>
-        <div className="text-white font-medium text-lg">{nombre || "Producto"}</div>
-      </div>
-      
-      <div className="relative z-10 flex flex-col items-center">
-        <div className="bg-white text-red-600 font-bold text-lg px-3 py-1 rounded-full mb-2">
-          UNIDAD ${precioActual || "0"}
-        </div>
-        <div className="bg-yellow-400 text-black font-bold text-3xl px-4 py-2 rounded-md">
-          LLEVANDO {cantidadCombo} x ${precioCombo || "0"}
-        </div>
-        {porcentaje && (
-          <div className="absolute -right-2 -top-10 bg-yellow-400 text-black font-bold text-xl p-2 rounded-full transform rotate-12">
-            {porcentaje}% OFF
+    <div className="w-full h-full flex items-center justify-center bg-white">
+      <div
+        className={`transition-transform duration-300 ease-in-out ${
+          small ? "scale-[0.6] max-w-[400px]" : "scale-100 max-w-[400px]"
+        } w-full`}
+      >
+        <div className="border-2 border-black font-sans w-full bg-white">
+          {/* Header negro LADRILLAZOS */}
+          <div className="bg-black text-white text-xl font-bold text-center py-3">
+            LADRILLAZOS
           </div>
-        )}
-      </div>
-      
-      <div className="relative z-10 text-white text-xs">
-        <div>SAP: {sap || "000000"}</div>
-        <div>Vu00e1lido: {fechasDesde || "00/00"} al {fechasHasta || "00/00"}</div>
-        <div>{origen || "Origen: Argentina"}</div>
+          
+          {/* COMBO prominente */}
+          <div className="text-center mt-6">
+            <div className="text-6xl font-extrabold text-black leading-none">
+              COMBO
+            </div>
+          </div>
+          
+          {/* Descripción del producto */}
+          <div className="text-center text-lg font-bold mt-4 px-2 leading-tight text-gray-600">
+            {nombre || "DESCRIPCIÓN PRODUCTO"}
+          </div>
+          
+          {/* Precio principal */}
+          <div className="flex items-start justify-center mt-6 px-4">
+            <div className="flex items-start">
+              <div className="text-6xl font-bold text-black mr-4">$</div>
+              <div className="text-8xl font-bold text-gray-500 leading-none">
+                {precioActual?.padStart(3, '0') || "000"}
+              </div>
+            </div>
+          </div>
+          
+          {/* Etiqueta PRECIO COMBO */}
+          <div className="text-center mt-2">
+            <div className="text-sm font-bold text-black">
+              PRECIO COMBO
+            </div>
+          </div>
+          
+          {/* Información adicional */}
+          <div className="flex justify-between px-3 text-xs font-bold mt-6">
+            <div>{fechasDesde || "23/05/2025"}-{fechasHasta || "23/05/2025"}</div>
+            <div>SAP:{sap || "00000000"}</div>
+            <div>ORIGEN: {origen || "XXXXXXX"}</div>
+          </div>
+          
+          {/* Pie de página */}
+          <div className="text-center text-xs text-gray-700 mt-2 mb-2 px-2 leading-tight">
+            PRECIO SIN IMPUESTOS NACIONALES: ${precioSinImpuestos || "0000,00"}<br />
+            NO ACUMULABLE CON OTRAS PROMOCIONES Y/O DESCUENTOS
+          </div>
+        </div>
       </div>
     </div>
   );

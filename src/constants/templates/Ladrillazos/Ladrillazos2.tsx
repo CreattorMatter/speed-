@@ -1,55 +1,93 @@
 import React from "react";
 
+interface FinancingOption {
+  bank: string;
+  logo: string;
+  cardName: string;
+  plan: string;
+}
+
 interface MockupProps {
   small?: boolean;
   nombre?: string;
-  precioAnterior?: string;
   precioActual?: string;
   porcentaje?: string;
   sap?: string;
   fechasDesde?: string;
   fechasHasta?: string;
   origen?: string;
+  precioSinImpuestos?: string;
+  financiacion?: FinancingOption[];
 }
 
 const Ladrillazos2: React.FC<MockupProps> = ({
   small,
   nombre,
-  precioAnterior,
   precioActual,
-  porcentaje,
+  porcentaje, // eslint-disable-line @typescript-eslint/no-unused-vars
   sap,
   fechasDesde,
   fechasHasta,
   origen,
+  precioSinImpuestos,
+  financiacion // eslint-disable-line @typescript-eslint/no-unused-vars
 }) => {
   return (
-    <div className={`relative ${small ? "w-[300px] h-[200px]" : "w-[400px] h-[300px]"} bg-red-600 rounded-lg p-4 flex flex-col justify-between`}>
-      <div className="absolute top-0 left-0 w-full h-full bg-[url('/images/ladrillazos-bg.jpg')] bg-cover opacity-20 rounded-lg" />
-      
-      <div className="relative z-10">
-        <div className="text-white font-bold text-2xl mb-2">LADRILLAZOS</div>
-        <div className="text-white font-medium text-lg">{nombre || "Producto"}</div>
-      </div>
-      
-      <div className="relative z-10 flex flex-col items-center">
-        <div className="bg-white text-red-600 font-bold text-lg px-3 py-1 rounded-full mb-2">
-          ANTES ${precioAnterior || "0"}
-        </div>
-        <div className="bg-yellow-400 text-black font-bold text-3xl px-4 py-2 rounded-md">
-          AHORA ${precioActual || "0"}
-        </div>
-        {porcentaje && (
-          <div className="absolute -right-2 -top-10 bg-yellow-400 text-black font-bold text-xl p-2 rounded-full transform rotate-12">
-            {porcentaje}% OFF
+    <div className="w-full h-full flex items-center justify-center bg-white">
+      <div
+        className={`transition-transform duration-300 ease-in-out ${
+          small ? "scale-[0.6] max-w-[400px]" : "scale-100 max-w-[400px]"
+        } w-full`}
+      >
+        <div className="border-2 border-black font-sans w-full bg-white">
+          {/* Header negro LADRILLAZOS */}
+          <div className="bg-black text-white text-xl font-bold text-center py-3">
+            LADRILLAZOS
           </div>
-        )}
-      </div>
-      
-      <div className="relative z-10 text-white text-xs">
-        <div>SAP: {sap || "000000"}</div>
-        <div>Válido: {fechasDesde || "00/00"} al {fechasHasta || "00/00"}</div>
-        <div>{origen || "Origen: Argentina"}</div>
+          
+          {/* Caja naranja con descripción producto */}
+          <div className="bg-red-500 text-white text-lg font-bold text-center py-2 mx-4 mt-4">
+            {nombre || "DESCRIPCIÓN PRODUCTO"}
+          </div>
+          
+          {/* Precio principal con elementos destacados */}
+          <div className="flex items-start justify-center mt-6 px-4">
+            <div className="flex items-start">
+              <div className="text-6xl font-bold text-black mr-4">$</div>
+              <div className="text-8xl font-bold leading-none">
+                <span className="text-red-500">{precioActual?.slice(0, 3) || "000"}</span>
+                <span className="text-yellow-400 text-4xl align-super">00</span>
+              </div>
+              <div className="text-2xl font-bold text-black ml-4 mt-8">
+                ${precioActual || "000"}
+              </div>
+            </div>
+          </div>
+          
+          {/* Etiquetas de precio */}
+          <div className="flex justify-between px-8 mt-4">
+            <div className="text-center">
+              <div className="text-sm font-bold text-black">PRECIO REGULAR</div>
+              <div className="text-sm font-bold text-black">X METRO²</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-bold text-black">PRECIO REGULAR POR CAJA</div>
+            </div>
+          </div>
+          
+          {/* Información adicional */}
+          <div className="flex justify-between px-3 text-xs font-bold mt-6">
+            <div>{fechasDesde || "23/05/2025"}-{fechasHasta || "23/05/2025"}</div>
+            <div className="bg-red-500 text-white px-2 py-1">SAP:{sap || "00000000"}</div>
+            <div className="bg-red-500 text-white px-2 py-1">ORIGEN: {origen || "XXXXXXX"}</div>
+          </div>
+          
+          {/* Pie de página */}
+          <div className="text-center text-xs text-gray-700 mt-2 mb-2 px-2 leading-tight">
+            PRECIO SIN IMPUESTOS NACIONALES: <span className="bg-red-500 text-white px-1">${precioSinImpuestos || "0000,00"}</span><br />
+            NO ACUMULABLE CON OTRAS PROMOCIONES Y/O DESCUENTOS
+          </div>
+        </div>
       </div>
     </div>
   );

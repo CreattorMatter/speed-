@@ -43,10 +43,19 @@ export const PLANTILLA_COMBOS: Record<string, string[]> = {
     "combo_dto"
   ],
   "Ladrillazos": [
+    "precio_lleno",
+    "flooring",
+    "combo_dto",
     "descuento_plano_categoria",
     "antes_ahora_dto",
-    "combo_dto",
-    "promociones_especiales"
+    "antes_ahora_flooring_dto",
+    "flooring_cuotas",
+    "cuotas",
+    "promo_3x2_precio",
+    "promo_3x2_plano_categoria",
+    "promo_3x2_plano_categoria_combinable",
+    "descuento_2da_unidad",
+    "antes_ahora_cuotas_dto"
   ],
   "Mundo Experto": [
     "antes_ahora_dto",
