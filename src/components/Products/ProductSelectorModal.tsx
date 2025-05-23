@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { Product } from '../../types/product';
+import { type Product } from '../../data/products';
 
 interface ProductSelectorModalProps {
   isOpen: boolean;

@@ -9,7 +9,7 @@ interface LocationMapProps {
 }
 
 export const LocationMap: React.FC<LocationMapProps> = ({ location }) => {
-  const getGoogleMapsEmbedUrl = (lat: number, lng: number, name: string) => {
+  const getGoogleMapsEmbedUrl = (name: string) => {
     const query = encodeURIComponent(`${name} - ${location?.address}`);
     return `https://maps.google.com/maps?q=${query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
   };
@@ -26,7 +26,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({ location }) => {
             scrolling="no"
             marginHeight={0}
             marginWidth={0}
-            src={getGoogleMapsEmbedUrl(location.coordinates[1], location.coordinates[0], location.name)}
+            src={getGoogleMapsEmbedUrl(location.name)}
             style={{ border: 0 }}
             className="w-full"
             loading="lazy"

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from '../shared/Header';
-import { CompanySelect } from '../Posters/CompanySelect';
-import { LocationSelect } from '../Posters/LocationSelect';
+import { CompanySelect } from '../Posters/Editor/Selectors/CompanySelect';
+import { LocationSelect } from '../Posters/Editor/Selectors/LocationSelect';
 import { ArrowLeft, Monitor, Layout, MonitorPlay, Image as ImageIcon, Send, X, Check, ChevronLeft, ChevronRight, Maximize2, Minimize2, Video, ShoppingCart, Tablet, MonitorSmartphone, Layers, TouchpadOff, Search, Upload, Mail } from 'lucide-react';
 import { getEmpresas, getSucursalesPorEmpresa, type Empresa, type Sucursal } from '../../lib/supabaseClient-sucursales';
 import { toast } from 'react-hot-toast';

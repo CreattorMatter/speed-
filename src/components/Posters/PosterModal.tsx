@@ -1,7 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { PosterPreview } from './PosterPreview';
-import { Product } from '../../types/product';
+import { type Product } from '../../data/products';
 import { Promotion } from '../../types/promotion';
 
 interface PosterModalProps {
@@ -45,7 +45,9 @@ export const PosterModal: React.FC<PosterModalProps> = ({
           pricePerUnit={`${product.price * 2}`}
           points="49"
           origin="ARGENTINA"
-          barcode="7790895000782"
+          selectedFormat={{ id: 'A4', width: '210mm', height: '297mm', name: 'A4' }}
+          zoom={1}
+          cardSize={0.8}
         />
       </div>
     </div>

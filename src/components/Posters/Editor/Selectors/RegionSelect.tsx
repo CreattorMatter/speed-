@@ -1,11 +1,6 @@
 import React from 'react';
 import Select from 'react-select';
 
-interface Region {
-  id: string;
-  name: string;
-}
-
 interface RegionSelectProps {
   value: string[];
   onChange: (values: string[]) => void;
@@ -28,10 +23,10 @@ export const RegionSelect: React.FC<RegionSelectProps> = ({
         value: r.id,
         label: r.name
       }))}
-      onChange={(newValue: any) => {
+      onChange={(newValue: unknown) => {
         const selectedValues = newValue ? (Array.isArray(newValue) 
-          ? newValue.map(v => v.value)
-          : [newValue.value]) 
+          ? newValue.map((v: unknown) => (v as {value: string}).value)
+          : [(newValue as {value: string}).value]) 
         : [];
         onChange(selectedValues);
       }}
@@ -40,7 +35,7 @@ export const RegionSelect: React.FC<RegionSelectProps> = ({
         label: r.name
       }))}
       classNames={{
-        control: () => className,
+        control: () => className || "bg-white rounded-lg shadow-lg",
         menu: () => "bg-white rounded-lg shadow-lg",
         option: () => "px-3 py-2 hover:bg-gray-100 cursor-pointer"
       }}

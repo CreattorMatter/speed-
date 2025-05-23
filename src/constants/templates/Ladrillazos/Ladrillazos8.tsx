@@ -1,3 +1,4 @@
+// Plantilla 8: Variante de ANTES/AHORA con DTO
 import React from "react";
 
 interface FinancingOption {
@@ -20,7 +21,7 @@ interface MockupProps {
   financiacion?: FinancingOption[];
 }
 
-const Ladrillazos2: React.FC<MockupProps> = ({
+const Ladrillazos8: React.FC<MockupProps> = ({
   small,
   nombre,
   precioActual,
@@ -52,46 +53,51 @@ const Ladrillazos2: React.FC<MockupProps> = ({
           >
           </div>
           
-          {/* Caja naranja con descripción producto */}
-          <div className="bg-red-500 text-white text-lg font-bold text-center py-2 mx-4 mt-4">
+          {/* Descripción del producto */}
+          <div className="text-center text-lg font-bold mt-4 px-2 leading-tight text-gray-600">
             {nombre || "DESCRIPCIÓN PRODUCTO"}
           </div>
           
-          {/* Precio principal con elementos destacados */}
-          <div className="flex items-start justify-center mt-6 px-4">
-            <div className="flex items-start">
-              <div className="text-4xl font-bold text-black mr-4">$</div>
-              <div className="text-6xl font-bold leading-none">
-                <span className="text-red-500">{precioActual?.slice(0, 3) || "000"}</span>
-                <span className="text-yellow-400 text-3xl align-super">00</span>
-              </div>
-              <div className="text-xl font-bold text-black ml-4 mt-6">
-                ${precioActual || "000"}
-              </div>
+          {/* Logo Cencopay */}
+          <div className="flex justify-center px-4 mt-4">
+            <div className="bg-blue-600 text-white px-4 py-2 rounded text-lg font-bold">
+              cencopay CRÉDITO
             </div>
           </div>
           
-          {/* Etiquetas de precio */}
-          <div className="flex justify-between px-8 mt-4">
-            <div className="text-center">
-              <div className="text-sm font-bold text-black">PRECIO REGULAR</div>
-              <div className="text-sm font-bold text-black">X METRO²</div>
+          {/* Precio contado */}
+          <div className="text-center mt-4">
+            <div className="font-bold text-sm text-black">PRECIO CONTADO</div>
+            <div className="text-4xl font-extrabold text-black mt-2">
+              ${precioActual || "000"}
             </div>
-            <div className="text-center">
-              <div className="text-sm font-bold text-black">PRECIO REGULAR POR CAJA</div>
+          </div>
+          
+          {/* Cuotas sin intereses */}
+          <div className="text-center mt-4">
+            <div className="text-sm font-bold text-black">12 CUOTAS FIJAS SIN INTERÉS</div>
+            <div className="text-3xl font-extrabold text-black mt-2">
+              ${Math.round((Number(precioActual) || 999) / 12)}<sup className="text-lg align-super">00</sup>
             </div>
+          </div>
+          
+          {/* Información de financiación */}
+          <div className="bg-gray-100 p-2 mt-4 text-xs text-center">
+            <div className="font-bold">PRECIO TOTAL FINANCIADO: ${precioActual || "999"}</div>
+            <div>TASA EFECTIVA ANUAL: 0,00%</div>
+            <div>CFT: 0,00%</div>
           </div>
           
           {/* Información adicional */}
-          <div className="flex justify-between px-3 text-xs font-bold mt-6">
+          <div className="flex justify-between px-3 text-xs font-bold mt-4">
             <div>{fechasDesde || "23/05/2025"}-{fechasHasta || "23/05/2025"}</div>
-            <div className="bg-red-500 text-white px-2 py-1">SAP:{sap || "00000000"}</div>
-            <div className="bg-red-500 text-white px-2 py-1">ORIGEN: {origen || "XXXXXXX"}</div>
+            <div>SAP:{sap || "00000000"}</div>
+            <div>ORIGEN: {origen || "XXXXXXX"}</div>
           </div>
           
           {/* Pie de página */}
           <div className="text-center text-xs text-gray-700 mt-2 mb-2 px-2 leading-tight">
-            PRECIO SIN IMPUESTOS NACIONALES: <span className="bg-red-500 text-white px-1">${precioSinImpuestos || "0000,00"}</span><br />
+            PRECIO SIN IMPUESTOS NACIONALES: ${precioSinImpuestos || "0000,00"}<br />
             NO ACUMULABLE CON OTRAS PROMOCIONES Y/O DESCUENTOS
           </div>
         </div>
@@ -100,7 +106,7 @@ const Ladrillazos2: React.FC<MockupProps> = ({
   );
 };
 
-export default Ladrillazos2;
+export default Ladrillazos8; 
 
 
 

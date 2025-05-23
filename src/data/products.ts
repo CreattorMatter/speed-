@@ -1,13 +1,12 @@
-interface Product {
+export interface Product {
   id: string;
+  sku: string;
   name: string;
-  category: string;
+  description: string;
   price: number;
-  // Campos comunes obligatorios
-  sku?: string;
-  description?: string;
-  imageUrl?: string;
-  // Nuevos campos opcionales
+  imageUrl: string;
+  category: string;
+  // Campos opcionales específicos
   subCategory?: string;
   brand?: string;
   image?: string;
@@ -304,6 +303,7 @@ export const products: Product[] = [
   // Nuevos productos de Aceites
   {
     id: 'aceite-natura-1.5',
+    sku: 'ACE-NAT-1.5',
     name: 'Aceite De Girasol Natura',
     category: 'Almacén',
     subCategory: 'Aceites Comunes',
@@ -317,6 +317,7 @@ export const products: Product[] = [
   },
   {
     id: 'aceite-canuelas-1.5',
+    sku: 'ACE-CAN-1.5',
     name: 'Aceite Cañuelas De Girasol',
     category: 'Almacén',
     subCategory: 'Aceites Comunes',
@@ -330,6 +331,7 @@ export const products: Product[] = [
   },
   {
     id: 'aceite-cocinero-1.5',
+    sku: 'ACE-COC-1.5',
     name: 'Aceite De Girasol Cocinero',
     category: 'Almacén',
     subCategory: 'Aceites Comunes',
@@ -343,6 +345,7 @@ export const products: Product[] = [
   },
   {
     id: 'aceite-oliva-cocinero-500',
+    sku: 'ACE-OLI-COC-500',
     name: 'Aceite Oliva Extra Virgen Intenso Cocinero',
     category: 'Almacén',
     subCategory: 'Aceites Especiales',
@@ -356,6 +359,7 @@ export const products: Product[] = [
   },
   {
     id: 'aceite-oliva-nucete-2000',
+    sku: 'ACE-OLI-NUC-2000',
     name: 'Aceite De Oliva Extra Virgen Nucete',
     category: 'Almacén',
     subCategory: 'Aceites Especiales',

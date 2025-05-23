@@ -2,15 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { PosterPreview } from './PosterPreview';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  category: string;
-}
+import { type Product } from '../../data/products';
 
 const PAPER_SIZES = [
   { id: 'a3', name: 'A3', width: '297mm', height: '420mm', previewWidth: 595, previewHeight: 842 },
@@ -110,7 +102,9 @@ export const PrintView: React.FC = () => {
                     pricePerUnit={`${product.price * 2}`}
                     points="49"
                     origin="ARGENTINA"
-                    barcode="7790895000782"
+                    selectedFormat={{ id: selectedSize.id, width: selectedSize.width, height: selectedSize.height, name: selectedSize.name }}
+                    zoom={1}
+                    cardSize={0.8}
                   />
                 </div>
               </div>

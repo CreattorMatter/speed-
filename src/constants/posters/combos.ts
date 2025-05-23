@@ -6,9 +6,13 @@ export interface Combos {
     value: string;
   }
 export const COMBOS: Combos[] = [
+    { label: "PRECIO LLENO", value: "precio_lleno" },
     { label: "ANTES/AHORA con DTO", value: "antes_ahora_dto" },
+    { label: "ANTES/AHORA", value: "antes_ahora" },
     { label: "ANTES/AHORA EN CUOTAS con DTO", value: "antes_ahora_cuotas_dto" },
     { label: "ANTES/AHORA FLOORING con DTO", value: "antes_ahora_flooring_dto" },
+    { label: "FLOORING", value: "flooring" },
+    { label: "FLOORING EN CUOTAS", value: "flooring_cuotas" },
     { label: "COMBO con DTO", value: "combo_dto" },
     { label: "COMBO CUOTAS con DTO", value: "combo_cuotas_dto" },
     { label: "PROMO 3x2 CON PRECIO", value: "promo_3x2_precio" },
@@ -16,4 +20,6 @@ export const COMBOS: Combos[] = [
     { label: "PROMO 3x2 PLANO CATEGORIA", value: "promo_3x2_plano_categoria" },
     { label: "DESCUENTO EN LA 2da UNIDAD", value: "descuento_2da_unidad" },
     { label: "DESCUENTO PLANO CATEGORIA", value: "descuento_plano_categoria" },
+    { label: "CUOTAS", value: "cuotas" },
+    { label: "PROMOCIONES ESPECIALES", value: "promociones_especiales" },
 ];
