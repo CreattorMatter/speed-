@@ -65,6 +65,32 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
   // Determinar si estamos en modo multiproductos
   const isMultiProductMode = selectedProducts.length > 1;
   
+  // Función para obtener el nombre del tipo de promoción basado en el ID del modelo
+  const getPromoTypeFromModelId = (modelId: string): string => {
+    const ladrillazoPromoTypes: Record<string, string> = {
+      "ladrillazos-1": "PRECIO LLENO",
+      "ladrillazos-2": "FLOORING", 
+      "ladrillazos-3": "COMBO",
+      "ladrillazos-4": "DESCUENTO PLANO",
+      "ladrillazos-5": "ANTES/AHORA",
+      "ladrillazos-6": "ANTES/AHORA FLOORING",
+      "ladrillazos-7": "FLOORING CUOTAS",
+      "ladrillazos-8": "CUOTAS",
+      "ladrillazos-9": "ANTES/AHORA FLOORING",
+      "ladrillazos-10": "FLOORING CUOTAS",
+      "ladrillazos-11": "COMBO",
+      "ladrillazos-12": "PROMO 3X2",
+      "ladrillazos-13": "3X2 PLANO",
+      "ladrillazos-14": "3X2 COMBINABLE", 
+      "ladrillazos-15": "DESCUENTO PLANO",
+      "ladrillazos-16": "2DA UNIDAD",
+      "ladrillazos-17": "CUOTAS",
+      "ladrillazos-18": "ANTES/AHORA CUOTAS"
+    };
+    
+    return ladrillazoPromoTypes[modelId] || `Modelo ${modelId.split('-')[1] || modelId}`;
+  };
+
   // Obtener y filtrar los modelos disponibles para la plantilla seleccionada
   const getFilteredModelos = () => {
     if (!plantillaSeleccionada?.value) return [];
@@ -173,7 +199,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                             <span className="text-sm text-gray-700">Volver</span>
                           </button>
                           <div className="text-sm text-gray-600">
-                            Modelo {modelo?.id.split('-')[1] || modelo?.id} seleccionado
+                            {getPromoTypeFromModelId(modelo?.id || '')} seleccionado
                           </div>
                         </div>
                         
@@ -185,7 +211,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
 
                       {/* Contenedor de la plantilla seleccionada */}
                       <div className="flex-1 flex items-center justify-center p-4">
-                        <div className="w-full h-full flex items-center justify-center max-w-[700px] max-h-[700px]">
+                        <div className="w-full h-full flex items-center justify-center max-w-[900px] max-h-[800px]">
                           {Component && typeof Component === "function" ? (
                             <Component
                               small={false}
@@ -221,7 +247,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                 })()
               ) : (
                 /* Grid 3x3 para mostrar todas las plantillas con scroll */
-                <div className="grid grid-cols-3 gap-4 p-4">
+                <div className="grid grid-cols-3 gap-6 p-6">
                   {filteredModelos.map((modelo: TemplateModel) => {
                     const Component = templateComponents[modelo.componentPath];
 
@@ -231,12 +257,12 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                         className="cursor-pointer border rounded-lg hover:border-indigo-400 hover:shadow-md transition-all duration-300
                                   bg-white hover:bg-gray-50 relative overflow-hidden"
                         onClick={() => setModeloSeleccionado(modelo.id)}
-                        title={`Modelo ${modelo.id} - Click para seleccionar`}
+                        title={`${getPromoTypeFromModelId(modelo.id)} - Click para seleccionar`}
                       >
                         {/* Contenedor de la plantilla */}
-                        <div className="w-full h-[240px] flex items-center justify-center p-2 overflow-hidden">
+                        <div className="w-full h-[280px] flex items-center justify-center p-3 overflow-hidden">
                           {Component && typeof Component === "function" ? (
-                            <div className="max-w-full max-h-full transform scale-[0.45]">
+                            <div className="max-w-full max-h-full transform scale-[0.55]">
                               <Component
                                 small={true}
                                 nombre={selectedProduct?.name || "Producto de ejemplo"}
@@ -269,7 +295,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                         
                         {/* Etiqueta del modelo */}
                         <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white text-xs text-center py-2 px-2">
-                          Modelo {modelo.id.split('-')[1] || modelo.id}
+                          {getPromoTypeFromModelId(modelo.id)}
                         </div>
                       </div>
                     );

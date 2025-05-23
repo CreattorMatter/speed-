@@ -161,8 +161,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
             placeholder={
               plantillaSeleccionada?.value === "multiproductos" ||
               plantillaSeleccionada?.value?.includes("multiproductos")
-                ? "Seleccione hasta 9 productos..."
-                : "Seleccionar producto..."
+                ? "Buscar productos por nombre o SKU..."
+                : "Buscar producto por nombre o SKU..."
             }
           />
           

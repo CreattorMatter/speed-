@@ -1,4 +1,4 @@
-// Plantilla 18: Promociones Especiales
+// Plantilla 18: ANTES/AHORA CUOTAS
 import React from "react";
 
 interface FinancingOption {
@@ -31,19 +31,63 @@ const Ladrillazos18: React.FC<MockupProps> = ({
   fechasHasta,
   origen,
   precioSinImpuestos,
-  financiacion // eslint-disable-line @typescript-eslint/no-unused-vars
+  financiacion
 }) => {
+  // Calcular valores con fallbacks apropiados
+  const precioBase = precioActual || "1299999.99";
+  const precioAntes = Math.round((Number(precioBase) || 0) * (1 + (Number(porcentaje) || 20) / 100)) || "1560000";
+  
+  // Información de financiación dinámica
+  const financiacionActiva = financiacion && financiacion.length > 0 ? financiacion[0] : null;
+  const cuotasTexto = financiacionActiva?.plan || "6 CUOTAS CON INTERÉS";
+  const cuotasPorMes = financiacionActiva ? 
+    Math.round((Number(precioBase) || 0) / parseInt(financiacionActiva.plan.split(' ')[0]) || 6) :
+    Math.round((Number(precioBase) || 0) / 6) || "216667";
+  
+  // Obtener icono real de la financiación
+  const getBankLogo = (bank: string) => {
+    const bankName = bank?.toLowerCase();
+    if (bankName?.includes('cencopay') || bankName?.includes('cencosud')) {
+      return '/images/banks/cencopay.png';
+    } else if (bankName?.includes('visa')) {
+      return '/images/banks/visa-logo.png';
+    } else if (bankName?.includes('mastercard')) {
+      return '/images/banks/mastercard-logo.png';
+    } else if (bankName?.includes('american') || bankName?.includes('amex')) {
+      return '/images/banks/amex-logo.png';
+    } else if (bankName?.includes('nacion')) {
+      return '/images/banks/banco-nacion-logo.png';
+    }
+    return '/images/banks/visa-logo.png'; // default
+  };
+
+  const getBankText = (bank: string) => {
+    const bankName = bank?.toLowerCase();
+    if (bankName?.includes('visa')) {
+      return 'VISA CRÉDITO';
+    } else if (bankName?.includes('mastercard')) {
+      return 'MASTERCARD';
+    } else if (bankName?.includes('cencopay') || bankName?.includes('cencosud')) {
+      return 'CENCOPAY';
+    }
+    return 'VISA CRÉDITO';
+  };
+
   return (
     <div className="w-full h-full flex items-center justify-center bg-white">
       <div
         className={`transition-transform duration-300 ease-in-out ${
-          small ? "scale-[0.6] max-w-[400px]" : "scale-100 max-w-[600px]"
+          small ? "scale-[0.65] max-w-[450px]" : "scale-100 max-w-[800px]"
         } w-full`}
       >
-        <div className="border-2 border-black font-sans w-full bg-white">
-          {/* Header con imagen de ladrillo LADRILLAZOS */}
+        <div className={`border-2 border-black font-sans w-full bg-white ${
+          small ? "min-w-[400px] max-h-[500px]" : "min-w-[650px] max-h-[750px]"
+        } overflow-hidden`}>
+          {/* Header con imagen de ladrillo LADRILLAZOS - SIN texto superpuesto */}
           <div 
-            className="text-white text-xl font-bold text-center py-4 relative min-h-[60px]"
+            className={`relative ${
+              small ? "min-h-[80px]" : "min-h-[140px]"
+            }`}
             style={{
               backgroundImage: "url('/images/templates/ladrillazo-header.jpg?v=3')",
               backgroundSize: "cover",
@@ -51,63 +95,131 @@ const Ladrillazos18: React.FC<MockupProps> = ({
               backgroundRepeat: "no-repeat"
             }}
           >
-            
-          </div>
-          
-          {/* Porcentaje de descuento */}
-          <div className="bg-yellow-300 text-black text-xl font-bold text-center py-2">
-            {porcentaje || "20"}% DE DESCUENTO
+            {/* Sin texto superpuesto - la imagen ya contiene el texto LADRILLAZOS */}
           </div>
           
           {/* Descripción del producto */}
-          <div className="text-center text-lg font-bold mt-3 px-2 leading-tight text-gray-600">
-            {nombre || "DESCRIPCIÓN PRODUCTO"}
+          <div className={`text-center font-bold px-3 leading-tight text-gray-700 ${
+            small ? "text-sm mt-2" : "text-lg mt-3"
+          }`}>
+            {nombre || "MacBook Pro M3 Pro 14\""}
           </div>
           
-          {/* Logo Cencopay */}
-          <div className="flex justify-end px-4 mt-2">
-            <div className="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold">
-              cencopay CRÉDITO
+          {/* Logo de financiación dinámico */}
+          <div className={`flex justify-end px-3 ${small ? "mt-1" : "mt-2"}`}>
+            <div className={`bg-blue-600 text-white rounded font-bold flex items-center gap-1 ${
+              small ? "px-2 py-1 text-xs" : "px-3 py-2 text-sm"
+            }`}>
+              <img 
+                src={getBankLogo(financiacionActiva?.bank || 'visa')} 
+                alt="Bank Logo" 
+                className={small ? "h-3 w-auto" : "h-4 w-auto"}
+              />
+              {getBankText(financiacionActiva?.bank || 'visa')}
             </div>
           </div>
           
-          {/* Precios AHORA y ANTES */}
-          <div className="flex justify-between items-center mt-4 px-8">
-            <div className="text-center">
-              <div className="font-bold text-sm text-black">AHORA</div>
-              <div className="font-bold text-sm text-black">PRECIO</div>
-              <div className="font-bold text-sm text-black">CON DESCUENTO</div>
-              <div className="text-3xl font-extrabold text-black mt-2">
-                ${precioActual || "000"}
+          {/* Layout principal responsive */}
+          <div className={`flex items-center justify-between px-4 ${
+            small ? "mt-2" : "mt-4"
+          }`}>
+            {/* Columna izquierda: AHORA y ANTES */}
+            <div className={`text-center flex-shrink-0 ${
+              small ? "w-20" : "w-32"
+            }`}>
+              {/* AHORA */}
+              <div className={small ? "mb-2" : "mb-4"}>
+                <div className={`font-bold text-black ${
+                  small ? "text-sm" : "text-lg"
+                }`}>AHORA</div>
+                <div className={`font-bold text-black ${
+                  small ? "text-3xl mt-1" : "text-6xl mt-2"
+                }`}>$</div>
+                <div className={`font-bold text-black ${
+                  small ? "text-xs mt-1" : "text-sm mt-2"
+                }`}>PRECIO</div>
+                <div className={`font-bold text-black ${
+                  small ? "text-xs" : "text-sm"
+                }`}>CONTADO</div>
+              </div>
+              
+              {/* ANTES */}
+              <div className="text-center">
+                <div className={`font-bold text-black ${
+                  small ? "text-sm" : "text-lg"
+                }`}>ANTES</div>
+                <div className={`font-bold text-black line-through ${
+                  small ? "text-sm mt-1" : "text-xl mt-2"
+                }`}>
+                  ${Number(precioAntes).toLocaleString('es-AR')}
+                </div>
               </div>
             </div>
             
-            <div className="text-center">
-              <div className="font-bold text-sm text-black">ANTES</div>
-              <div className="text-xl font-bold text-black line-through mt-4">
-                ${Math.round((Number(precioActual) || 999) * (1 + (Number(porcentaje) || 20) / 100))}
+            {/* Columna central: Precio principal */}
+            <div className={`text-center flex-1 ${
+              small ? "mx-2" : "mx-6"
+            }`}>
+              <div className={`font-bold text-gray-500 leading-none ${
+                small ? "text-2xl" : "text-6xl"
+              }`}>
+                {Number(precioBase).toLocaleString('es-AR', { 
+                  minimumFractionDigits: 2, 
+                  maximumFractionDigits: 2 
+                })}
+              </div>
+            </div>
+            
+            {/* Columna derecha: Cuotas */}
+            <div className={`text-right flex-shrink-0 ${
+              small ? "w-24" : "w-40"
+            }`}>
+              <div className={`font-bold text-black leading-tight ${
+                small ? "text-xs" : "text-sm"
+              }`}>
+                {cuotasTexto}
+              </div>
+              <div className={`font-bold text-black ${
+                small ? "text-sm mt-1" : "text-2xl mt-2"
+              }`}>
+                ${Number(cuotasPorMes).toLocaleString('es-AR')}<sup className={`align-super ${
+                  small ? "text-xs" : "text-sm"
+                }`}>00</sup>
               </div>
             </div>
           </div>
           
-          {/* Cuotas sin intereses */}
-          <div className="text-center mt-4">
-            <div className="text-sm font-bold text-black">12 CUOTAS SIN INTERESES</div>
-            <div className="text-2xl font-bold text-black">
-              ${Math.round((Number(precioActual) || 999) / 12)}
+          {/* Información de financiación detallada */}
+          <div className={`px-3 space-y-0.5 ${
+            small ? "mt-2 text-xs" : "mt-4 text-sm"
+          }`}>
+            <div className="text-right">
+              <div><span className="font-bold">PRECIO TOTAL FINANCIADO:</span> ${Number(precioBase).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div><span className="font-bold">TASA EFECTIVA ANUAL:</span> 0,00%</div>
+              <div><span className="font-bold">TASA NOMINAL ANUAL:</span> 0,00%</div>
+              <div><span className="font-bold">COSTO FINANCIERO TOTAL (CFT):</span> 0,00%</div>
+            </div>
+            <div className="text-right mt-1">
+              <div className={`font-bold text-black ${
+                small ? "text-sm" : "text-xl"
+              }`}>CFT: 0,00%</div>
             </div>
           </div>
           
           {/* Información adicional */}
-          <div className="flex justify-between px-3 text-xs font-bold mt-4">
-            <div>{fechasDesde || "23/05/2025"}-{fechasHasta || "23/05/2025"}</div>
-            <div>SAP:{sap || "00000000"}</div>
-            <div>ORIGEN: {origen || "XXXXXXX"}</div>
+          <div className={`flex justify-between px-3 font-bold ${
+            small ? "text-xs mt-2" : "text-sm mt-3"
+          }`}>
+            <div>{fechasDesde || "15/05/2025"}-{fechasHasta || "18/05/2025"}</div>
+            <div>SAP-TEC-{sap || "001"}</div>
+            <div>ORIGEN: {origen || "ARG"}</div>
           </div>
           
           {/* Pie de página */}
-          <div className="text-center text-xs text-gray-700 mt-2 mb-2 px-2 leading-tight">
-            PRECIO SIN IMPUESTOS NACIONALES: ${precioSinImpuestos || "0000,00"}<br />
+          <div className={`text-center text-gray-700 px-2 leading-tight ${
+            small ? "text-xs mt-1 mb-2" : "text-sm mt-2 mb-3"
+          }`}>
+            PRECIO SIN IMPUESTOS NACIONALES: ${Number(precioSinImpuestos || "1078999.99").toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br />
             NO ACUMULABLE CON OTRAS PROMOCIONES Y/O DESCUENTOS
           </div>
         </div>
