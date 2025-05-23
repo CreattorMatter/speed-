@@ -36,13 +36,21 @@ const Ladrillazos2: React.FC<MockupProps> = ({
     <div className="w-full h-full flex items-center justify-center bg-white">
       <div
         className={`transition-transform duration-300 ease-in-out ${
-          small ? "scale-[0.6] max-w-[400px]" : "scale-100 max-w-[400px]"
+          small ? "scale-[0.6] max-w-[400px]" : "scale-100 max-w-[600px]"
         } w-full`}
       >
         <div className="border-2 border-black font-sans w-full bg-white">
-          {/* Header negro LADRILLAZOS */}
-          <div className="bg-black text-white text-xl font-bold text-center py-3">
-            LADRILLAZOS
+          {/* Header con imagen de ladrillo LADRILLAZOS */}
+          <div 
+            className="text-white text-xl font-bold text-center py-3 relative"
+            style={{
+              backgroundImage: "url('/images/templates/ladrillazo-header.jpg')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat"
+            }}
+          >
+            <div className="relative z-10">LADRILLAZOS</div>
           </div>
           
           {/* Caja naranja con descripción producto */}
@@ -53,12 +61,12 @@ const Ladrillazos2: React.FC<MockupProps> = ({
           {/* Precio principal con elementos destacados */}
           <div className="flex items-start justify-center mt-6 px-4">
             <div className="flex items-start">
-              <div className="text-6xl font-bold text-black mr-4">$</div>
-              <div className="text-8xl font-bold leading-none">
+              <div className="text-4xl font-bold text-black mr-4">$</div>
+              <div className="text-6xl font-bold leading-none">
                 <span className="text-red-500">{precioActual?.slice(0, 3) || "000"}</span>
-                <span className="text-yellow-400 text-4xl align-super">00</span>
+                <span className="text-yellow-400 text-3xl align-super">00</span>
               </div>
-              <div className="text-2xl font-bold text-black ml-4 mt-8">
+              <div className="text-xl font-bold text-black ml-4 mt-6">
                 ${precioActual || "000"}
               </div>
             </div>
@@ -94,3 +102,5 @@ const Ladrillazos2: React.FC<MockupProps> = ({
 };
 
 export default Ladrillazos2;
+
+

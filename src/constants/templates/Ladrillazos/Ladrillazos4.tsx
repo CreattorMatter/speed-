@@ -50,3 +50,5 @@ const Ladrillazos4: React.FC<MockupProps> = ({
 };
 
 export default Ladrillazos4;
+
+
