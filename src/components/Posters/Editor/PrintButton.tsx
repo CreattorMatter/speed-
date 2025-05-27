@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Printer, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { renderToString } from 'react-dom/server';
 import { useProductChanges } from '../../../hooks/useProductChanges';
 import { ReportModal } from './ReportModal';
 import { EmailService } from '../../../services/emailService';
@@ -19,6 +20,12 @@ interface PrintButtonProps {
   formatoSeleccionado?: PaperFormatOption | null; // Agregar formato de papel
   onPrint?: () => void; // Opcional ahora
   disabled?: boolean;
+  // Nuevas props necesarias para generar contenido
+  templateComponents?: Record<string, React.ComponentType<any>>;
+  PLANTILLA_MODELOS?: Record<string, any[]>;
+  modeloSeleccionado?: string | null;
+  selectedFinancing?: any[];
+  getCurrentProductValue?: (product: any, field: string) => any;
 }
 
 export const PrintButton: React.FC<PrintButtonProps> = ({
@@ -27,7 +34,13 @@ export const PrintButton: React.FC<PrintButtonProps> = ({
   selectedProducts,
   formatoSeleccionado,
   onPrint,
-  disabled = false
+  disabled = false,
+  // Nuevas props necesarias para generar contenido
+  templateComponents,
+  PLANTILLA_MODELOS,
+  modeloSeleccionado,
+  selectedFinancing,
+  getCurrentProductValue
 }) => {
   const navigate = useNavigate();
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -102,203 +115,24 @@ export const PrintButton: React.FC<PrintButtonProps> = ({
       return;
     }
 
-    // Si hay múltiples productos y alguno está expandido, necesitamos volver al grid
-    const isInExpandedView = document.querySelector('[data-preview-content]')?.querySelector('.w-80.bg-gray-50.border-r') !== null;
-    
-    // Detección adicional: verificar si hay texto "Producto X de Y" que indica vista expandida
-    const hasExpandedText = document.querySelector('[data-preview-content]')?.textContent?.includes('de ' + selectedProducts.length) || false;
-    const isReallyExpanded = isInExpandedView || hasExpandedText;
-    
-    console.log('PrintButton - handlePrintDirectly:', {
+    console.log('PrintButton - Generando contenido para impresión:', {
       selectedProductsCount: selectedProducts.length,
-      isInExpandedView,
-      hasExpandedText,
-      isReallyExpanded,
-      hasEditedProducts: editedProducts.length > 0
+      hasTemplateComponents: !!templateComponents,
+      hasModelos: !!PLANTILLA_MODELOS,
+      plantillaFamily,
+      modeloSeleccionado
     });
 
-    // Función para capturar el contenido
-    const captureContent = () => {
-      const previewElement = document.querySelector('[data-preview-content]');
-      let contentToPrint = '';
-      
-      console.log('PrintButton - captureContent iniciado:', {
-        previewElementFound: !!previewElement,
-        selectedProductsCount: selectedProducts.length
-      });
-      
-      if (previewElement) {
-        if (selectedProducts.length > 1) {
-          // Para múltiples productos, buscar todos los elementos de cartel dentro del preview
-          const allCartelElements = previewElement.querySelectorAll('[data-cartel-content]');
-          
-          console.log('PrintButton - Múltiples productos detectados:', {
-            productCount: selectedProducts.length,
-            cartelElementsFound: allCartelElements.length,
-            previewElement: !!previewElement,
-            previewElementHTML: previewElement.innerHTML.substring(0, 200) + '...'
-          });
-          
-          // Debug adicional: mostrar todos los elementos encontrados
-          console.log('PrintButton - Elementos data-cartel-content encontrados:', 
-            Array.from(allCartelElements).map((el, i) => ({
-              index: i,
-              tagName: el.tagName,
-              className: el.className,
-              hasContent: el.innerHTML.length > 0
-            }))
-          );
-          
-          if (allCartelElements.length > 0) {
-            // Asegurar que tenemos un elemento por cada producto
-            if (allCartelElements.length < selectedProducts.length) {
-              console.warn('PrintButton - Advertencia: Menos elementos de cartel que productos seleccionados');
-              console.log('PrintButton - Intentando método alternativo de captura');
-              
-              // Método alternativo: generar contenido para cada producto
-              contentToPrint = selectedProducts.map((product, index) => {
-                const productName = product?.name || `Producto ${index + 1}`;
-                const cartelElement = allCartelElements[index];
-                
-                if (cartelElement) {
-                  return `<div class="cartel-page">
-                    <div class="cartel-wrapper">
-                      <div class="cartel-content">
-                        ${cartelElement.outerHTML}
-                      </div>
-                    </div>
-                  </div>`;
-                } else {
-                  // Si no hay elemento específico, crear un placeholder
-                  return `<div class="cartel-page">
-                    <div class="cartel-wrapper">
-                      <div class="cartel-placeholder">
-                        <p>Producto: ${productName}</p>
-                        <p>SKU: ${product?.sku || 'N/A'}</p>
-                        <p>Precio: $${product?.price || '0'}</p>
-                        <p>Nota: Contenido no disponible para impresión</p>
-                      </div>
-                    </div>
-                  </div>`;
-                }
-              }).join('');
-            } else {
-              // Método normal cuando hay suficientes elementos
-              contentToPrint = Array.from(allCartelElements)
-                .map((element, index) => {
-                  // Obtener todo el contenido del elemento cartel incluyendo estilos y atributos
-                  const cartelContent = element.outerHTML; // Usar outerHTML para incluir el elemento completo
-                  const productName = selectedProducts[index]?.name || `Producto ${index + 1}`;
-                  
-                  return `<div class="cartel-page">
-                    <div class="cartel-wrapper">
-                      <div class="cartel-content">
-                        ${cartelContent}
-                      </div>
-                    </div>
-                  </div>`;
-                })
-                .join('');
-            }
-          } else {
-            // Si no hay elementos específicos, intentar buscar elementos de plantilla directamente
-            console.log('PrintButton - No se encontraron elementos [data-cartel-content], buscando plantillas directamente');
-            
-            // Buscar todos los componentes de plantilla en el DOM
-            const templateElements = previewElement.querySelectorAll('[class*="font-sans"], [class*="bg-white"], .cartel-wrapper > div');
-            
-            if (templateElements.length >= selectedProducts.length) {
-              // Si encontramos suficientes elementos de plantilla
-              contentToPrint = Array.from(templateElements)
-                .slice(0, selectedProducts.length) // Tomar solo los necesarios
-                .map((element, index) => {
-                  const productName = selectedProducts[index]?.name || `Producto ${index + 1}`;
-                  
-                  return `<div class="cartel-page">
-                    <div class="cartel-wrapper">
-                      <div class="cartel-content" style="transform: scale(1); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                        ${element.outerHTML}
-                      </div>
-                    </div>
-                  </div>`;
-                })
-                .join('');
-            } else {
-              // Último recurso: generar placeholders para todos los productos
-              console.warn('PrintButton - No se encontraron suficientes elementos, generando placeholders');
-              contentToPrint = selectedProducts.map((product, index) => {
-                const productName = product?.name || `Producto ${index + 1}`;
-                
-                return `<div class="cartel-page">
-                  <div class="cartel-wrapper">
-                    <div class="cartel-placeholder">
-                      <p>Producto: ${productName}</p>
-                      <p>SKU: ${product?.sku || 'N/A'}</p>
-                      <p>Precio: $${product?.price || '0'}</p>
-                      <p>Nota: Contenido no disponible para impresión</p>
-                    </div>
-                  </div>
-                </div>`;
-              }).join('');
-            }
-          }
-        } else {
-          // Para un solo producto, usar el contenido completo
-          const productName = selectedProducts[0]?.name || 'Producto';
-          const singleElement = previewElement.querySelector('[data-cartel-content]') || previewElement;
-          contentToPrint = `<div class="cartel-page">
-            <div class="cartel-wrapper">
-              <div class="cartel-content">
-                ${singleElement.outerHTML}
-              </div>
-            </div>
-          </div>`;
-        }
-      } else {
-        // Fallback: buscar el componente de plantilla directamente
-        console.warn('PrintButton - No se encontró [data-preview-content], usando fallback');
-        const templateElement = document.querySelector('[class*="font-sans"]');
-        contentToPrint = templateElement ? 
-          `<div class="cartel-page">
-            <div class="cartel-wrapper">
-              ${templateElement.outerHTML}
-            </div>
-          </div>` : 
-          '<div class="cartel-page"><p>Error: No se pudo obtener el contenido para imprimir</p></div>';
-      }
+    // Generar HTML para cada producto usando los componentes de plantilla
+    const contentToPrint = selectedProducts
+      .map((product, index) => generateProductHTML(product, index))
+      .join('');
 
-      return contentToPrint;
-    };
+    console.log('PrintButton - Contenido generado:', {
+      contentLength: contentToPrint.length,
+      productCount: selectedProducts.length
+    });
 
-    // Si estamos en vista expandida con múltiples productos, necesitamos volver al grid primero
-    if (selectedProducts.length > 1 && isReallyExpanded) {
-      console.log('PrintButton - Detectada vista expandida, volviendo al grid para capturar todos los productos');
-      
-      // Buscar el botón "Volver al preview" de manera más robusta
-      const allButtons = Array.from(document.querySelectorAll('button'));
-      const backButton = allButtons.find(button => {
-        const text = button.textContent?.toLowerCase() || '';
-        return text.includes('volver') && (text.includes('preview') || text.includes('al preview'));
-      });
-      
-      if (backButton) {
-        console.log('PrintButton - Haciendo click en botón volver');
-        backButton.click();
-        
-        // Esperar más tiempo para que se actualice la vista y luego capturar
-        setTimeout(() => {
-          console.log('PrintButton - Reintentando captura después de volver al grid');
-          const contentToPrint = captureContent();
-          generatePrintWindow(printWindow, contentToPrint);
-        }, 1000); // Aumentar tiempo de espera
-        return;
-      } else {
-        console.warn('PrintButton - No se encontró el botón volver, continuando con captura directa');
-      }
-    }
-
-    // Capturar contenido directamente
-    const contentToPrint = captureContent();
     generatePrintWindow(printWindow, contentToPrint);
   };
 
@@ -549,6 +383,130 @@ export const PrintButton: React.FC<PrintButtonProps> = ({
 
   const handleCancelReport = () => {
     setReportModalOpen(false);
+  };
+
+  // Función para generar props de plantilla (similar a PreviewArea)
+  const generateTemplateProps = (product: any) => {
+    const baseProps = {
+      small: false,
+      financiacion: selectedFinancing || [],
+      productos: [product],
+      titulo: "Ofertas Especiales"
+    };
+
+    // Generar props dinámicos basados en los valores actuales del producto
+    const templateProps: Record<string, any> = {
+      // Mapeo directo de campos
+      nombre: getCurrentProductValue ? getCurrentProductValue(product, 'nombre') : product.name,
+      precioActual: getCurrentProductValue ? getCurrentProductValue(product, 'precioActual')?.toString() : product.price?.toString(),
+      porcentaje: getCurrentProductValue ? getCurrentProductValue(product, 'porcentaje')?.toString() : '20',
+      sap: getCurrentProductValue ? getCurrentProductValue(product, 'sap')?.toString() : product.sku,
+      fechasDesde: getCurrentProductValue ? getCurrentProductValue(product, 'fechasDesde')?.toString() : '15/05/2025',
+      fechasHasta: getCurrentProductValue ? getCurrentProductValue(product, 'fechasHasta')?.toString() : '18/05/2025',
+      origen: getCurrentProductValue ? getCurrentProductValue(product, 'origen')?.toString() : 'ARG',
+      precioSinImpuestos: getCurrentProductValue ? getCurrentProductValue(product, 'precioSinImpuestos')?.toString() : (product.price * 0.83).toFixed(2)
+    };
+
+    return { 
+      ...baseProps, 
+      ...templateProps 
+    };
+  };
+
+  // Función para generar HTML de cada producto usando los componentes de plantilla
+  const generateProductHTML = (product: any, index: number): string => {
+    console.log(`PrintButton - Generando HTML para producto ${index + 1}:`, {
+      productName: product.name,
+      productId: product.id,
+      hasTemplateComponents: !!templateComponents,
+      hasModelos: !!PLANTILLA_MODELOS,
+      modeloSeleccionado
+    });
+
+    if (!templateComponents || !PLANTILLA_MODELOS) {
+      console.warn('PrintButton - No hay componentes de plantilla disponibles');
+      return `<div class="cartel-page">
+        <div class="cartel-wrapper">
+          <div class="cartel-placeholder">
+            <p>Producto: ${product.name}</p>
+            <p>SKU: ${product.sku || 'N/A'}</p>
+            <p>Precio: $${product.price || '0'}</p>
+            <p>Nota: Componentes de plantilla no disponibles</p>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    // Obtener el modelo seleccionado o el primero disponible
+    const modelos = PLANTILLA_MODELOS[plantillaFamily] || [];
+    const modelo = modeloSeleccionado 
+      ? modelos.find((m: any) => m.id === modeloSeleccionado)
+      : modelos[0];
+
+    if (!modelo) {
+      console.warn('PrintButton - No se encontró modelo de plantilla');
+      return `<div class="cartel-page">
+        <div class="cartel-wrapper">
+          <div class="cartel-placeholder">
+            <p>Producto: ${product.name}</p>
+            <p>SKU: ${product.sku || 'N/A'}</p>
+            <p>Precio: $${product.price || '0'}</p>
+            <p>Nota: Modelo de plantilla no encontrado</p>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    const Component = templateComponents[modelo.componentPath];
+    
+    if (!Component) {
+      console.warn('PrintButton - Componente de plantilla no encontrado:', modelo.componentPath);
+      return `<div class="cartel-page">
+        <div class="cartel-wrapper">
+          <div class="cartel-placeholder">
+            <p>Producto: ${product.name}</p>
+            <p>SKU: ${product.sku || 'N/A'}</p>
+            <p>Precio: $${product.price || '0'}</p>
+            <p>Nota: Componente no encontrado</p>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    try {
+      // Generar props para este producto específico
+      const templateProps = generateTemplateProps(product);
+      
+      console.log(`PrintButton - Props generadas para ${product.name}:`, templateProps);
+      
+      // Renderizar el componente a HTML
+      const componentHTML = renderToString(
+        React.createElement(Component, {
+          ...templateProps,
+          key: `${product.id}-print`
+        })
+      );
+
+      return `<div class="cartel-page">
+        <div class="cartel-wrapper">
+          <div class="cartel-content">
+            ${componentHTML}
+          </div>
+        </div>
+      </div>`;
+    } catch (error) {
+      console.error('PrintButton - Error al renderizar componente:', error);
+      return `<div class="cartel-page">
+        <div class="cartel-wrapper">
+          <div class="cartel-placeholder">
+            <p>Producto: ${product.name}</p>
+            <p>SKU: ${product.sku || 'N/A'}</p>
+            <p>Precio: $${product.price || '0'}</p>
+            <p>Nota: Error al renderizar plantilla</p>
+          </div>
+        </div>
+      </div>`;
+    }
   };
 
   if (selectedProducts.length === 0) {

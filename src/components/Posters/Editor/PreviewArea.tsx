@@ -151,14 +151,18 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
 
   // Obtener y filtrar los modelos disponibles para la plantilla seleccionada
   const getFilteredModelos = () => {
-    if (!plantillaSeleccionada?.value) return [];
+    if (!plantillaSeleccionada?.value) {
+      return [];
+    }
     
     const modelos = PLANTILLA_MODELOS[plantillaSeleccionada.value] || [];
     
     // Para Ladrillazos, filtrar según la plantilla específica
     if (plantillaSeleccionada.value === 'Ladrillazos') {
       // Si no hay plantilla seleccionada, mostrar todas las 18
-      if (!comboSeleccionado) return modelos;
+      if (!comboSeleccionado) {
+        return modelos;
+      }
       
       // Mapeo específico de plantillas a plantillas de Ladrillazos
       const ladrillazosMappings: Record<string, string[]> = {
@@ -180,14 +184,19 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
       const allowedIds = ladrillazosMappings[comboSeleccionado.value] || [];
       
       // Si no hay mapeo específico, mostrar todas
-      if (allowedIds.length === 0) return modelos;
+      if (allowedIds.length === 0) {
+        return modelos;
+      }
       
       // Filtrar solo las plantillas correspondientes al tipo de promoción
-      return modelos.filter(modelo => allowedIds.includes(modelo.id));
+      const filtered = modelos.filter(modelo => allowedIds.includes(modelo.id));
+      return filtered;
     }
     
     // Si no hay plantilla seleccionada para otras plantillas, mostrar todas
-    if (!comboSeleccionado) return modelos;
+    if (!comboSeleccionado) {
+      return modelos;
+    }
     
     // Aplicar filtros según la plantilla y plantilla para otras familias
     return modelos;
@@ -358,6 +367,137 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
             </div>
           )}
 
+          {/* Renderizado cuando no hay productos seleccionados - mostrar plantillas con datos de ejemplo */}
+          {selectedProducts.length === 0 && filteredModelos.length > 0 && (
+            <>
+              {/* Si hay un modelo seleccionado, mostrar solo ese */}
+              {modeloSeleccionado ? (
+                (() => {
+                  const modelo = filteredModelos.find((m: TemplateModel) => m.id === modeloSeleccionado);
+                  const Component = modelo ? templateComponents[modelo.componentPath] : null;
+
+                  // Datos de ejemplo para mostrar la plantilla
+                  const exampleProduct: Product = {
+                    id: 'example-product',
+                    name: 'Producto de Ejemplo',
+                    price: 99999,
+                    sku: 'EJ001',
+                    category: 'Ejemplo',
+                    description: 'Producto de ejemplo para vista previa',
+                    imageUrl: '/images/placeholder-product.jpg'
+                  };
+
+                  return (
+                    <div className="w-full h-full flex flex-col">
+                      {/* Botón para volver atrás */}
+                      <div className="flex items-center justify-between mb-4 p-2 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => dispatch(setModeloSeleccionado(null))}
+                            className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            title="Volver a ver todas las plantillas"
+                          >
+                            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                            <span className="text-sm text-gray-700">Volver</span>
+                          </button>
+                          <div className="text-sm text-gray-600">
+                            {getPromoTypeFromModelId(modelo?.id || '')} seleccionado
+                          </div>
+                        </div>
+                        
+                        {/* Información adicional */}
+                        <div className="text-xs text-gray-500">
+                          {filteredModelos.length} modelo{filteredModelos.length !== 1 ? 's' : ''} disponible{filteredModelos.length !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+
+                      {/* Mensaje informativo */}
+                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm text-blue-700">
+                          <span className="font-medium">Vista previa:</span> Selecciona productos para personalizar la plantilla
+                        </p>
+                      </div>
+
+                      {/* Preview de la plantilla con datos de ejemplo */}
+                      <div className="flex-1 flex items-center justify-center p-4">
+                        <div className="w-full h-full flex items-center justify-center max-w-[900px] max-h-[800px]" data-preview-content>
+                          {Component && typeof Component === "function" ? (
+                            <Component 
+                              key={`example-product-${refreshKeyState}`}
+                              {...generateTemplateProps(exampleProduct)} 
+                            />
+                          ) : (
+                            <div>Error al cargar el componente</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : (
+                /* Grid 3x3 para mostrar todas las plantillas con scroll */
+                <div className="grid grid-cols-3 gap-6 p-6">
+                  {/* Mensaje informativo */}
+                  <div className="col-span-3 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700 text-center">
+                      <span className="font-medium">Vista previa de plantillas:</span> Haz click en cualquier plantilla para verla en detalle
+                    </p>
+                  </div>
+                  
+                  {filteredModelos.map((modelo: TemplateModel) => {
+                    const Component = templateComponents[modelo.componentPath];
+
+                    // Datos de ejemplo para mostrar la plantilla
+                    const exampleProduct: Product = {
+                      id: 'example-product',
+                      name: 'Producto de Ejemplo',
+                      price: 99999,
+                      sku: 'EJ001',
+                      category: 'Ejemplo',
+                      description: 'Producto de ejemplo para vista previa',
+                      imageUrl: '/images/placeholder-product.jpg'
+                    };
+
+                    return (
+                      <div
+                        key={modelo.id}
+                        className="cursor-pointer border rounded-lg hover:border-indigo-400 hover:shadow-md transition-all duration-300
+                                  bg-white hover:bg-gray-50 relative overflow-hidden"
+                        onClick={() => dispatch(setModeloSeleccionado(modelo.id))}
+                        title={`${getPromoTypeFromModelId(modelo.id)} - Click para seleccionar`}
+                      >
+                        {/* Contenedor de la plantilla */}
+                        <div className="w-full h-[280px] flex items-center justify-center p-3 overflow-hidden">
+                          {Component && typeof Component === "function" ? (
+                            <div className="max-w-full max-h-full transform scale-[0.55]">
+                              <Component 
+                                key={`example-${modelo.id}-${refreshKeyState}`}
+                                {...generateTemplateProps(exampleProduct)} 
+                              />
+                            </div>
+                          ) : (
+                            <div className="text-red-500 text-sm text-center">
+                              Error al cargar componente: {modelo.componentPath}
+                              <br />
+                              <small>Component: {Component ? 'exists' : 'missing'}</small>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Etiqueta del modelo */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white text-xs text-center py-2 px-2">
+                          {getPromoTypeFromModelId(modelo.id)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
           {/* Renderizado para producto único o selección de modelo */}
           {selectedProducts.length === 1 && filteredModelos.length > 0 && (
             <>
@@ -492,7 +632,11 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                               />
                             </div>
                           ) : (
-                            <div className="text-red-500 text-sm text-center">Error al cargar componente</div>
+                            <div className="text-red-500 text-sm text-center">
+                              Error al cargar componente: {modelo.componentPath}
+                              <br />
+                              <small>Component: {Component ? 'exists' : 'missing'}</small>
+                            </div>
                           )}
                         </div>
                         
@@ -798,6 +942,11 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
         selectedProducts={selectedProducts}
         formatoSeleccionado={formatoSeleccionado}
         disabled={selectedProducts.length === 0}
+        templateComponents={templateComponents}
+        PLANTILLA_MODELOS={PLANTILLA_MODELOS}
+        modeloSeleccionado={modeloSeleccionado}
+        selectedFinancing={selectedFinancing}
+        getCurrentProductValue={getCurrentProductValue}
       />
       
       {/* Modal de eliminación */}

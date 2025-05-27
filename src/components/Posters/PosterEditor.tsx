@@ -292,12 +292,18 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
         Object.values(PLANTILLA_MODELOS).forEach((models) => {
           (models as { componentPath: string }[]).forEach((model) => uniquePaths.add(model.componentPath));
         });
+        
         for (const path of uniquePaths) {
           const component = await loadTemplateComponent(path);
-          if (component) { components[path] = component; }
+          if (component) { 
+            components[path] = component;
+          }
         }
+        
         setTemplateComponents(components);
-      } catch (error) { console.error("Error al cargar los componentes:", error); }
+      } catch (error) { 
+        console.error("❌ PosterEditor: Error al cargar los componentes:", error); 
+      }
     };
     loadComponents();
   }, []);
