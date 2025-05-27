@@ -67,7 +67,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         {/* Selección de Plantillas */}
         <div className="border-gray-200 pt-6">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Plantillas:
+            Familia:
           </label>
           <PlantillaSelect
             value={plantillaSeleccionada}
@@ -85,7 +85,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         {/* Selección de Tipo de Promoción */}
         <div className="border-t border-gray-200 pt-6">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Tipo de Promoción:
+            Plantilla:
           </label>
           <ComboSelect
             value={comboSeleccionado}
@@ -96,7 +96,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
               }
             }}
             options={combosDisponibles}
-            placeholder="Seleccionar tipo de promoción..."
+            placeholder="Seleccionar plantilla..."
           />
         </div>
 

@@ -102,12 +102,12 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
     
     const modelos = PLANTILLA_MODELOS[plantillaSeleccionada.value] || [];
     
-    // Para Ladrillazos, filtrar según el tipo de promoción específico
+    // Para Ladrillazos, filtrar según la plantilla específica
     if (plantillaSeleccionada.value === 'Ladrillazos') {
-      // Si no hay tipo de promoción seleccionado, mostrar todas las 18
+      // Si no hay plantilla seleccionada, mostrar todas las 18
       if (!comboSeleccionado) return modelos;
       
-      // Mapeo específico de tipos de promoción a plantillas de Ladrillazos
+      // Mapeo específico de plantillas a plantillas de Ladrillazos
       const ladrillazosMappings: Record<string, string[]> = {
         "precio_lleno": ["ladrillazos-1"], // PRECIO LLENO
         "flooring": ["ladrillazos-2"], // FLOORING
@@ -133,10 +133,10 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
       return modelos.filter(modelo => allowedIds.includes(modelo.id));
     }
     
-    // Si no hay tipo de promoción seleccionado para otras plantillas, mostrar todas
+    // Si no hay plantilla seleccionada para otras plantillas, mostrar todas
     if (!comboSeleccionado) return modelos;
     
-    // Aplicar filtros según la plantilla y tipo de promoción para otras familias
+    // Aplicar filtros según la plantilla y plantilla para otras familias
     return modelos;
   };
 
@@ -157,7 +157,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">Selecciona una plantilla</h3>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">Selecciona una familia</h3>
               <p className="text-sm text-gray-500 text-center max-w-md">
                 Elige una familia de plantillas para ver los modelos disponibles
               </p>
@@ -174,7 +174,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
               </div>
               <h3 className="text-lg font-medium text-gray-700 mb-2">No hay modelos disponibles</h3>
               <p className="text-sm text-gray-500 text-center max-w-md">
-                No se encontraron plantillas para la combinación seleccionada. Prueba cambiando el tipo de promoción.
+                No se encontraron plantillas para la combinación seleccionada. Prueba cambiando la plantilla.
               </p>
             </div>
           )}
