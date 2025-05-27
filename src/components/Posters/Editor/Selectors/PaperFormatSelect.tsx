@@ -1,5 +1,5 @@
-// src/components/Posters/PaperFormatSelect.tsx
-import React from "react";
+// src/components/Posters/Editor/Selectors/PaperFormatSelect.tsx
+import React, { useEffect } from "react";
 import Select from "react-select";
 import { PAPER_FORMATS } from "@/constants/posters/paperFormats";
 
@@ -23,19 +23,50 @@ const paperFormatOptions: PaperFormatOption[] = PAPER_FORMATS.map((format) => ({
   height: format.height,
 }));
 
+console.log('PaperFormatSelect - Opciones disponibles:', paperFormatOptions);
+
 export const PaperFormatSelect: React.FC<PaperFormatSelectProps> = ({
   value,
   onChange,
   className = "",
-}) => (
-  <Select
-    value={value}
-    onChange={onChange}
-    options={paperFormatOptions}
-    placeholder="Seleccionar formato de papel..."
-    className={className}
-    isClearable
-  />
-);
+}) => {
+  console.log('PaperFormatSelect - Render:', {
+    value,
+    valueExists: !!value,
+    valueLabel: value?.label,
+    valueValue: value?.value
+  });
+  
+  // Si no hay valor y es la primera vez, establecer A4 por defecto
+  useEffect(() => {
+    console.log('PaperFormatSelect - useEffect ejecutado:', { value, hasValue: !!value });
+    
+    if (!value) {
+      const defaultA4 = paperFormatOptions.find(option => option.value === 'A4');
+      console.log('PaperFormatSelect - Buscando A4:', { defaultA4, paperFormatOptions });
+      
+      if (defaultA4) {
+        console.log('PaperFormatSelect - Estableciendo A4 por defecto:', defaultA4);
+        onChange(defaultA4);
+      }
+    }
+  }, [value, onChange]);
+  
+  // Forzar A4 si el valor actual no es válido
+  const currentValue = value || paperFormatOptions.find(option => option.value === 'A4');
+  
+  console.log('PaperFormatSelect - Valor final a mostrar:', currentValue);
+  
+  return (
+    <Select
+      value={currentValue}
+      onChange={onChange}
+      options={paperFormatOptions}
+      placeholder="Seleccionar formato de papel..."
+      className={className}
+      isClearable={false}
+    />
+  );
+};
 
 export default PaperFormatSelect;

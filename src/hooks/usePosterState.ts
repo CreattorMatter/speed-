@@ -23,6 +23,26 @@ interface InitialPromotion {
   [key: string]: unknown;
 }
 
+// Obtener A4 directamente de las constantes
+const getA4Format = (): PaperFormatOption => {
+  const a4Format = PAPER_FORMATS.find(format => format.id === 'A4');
+  if (a4Format) {
+    return {
+      label: a4Format.name,
+      value: a4Format.id,
+      width: a4Format.width,
+      height: a4Format.height
+    };
+  }
+  // Fallback si no se encuentra A4
+  return {
+    label: 'A4 (210 × 297 mm)',
+    value: 'A4',
+    width: '210mm',
+    height: '297mm'
+  };
+};
+
 export const usePosterState = (initialProducts: string[] = [], initialPromotion?: InitialPromotion) => {
   // Estados principales
   const [company, setCompany] = useState("");
@@ -53,12 +73,18 @@ export const usePosterState = (initialProducts: string[] = [], initialPromotion?
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedFinancing, setSelectedFinancing] = useState<FinancingOption[]>([]);
   const [comboSeleccionado, setComboSeleccionado] = useState<SelectOption | null>(null);
-  const [formatoSeleccionado, setFormatoSeleccionado] = useState<PaperFormatOption | null>({
-    label: 'A4 (210 × 297 mm)',
-    value: 'A4',
-    width: '210mm',
-    height: '297mm'
+  
+  // Inicializar con A4 desde las constantes
+  const a4Format = getA4Format();
+  const [formatoSeleccionado, setFormatoSeleccionado] = useState<PaperFormatOption | null>(a4Format);
+  
+  // Debug logging para formato inicial
+  console.log('usePosterState - Formato inicial:', {
+    a4Format,
+    formatoSeleccionado: a4Format,
+    PAPER_FORMATS_A4: PAPER_FORMATS.find(f => f.id === 'A4')
   });
+  
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [maxProductsReached, setMaxProductsReached] = useState(false);
   const [plantillaSeleccionada, setPlantillaSeleccionada] = useState<SelectOption | null>(null);
