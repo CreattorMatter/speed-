@@ -53,7 +53,12 @@ export const usePosterState = (initialProducts: string[] = [], initialPromotion?
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedFinancing, setSelectedFinancing] = useState<FinancingOption[]>([]);
   const [comboSeleccionado, setComboSeleccionado] = useState<SelectOption | null>(null);
-  const [formatoSeleccionado, setFormatoSeleccionado] = useState<PaperFormatOption | null>(null);
+  const [formatoSeleccionado, setFormatoSeleccionado] = useState<PaperFormatOption | null>({
+    label: 'A4 (210 × 297 mm)',
+    value: 'A4',
+    width: '210mm',
+    height: '297mm'
+  });
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [maxProductsReached, setMaxProductsReached] = useState(false);
   const [plantillaSeleccionada, setPlantillaSeleccionada] = useState<SelectOption | null>(null);

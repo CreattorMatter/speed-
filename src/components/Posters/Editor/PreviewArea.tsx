@@ -1,6 +1,17 @@
 import React from 'react';
+import { Trash2 } from 'lucide-react';
 import { type Product } from '../../../data/products';
 import { type TemplateModel } from '../../../constants/posters/templates';
+import { EditableField } from './EditableField';
+import { DeleteProductModal } from './DeleteProductModal';
+import { PrintButton } from './PrintButton';
+import { useProductChanges } from '../../../hooks/useProductChanges';
+import { 
+  getTemplateFields, 
+  getAvailableFields, 
+  getFieldLabel, 
+  getFieldType 
+} from '../../../utils/templateFieldDetector';
 
 // Tipos específicos para el componente
 interface PlantillaOption {
@@ -18,6 +29,13 @@ interface FinancingOption {
   logo: string;
   cardName: string;
   plan: string;
+}
+
+interface PaperFormatOption {
+  label: string;
+  value: string;
+  width: string;
+  height: string;
 }
 
 // Interfaz para las props de los componentes de plantilla
@@ -46,9 +64,11 @@ interface PreviewAreaProps {
   selectedProduct: Product | null;
   selectedProducts: Product[];
   selectedFinancing: FinancingOption[];
+  formatoSeleccionado?: PaperFormatOption | null;
   PLANTILLA_MODELOS: Record<string, TemplateModel[]>;
   onRemoveProduct?: (productId: string) => void;
   onRemoveAllProducts?: () => void;
+  onUpdateProduct?: (productId: string, updates: Partial<Product>) => void;
 }
 
 export const PreviewArea: React.FC<PreviewAreaProps> = ({
@@ -60,12 +80,31 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
   selectedProduct,
   selectedProducts,
   selectedFinancing,
+  formatoSeleccionado,
   PLANTILLA_MODELOS,
   onRemoveProduct,
-  onRemoveAllProducts
+  onRemoveAllProducts,
+  onUpdateProduct
 }) => {
   // Estado para el producto expandido individualmente
   const [expandedProductIndex, setExpandedProductIndex] = React.useState<number | null>(null);
+  
+  // Estado para el modal de eliminación
+  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
+  const [productToDelete, setProductToDelete] = React.useState<Product | null>(null);
+  
+  // Estado para forzar re-renders cuando hay cambios
+  const [refreshKeyState, setRefreshKeyState] = React.useState(0);
+  
+  // Hook para tracking de cambios
+  const { trackChange, getEditedProduct } = useProductChanges();
+
+  // Obtener configuración de campos para la plantilla actual
+  const templateFields = getTemplateFields(
+    plantillaSeleccionada?.value || '',
+    comboSeleccionado?.value
+  );
+  const availableFields = getAvailableFields(templateFields);
 
   // Determinar si estamos en modo multiproductos
   const isMultiProductMode = selectedProducts.length > 1;
@@ -142,6 +181,129 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
 
   const filteredModelos = getFilteredModelos();
   
+  // Funciones para manejar edición y eliminación
+  const handleProductEdit = (productId: string, field: string, newValue: string | number) => {
+    const product = selectedProducts.find(p => p.id === productId);
+    if (!product) return;
+
+    const originalValue = getCurrentProductValue(product, field);
+    
+    // Trackear el cambio
+    trackChange(productId, field, originalValue as string | number, newValue, product);
+    
+    // Actualizar el producto si la función está disponible
+    if (onUpdateProduct) {
+      onUpdateProduct(productId, { [field]: newValue });
+    }
+    
+    // Forzar re-render para actualizar la vista previa
+    setRefreshKeyState(prev => prev + 1);
+  };
+
+  const handleDeleteClick = (product: Product) => {
+    setProductToDelete(product);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (productToDelete && onRemoveProduct) {
+      const currentIndex = selectedProducts.findIndex(p => p.id === productToDelete.id);
+      
+      // Eliminar el producto
+      onRemoveProduct(productToDelete.id);
+      
+      // Mantener el panel de edición abierto navegando al siguiente producto si estamos en vista expandida
+      if (expandedProductIndex !== null) {
+        const remainingProductsCount = selectedProducts.length - 1; // Después de eliminar
+        
+        if (remainingProductsCount > 0) {
+          if (currentIndex < remainingProductsCount) {
+            // Mantener el mismo índice si hay un producto después
+            setExpandedProductIndex(currentIndex);
+          } else {
+            // Ir al producto anterior si eliminamos el último
+            setExpandedProductIndex(Math.max(0, currentIndex - 1));
+          }
+        } else {
+          // Si no quedan productos, salir de vista expandida
+          setExpandedProductIndex(null);
+        }
+      }
+    }
+    
+    setDeleteModalOpen(false);
+    setProductToDelete(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModalOpen(false);
+    setProductToDelete(null);
+  };
+
+  // Función para obtener valor actual del producto (original o editado)
+  const getCurrentProductValue = (product: Product, field: string): any => {
+    const editedProduct = getEditedProduct(product.id);
+    
+    // Primero verificar si hay un valor editado
+    if (editedProduct && editedProduct.changes.length > 0) {
+      const change = editedProduct.changes.find(c => c.field === field);
+      if (change) {
+        return change.newValue;
+      }
+    }
+    
+    // Mapeo directo de campos del producto
+    const productFieldMapping: Record<string, keyof Product> = {
+      nombre: 'name',
+      precioActual: 'price',
+      sap: 'sku'
+    };
+    
+    const productField = productFieldMapping[field];
+    if (productField && product[productField] !== undefined) {
+      return product[productField];
+    }
+    
+    // Valores por defecto para campos que no están en Product
+    const defaultValues: Record<string, any> = {
+      porcentaje: 20,
+      fechasDesde: '15/05/2025',
+      fechasHasta: '18/05/2025',
+      origen: 'ARG',
+      precioSinImpuestos: product.price ? (product.price * 0.83).toFixed(2) : '0'
+    };
+    
+    return defaultValues[field] || '';
+  };
+
+  // Función para generar props dinámicos para el componente de plantilla
+  const generateTemplateProps = (product: Product) => {
+    const baseProps = {
+      small: false,
+      financiacion: selectedFinancing,
+      productos: [product],
+      titulo: "Ofertas Especiales"
+    };
+
+    // Generar props dinámicos basados en los valores actuales del producto
+    const templateProps: Record<string, any> = {
+      // Mapeo directo de campos
+      nombre: getCurrentProductValue(product, 'nombre'),
+      precioActual: getCurrentProductValue(product, 'precioActual')?.toString(),
+      porcentaje: getCurrentProductValue(product, 'porcentaje')?.toString(),
+      sap: getCurrentProductValue(product, 'sap')?.toString(),
+      fechasDesde: getCurrentProductValue(product, 'fechasDesde')?.toString(),
+      fechasHasta: getCurrentProductValue(product, 'fechasHasta')?.toString(),
+      origen: getCurrentProductValue(product, 'origen')?.toString(),
+      precioSinImpuestos: getCurrentProductValue(product, 'precioSinImpuestos')?.toString()
+    };
+
+    return { 
+      ...baseProps, 
+      ...templateProps 
+    };
+  };
+
   return (
     <div className="col-span-7 h-full flex flex-col">
       <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 flex flex-1 overflow-hidden max-h-[800px] w-full">
@@ -215,36 +377,75 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                       </div>
 
                       {/* Contenedor de la plantilla seleccionada */}
-                      <div className="flex-1 flex items-center justify-center p-4">
-                        <div className="w-full h-full flex items-center justify-center max-w-[900px] max-h-[800px]">
-                          {Component && typeof Component === "function" ? (
-                            <Component
-                              small={false}
-                              nombre={selectedProduct?.name || "Producto de ejemplo"}
-                              precioActual={selectedProduct?.price?.toString() || "999"}
-                              porcentaje="20"
-                              sap={selectedProduct?.sku || "SKU123"}
-                              fechasDesde="15/05/2025"
-                              fechasHasta="18/05/2025"
-                              origen="ARG"
-                              precioSinImpuestos={
-                                selectedProduct?.price
-                                  ? (selectedProduct.price * 0.83).toFixed(2)
-                                  : "829"
-                              }
-                              financiacion={selectedFinancing}
-                              productos={
-                                modelo?.componentPath.toLowerCase().includes("multiproductos")
-                                  ? selectedProducts.length > 0 ? selectedProducts : []
-                                  : selectedProduct
-                                  ? [selectedProduct]
-                                  : []
-                              }
-                              titulo="Ofertas Especiales"
-                            />
-                          ) : (
-                            <div>Error al cargar el componente</div>
-                          )}
+                      <div className="flex-1 flex bg-white">
+                        {/* Panel de edición lateral para producto único */}
+                        {selectedProduct && (
+                          <div className="w-80 bg-gray-50 border-r p-4 overflow-y-auto">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              Editar Producto
+                            </h3>
+                            
+                            <div className="space-y-4">
+                              {/* Renderizar solo campos disponibles para esta plantilla */}
+                              {availableFields.map(field => {
+                                const fieldType = getFieldType(field);
+                                const fieldLabel = getFieldLabel(field);
+                                const isRequired = field === 'nombre';
+                                
+                                return (
+                                  <div key={field}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                      {fieldLabel} {isRequired && <span className="text-red-500">*</span>}
+                                    </label>
+                                    <EditableField
+                                      value={getCurrentProductValue(selectedProduct, field)}
+                                      fieldName={field}
+                                      fieldType={fieldType}
+                                      isRequired={isRequired}
+                                      onSave={(newValue) => handleProductEdit(selectedProduct.id, field, newValue)}
+                                      className="w-full"
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            {/* Información de cambios para producto único */}
+                            {(() => {
+                              const editedProduct = getEditedProduct(selectedProduct.id);
+                              return editedProduct && editedProduct.changes.length > 0 && (
+                                <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded">
+                                  <h4 className="text-sm font-medium text-blue-800 mb-2">
+                                    Cambios realizados ({editedProduct.changes.length})
+                                  </h4>
+                                  <div className="space-y-1">
+                                    {editedProduct.changes.map((change, index) => (
+                                      <div key={index} className="text-xs text-blue-700">
+                                        <span className="font-medium">{change.field}:</span> {change.originalValue} → {change.newValue}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        )}
+
+                        {/* Preview de la plantilla */}
+                        <div className="flex-1 flex items-center justify-center p-4">
+                          <div className="w-full h-full flex items-center justify-center max-w-[900px] max-h-[800px]" data-preview-content>
+                            {Component && typeof Component === "function" ? (
+                              <Component 
+                                key={`${selectedProduct?.id || 'no-product'}-${refreshKeyState}`}
+                                {...generateTemplateProps(selectedProduct || {} as Product)} 
+                              />
+                            ) : (
+                              <div>Error al cargar el componente</div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -268,29 +469,9 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                         <div className="w-full h-[280px] flex items-center justify-center p-3 overflow-hidden">
                           {Component && typeof Component === "function" ? (
                             <div className="max-w-full max-h-full transform scale-[0.55]">
-                              <Component
-                                small={true}
-                                nombre={selectedProduct?.name || "Producto de ejemplo"}
-                                precioActual={selectedProduct?.price?.toString() || "999"}
-                                porcentaje="20"
-                                sap={selectedProduct?.sku || "SKU123"}
-                                fechasDesde="15/05/2025"
-                                fechasHasta="18/05/2025"
-                                origen="ARG"
-                                precioSinImpuestos={
-                                  selectedProduct?.price
-                                    ? (selectedProduct.price * 0.83).toFixed(2)
-                                    : "829"
-                                }
-                                financiacion={selectedFinancing}
-                                productos={
-                                  modelo.componentPath.toLowerCase().includes("multiproductos")
-                                    ? selectedProducts.length > 0 ? selectedProducts : []
-                                    : selectedProduct
-                                    ? [selectedProduct]
-                                    : []
-                                }
-                                titulo="Ofertas Especiales"
+                              <Component 
+                                key={`${selectedProduct?.id || 'no-product'}-${refreshKeyState}`}
+                                {...generateTemplateProps(selectedProduct || {} as Product)} 
                               />
                             </div>
                           ) : (
@@ -338,7 +519,8 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                 )}
               </div>
               
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 p-2">
+              {/* Contenedor con data-preview-content para múltiples productos */}
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 p-2" data-preview-content>
                 {selectedProducts.map((product: Product, productIndex: number) => {
                   // Para multiproductos, usar el modelo seleccionado o el primero disponible
                   const modelo = modeloSeleccionado 
@@ -385,24 +567,13 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                         </button>
                       )}
                       
-                      <div className="w-full h-[280px] flex items-center justify-center overflow-hidden">
+                      {/* Contenedor del cartel con data-cartel-content para impresión */}
+                      <div className="w-full h-[280px] flex items-center justify-center overflow-hidden" data-cartel-content>
                         {Component && typeof Component === "function" ? (
                           <div className="max-w-full max-h-full scale-90 transform">
-                            <Component
-                              small={true}
-                              nombre={product.name}
-                              precioActual={product.price?.toString()}
-                              porcentaje="20"
-                              sap={product.sku || ""}
-                              fechasDesde="15/05/2025"
-                              fechasHasta="18/05/2025"
-                              origen="ARG"
-                              precioSinImpuestos={
-                                product.price ? (product.price * 0.83).toFixed(2) : ""
-                              }
-                              financiacion={selectedFinancing}
-                              productos={[product]}
-                              titulo="Ofertas Especiales"
+                            <Component 
+                              key={`${product.id}-${refreshKeyState}`}
+                              {...generateTemplateProps(product)} 
                             />
                           </div>
                         ) : (
@@ -485,6 +656,15 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                     </div>
                     
                     <div className="flex gap-2">
+                      {/* Botón eliminar */}
+                      <button
+                        onClick={() => handleDeleteClick(product)}
+                        className="p-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors shadow-md"
+                        title="Eliminar producto"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      
                       {/* Navegación entre productos */}
                       <button
                         onClick={() => setExpandedProductIndex(Math.max(0, expandedProductIndex - 1))}
@@ -518,29 +698,74 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                     </div>
                   </div>
 
-                  {/* Contenedor de la plantilla expandida */}
-                  <div className="flex-1 flex items-center justify-center p-4 bg-white">
-                    <div className="flex-1 flex items-center justify-center max-w-[900px] max-h-[800px]">
-                      {Component && typeof Component === "function" ? (
-                        <Component
-                          small={false}
-                          nombre={product.name}
-                          precioActual={product.price?.toString() || "999"}
-                          porcentaje="20"
-                          sap={product.sku || "SKU123"}
-                          fechasDesde="15/05/2025"
-                          fechasHasta="18/05/2025"
-                          origen="ARG"
-                          precioSinImpuestos={
-                            product.price ? (product.price * 0.83).toFixed(2) : "829"
-                          }
-                          financiacion={selectedFinancing}
-                          productos={[product]}
-                          titulo="Ofertas Especiales"
-                        />
-                      ) : (
-                        <div>Error al cargar el componente</div>
-                      )}
+                  {/* Contenedor principal con panel de edición y preview */}
+                  <div className="flex-1 flex bg-white">
+                    {/* Panel de edición lateral */}
+                    <div className="w-80 bg-gray-50 border-r p-4 overflow-y-auto">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Editar Producto
+                      </h3>
+                      
+                      <div className="space-y-4">
+                        {/* Renderizar solo campos disponibles para esta plantilla */}
+                        {availableFields.map(field => {
+                          const fieldType = getFieldType(field);
+                          const fieldLabel = getFieldLabel(field);
+                          const isRequired = field === 'nombre';
+                          
+                          return (
+                            <div key={field}>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {fieldLabel} {isRequired && <span className="text-red-500">*</span>}
+                              </label>
+                              <EditableField
+                                value={getCurrentProductValue(product, field)}
+                                fieldName={field}
+                                fieldType={fieldType}
+                                isRequired={isRequired}
+                                onSave={(newValue) => handleProductEdit(product.id, field, newValue)}
+                                className="w-full"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Información de cambios */}
+                      {(() => {
+                        const editedProduct = getEditedProduct(product.id);
+                        return editedProduct && editedProduct.changes.length > 0 && (
+                          <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded">
+                            <h4 className="text-sm font-medium text-blue-800 mb-2">
+                              Cambios realizados ({editedProduct.changes.length})
+                            </h4>
+                            <div className="space-y-1">
+                              {editedProduct.changes.map((change, index) => (
+                                <div key={index} className="text-xs text-blue-700">
+                                  <span className="font-medium">{change.field}:</span> {change.originalValue} → {change.newValue}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Preview de la plantilla */}
+                    <div className="flex-1 flex items-center justify-center p-6">
+                      <div className="w-full h-full flex items-center justify-center max-w-[900px] max-h-[800px]" data-preview-content>
+                        {Component && typeof Component === "function" ? (
+                          <Component 
+                            key={`${selectedProduct?.id || 'no-product'}-${refreshKeyState}`}
+                            {...generateTemplateProps(product)} 
+                          />
+                        ) : (
+                          <div>Error al cargar el componente</div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -549,6 +774,26 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
           )}
         </div>
       </div>
+      
+      {/* PrintButton integrado */}
+      <PrintButton 
+        key={`print-button-${refreshKeyState}`}
+        plantillaFamily={plantillaSeleccionada?.value || 'default'}
+        plantillaType={comboSeleccionado?.value || 'default'}
+        selectedProducts={selectedProducts}
+        formatoSeleccionado={formatoSeleccionado}
+        disabled={selectedProducts.length === 0}
+      />
+      
+      {/* Modal de eliminación */}
+      <DeleteProductModal
+        isOpen={deleteModalOpen}
+        product={productToDelete}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        productNumber={productToDelete ? selectedProducts.findIndex(p => p.id === productToDelete.id) + 1 : undefined}
+        totalProducts={selectedProducts.length}
+      />
     </div>
   );
 }; 

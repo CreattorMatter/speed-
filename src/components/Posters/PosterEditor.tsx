@@ -91,6 +91,14 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
     }
   };
 
+  // Handler para actualizar productos
+  const handleUpdateProduct = (productId: string, updates: Partial<Product>) => {
+    // Actualizar el producto en el estado local
+    // Esto debería integrarse con el sistema de state management existente
+    console.log('Actualizando producto:', productId, updates);
+    // TODO: Implementar la actualización real del producto en el estado
+  };
+
   // Handlers específicos
   const handleSearch = (term: string) => {
     state.setSearchTerm(term);
@@ -180,9 +188,11 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                 selectedProduct={state.selectedProduct}
                 selectedProducts={getProductsFromIds(state.selectedProducts)}
                 selectedFinancing={state.selectedFinancing}
+                formatoSeleccionado={state.formatoSeleccionado}
                 PLANTILLA_MODELOS={PLANTILLA_MODELOS as Record<string, TemplateModel[]>}
                 onRemoveProduct={actions.handleRemoveProduct}
                 onRemoveAllProducts={actions.handleRemoveAllProducts}
+                onUpdateProduct={handleUpdateProduct}
               />
             </div>
 

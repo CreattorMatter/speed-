@@ -7,7 +7,7 @@ import Promotions from './components/Promotions';
 import { PosterEditor } from './components/Posters/PosterEditor';
 import { PrintView } from './components/Posters/PrintView';
 import { DigitalCarouselEditor } from './components/DigitalCarousel/DigitalCarouselEditor';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ConfigurationPortal } from './components/Settings/ConfigurationPortal';
 import { PosterPreviewPage } from './pages/PosterPreview';
@@ -457,6 +457,10 @@ function AppContent() {
           }
         />
         
+        <Route path="/print-view" element={<PrintView />} />
+        <Route path="/poster-preview" element={<PosterPreviewPage />} />
+        <Route path="/digital-signage" element={<DigitalSignageView />} />
+        
         <Route
           path="/analytics"
           element={
@@ -534,13 +538,8 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/print-view" element={<PrintView />} />
-        <Route path="/poster-preview" element={<PosterPreviewPage />} />
-        <Route path="/digital-signage" element={<DigitalSignageView />} />
-        <Route path="*" element={<AppContent />} />
-      </Routes>
       <Suspense fallback={null}>
+        <AppContent />
         <Toaster 
           position="bottom-right"
           toastOptions={{
