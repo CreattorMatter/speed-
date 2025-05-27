@@ -102,54 +102,208 @@ export const PrintButton: React.FC<PrintButtonProps> = ({
       return;
     }
 
-    // Obtener el contenido actual del preview area
-    const previewElement = document.querySelector('[data-preview-content]');
-    let contentToPrint = '';
+    // Si hay múltiples productos y alguno está expandido, necesitamos volver al grid
+    const isInExpandedView = document.querySelector('[data-preview-content]')?.querySelector('.w-80.bg-gray-50.border-r') !== null;
     
-    if (previewElement) {
-      if (selectedProducts.length > 1) {
-        // Para múltiples productos, buscar todos los elementos de cartel dentro del preview
-        const allCartelElements = previewElement.querySelectorAll('[data-cartel-content]');
-        
-        console.log('PrintButton - Múltiples productos detectados:', {
-          productCount: selectedProducts.length,
-          cartelElementsFound: allCartelElements.length,
-          previewElement: !!previewElement
-        });
-        
-        if (allCartelElements.length > 0) {
-          contentToPrint = Array.from(allCartelElements)
-            .map((element, index) => {
-              // Obtener todo el contenido del elemento cartel
-              const cartelContent = element.innerHTML;
+    // Detección adicional: verificar si hay texto "Producto X de Y" que indica vista expandida
+    const hasExpandedText = document.querySelector('[data-preview-content]')?.textContent?.includes('de ' + selectedProducts.length) || false;
+    const isReallyExpanded = isInExpandedView || hasExpandedText;
+    
+    console.log('PrintButton - handlePrintDirectly:', {
+      selectedProductsCount: selectedProducts.length,
+      isInExpandedView,
+      hasExpandedText,
+      isReallyExpanded,
+      hasEditedProducts: editedProducts.length > 0
+    });
+
+    // Función para capturar el contenido
+    const captureContent = () => {
+      const previewElement = document.querySelector('[data-preview-content]');
+      let contentToPrint = '';
+      
+      console.log('PrintButton - captureContent iniciado:', {
+        previewElementFound: !!previewElement,
+        selectedProductsCount: selectedProducts.length
+      });
+      
+      if (previewElement) {
+        if (selectedProducts.length > 1) {
+          // Para múltiples productos, buscar todos los elementos de cartel dentro del preview
+          const allCartelElements = previewElement.querySelectorAll('[data-cartel-content]');
+          
+          console.log('PrintButton - Múltiples productos detectados:', {
+            productCount: selectedProducts.length,
+            cartelElementsFound: allCartelElements.length,
+            previewElement: !!previewElement,
+            previewElementHTML: previewElement.innerHTML.substring(0, 200) + '...'
+          });
+          
+          // Debug adicional: mostrar todos los elementos encontrados
+          console.log('PrintButton - Elementos data-cartel-content encontrados:', 
+            Array.from(allCartelElements).map((el, i) => ({
+              index: i,
+              tagName: el.tagName,
+              className: el.className,
+              hasContent: el.innerHTML.length > 0
+            }))
+          );
+          
+          if (allCartelElements.length > 0) {
+            // Asegurar que tenemos un elemento por cada producto
+            if (allCartelElements.length < selectedProducts.length) {
+              console.warn('PrintButton - Advertencia: Menos elementos de cartel que productos seleccionados');
+              console.log('PrintButton - Intentando método alternativo de captura');
               
-              return `<div class="cartel-page">
-                <div class="cartel-header">Cartel ${index + 1} de ${allCartelElements.length}</div>
-                <div class="cartel-wrapper">
-                  ${cartelContent}
-                </div>
-              </div>`;
-            })
-            .join('');
+              // Método alternativo: generar contenido para cada producto
+              contentToPrint = selectedProducts.map((product, index) => {
+                const productName = product?.name || `Producto ${index + 1}`;
+                const cartelElement = allCartelElements[index];
+                
+                if (cartelElement) {
+                  return `<div class="cartel-page">
+                    <div class="cartel-wrapper">
+                      <div class="cartel-content">
+                        ${cartelElement.outerHTML}
+                      </div>
+                    </div>
+                  </div>`;
+                } else {
+                  // Si no hay elemento específico, crear un placeholder
+                  return `<div class="cartel-page">
+                    <div class="cartel-wrapper">
+                      <div class="cartel-placeholder">
+                        <p>Producto: ${productName}</p>
+                        <p>SKU: ${product?.sku || 'N/A'}</p>
+                        <p>Precio: $${product?.price || '0'}</p>
+                        <p>Nota: Contenido no disponible para impresión</p>
+                      </div>
+                    </div>
+                  </div>`;
+                }
+              }).join('');
+            } else {
+              // Método normal cuando hay suficientes elementos
+              contentToPrint = Array.from(allCartelElements)
+                .map((element, index) => {
+                  // Obtener todo el contenido del elemento cartel incluyendo estilos y atributos
+                  const cartelContent = element.outerHTML; // Usar outerHTML para incluir el elemento completo
+                  const productName = selectedProducts[index]?.name || `Producto ${index + 1}`;
+                  
+                  return `<div class="cartel-page">
+                    <div class="cartel-wrapper">
+                      <div class="cartel-content">
+                        ${cartelContent}
+                      </div>
+                    </div>
+                  </div>`;
+                })
+                .join('');
+            }
+          } else {
+            // Si no hay elementos específicos, intentar buscar elementos de plantilla directamente
+            console.log('PrintButton - No se encontraron elementos [data-cartel-content], buscando plantillas directamente');
+            
+            // Buscar todos los componentes de plantilla en el DOM
+            const templateElements = previewElement.querySelectorAll('[class*="font-sans"], [class*="bg-white"], .cartel-wrapper > div');
+            
+            if (templateElements.length >= selectedProducts.length) {
+              // Si encontramos suficientes elementos de plantilla
+              contentToPrint = Array.from(templateElements)
+                .slice(0, selectedProducts.length) // Tomar solo los necesarios
+                .map((element, index) => {
+                  const productName = selectedProducts[index]?.name || `Producto ${index + 1}`;
+                  
+                  return `<div class="cartel-page">
+                    <div class="cartel-wrapper">
+                      <div class="cartel-content" style="transform: scale(1); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                        ${element.outerHTML}
+                      </div>
+                    </div>
+                  </div>`;
+                })
+                .join('');
+            } else {
+              // Último recurso: generar placeholders para todos los productos
+              console.warn('PrintButton - No se encontraron suficientes elementos, generando placeholders');
+              contentToPrint = selectedProducts.map((product, index) => {
+                const productName = product?.name || `Producto ${index + 1}`;
+                
+                return `<div class="cartel-page">
+                  <div class="cartel-wrapper">
+                    <div class="cartel-placeholder">
+                      <p>Producto: ${productName}</p>
+                      <p>SKU: ${product?.sku || 'N/A'}</p>
+                      <p>Precio: $${product?.price || '0'}</p>
+                      <p>Nota: Contenido no disponible para impresión</p>
+                    </div>
+                  </div>
+                </div>`;
+              }).join('');
+            }
+          }
         } else {
-          // Si no hay elementos específicos, usar todo el contenido del preview
+          // Para un solo producto, usar el contenido completo
+          const productName = selectedProducts[0]?.name || 'Producto';
+          const singleElement = previewElement.querySelector('[data-cartel-content]') || previewElement;
           contentToPrint = `<div class="cartel-page">
             <div class="cartel-wrapper">
-              ${previewElement.innerHTML}
+              <div class="cartel-content">
+                ${singleElement.outerHTML}
+              </div>
             </div>
           </div>`;
         }
       } else {
-        // Para un solo producto, usar el contenido completo
-        contentToPrint = previewElement.innerHTML;
+        // Fallback: buscar el componente de plantilla directamente
+        console.warn('PrintButton - No se encontró [data-preview-content], usando fallback');
+        const templateElement = document.querySelector('[class*="font-sans"]');
+        contentToPrint = templateElement ? 
+          `<div class="cartel-page">
+            <div class="cartel-wrapper">
+              ${templateElement.outerHTML}
+            </div>
+          </div>` : 
+          '<div class="cartel-page"><p>Error: No se pudo obtener el contenido para imprimir</p></div>';
       }
-    } else {
-      // Fallback: buscar el componente de plantilla directamente
-      const templateElement = document.querySelector('[class*="font-sans"]');
-      contentToPrint = templateElement ? templateElement.outerHTML : '<p>Error: No se pudo obtener el contenido para imprimir</p>';
+
+      return contentToPrint;
+    };
+
+    // Si estamos en vista expandida con múltiples productos, necesitamos volver al grid primero
+    if (selectedProducts.length > 1 && isReallyExpanded) {
+      console.log('PrintButton - Detectada vista expandida, volviendo al grid para capturar todos los productos');
+      
+      // Buscar el botón "Volver al preview" de manera más robusta
+      const allButtons = Array.from(document.querySelectorAll('button'));
+      const backButton = allButtons.find(button => {
+        const text = button.textContent?.toLowerCase() || '';
+        return text.includes('volver') && (text.includes('preview') || text.includes('al preview'));
+      });
+      
+      if (backButton) {
+        console.log('PrintButton - Haciendo click en botón volver');
+        backButton.click();
+        
+        // Esperar más tiempo para que se actualice la vista y luego capturar
+        setTimeout(() => {
+          console.log('PrintButton - Reintentando captura después de volver al grid');
+          const contentToPrint = captureContent();
+          generatePrintWindow(printWindow, contentToPrint);
+        }, 1000); // Aumentar tiempo de espera
+        return;
+      } else {
+        console.warn('PrintButton - No se encontró el botón volver, continuando con captura directa');
+      }
     }
 
-    // Obtener todos los estilos CSS de la página actual
+    // Capturar contenido directamente
+    const contentToPrint = captureContent();
+    generatePrintWindow(printWindow, contentToPrint);
+  };
+
+  const generatePrintWindow = (printWindow: Window, contentToPrint: string) => {
+    // Obtener todos los estilos CSS de la página actual de manera más completa
     const allStyles = Array.from(document.styleSheets)
       .map(styleSheet => {
         try {
@@ -163,6 +317,22 @@ export const PrintButton: React.FC<PrintButtonProps> = ({
       })
       .join('\n');
 
+    // Obtener también todos los elementos <style> del documento
+    const inlineStyles = Array.from(document.querySelectorAll('style'))
+      .map(style => style.innerHTML)
+      .join('\n');
+
+    // Obtener estilos de Tailwind específicamente
+    const tailwindStyles = Array.from(document.querySelectorAll('link[href*="tailwind"], link[href*="index"]'))
+      .map(link => `@import url("${(link as HTMLLinkElement).href}");`)
+      .join('\n');
+
+    console.log('PrintButton - Estilos capturados:', {
+      allStylesLength: allStyles.length,
+      inlineStylesLength: inlineStyles.length,
+      tailwindStylesLength: tailwindStyles.length
+    });
+
     // HTML para la impresión con todos los estilos y tamaño de papel correcto
     const printHTML = `
       <!DOCTYPE html>
@@ -170,12 +340,18 @@ export const PrintButton: React.FC<PrintButtonProps> = ({
       <head>
         <meta charset="utf-8">
         <title>Impresión de Cartel${selectedProducts.length > 1 ? 'es' : ''} - ${plantillaFamily} - ${paperSize.label}</title>
+        
+        <!-- Importar Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        
         <style>
           /* Reset básico */
           * { margin: 0; padding: 0; box-sizing: border-box; }
           
-          /* Estilos de la aplicación */
+          /* Estilos de Tailwind y la aplicación */
+          ${tailwindStyles}
           ${allStyles}
+          ${inlineStyles}
           
           /* Estilos específicos para impresión */
           body { 
@@ -187,20 +363,20 @@ export const PrintButton: React.FC<PrintButtonProps> = ({
           }
           
           .print-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 100%;
+            height: 100%;
             background: white;
-            flex-direction: column;
-            gap: 20px;
           }
           
           .cartel-content {
             transform-origin: center;
             max-width: none;
             max-height: none;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
           
           .cartel-page {
@@ -210,6 +386,7 @@ export const PrintButton: React.FC<PrintButtonProps> = ({
             justify-content: center;
             min-height: 100vh;
             width: 100%;
+            position: relative;
           }
           
           .cartel-page:last-child {
@@ -223,24 +400,13 @@ export const PrintButton: React.FC<PrintButtonProps> = ({
             background: #f9f9f9;
           }
           
-          .cartel-header {
-            text-align: center;
-            font-weight: bold;
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-            padding: 5px;
-            background: #f0f0f0;
-            border-radius: 4px;
-          }
-          
           .cartel-wrapper {
             display: flex;
             align-items: center;
             justify-content: center;
-            flex: 1;
             width: 100%;
-            height: calc(100vh - 60px);
+            height: 100vh;
+            position: relative;
           }
           
           @media print {
@@ -273,11 +439,38 @@ export const PrintButton: React.FC<PrintButtonProps> = ({
             color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
+          
+          /* Preservar estilos de Tailwind específicos para carteles */
+          .font-sans { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
+          .font-bold { font-weight: 700; }
+          .text-white { color: rgb(255 255 255); }
+          .text-black { color: rgb(0 0 0); }
+          .text-gray-600 { color: rgb(75 85 99); }
+          .text-blue-600 { color: rgb(37 99 235); }
+          .bg-white { background-color: rgb(255 255 255); }
+          .bg-gray-100 { background-color: rgb(243 244 246); }
+          .bg-blue-500 { background-color: rgb(59 130 246); }
+          .rounded { border-radius: 0.25rem; }
+          .shadow-lg { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+          .p-4 { padding: 1rem; }
+          .p-6 { padding: 1.5rem; }
+          .m-4 { margin: 1rem; }
+          .flex { display: flex; }
+          .items-center { align-items: center; }
+          .justify-center { justify-content: center; }
+          .text-center { text-align: center; }
+          .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+          .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+          .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+          .text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+          .text-5xl { font-size: 3rem; line-height: 1; }
+          .text-6xl { font-size: 3.75rem; line-height: 1; }
+          .text-8xl { font-size: 6rem; line-height: 1; }
         </style>
       </head>
       <body>
         <div class="print-container">
-          ${selectedProducts.length > 1 ? contentToPrint : `<div class="cartel-content">${contentToPrint}</div>`}
+          ${contentToPrint}
         </div>
         <script>
           window.onload = function() {
@@ -286,7 +479,7 @@ export const PrintButton: React.FC<PrintButtonProps> = ({
               setTimeout(function() {
                 window.close();
               }, 100);
-            }, 1000); // Más tiempo para cargar estilos
+            }, 1500); // Más tiempo para cargar Tailwind
           }
         </script>
       </body>
@@ -337,11 +530,13 @@ export const PrintButton: React.FC<PrintButtonProps> = ({
         timestamp: new Date()
       });
       
-      // Limpiar cambios después del reporte
-      clearChanges();
-      
-      // Proceder con la impresión
+      // Proceder con la impresión ANTES de limpiar cambios
       navigateToPrintView();
+      
+      // Limpiar cambios después de la impresión
+      setTimeout(() => {
+        clearChanges();
+      }, 1000); // Dar tiempo para que se abra la ventana de impresión
       
     } catch (error) {
       console.error('Error al enviar reporte:', error);

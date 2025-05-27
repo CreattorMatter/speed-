@@ -1,9 +1,95 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { preloadCriticalImages } from "../../utils/imageUtils";
 
-// Hooks personalizados
-import { usePosterState } from "../../hooks/usePosterState";
-import { usePosterActions } from "../../hooks/usePosterActions";
+// Importar hooks de Redux y el slice de poster
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  // Selectores principales
+  selectCompany,
+  selectPromotion,
+  selectSelectedProducts,
+  selectSelectedCategory,
+  selectShowLogo,
+  selectShowPesosCheck,
+  selectViewMode,
+  
+  // Selectores de UI
+  selectIsProductSelectorOpen,
+  selectIsLoading,
+  selectIsSendingModalOpen,
+  selectSelectedPoster,
+  selectIsFinancingModalOpen,
+  selectIsTemplateModalOpen,
+  selectIsSearchModalOpen,
+  
+  // Selectores de formato
+  selectSelectedFormat,
+  selectShowFormatSelector,
+  selectZoom,
+  selectCardSize,
+  selectIsLandscape,
+  
+  // Selectores de plantillas
+  selectPlantillaSeleccionada,
+  selectComboSeleccionado,
+  selectSelectedTemplate,
+  selectSelectedFinancing,
+  selectFormatoSeleccionado,
+  selectSelectedProduct,
+  selectMaxProductsReached,
+  selectModeloSeleccionado,
+  
+  // Selectores de búsqueda
+  selectSearchResults,
+  selectSearchTerm,
+  selectAllPosters,
+  
+  // Acciones principales
+  setCompany,
+  setPromotion,
+  setSelectedProducts,
+  toggleProductSelection,
+  setSelectedCategory,
+  setShowLogo,
+  setShowPesosCheck,
+  setViewMode,
+  
+  // Acciones de UI
+  setIsProductSelectorOpen,
+  setIsLoading,
+  setIsSendingModalOpen,
+  setSelectedPoster,
+  setIsFinancingModalOpen,
+  setIsTemplateModalOpen,
+  setIsSearchModalOpen,
+  
+  // Acciones de formato
+  setSelectedFormat,
+  setShowFormatSelector,
+  setZoom,
+  setCardSize,
+  setIsLandscape,
+  
+  // Acciones de plantillas
+  setPlantillaSeleccionada,
+  setComboSeleccionado,
+  setSelectedTemplate,
+  setSelectedFinancing,
+  setFormatoSeleccionado,
+  setSelectedProduct,
+  setModeloSeleccionado,
+  
+  // Acciones de búsqueda
+  setSearchResults,
+  setSearchTerm,
+  setAllPosters,
+  
+  // Acciones complejas
+  removeProduct,
+  removeAllProducts,
+  initializeWithProducts,
+} from '../../store/features/poster/posterSlice';
+import { RootState, AppDispatch } from '../../store';
 
 // Componentes modulares
 import { PosterEditorHeader } from "./Editor/PosterEditorHeader";
@@ -57,94 +143,162 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   userEmail,
   userName,
 }) => {
-  // Estado centralizado
-  const state = usePosterState(initialProducts, initialPromotion);
-  const actions = usePosterActions(state);
+  // Hooks de Redux
+  const dispatch = useDispatch<AppDispatch>();
+  
+  // Selectores principales
+  const company = useSelector(selectCompany);
+  const promotion = useSelector(selectPromotion);
+  const selectedProductIds = useSelector(selectSelectedProducts);
+  const selectedCategory = useSelector(selectSelectedCategory);
+  const showLogo = useSelector(selectShowLogo);
+  const showPesosCheck = useSelector(selectShowPesosCheck);
+  const viewMode = useSelector(selectViewMode);
+  
+  // Selectores de UI
+  const isProductSelectorOpen = useSelector(selectIsProductSelectorOpen);
+  const isLoading = useSelector(selectIsLoading);
+  const isSendingModalOpen = useSelector(selectIsSendingModalOpen);
+  const selectedPoster = useSelector(selectSelectedPoster);
+  const isFinancingModalOpen = useSelector(selectIsFinancingModalOpen);
+  const isTemplateModalOpen = useSelector(selectIsTemplateModalOpen);
+  const isSearchModalOpen = useSelector(selectIsSearchModalOpen);
+  
+  // Selectores de formato
+  const selectedFormat = useSelector(selectSelectedFormat);
+  const showFormatSelector = useSelector(selectShowFormatSelector);
+  const zoom = useSelector(selectZoom);
+  const cardSize = useSelector(selectCardSize);
+  const isLandscape = useSelector(selectIsLandscape);
+  
+  // Selectores de plantillas
+  const plantillaSeleccionada = useSelector(selectPlantillaSeleccionada);
+  const comboSeleccionado = useSelector(selectComboSeleccionado);
+  const selectedTemplate = useSelector(selectSelectedTemplate);
+  const selectedFinancing = useSelector(selectSelectedFinancing);
+  const formatoSeleccionado = useSelector(selectFormatoSeleccionado);
+  const selectedProduct = useSelector(selectSelectedProduct);
+  const maxProductsReached = useSelector(selectMaxProductsReached);
+  const modeloSeleccionado = useSelector(selectModeloSeleccionado);
+  
+  // Selectores de búsqueda
+  const searchResults = useSelector(selectSearchResults);
+  const searchTerm = useSelector(selectSearchTerm);
+  const allPosters = useSelector(selectAllPosters);
 
   // Estados locales para componentes
   const [templateComponents, setTemplateComponents] = useState<Record<string, React.ComponentType<unknown>>>({});
 
   // Datos computados
-  const selectedPromotion = PROMOTIONS.find((p) => p.id === state.promotion);
-  const companyDetails = COMPANIES.find((c) => c.id === state.company);
+  const selectedPromotion = PROMOTIONS.find((p) => p.id === promotion);
+  const companyDetails = COMPANIES.find((c) => c.id === company);
   const empresaId = companyDetails?.empresaId || 0;
     
-  // Filtrar combos y plantillas disponibles
+  // Filtrar combos y plantillas disponibles (basado en estado de Redux)
   const combosDisponibles = useMemo(() => {
-    return getCombosPorPlantilla(state.plantillaSeleccionada?.value);
-  }, [state.plantillaSeleccionada]);
+    return getCombosPorPlantilla(plantillaSeleccionada?.value);
+  }, [plantillaSeleccionada]);
   
   const plantillasDisponibles = useMemo(() => {
-    return getPlantillasPorCombo(state.comboSeleccionado?.value);
-  }, [state.comboSeleccionado]);
+    return getPlantillasPorCombo(comboSeleccionado?.value);
+  }, [comboSeleccionado]);
 
-  // Helper para convertir IDs a Products
+  // Helper para convertir IDs a Products (usa IDs de Redux)
   const getProductsFromIds = (productIds: string[]): Product[] => {
     return productIds.map(id => products.find(p => p.id === id)).filter(Boolean) as Product[];
   };
+  const selectedProductsForPreview = useMemo(() => getProductsFromIds(selectedProductIds), [selectedProductIds]);
 
-  // Helper para manejar selección de producto desde modal
+  // Handlers que despachan acciones de Redux
   const handleProductSelect = (productId: string) => {
     const product = products.find(p => p.id === productId);
-          if (product) {
-      actions.handleSelectProduct(product);
+    if (product) {
+      // Siempre usar lógica de múltiples productos
+      dispatch(toggleProductSelection(product.id));
+      
+      // Actualizar el producto único para compatibilidad (usar el primero de la lista)
+      const currentProducts = selectedProductIds.includes(product.id) 
+        ? selectedProductIds.filter(id => id !== product.id)
+        : [...selectedProductIds, product.id];
+      
+      if (currentProducts.length > 0) {
+        const firstProduct = products.find(p => p.id === currentProducts[0]);
+        if (firstProduct) {
+          dispatch(setSelectedProduct(firstProduct));
+        }
+      } else {
+        dispatch(setSelectedProduct(null));
+      }
     }
   };
 
-  // Handler para actualizar productos
-  const handleUpdateProduct = (productId: string, updates: Partial<Product>) => {
-    // Actualizar el producto en el estado local
-    // Esto debería integrarse con el sistema de state management existente
-    console.log('Actualizando producto:', productId, updates);
-    // TODO: Implementar la actualización real del producto en el estado
+  const handleRemoveProduct = (productId: string) => {
+    dispatch(removeProduct(productId));
   };
 
-  // Handlers específicos
+  const handleRemoveAllProducts = () => {
+    dispatch(removeAllProducts());
+  };
+
+  const handleUpdateProduct = (productId: string, updates: Partial<Product>) => {
+    console.log('Actualizando producto:', productId, updates);
+    // TODO: Implementar la actualización real del producto en Redux si es necesario
+    // Esto podría requerir un slice separado para productos editados
+  };
+
   const handleSearch = (term: string) => {
-    state.setSearchTerm(term);
+    dispatch(setSearchTerm(term));
     if (!term.trim()) {
-      state.setSearchResults(state.allPosters);
+      dispatch(setSearchResults(allPosters));
       return;
     }
-    const filtered = state.allPosters.filter((poster) =>
+    const filtered = allPosters.filter((poster) =>
       poster.name.toLowerCase().includes(term.toLowerCase())
     );
-    state.setSearchResults(filtered);
+    dispatch(setSearchResults(filtered));
   };
+
+  const handleSearchPosters = () => {
+    dispatch(setIsSearchModalOpen(true));
+  };
+
+  const handlePosterSelect = (poster: any) => {
+    dispatch(setSelectedPoster(poster));
+    dispatch(setIsSearchModalOpen(false));
+  };
+
+  // Inicialización con productos iniciales
+  useEffect(() => {
+    if (initialProducts.length > 0 || initialPromotion) {
+      dispatch(initializeWithProducts({
+        products: initialProducts,
+        promotion: initialPromotion?.id
+      }));
+    }
+  }, [dispatch, initialProducts, initialPromotion]);
 
   // Efectos
   useEffect(() => {
-    const timer = setTimeout(() => state.setIsLoading(false), 3000);
+    const timer = setTimeout(() => dispatch(setIsLoading(false)), 3000);
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.setIsLoading]);
+  }, [dispatch]);
 
   useEffect(() => {
-    // Precargar imágenes críticas para mejorar rendimiento
     preloadCriticalImages();
-    
     const loadComponents = async () => {
       try {
         const components: Record<string, React.ComponentType<unknown>> = {};
         const uniquePaths = new Set<string>();
-        
         Object.values(PLANTILLA_MODELOS).forEach((models) => {
           (models as { componentPath: string }[]).forEach((model) => uniquePaths.add(model.componentPath));
         });
-
         for (const path of uniquePaths) {
           const component = await loadTemplateComponent(path);
-          if (component) {
-            components[path] = component;
-          }
+          if (component) { components[path] = component; }
         }
-
         setTemplateComponents(components);
-      } catch (error) {
-        console.error("Error al cargar los componentes:", error);
-      }
+      } catch (error) { console.error("Error al cargar los componentes:", error); }
     };
-
     loadComponents();
   }, []);
 
@@ -156,102 +310,55 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
         <div className="poster-editor-container min-h-screen w-full flex flex-col bg-white">
           <main className="pt-10 px-6 pb-6 max-w-7xl mx-auto space-y-6 min-h-[1000px]">
             
-            <PosterEditorHeader onSearchPosters={actions.handleSearchPosters} />
+            <PosterEditorHeader onSearchPosters={handleSearchPosters} />
 
             <div className="grid grid-cols-10 gap-6 h-full">
               <SidePanel
-                plantillaSeleccionada={state.plantillaSeleccionada}
-                setPlantillaSeleccionada={state.setPlantillaSeleccionada}
-                comboSeleccionado={state.comboSeleccionado}
-                setComboSeleccionado={state.setComboSeleccionado}
-                selectedCategory={state.selectedCategory}
-                setSelectedCategory={state.setSelectedCategory}
-                selectedProducts={getProductsFromIds(state.selectedProducts)}
-                handleSelectProduct={actions.handleSelectProduct}
-                maxProductsReached={state.maxProductsReached}
-                setIsFinancingModalOpen={state.setIsFinancingModalOpen}
-                selectedFinancing={state.selectedFinancing}
-                formatoSeleccionado={state.formatoSeleccionado}
-                setFormatoSeleccionado={state.setFormatoSeleccionado}
                 plantillasDisponibles={plantillasDisponibles}
                 combosDisponibles={combosDisponibles}
                 categories={CATEGORIES}
-                setSelectedProduct={state.setSelectedProduct}
+                setIsFinancingModalOpen={(open) => dispatch(setIsFinancingModalOpen(open))}
+                setSelectedProduct={(product) => dispatch(setSelectedProduct(product))}
               />
 
               <PreviewArea
                 templateComponents={templateComponents}
-                plantillaSeleccionada={state.plantillaSeleccionada}
-                comboSeleccionado={state.comboSeleccionado}
-                modeloSeleccionado={state.modeloSeleccionado}
-                setModeloSeleccionado={state.setModeloSeleccionado}
-                selectedProduct={state.selectedProduct}
-                selectedProducts={getProductsFromIds(state.selectedProducts)}
-                selectedFinancing={state.selectedFinancing}
-                formatoSeleccionado={state.formatoSeleccionado}
                 PLANTILLA_MODELOS={PLANTILLA_MODELOS as Record<string, TemplateModel[]>}
-                onRemoveProduct={actions.handleRemoveProduct}
-                onRemoveAllProducts={actions.handleRemoveAllProducts}
                 onUpdateProduct={handleUpdateProduct}
               />
             </div>
 
-            {/* Modales */}
             <ProductSelectorModal
-              isOpen={state.isProductSelectorOpen}
-              onClose={() => state.setIsProductSelectorOpen(false)}
               products={
-                state.selectedCategory === "Todos" || !state.selectedCategory
+                selectedCategory === "Todos" || !selectedCategory
                   ? products
-                  : products.filter((p) => p.category === state.selectedCategory)
+                  : products.filter((p) => p.category === selectedCategory)
               }
-              selectedProducts={state.selectedProducts}
               onSelectProduct={handleProductSelect}
-              category={state.selectedCategory}
             />
 
             <SendingModal
-              isOpen={state.isSendingModalOpen}
-              onClose={() => state.setIsSendingModalOpen(false)}
-              productsCount={state.selectedProducts.length}
               empresaId={empresaId}
             />
 
             <PosterModal
-              isOpen={!!state.selectedPoster}
-              onClose={() => state.setSelectedPoster(null)}
-              product={state.selectedPoster!}
               promotion={selectedPromotion}
               company={companyDetails}
-              showLogo={state.showLogo}
             />
 
-            <FinancingModal
-              isOpen={state.isFinancingModalOpen}
-              onClose={() => state.setIsFinancingModalOpen(false)}
-              onSelect={state.setSelectedFinancing}
-            />
+            <FinancingModal />
 
-            <TemplateSelect
-              isOpen={state.isTemplateModalOpen}
-              onClose={() => state.setIsTemplateModalOpen(false)}
-              value={state.selectedTemplate}
-              onChange={state.setSelectedTemplate}
-            />
+            <TemplateSelect />
 
             <SearchModal
-              isOpen={state.isSearchModalOpen}
-              onClose={() => state.setIsSearchModalOpen(false)}
-              searchTerm={state.searchTerm}
               onSearch={handleSearch}
-              searchResults={state.searchResults}
-              onPosterSelect={actions.handlePosterSelect}
+              onPosterSelect={handlePosterSelect}
             />
           </main>
         </div>
       </div>
 
-      <LoadingModal isOpen={state.isLoading} />
+      <LoadingModal isOpen={isLoading} />
     </HeaderProvider>
   );
 };

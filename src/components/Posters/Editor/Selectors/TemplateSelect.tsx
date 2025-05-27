@@ -1,21 +1,39 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, LayoutTemplate } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+
+// Importar selectores y acciones de Redux
+import {
+  selectIsTemplateModalOpen,
+  selectSelectedTemplate,
+  setIsTemplateModalOpen,
+  setSelectedTemplate,
+} from '../../../../store/features/poster/posterSlice';
+import { RootState, AppDispatch } from '../../../../store';
+
 import { POSTER_TEMPLATES } from '../../../../constants/templates';
 
 interface TemplateSelectProps {
-  isOpen: boolean;
-  onClose: () => void;
-  value: string;
-  onChange: (templateId: string) => void;
+  // Ya no necesita props, todo viene de Redux
 }
 
-export const TemplateSelect: React.FC<TemplateSelectProps> = ({
-  isOpen,
-  onClose,
-  value,
-  onChange
-}) => {
+export const TemplateSelect: React.FC<TemplateSelectProps> = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  
+  // Obtener estado de Redux
+  const isOpen = useSelector(selectIsTemplateModalOpen);
+  const selectedTemplate = useSelector(selectSelectedTemplate);
+
+  const handleClose = () => {
+    dispatch(setIsTemplateModalOpen(false));
+  };
+
+  const handleTemplateSelect = (templateId: string) => {
+    dispatch(setSelectedTemplate(templateId));
+    dispatch(setIsTemplateModalOpen(false));
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -25,7 +43,7 @@ export const TemplateSelect: React.FC<TemplateSelectProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleClose}
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
           />
 
@@ -45,7 +63,7 @@ export const TemplateSelect: React.FC<TemplateSelectProps> = ({
                 <h2 className="text-xl font-semibold text-gray-900">Seleccionar Plantilla</h2>
               </div>
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5 text-gray-500" />
@@ -59,12 +77,9 @@ export const TemplateSelect: React.FC<TemplateSelectProps> = ({
                   key={template.id}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    onChange(template.id);
-                    onClose();
-                  }}
+                  onClick={() => handleTemplateSelect(template.id)}
                   className={`p-4 rounded-lg border transition-all text-left
-                    ${value === template.id 
+                    ${selectedTemplate === template.id 
                       ? 'border-indigo-500 bg-indigo-50' 
                       : 'border-gray-200 hover:border-indigo-200 hover:bg-gray-50'}`}
                 >

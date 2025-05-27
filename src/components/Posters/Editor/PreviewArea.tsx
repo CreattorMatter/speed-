@@ -1,5 +1,22 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+
+// Importar selectores y acciones de Redux
+import {
+  selectPlantillaSeleccionada,
+  selectComboSeleccionado,
+  selectModeloSeleccionado,
+  selectSelectedProduct,
+  selectSelectedProducts,
+  selectSelectedFinancing,
+  selectFormatoSeleccionado,
+  setModeloSeleccionado,
+  removeProduct,
+  removeAllProducts,
+} from '../../../store/features/poster/posterSlice';
+import { RootState, AppDispatch } from '../../../store';
+
 import { type Product } from '../../../data/products';
 import { type TemplateModel } from '../../../constants/posters/templates';
 import { EditableField } from './EditableField';
@@ -12,6 +29,7 @@ import {
   getFieldLabel, 
   getFieldType 
 } from '../../../utils/templateFieldDetector';
+import { products } from '../../../data/products';
 
 // Tipos específicos para el componente
 interface PlantillaOption {
@@ -57,35 +75,31 @@ interface PlantillaComponentProps {
 
 interface PreviewAreaProps {
   templateComponents: Record<string, React.ComponentType<PlantillaComponentProps>>;
-  plantillaSeleccionada: PlantillaOption | null;
-  comboSeleccionado: ComboOption | null;
-  modeloSeleccionado: string | null;
-  setModeloSeleccionado: (value: string | null) => void;
-  selectedProduct: Product | null;
-  selectedProducts: Product[];
-  selectedFinancing: FinancingOption[];
-  formatoSeleccionado?: PaperFormatOption | null;
   PLANTILLA_MODELOS: Record<string, TemplateModel[]>;
-  onRemoveProduct?: (productId: string) => void;
-  onRemoveAllProducts?: () => void;
   onUpdateProduct?: (productId: string, updates: Partial<Product>) => void;
 }
 
 export const PreviewArea: React.FC<PreviewAreaProps> = ({
   templateComponents,
-  plantillaSeleccionada,
-  comboSeleccionado,
-  modeloSeleccionado,
-  setModeloSeleccionado,
-  selectedProduct,
-  selectedProducts,
-  selectedFinancing,
-  formatoSeleccionado,
   PLANTILLA_MODELOS,
-  onRemoveProduct,
-  onRemoveAllProducts,
   onUpdateProduct
 }) => {
+  const dispatch = useDispatch<AppDispatch>();
+  
+  // Obtener estado de Redux
+  const plantillaSeleccionada = useSelector(selectPlantillaSeleccionada);
+  const comboSeleccionado = useSelector(selectComboSeleccionado);
+  const modeloSeleccionado = useSelector(selectModeloSeleccionado);
+  const selectedProduct = useSelector(selectSelectedProduct);
+  const selectedProductIds = useSelector(selectSelectedProducts);
+  const selectedFinancing = useSelector(selectSelectedFinancing);
+  const formatoSeleccionado = useSelector(selectFormatoSeleccionado);
+
+  // Convertir IDs a objetos Product
+  const selectedProducts = React.useMemo(() => 
+    selectedProductIds.map(id => products.find(p => p.id === id)).filter(Boolean) as Product[]
+  , [selectedProductIds]);
+
   // Estado para el producto expandido individualmente
   const [expandedProductIndex, setExpandedProductIndex] = React.useState<number | null>(null);
   
@@ -200,34 +214,38 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
     setRefreshKeyState(prev => prev + 1);
   };
 
+  // Handlers que despachan acciones de Redux
+  const handleRemoveProduct = (productId: string) => {
+    dispatch(removeProduct(productId));
+  };
+
+  const handleRemoveAllProducts = () => {
+    dispatch(removeAllProducts());
+  };
+
   const handleDeleteClick = (product: Product) => {
     setProductToDelete(product);
     setDeleteModalOpen(true);
   };
 
   const handleDeleteConfirm = () => {
-    if (productToDelete && onRemoveProduct) {
-      const currentIndex = selectedProducts.findIndex(p => p.id === productToDelete.id);
+    if (productToDelete) {
+      handleRemoveProduct(productToDelete.id);
       
-      // Eliminar el producto
-      onRemoveProduct(productToDelete.id);
+      // Si era el último producto, también limpiar el producto único
+      if (selectedProducts.length === 1) {
+        // El selectedProduct se limpiará automáticamente en el reducer
+      }
       
-      // Mantener el panel de edición abierto navegando al siguiente producto si estamos en vista expandida
-      if (expandedProductIndex !== null) {
-        const remainingProductsCount = selectedProducts.length - 1; // Después de eliminar
-        
-        if (remainingProductsCount > 0) {
-          if (currentIndex < remainingProductsCount) {
-            // Mantener el mismo índice si hay un producto después
-            setExpandedProductIndex(currentIndex);
-          } else {
-            // Ir al producto anterior si eliminamos el último
-            setExpandedProductIndex(Math.max(0, currentIndex - 1));
-          }
-        } else {
-          // Si no quedan productos, salir de vista expandida
-          setExpandedProductIndex(null);
-        }
+      // Si estamos expandiendo este producto, colapsar
+      const productIndex = selectedProducts.findIndex(p => p.id === productToDelete.id);
+      if (expandedProductIndex === productIndex) {
+        setExpandedProductIndex(null);
+      }
+      
+      // Ajustar el índice expandido si es necesario
+      if (expandedProductIndex !== null && productIndex < expandedProductIndex) {
+        setExpandedProductIndex(expandedProductIndex - 1);
       }
     }
     
@@ -240,7 +258,6 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
     setProductToDelete(null);
   };
 
-  // Función para obtener valor actual del producto (original o editado)
   const getCurrentProductValue = (product: Product, field: string): any => {
     const editedProduct = getEditedProduct(product.id);
     
@@ -342,7 +359,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
           )}
 
           {/* Renderizado para producto único o selección de modelo */}
-          {!isMultiProductMode && filteredModelos.length > 0 && (
+          {selectedProducts.length === 1 && filteredModelos.length > 0 && (
             <>
               {/* Si hay un modelo seleccionado, mostrar solo ese */}
               {modeloSeleccionado ? (
@@ -356,7 +373,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                       <div className="flex items-center justify-between mb-4 p-2 bg-gray-50 rounded-lg">
                         <div className="flex items-center space-x-2">
                           <button
-                            onClick={() => setModeloSeleccionado(null)}
+                            onClick={() => dispatch(setModeloSeleccionado(null))}
                             className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                             title="Volver a ver todas las plantillas"
                           >
@@ -462,7 +479,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                         key={modelo.id}
                         className="cursor-pointer border rounded-lg hover:border-indigo-400 hover:shadow-md transition-all duration-300
                                   bg-white hover:bg-gray-50 relative overflow-hidden"
-                        onClick={() => setModeloSeleccionado(modelo.id)}
+                        onClick={() => dispatch(setModeloSeleccionado(modelo.id))}
                         title={`${getPromoTypeFromModelId(modelo.id)} - Click para seleccionar`}
                       >
                         {/* Contenedor de la plantilla */}
@@ -492,7 +509,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
           )}
 
           {/* Renderizado de múltiples productos */}
-          {isMultiProductMode && filteredModelos.length > 0 && expandedProductIndex === null && (
+          {selectedProducts.length >= 2 && filteredModelos.length > 0 && expandedProductIndex === null && (
             <>
               {/* Header con controles para múltiples productos */}
               <div className="flex items-center justify-between p-4 bg-gray-50 border-b mb-4">
@@ -501,11 +518,11 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                 </div>
                 
                 {/* Botón eliminar todos */}
-                {onRemoveAllProducts && selectedProducts.length > 0 && (
+                {handleRemoveAllProducts && selectedProducts.length > 0 && (
                   <button
                     onClick={() => {
                       if (window.confirm(`¿Estás seguro de que deseas eliminar todos los ${selectedProducts.length} productos seleccionados?`)) {
-                        onRemoveAllProducts();
+                        handleRemoveAllProducts();
                       }
                     }}
                     className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md"
@@ -552,20 +569,18 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                       </div>
                       
                       {/* Botón de eliminar producto */}
-                      {onRemoveProduct && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onRemoveProduct(product.id);
-                          }}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-20 hover:bg-red-600 transition-colors shadow-md"
-                          title={`Eliminar ${product.name} de la selección`}
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveProduct(product.id);
+                        }}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-20 hover:bg-red-600 transition-colors shadow-md"
+                        title={`Eliminar ${product.name} de la selección`}
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                       
                       {/* Contenedor del cartel con data-cartel-content para impresión */}
                       <div className="w-full h-[280px] flex items-center justify-center overflow-hidden" data-cartel-content>
@@ -604,7 +619,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
           )}
 
           {/* Vista expandida de producto individual */}
-          {isMultiProductMode && expandedProductIndex !== null && filteredModelos.length > 0 && (
+          {selectedProducts.length >= 2 && expandedProductIndex !== null && filteredModelos.length > 0 && (
             (() => {
               const product = selectedProducts[expandedProductIndex];
               const modelo = modeloSeleccionado 

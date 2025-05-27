@@ -1,27 +1,51 @@
 import React from 'react';
 import { Search } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+
+// Importar selectores y acciones de Redux
+import {
+  selectIsSearchModalOpen,
+  selectSearchTerm,
+  selectSearchResults,
+  setIsSearchModalOpen,
+  setSearchTerm,
+  setSearchResults,
+  setSelectedPoster,
+} from '../../../store/features/poster/posterSlice';
+import { RootState, AppDispatch } from '../../../store';
 
 interface SearchModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  searchTerm: string;
   onSearch: (term: string) => void;
-  searchResults: Array<{
-    name: string;
-    url: string;
-    created_at: string;
-  }>;
   onPosterSelect: (poster: { name: string; url: string }) => void;
 }
 
 export const SearchModal: React.FC<SearchModalProps> = ({
-  isOpen,
-  onClose,
-  searchTerm,
   onSearch,
-  searchResults,
   onPosterSelect
 }) => {
+  const dispatch = useDispatch<AppDispatch>();
+  
+  // Obtener estado de Redux
+  const isOpen = useSelector(selectIsSearchModalOpen);
+  const searchTerm = useSelector(selectSearchTerm);
+  const searchResults = useSelector(selectSearchResults);
+
+  const handleClose = () => {
+    dispatch(setIsSearchModalOpen(false));
+    dispatch(setSearchTerm(""));
+    onSearch("");
+  };
+
+  const handleSearch = (term: string) => {
+    dispatch(setSearchTerm(term));
+    onSearch(term);
+  };
+
+  const handlePosterSelect = (poster: { name: string; url: string }) => {
+    onPosterSelect(poster);
+    dispatch(setIsSearchModalOpen(false));
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -33,10 +57,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               Carteles Guardados
             </h3>
             <button
-              onClick={() => {
-                onClose();
-                onSearch("");
-              }}
+              onClick={handleClose}
               className="text-gray-400 hover:text-gray-500 transition-colors"
             >
               <svg
@@ -58,7 +79,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => onSearch(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)}
                 placeholder="Buscar cartel por nombre..."
                 className="w-full px-4 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg 
                          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -74,7 +95,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               <div
                 key={index}
                 className="bg-white border border-gray-200 rounded-lg p-4 hover:border-indigo-500 transition-all cursor-pointer shadow-sm hover:shadow-md"
-                onClick={() => onPosterSelect(poster)}
+                onClick={() => handlePosterSelect(poster)}
               >
                 <img
                   src={poster.url}

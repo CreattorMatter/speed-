@@ -1,12 +1,21 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+
+// Importar selectores y acciones de Redux
+import {
+  selectIsFinancingModalOpen,
+  selectSelectedFinancing,
+  setIsFinancingModalOpen,
+  setSelectedFinancing,
+} from '../../store/features/poster/posterSlice';
+import { RootState, AppDispatch } from '../../store';
+
 import { FinancingCard } from './Financing/FinancingCard';
 
 interface FinancingModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSelect: (financing: FinancingOption[]) => void;
+  // Ya no necesita props, todo viene de Redux
 }
 
 export interface FinancingOption {
@@ -50,12 +59,19 @@ const FINANCING_OPTIONS = [
   }
 ];
 
-export const FinancingModal: React.FC<FinancingModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  onSelect 
-}) => {
-  const [selectedOptions, setSelectedOptions] = useState<FinancingOption[]>([]);
+export const FinancingModal: React.FC<FinancingModalProps> = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  
+  // Obtener estado de Redux
+  const isOpen = useSelector(selectIsFinancingModalOpen);
+  const currentSelectedFinancing = useSelector(selectSelectedFinancing);
+  
+  const [selectedOptions, setSelectedOptions] = useState<FinancingOption[]>(currentSelectedFinancing);
+
+  // Sincronizar con Redux cuando cambie el estado global
+  React.useEffect(() => {
+    setSelectedOptions(currentSelectedFinancing);
+  }, [currentSelectedFinancing]);
 
   const handleSelect = (bank: string, logo: string, card: { name: string, image: string }, plan: string) => {
     const option: FinancingOption = {
@@ -83,15 +99,15 @@ export const FinancingModal: React.FC<FinancingModalProps> = ({
 
   const handleConfirm = () => {
     if (selectedOptions.length > 0) {
-      onSelect(selectedOptions);
-      onClose();
+      dispatch(setSelectedFinancing(selectedOptions));
+      dispatch(setIsFinancingModalOpen(false));
       setSelectedOptions([]);
     }
   };
 
   const handleClose = () => {
-    setSelectedOptions([]);
-    onClose();
+    setSelectedOptions(currentSelectedFinancing); // Restaurar al estado original
+    dispatch(setIsFinancingModalOpen(false));
   };
 
   return (

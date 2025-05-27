@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, PrinterIcon, Printer } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+
+// Importar selectores y acciones de Redux
+import {
+  selectIsSendingModalOpen,
+  selectSelectedProducts,
+  setIsSendingModalOpen,
+} from '../../store/features/poster/posterSlice';
+import { RootState, AppDispatch } from '../../store';
+
 import { LocationSelection } from './Sending/LocationSelection';
 import { PrinterSelection } from './Sending/PrinterSelection';
 import { SendingProgress } from './Sending/SendingProgress';
 import { getSucursalesPorEmpresa, Sucursal } from '../../lib/supabaseClient-sucursalesCartelFisico';
 
 interface SendingModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  productsCount: number;
   empresaId: number;
 }
 
@@ -35,11 +42,15 @@ const PRINTERS = [
 ];
 
 export const SendingModal: React.FC<SendingModalProps> = ({
-  isOpen,
-  onClose,
-  productsCount,
   empresaId
 }) => {
+  const dispatch = useDispatch<AppDispatch>();
+  
+  // Obtener estado de Redux
+  const isOpen = useSelector(selectIsSendingModalOpen);
+  const selectedProductIds = useSelector(selectSelectedProducts);
+  const productsCount = selectedProductIds.length;
+
   const [sentLocations, setSentLocations] = useState<Set<string>>(new Set());
   const [currentLocation, setCurrentLocation] = useState<number>(0);
   const [step, setStep] = useState<SendingStep>('selection');
@@ -55,6 +66,11 @@ export const SendingModal: React.FC<SendingModalProps> = ({
     direccion: s.direccion,
     email: s.email
   }));
+
+  // Handler para cerrar el modal
+  const handleClose = () => {
+    dispatch(setIsSendingModalOpen(false));
+  };
 
   // Reset y carga de datos cuando se abre el modal
   useEffect(() => {
@@ -120,7 +136,7 @@ export const SendingModal: React.FC<SendingModalProps> = ({
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (step === 'complete' && e.target === e.currentTarget) {
-      onClose();
+      handleClose();
     }
   };
 
@@ -147,7 +163,7 @@ export const SendingModal: React.FC<SendingModalProps> = ({
                 </h3>
                 {(step === 'selection' || step === 'complete') && (
                   <button
-                    onClick={onClose}
+                    onClick={handleClose}
                     className="text-gray-400 hover:text-gray-500 transition-colors"
                   >
                     <X className="w-5 h-5" />
@@ -199,14 +215,21 @@ export const SendingModal: React.FC<SendingModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-gray-200">
+                    {/* Botones de acción */}
+                    <div className="pt-4 border-t border-gray-200 space-y-3">
                       <button
                         onClick={handleStartSending}
                         disabled={selectedLocations.length === 0 || !selectedPrinter}
-                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 
-                                 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                       >
                         Enviar carteles
+                      </button>
+                      
+                      <button
+                        onClick={handleClose}
+                        className="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+                      >
+                        Cancelar
                       </button>
                     </div>
                   </div>
@@ -214,7 +237,7 @@ export const SendingModal: React.FC<SendingModalProps> = ({
               </div>
             )}
 
-            {/* Pantalla de progreso */}
+            {/* Progreso de envío */}
             {(step === 'sending' || step === 'complete') && (
               <SendingProgress
                 locations={locationOptions.filter(loc => selectedLocations.includes(loc.id))}
@@ -239,7 +262,7 @@ export const SendingModal: React.FC<SendingModalProps> = ({
             {step === 'complete' && (
               <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 text-center">
                 <button
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
                   Cerrar
