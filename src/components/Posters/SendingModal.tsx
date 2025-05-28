@@ -144,29 +144,29 @@ export const SendingModal: React.FC<SendingModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 xs:p-4"
           onClick={handleBackdropClick}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-white rounded-xl shadow-xl max-w-5xl w-full mx-4 overflow-hidden"
+            className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-xs xs:max-w-sm sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="p-6 border-b border-gray-200">
+            <div className="p-3 xs:p-4 sm:p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-base xs:text-lg font-medium text-gray-900 truncate">
                   {step === 'selection' && 'Seleccionar sucursales'}
                   {(step === 'sending' || step === 'complete') && 'Enviando a sucursales'}
                 </h3>
                 {(step === 'selection' || step === 'complete') && (
                   <button
                     onClick={handleClose}
-                    className="text-gray-400 hover:text-gray-500 transition-colors"
+                    className="text-gray-400 hover:text-gray-500 transition-colors p-1 ml-2 flex-shrink-0"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4 xs:w-5 xs:h-5" />
                   </button>
                 )}
               </div>
@@ -174,9 +174,9 @@ export const SendingModal: React.FC<SendingModalProps> = ({
 
             {/* Content */}
             {step === 'selection' && (
-              <div className="grid grid-cols-5 gap-6">
+              <div className="flex flex-col lg:grid lg:grid-cols-5 gap-4 sm:gap-6 max-h-[calc(95vh-8rem)] sm:max-h-[calc(90vh-8rem)] overflow-hidden">
                 {/* Columna izquierda: Selección */}
-                <div className="col-span-3 border-r border-gray-200 p-6 space-y-6">
+                <div className="lg:col-span-3 lg:border-r border-gray-200 p-3 xs:p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
                   <LocationSelection
                     locations={locationOptions}
                     selectedLocations={selectedLocations}
@@ -192,44 +192,51 @@ export const SendingModal: React.FC<SendingModalProps> = ({
                 </div>
 
                 {/* Columna derecha: Resumen */}
-                <div className="col-span-2 p-6 bg-gray-50">
-                  <div className="space-y-4">
-                    <h4 className="text-lg font-medium text-gray-900">Resumen del envío</h4>
+                <div className="lg:col-span-2 p-3 xs:p-4 sm:p-6 bg-gray-50 overflow-y-auto">
+                  <div className="space-y-3 xs:space-y-4">
+                    <h4 className="text-base xs:text-lg font-medium text-gray-900">Resumen del envío</h4>
                     
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Carteles:</span>
+                    <div className="space-y-2 xs:space-y-3">
+                      <div className="flex justify-between text-sm xs:text-base">
+                        <span className="text-gray-600">Productos:</span>
                         <span className="font-medium">{productsCount}</span>
                       </div>
-                      
-                      <div className="flex justify-between">
+                      <div className="flex justify-between text-sm xs:text-base">
                         <span className="text-gray-600">Sucursales:</span>
                         <span className="font-medium">{selectedLocations.length}</span>
                       </div>
-                      
-                      <div className="flex justify-between">
+                      <div className="flex justify-between text-sm xs:text-base">
                         <span className="text-gray-600">Impresora:</span>
-                        <span className="font-medium">
+                        <span className="font-medium text-xs xs:text-sm truncate ml-2">
                           {selectedPrinter ? PRINTERS.find(p => p.id === selectedPrinter)?.name : 'No seleccionada'}
                         </span>
                       </div>
                     </div>
 
-                    {/* Botones de acción */}
-                    <div className="pt-4 border-t border-gray-200 space-y-3">
+                    {selectedLocations.length > 0 && (
+                      <div className="mt-4 xs:mt-6">
+                        <h5 className="text-sm xs:text-base font-medium text-gray-900 mb-2 xs:mb-3">Sucursales seleccionadas:</h5>
+                        <div className="space-y-1 xs:space-y-2 max-h-32 xs:max-h-40 overflow-y-auto">
+                          {selectedLocations.map(locationId => {
+                            const location = locationOptions.find(l => l.id === locationId);
+                            return (
+                              <div key={locationId} className="text-xs xs:text-sm text-gray-600 p-1.5 xs:p-2 bg-white rounded border">
+                                <div className="font-medium truncate">{location?.name}</div>
+                                <div className="text-xxs xs:text-xs text-gray-500 truncate">{location?.region}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="pt-4 xs:pt-6 border-t border-gray-200">
                       <button
                         onClick={handleStartSending}
                         disabled={selectedLocations.length === 0 || !selectedPrinter}
-                        className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        className="w-full px-3 xs:px-4 py-2 xs:py-3 bg-indigo-600 text-white text-sm xs:text-base font-medium rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                       >
-                        Enviar carteles
-                      </button>
-                      
-                      <button
-                        onClick={handleClose}
-                        className="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                      >
-                        Cancelar
+                        Enviar a {selectedLocations.length} sucursal{selectedLocations.length !== 1 ? 'es' : ''}
                       </button>
                     </div>
                   </div>
@@ -239,20 +246,22 @@ export const SendingModal: React.FC<SendingModalProps> = ({
 
             {/* Progreso de envío */}
             {(step === 'sending' || step === 'complete') && (
-              <SendingProgress
-                locations={locationOptions.filter(loc => selectedLocations.includes(loc.id))}
-                sentLocations={sentLocations}
-                currentLocation={currentLocation}
-                isComplete={step === 'complete'}
-              />
+              <div className="p-3 xs:p-4 sm:p-6">
+                <SendingProgress
+                  locations={locationOptions.filter(loc => selectedLocations.includes(loc.id))}
+                  sentLocations={sentLocations}
+                  currentLocation={currentLocation}
+                  isComplete={step === 'complete'}
+                />
+              </div>
             )}
 
             {/* Footer para pantalla de progreso */}
             {step === 'sending' && (
-              <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <div className="px-3 xs:px-4 sm:px-6 py-3 xs:py-4 border-t border-gray-200 bg-gray-50">
                 <button
                   onClick={handleCancel}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  className="px-3 xs:px-4 py-2 text-sm xs:text-base text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   Cancelar envío
                 </button>
@@ -260,10 +269,10 @@ export const SendingModal: React.FC<SendingModalProps> = ({
             )}
 
             {step === 'complete' && (
-              <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 text-center">
+              <div className="px-3 xs:px-4 sm:px-6 py-3 xs:py-4 border-t border-gray-200 bg-gray-50 text-center">
                 <button
                   onClick={handleClose}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className="px-4 xs:px-6 py-2 xs:py-3 bg-green-600 text-white text-sm xs:text-base font-medium rounded-lg hover:bg-green-700 transition-colors"
                 >
                   Cerrar
                 </button>

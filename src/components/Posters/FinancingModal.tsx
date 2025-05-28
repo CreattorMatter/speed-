@@ -125,21 +125,21 @@ export const FinancingModal: React.FC<FinancingModalProps> = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-auto p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-auto p-2 xs:p-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-auto">
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-xs xs:max-w-sm sm:max-w-lg lg:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-auto">
               {/* Header */}
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-800">Opciones de Financiación</h2>
-                <button onClick={handleClose} className="text-gray-500 hover:text-gray-700">
-                  <X className="w-5 h-5" />
+              <div className="p-3 xs:p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between">
+                <h2 className="text-base xs:text-lg sm:text-xl font-semibold text-gray-800 truncate">Opciones de Financiación</h2>
+                <button onClick={handleClose} className="text-gray-500 hover:text-gray-700 p-1 ml-2 flex-shrink-0">
+                  <X className="w-4 h-4 xs:w-5 xs:h-5" />
                 </button>
               </div>
 
               {/* Content */}
-              <div className="p-6 space-y-6">
-                <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-1">
+              <div className="p-3 xs:p-4 sm:p-6 space-y-4 xs:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 xs:gap-4 max-h-[50vh] xs:max-h-[60vh] overflow-y-auto p-1">
                   {FINANCING_OPTIONS.map((option) => (
                     <FinancingCard
                       key={option.bank}
@@ -154,13 +154,13 @@ export const FinancingModal: React.FC<FinancingModalProps> = () => {
 
                 {/* Selected Options Summary */}
                 {selectedOptions.length > 0 && (
-                  <div className="border-t border-gray-200 pt-4">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">
+                  <div className="border-t border-gray-200 pt-3 xs:pt-4">
+                    <h4 className="text-xs xs:text-sm font-medium text-gray-900 mb-1 xs:mb-2">
                       Opciones seleccionadas ({selectedOptions.length}):
                     </h4>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5 xs:space-y-1 max-h-20 xs:max-h-24 overflow-y-auto">
                       {selectedOptions.map((option, index) => (
-                        <div key={index} className="text-xs text-gray-600">
+                        <div key={index} className="text-xxs xs:text-xs text-gray-600">
                           • {option.bank} - {option.plan}
                         </div>
                       ))}
@@ -169,18 +169,17 @@ export const FinancingModal: React.FC<FinancingModalProps> = () => {
                 )}
 
                 {/* Actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <div className="flex flex-col xs:flex-row gap-2 xs:gap-3 pt-3 xs:pt-4 border-t border-gray-200">
                   <button
                     onClick={handleClose}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+                    className="flex-1 px-3 xs:px-4 py-2 xs:py-3 text-sm xs:text-base text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleConfirm}
                     disabled={selectedOptions.length === 0}
-                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 
-                             disabled:bg-gray-300 disabled:cursor-not-allowed rounded-lg transition-colors"
+                    className="flex-1 px-3 xs:px-4 py-2 xs:py-3 text-sm xs:text-base bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                   >
                     Confirmar ({selectedOptions.length})
                   </button>

@@ -273,6 +273,230 @@
   }
 }
 
+/* ===== ESTILOS RESPONSIVOS PARA MODALES ===== */
+
+/* Contenedores base para modales */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 0.5rem;
+}
+
+@media (min-width: 475px) {
+  .modal-overlay {
+    padding: 1rem;
+  }
+}
+
+/* Contenedores de modales responsivos */
+.modal-container {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-height: 95vh;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .modal-container {
+    border-radius: 0.75rem;
+    max-height: 90vh;
+  }
+}
+
+/* Tamaños específicos de modales */
+.modal-xs {
+  max-width: 20rem;
+}
+
+.modal-sm {
+  max-width: 24rem;
+}
+
+@media (min-width: 475px) {
+  .modal-sm {
+    max-width: 28rem;
+  }
+}
+
+.modal-md {
+  max-width: 32rem;
+}
+
+@media (min-width: 640px) {
+  .modal-md {
+    max-width: 42rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .modal-md {
+    max-width: 48rem;
+  }
+}
+
+.modal-lg {
+  max-width: 48rem;
+}
+
+@media (min-width: 1024px) {
+  .modal-lg {
+    max-width: 64rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .modal-lg {
+    max-width: 80rem;
+  }
+}
+
+/* Headers de modales responsivos */
+.modal-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (min-width: 475px) {
+  .modal-header {
+    padding: 1rem 1.5rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .modal-header {
+    padding: 1.5rem;
+  }
+}
+
+.modal-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 475px) {
+  .modal-title {
+    font-size: 1.125rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .modal-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Contenido de modales responsivo */
+.modal-content {
+  padding: 0.75rem 1rem;
+  overflow-y: auto;
+}
+
+@media (min-width: 475px) {
+  .modal-content {
+    padding: 1rem 1.5rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .modal-content {
+    padding: 1.5rem;
+  }
+}
+
+/* Botones de cierre responsivos */
+.modal-close-btn {
+  padding: 0.25rem;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+  color: #6b7280;
+  transition: color 0.2s;
+}
+
+.modal-close-btn:hover {
+  color: #374151;
+}
+
+.modal-close-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (min-width: 475px) {
+  .modal-close-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+/* Grids responsivos en modales */
+.modal-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .modal-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .modal-grid {
+    gap: 1.5rem;
+  }
+}
+
+/* Botones responsivos en modales */
+.modal-btn {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+@media (min-width: 475px) {
+  .modal-btn {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+}
+
+.modal-btn-primary {
+  background-color: #4f46e5;
+  color: white;
+}
+
+.modal-btn-primary:hover {
+  background-color: #4338ca;
+}
+
+.modal-btn-secondary {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.modal-btn-secondary:hover {
+  background-color: #e5e7eb;
+}
+
 /* Mejoras para el contenido de impresión */
 @media print {
   .template-wrapper {
@@ -285,5 +509,37 @@
     min-width: auto !important;
     max-width: none !important;
     width: 100% !important;
+  }
+  
+  /* Ocultar todos los modales en impresión */
+  .modal-overlay,
+  .modal-container,
+  [class*="modal"] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+} 
+
+/* Mejoras específicas para dispositivos táctiles */
+@media (hover: none) and (pointer: coarse) {
+  .modal-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .modal-close-btn {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Animaciones responsivas para modales */
+@media (prefers-reduced-motion: reduce) {
+  .modal-container {
+    transition: none !important;
+    animation: none !important;
   }
 } 

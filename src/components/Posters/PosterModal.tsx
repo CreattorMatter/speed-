@@ -42,27 +42,29 @@ export const PosterModal: React.FC<PosterModalProps> = ({
   if (!isOpen || !selectedPoster) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100]">
-      <div className="relative">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-2 xs:p-4">
+      <div className="relative w-full max-w-xs xs:max-w-sm sm:max-w-2xl lg:max-w-4xl xl:max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-auto">
         <button
           onClick={handleClose}
-          className="absolute -top-12 right-0 text-white/60 hover:text-white"
+          className="absolute -top-8 xs:-top-10 sm:-top-12 right-0 text-white/60 hover:text-white p-1 xs:p-2 z-10"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5 xs:w-6 xs:h-6" />
         </button>
         
-        <PosterPreview
-          product={selectedPoster}
-          promotion={promotion}
-          company={company}
-          showTopLogo={showLogo}
-          pricePerUnit={`${selectedPoster.price * 2}`}
-          points="49"
-          origin="ARGENTINA"
-          selectedFormat={{ id: 'A4', width: '210mm', height: '297mm', name: 'A4' }}
-          zoom={1}
-          cardSize={0.8}
-        />
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-2xl overflow-hidden">
+          <PosterPreview
+            product={selectedPoster}
+            promotion={promotion}
+            company={company}
+            showTopLogo={showLogo}
+            pricePerUnit={`${selectedPoster.price * 2}`}
+            points="49"
+            origin="ARGENTINA"
+            selectedFormat={{ id: 'A4', width: '210mm', height: '297mm', name: 'A4' }}
+            zoom={1}
+            cardSize={0.8}
+          />
+        </div>
       </div>
     </div>
   );

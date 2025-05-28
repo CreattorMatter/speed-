@@ -49,49 +49,46 @@ export const TemplateSelect: React.FC<TemplateSelectProps> = () => {
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-x-0 top-[5%] mx-auto max-w-2xl bg-white rounded-xl shadow-2xl z-50 p-6"
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-auto p-2 xs:p-4"
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-100 rounded-lg">
-                  <LayoutTemplate className="w-6 h-6 text-indigo-600" />
-                </div>
-                <h2 className="text-xl font-semibold text-gray-900">Seleccionar Plantilla</h2>
+            <div className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-xs xs:max-w-sm sm:max-w-lg lg:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-auto">
+              {/* Header */}
+              <div className="p-3 xs:p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between">
+                <h2 className="text-base xs:text-lg sm:text-xl font-semibold text-gray-800 truncate">Seleccionar Plantilla</h2>
+                <button onClick={handleClose} className="text-gray-500 hover:text-gray-700 p-1 ml-2 flex-shrink-0">
+                  <X className="w-4 h-4 xs:w-5 xs:h-5" />
+                </button>
               </div>
-              <button
-                onClick={handleClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
 
-            {/* Grid de plantillas */}
-            <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto p-1">
-              {POSTER_TEMPLATES.map((template: { id: string; name: string; description: string }) => (
-                <motion.button
-                  key={template.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleTemplateSelect(template.id)}
-                  className={`p-4 rounded-lg border transition-all text-left
-                    ${selectedTemplate === template.id 
-                      ? 'border-indigo-500 bg-indigo-50' 
-                      : 'border-gray-200 hover:border-indigo-200 hover:bg-gray-50'}`}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-indigo-100 rounded-lg">
-                      <LayoutTemplate className="w-5 h-5 text-indigo-600" />
-                    </div>
-                    <h3 className="font-medium text-gray-900">{template.name}</h3>
-                  </div>
-                  <p className="text-sm text-gray-500">{template.description}</p>
-                </motion.button>
-              ))}
+              {/* Content */}
+              <div className="p-3 xs:p-4 sm:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 xs:gap-4 max-h-[50vh] xs:max-h-[60vh] overflow-y-auto p-1">
+                  {POSTER_TEMPLATES.map((template: { id: string; name: string; description: string }) => (
+                    <motion.button
+                      key={template.id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleTemplateSelect(template.id)}
+                      className={`p-3 xs:p-4 rounded-lg border transition-all text-left
+                        ${selectedTemplate === template.id 
+                          ? 'border-indigo-500 bg-indigo-50' 
+                          : 'border-gray-200 hover:border-indigo-200 hover:bg-gray-50'}`}
+                    >
+                      <div className="flex items-center gap-2 xs:gap-3 mb-1 xs:mb-2">
+                        <div className="p-1.5 xs:p-2 bg-indigo-100 rounded-lg">
+                          <LayoutTemplate className="w-4 h-4 xs:w-5 xs:h-5 text-indigo-600" />
+                        </div>
+                        <h3 className="text-sm xs:text-base font-medium text-gray-900 truncate">{template.name}</h3>
+                      </div>
+                      <p className="text-xs xs:text-sm text-gray-500 line-clamp-2">{template.description}</p>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
             </div>
           </motion.div>
         </>

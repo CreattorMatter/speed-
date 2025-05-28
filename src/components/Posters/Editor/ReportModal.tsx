@@ -51,49 +51,49 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   const totalChanges = editedProducts.reduce((sum, product) => sum + product.changes.length, 0);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 print:hidden">
-      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden print:hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 print:hidden p-2 xs:p-4">
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-2xl w-full max-w-xs xs:max-w-sm sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden print:hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b bg-orange-50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-orange-600" />
+        <div className="flex items-center justify-between p-3 xs:p-4 sm:p-6 border-b bg-orange-50">
+          <div className="flex items-center gap-2 xs:gap-3">
+            <div className="w-8 h-8 xs:w-10 xs:h-10 bg-orange-100 rounded-full flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4 xs:w-5 xs:h-5 text-orange-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-base xs:text-lg font-semibold text-gray-900">
                 Reportar Cambios de Productos
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs xs:text-sm text-gray-600">
                 Se detectaron modificaciones que requieren reporte
               </p>
             </div>
           </div>
           <button
             onClick={handleCancel}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1 xs:p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
             title="Cerrar"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-4 h-4 xs:w-5 xs:h-5 text-gray-500" />
           </button>
         </div>
 
-        <div className="flex h-[600px]">
+        <div className="flex flex-col lg:flex-row h-[400px] xs:h-[500px] sm:h-[600px]">
           {/* Panel principal */}
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex-1 p-3 xs:p-4 sm:p-6 overflow-y-auto">
             {/* Información del contexto */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
-                <FileText className="w-4 h-4" />
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 xs:p-4 mb-4 xs:mb-6">
+              <h4 className="font-medium text-blue-900 mb-1 xs:mb-2 flex items-center gap-2">
+                <FileText className="w-3 h-3 xs:w-4 xs:h-4" />
                 Información de la plantilla
               </h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 xs:gap-4 text-xs xs:text-sm">
                 <div>
                   <span className="text-blue-700 font-medium">Familia:</span>
-                  <span className="text-blue-900 ml-2">{plantillaFamily}</span>
+                  <span className="text-blue-900 ml-2 break-words">{plantillaFamily}</span>
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Plantilla:</span>
-                  <span className="text-blue-900 ml-2">{plantillaType}</span>
+                  <span className="text-blue-900 ml-2 break-words">{plantillaType}</span>
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Productos editados:</span>
