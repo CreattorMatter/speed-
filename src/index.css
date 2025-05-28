@@ -58,12 +58,242 @@
   }
 }
 
+/* Estilos base para responsividad */
 html {
   scroll-behavior: smooth;
 }
 
-.smooth-scroll {
-  @apply transition-all duration-300 ease-in-out;
+body {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Breakpoints específicos para texto responsivo */
+@media (min-width: 475px) {
+  body {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 640px) {
+  body {
+    font-size: 16px;
+  }
+}
+
+/* Utilidades responsivas personalizadas */
+@layer utilities {
+  /* Ocultar scrollbar pero mantener funcionalidad */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Transiciones suaves para todos los elementos */
+  .smooth-scroll {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  /* Contenedores responsivos */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-2 xs:px-3 sm:px-4 lg:px-6 xl:px-8;
+  }
+  
+  /* Espaciado responsivo */
+  .spacing-responsive-sm {
+    @apply p-2 xs:p-3 sm:p-4 lg:p-6;
+  }
+  
+  .spacing-responsive-md {
+    @apply p-3 xs:p-4 sm:p-6 lg:p-8;
+  }
+  
+  .spacing-responsive-lg {
+    @apply p-4 xs:p-6 sm:p-8 lg:p-12;
+  }
+  
+  /* Texto responsivo */
+  .text-responsive-xs {
+    @apply text-xs xs:text-sm sm:text-base;
+  }
+  
+  .text-responsive-sm {
+    @apply text-sm xs:text-base sm:text-lg;
+  }
+  
+  .text-responsive-md {
+    @apply text-base xs:text-lg sm:text-xl lg:text-2xl;
+  }
+  
+  .text-responsive-lg {
+    @apply text-lg xs:text-xl sm:text-2xl lg:text-3xl;
+  }
+  
+  .text-responsive-xl {
+    @apply text-xl xs:text-2xl sm:text-3xl lg:text-4xl;
+  }
+  
+  /* Botones responsivos */
+  .btn-responsive {
+    @apply px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 text-sm xs:text-base rounded-lg transition-all duration-200;
+  }
+  
+  .btn-responsive-sm {
+    @apply px-2 xs:px-3 sm:px-4 py-1.5 xs:py-2 sm:py-2.5 text-xs xs:text-sm rounded-md transition-all duration-200;
+  }
+  
+  /* Grids responsivos */
+  .grid-responsive-1-2-3 {
+    @apply grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3;
+  }
+  
+  .grid-responsive-1-2-4 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4;
+  }
+  
+  .grid-responsive-auto {
+    @apply grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5;
+  }
+  
+  /* Gaps responsivos */
+  .gap-responsive-sm {
+    @apply gap-2 xs:gap-3 sm:gap-4 lg:gap-6;
+  }
+  
+  .gap-responsive-md {
+    @apply gap-3 xs:gap-4 sm:gap-6 lg:gap-8;
+  }
+  
+  .gap-responsive-lg {
+    @apply gap-4 xs:gap-6 sm:gap-8 lg:gap-12;
+  }
+  
+  /* Iconos responsivos */
+  .icon-responsive-sm {
+    @apply w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6;
+  }
+  
+  .icon-responsive-md {
+    @apply w-5 h-5 xs:w-6 xs:h-6 sm:w-8 sm:h-8;
+  }
+  
+  .icon-responsive-lg {
+    @apply w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10;
+  }
+  
+  /* Bordes redondeados responsivos */
+  .rounded-responsive {
+    @apply rounded-lg sm:rounded-xl lg:rounded-2xl;
+  }
+  
+  /* Sombras responsivas */
+  .shadow-responsive {
+    @apply shadow-md sm:shadow-lg lg:shadow-xl;
+  }
+  
+  /* Altura mínima responsiva */
+  .min-h-responsive {
+    @apply min-h-12 xs:min-h-16 sm:min-h-20;
+  }
+  
+  /* Ancho máximo responsivo */
+  .max-w-responsive-sm {
+    @apply max-w-xs xs:max-w-sm sm:max-w-md;
+  }
+  
+  .max-w-responsive-md {
+    @apply max-w-sm xs:max-w-md sm:max-w-lg lg:max-w-xl;
+  }
+  
+  .max-w-responsive-lg {
+    @apply max-w-md xs:max-w-lg sm:max-w-xl lg:max-w-2xl;
+  }
+}
+
+/* Mejoras específicas para dispositivos táctiles */
+@media (hover: none) and (pointer: coarse) {
+  /* Aumentar área de toque en dispositivos móviles */
+  button, 
+  [role="button"], 
+  input[type="button"], 
+  input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Mejorar espaciado en elementos interactivos */
+  .touch-target {
+    @apply p-3 m-1;
+  }
+}
+
+/* Optimizaciones para pantallas pequeñas */
+@media (max-width: 475px) {
+  /* Reducir padding en contenedores principales */
+  .main-container {
+    @apply px-2 py-3;
+  }
+  
+  /* Ajustar tamaño de fuente para mejor legibilidad */
+  h1 { @apply text-xl; }
+  h2 { @apply text-lg; }
+  h3 { @apply text-base; }
+  h4 { @apply text-sm; }
+  
+  /* Mejorar espaciado en formularios */
+  .form-group {
+    @apply mb-3;
+  }
+  
+  .form-input {
+    @apply py-2.5 px-3 text-base;
+  }
+}
+
+/* Optimizaciones para pantallas medianas */
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Ajustar grids para tablets */
+  .tablet-grid {
+    @apply grid-cols-2 lg:grid-cols-3;
+  }
+  
+  /* Mejorar espaciado en tablets */
+  .tablet-spacing {
+    @apply p-6 gap-6;
+  }
+}
+
+/* Optimizaciones para pantallas grandes */
+@media (min-width: 1920px) {
+  /* Limitar ancho máximo en pantallas muy grandes */
+  .ultra-wide-container {
+    @apply max-w-8xl mx-auto;
+  }
+  
+  /* Aumentar tamaños de fuente en pantallas grandes */
+  .ultra-wide-text {
+    @apply text-lg;
+  }
+}
+
+/* Animaciones responsivas */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Modo oscuro responsivo */
+@media (prefers-color-scheme: dark) {
+  .auto-dark {
+    @apply bg-gray-900 text-white;
+  }
 }
 
 .poster-editor {

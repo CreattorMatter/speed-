@@ -226,7 +226,7 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
         if (firstProduct) {
           dispatch(setSelectedProduct(firstProduct));
         }
-      } else {
+    } else {
         dispatch(setSelectedProduct(null));
       }
     }
@@ -292,16 +292,16 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
         Object.values(PLANTILLA_MODELOS).forEach((models) => {
           (models as { componentPath: string }[]).forEach((model) => uniquePaths.add(model.componentPath));
         });
-        
+
         for (const path of uniquePaths) {
           const component = await loadTemplateComponent(path);
-          if (component) { 
+          if (component) {
             components[path] = component;
           }
         }
-        
+
         setTemplateComponents(components);
-      } catch (error) { 
+      } catch (error) {
         console.error("❌ PosterEditor: Error al cargar los componentes:", error); 
       }
     };
@@ -314,24 +314,29 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
         <Header onBack={onBack} onLogout={onLogout} />
         
         <div className="poster-editor-container min-h-screen w-full flex flex-col bg-white">
-          <main className="pt-10 px-6 pb-6 max-w-7xl mx-auto space-y-6 min-h-[1000px]">
+          <main className="pt-4 sm:pt-6 lg:pt-10 px-2 xs:px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 min-h-[calc(100vh-4rem)] sm:min-h-[800px] lg:min-h-[1000px]">
             
             <PosterEditorHeader onSearchPosters={handleSearchPosters} />
 
-            <div className="grid grid-cols-10 gap-6 h-full">
-              <SidePanel
-                plantillasDisponibles={plantillasDisponibles}
-                combosDisponibles={combosDisponibles}
-                categories={CATEGORIES}
-                setIsFinancingModalOpen={(open) => dispatch(setIsFinancingModalOpen(open))}
-                setSelectedProduct={(product) => dispatch(setSelectedProduct(product))}
-              />
+            {/* Layout responsivo que cambia de stack a grid */}
+            <div className="flex flex-col lg:grid lg:grid-cols-10 gap-4 sm:gap-6 h-full">
+              <div className="w-full lg:col-span-3 order-2 lg:order-1">
+                <SidePanel
+                  plantillasDisponibles={plantillasDisponibles}
+                  combosDisponibles={combosDisponibles}
+                  categories={CATEGORIES}
+                  setIsFinancingModalOpen={(open) => dispatch(setIsFinancingModalOpen(open))}
+                  setSelectedProduct={(product) => dispatch(setSelectedProduct(product))}
+                />
+              </div>
 
-              <PreviewArea
-                templateComponents={templateComponents}
-                PLANTILLA_MODELOS={PLANTILLA_MODELOS as Record<string, TemplateModel[]>}
-                onUpdateProduct={handleUpdateProduct}
-              />
+              <div className="w-full lg:col-span-7 order-1 lg:order-2 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px]">
+                <PreviewArea
+                  templateComponents={templateComponents}
+                  PLANTILLA_MODELOS={PLANTILLA_MODELOS as Record<string, TemplateModel[]>}
+                  onUpdateProduct={handleUpdateProduct}
+                />
+              </div>
             </div>
 
             <ProductSelectorModal

@@ -317,14 +317,14 @@ function AppContent() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900 
-                    flex items-start justify-center pt-10 sm:pt-20 p-2 sm:p-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 sm:w-20 h-16 sm:h-20 
+                    flex items-start justify-center pt-4 sm:pt-10 lg:pt-20 p-2 sm:p-4 lg:p-6">
+        <div className="w-full max-w-xs xs:max-w-sm sm:max-w-md">
+          <div className="text-center mb-6 sm:mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 
                           rounded-full bg-white/10 backdrop-blur-lg">
-              <LogIn className="w-8 sm:w-10 h-8 sm:h-10" />
+              <LogIn className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold mb-2">
+            <h1 className="text-2xl xs:text-2.5xl sm:text-3xl lg:text-4xl font-bold mb-2 mt-4">
               <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-400 bg-clip-text text-transparent">
                 SPID
               </span>
@@ -332,35 +332,36 @@ function AppContent() {
                 {' '}Plus
               </span>
             </h1>
-            <p className="text-white/70 text-lg">Inicia sesión en tu cuenta</p>
+            <p className="text-white/70 text-sm xs:text-base sm:text-lg">Inicia sesión en tu cuenta</p>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/10">
-            <form onSubmit={handleLogin} className="space-y-6">
+          <div className="bg-white/5 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-2xl p-4 xs:p-6 sm:p-8 border border-white/10">
+            <form onSubmit={handleLogin} className="space-y-4 sm:space-y-6">
               {error && (
                 <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 backdrop-blur-sm">
-                  <p className="text-red-400 text-sm flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    {error}
+                  <p className="text-red-400 text-xs xs:text-sm flex items-center gap-2">
+                    <AlertCircle className="w-3 h-3 xs:w-4 xs:h-4 flex-shrink-0" />
+                    <span className="break-words">{error}</span>
                   </p>
                 </div>
               )}
 
               <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium text-white/90">
+                <label htmlFor="email" className="block text-xs xs:text-sm font-medium text-white/90">
                   Email
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-white/40" />
+                    <User className="h-4 w-4 xs:h-5 xs:w-5 text-white/40" />
                   </div>
                   <input
                     id="email"
                     type="email"
                     value={email}
                     onChange={handleEmailChange}
-                    className="block w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg 
-                             focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white"
+                    className="block w-full pl-8 xs:pl-10 pr-3 py-2 xs:py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-lg 
+                             focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white
+                             text-sm xs:text-base transition-all duration-200"
                     placeholder="tu@email.com"
                     defaultValue="admin@admin.com"
                   />
@@ -368,20 +369,21 @@ function AppContent() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium text-white/90">
+                <label htmlFor="password" className="block text-xs xs:text-sm font-medium text-white/90">
                   Contraseña
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-white/40" />
+                    <Lock className="h-4 w-4 xs:h-5 xs:w-5 text-white/40" />
                   </div>
                   <input
                     id="password"
                     type="password"
                     value={password}
                     onChange={handlePasswordChange}
-                    className="block w-full pl-10 pr-3 py-2 bg-white/10 border border-white/20 rounded-lg 
-                             focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white"
+                    className="block w-full pl-8 xs:pl-10 pr-3 py-2 xs:py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-lg 
+                             focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white
+                             text-sm xs:text-base transition-all duration-200"
                     placeholder="••••••••"
                     defaultValue="admin"
                   />
@@ -390,9 +392,10 @@ function AppContent() {
 
               <button
                 type="submit"
-                className="w-full py-3 px-4 bg-white/20 hover:bg-white/30 text-white rounded-lg 
+                className="w-full py-2.5 xs:py-3 sm:py-3.5 px-4 bg-white/20 hover:bg-white/30 text-white rounded-lg 
                          transition-all duration-200 font-medium shadow-lg hover:shadow-xl
-                         backdrop-blur-lg border border-white/20"
+                         backdrop-blur-lg border border-white/20 text-sm xs:text-base
+                         active:scale-95 transform"
               >
                 Iniciar Sesión
               </button>

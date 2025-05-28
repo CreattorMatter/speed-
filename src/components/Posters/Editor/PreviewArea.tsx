@@ -344,22 +344,22 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
   };
 
   return (
-    <div className="col-span-7 h-full flex flex-col">
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 flex flex-1 overflow-hidden max-h-[800px] w-full">
+    <div className="h-full flex flex-col">
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-3 xs:p-4 sm:p-6 border border-gray-200 flex flex-1 overflow-hidden max-h-full lg:max-h-[800px] w-full">
         
         {/* Contenedor principal */}
-        <div className="w-full h-full overflow-y-auto">
+        <div className="w-full h-full overflow-y-auto scrollbar-hide">
           
           {/* Mostrar mensaje cuando no hay plantilla seleccionada */}
           {!plantillaSeleccionada && (
-            <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
-              <div className="w-16 h-16 mb-4 bg-gray-200 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 p-4">
+              <div className="w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 mb-3 xs:mb-4 bg-gray-200 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">Selecciona una familia</h3>
-              <p className="text-sm text-gray-500 text-center max-w-md">
+              <h3 className="text-base xs:text-lg font-medium text-gray-700 mb-1 xs:mb-2">Selecciona una familia</h3>
+              <p className="text-xs xs:text-sm text-gray-500 text-center max-w-xs xs:max-w-sm sm:max-w-md">
                 Elige una familia de plantillas para ver los modelos disponibles
               </p>
             </div>
@@ -367,14 +367,14 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
 
           {/* Mostrar mensaje cuando hay plantilla pero no hay modelos después del filtro */}
           {plantillaSeleccionada && filteredModelos.length === 0 && (
-            <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
-              <div className="w-16 h-16 mb-4 bg-orange-200 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 p-4">
+              <div className="w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 mb-3 xs:mb-4 bg-orange-200 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">No hay modelos disponibles</h3>
-              <p className="text-sm text-gray-500 text-center max-w-md">
+              <h3 className="text-base xs:text-lg font-medium text-gray-700 mb-1 xs:mb-2">No hay modelos disponibles</h3>
+              <p className="text-xs xs:text-sm text-gray-500 text-center max-w-xs xs:max-w-sm sm:max-w-md">
                 No se encontraron plantillas para la combinación seleccionada. Prueba cambiando la plantilla.
               </p>
             </div>
@@ -450,11 +450,11 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                   );
                 })()
               ) : (
-                /* Grid 3x3 para mostrar todas las plantillas con scroll */
-                <div className="grid grid-cols-3 gap-6 p-6">
+                /* Grid responsivo para mostrar todas las plantillas con scroll */
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 xs:gap-4 sm:gap-6 p-3 xs:p-4 sm:p-6">
                   {/* Mensaje informativo */}
-                  <div className="col-span-3 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-blue-700 text-center">
+                  <div className="col-span-full mb-3 xs:mb-4 p-2 xs:p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs xs:text-sm text-blue-700 text-center">
                       <span className="font-medium">Vista previa de plantillas:</span> Haz click en cualquier plantilla para verla en detalle
                     </p>
                   </div>
@@ -482,16 +482,16 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                         title={`${getPromoTypeFromModelId(modelo.id)} - Click para seleccionar`}
                       >
                         {/* Contenedor de la plantilla */}
-                        <div className="w-full h-[280px] flex items-center justify-center p-3 overflow-hidden">
+                        <div className="w-full h-[200px] xs:h-[240px] sm:h-[280px] flex items-center justify-center p-2 xs:p-3 overflow-hidden">
                           {Component && typeof Component === "function" ? (
-                            <div className="max-w-full max-h-full transform scale-[0.55]">
+                            <div className="max-w-full max-h-full transform scale-[0.45] xs:scale-[0.5] sm:scale-[0.55]">
                               <Component 
                                 key={`example-${modelo.id}-${refreshKeyState}`}
                                 {...generateTemplateProps(exampleProduct)} 
                               />
                             </div>
                           ) : (
-                            <div className="text-red-500 text-sm text-center">
+                            <div className="text-red-500 text-xs xs:text-sm text-center">
                               Error al cargar componente: {modelo.componentPath}
                               <br />
                               <small>Component: {Component ? 'exists' : 'missing'}</small>
@@ -500,7 +500,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                         </div>
                         
                         {/* Etiqueta del modelo */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white text-xs text-center py-2 px-2">
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white text-xxs xs:text-xs text-center py-1.5 xs:py-2 px-2">
                           {getPromoTypeFromModelId(modelo.id)}
                         </div>
                       </div>
@@ -547,18 +547,18 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                       </div>
 
                       {/* Contenedor de la plantilla seleccionada */}
-                      <div className="flex-1 flex bg-white">
-                        {/* Panel de edición lateral para producto único */}
+                      <div className="flex-1 flex flex-col lg:flex-row bg-white">
+                        {/* Panel de edición lateral para producto único - responsivo */}
                         {selectedProduct && (
-                          <div className="w-80 bg-gray-50 border-r p-4 overflow-y-auto">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-full lg:w-80 bg-gray-50 border-b lg:border-b-0 lg:border-r p-3 xs:p-4 overflow-y-auto order-2 lg:order-1">
+                            <h3 className="text-base xs:text-lg font-semibold text-gray-800 mb-3 xs:mb-4 flex items-center gap-2">
+                              <svg className="w-4 h-4 xs:w-5 xs:h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
-                              Editar Producto
+                              <span className="truncate">Editar Producto</span>
                             </h3>
                             
-                            <div className="space-y-4">
+                            <div className="space-y-3 xs:space-y-4">
                               {/* Renderizar solo campos disponibles para esta plantilla */}
                               {availableFields.map(field => {
                                 const fieldType = getFieldType(field);
@@ -567,7 +567,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                                 
                                 return (
                                   <div key={field}>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-xs xs:text-sm font-medium text-gray-700 mb-1">
                                       {fieldLabel} {isRequired && <span className="text-red-500">*</span>}
                                     </label>
                                     <EditableField
@@ -583,17 +583,17 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                               })}
                             </div>
 
-                            {/* Información de cambios para producto único */}
+                            {/* Información de cambios */}
                             {(() => {
                               const editedProduct = getEditedProduct(selectedProduct.id);
                               return editedProduct && editedProduct.changes.length > 0 && (
-                                <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded">
-                                  <h4 className="text-sm font-medium text-blue-800 mb-2">
+                                <div className="mt-4 xs:mt-6 p-2 xs:p-3 bg-blue-50 border border-blue-200 rounded">
+                                  <h4 className="text-xs xs:text-sm font-medium text-blue-800 mb-1.5 xs:mb-2">
                                     Cambios realizados ({editedProduct.changes.length})
                                   </h4>
                                   <div className="space-y-1">
                                     {editedProduct.changes.map((change: ProductChange, index: number) => (
-                                      <div key={index} className="text-xs text-blue-700">
+                                      <div key={index} className="text-xxs xs:text-xs text-blue-700">
                                         <span className="font-medium">{change.field}:</span> {change.originalValue} → {change.newValue}
                                       </div>
                                     ))}
@@ -605,8 +605,8 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                         )}
 
                         {/* Preview de la plantilla */}
-                        <div className="flex-1 flex items-center justify-center p-4">
-                          <div className="w-full h-full flex items-center justify-center max-w-[900px] max-h-[800px] print-content" data-preview-content>
+                        <div className="flex-1 flex items-center justify-center p-3 xs:p-4 sm:p-6 order-1 lg:order-2 min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]">
+                          <div className="w-full h-full flex items-center justify-center max-w-full lg:max-w-[900px] max-h-[400px] sm:max-h-[600px] lg:max-h-[800px] print-content" data-preview-content>
                             {Component && typeof Component === "function" ? (
                               <Component 
                                 key={`${selectedProduct?.id || 'no-product'}-${refreshKeyState}`}
@@ -622,10 +622,28 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                   );
                 })()
               ) : (
-                /* Grid 3x3 para mostrar todas las plantillas con scroll */
-                <div className="grid grid-cols-3 gap-6 p-6">
+                /* Grid responsivo para mostrar todas las plantillas con scroll */
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 xs:gap-4 sm:gap-6 p-3 xs:p-4 sm:p-6">
+                  {/* Mensaje informativo */}
+                  <div className="col-span-full mb-3 xs:mb-4 p-2 xs:p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs xs:text-sm text-blue-700 text-center">
+                      <span className="font-medium">Vista previa de plantillas:</span> Haz click en cualquier plantilla para verla en detalle
+                    </p>
+                  </div>
+                  
                   {filteredModelos.map((modelo: TemplateModel) => {
                     const Component = templateComponents[modelo.componentPath];
+
+                    // Datos de ejemplo para mostrar la plantilla
+                    const exampleProduct: Product = {
+                      id: 'example-product',
+                      name: 'Producto de Ejemplo',
+                      price: 99999,
+                      sku: 'EJ001',
+                      category: 'Ejemplo',
+                      description: 'Producto de ejemplo para vista previa',
+                      imageUrl: '/images/placeholder-product.jpg'
+                    };
 
                     return (
                       <div
@@ -636,16 +654,16 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                         title={`${getPromoTypeFromModelId(modelo.id)} - Click para seleccionar`}
                       >
                         {/* Contenedor de la plantilla */}
-                        <div className="w-full h-[280px] flex items-center justify-center p-3 overflow-hidden">
+                        <div className="w-full h-[200px] xs:h-[240px] sm:h-[280px] flex items-center justify-center p-2 xs:p-3 overflow-hidden">
                           {Component && typeof Component === "function" ? (
-                            <div className="max-w-full max-h-full transform scale-[0.55]">
+                            <div className="max-w-full max-h-full transform scale-[0.45] xs:scale-[0.5] sm:scale-[0.55]">
                               <Component 
-                                key={`${selectedProduct?.id || 'no-product'}-${refreshKeyState}`}
-                                {...generateTemplateProps(selectedProduct || {} as Product)} 
+                                key={`example-${modelo.id}-${refreshKeyState}`}
+                                {...generateTemplateProps(exampleProduct)} 
                               />
                             </div>
                           ) : (
-                            <div className="text-red-500 text-sm text-center">
+                            <div className="text-red-500 text-xs xs:text-sm text-center">
                               Error al cargar componente: {modelo.componentPath}
                               <br />
                               <small>Component: {Component ? 'exists' : 'missing'}</small>
@@ -654,7 +672,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                         </div>
                         
                         {/* Etiqueta del modelo */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white text-xs text-center py-2 px-2">
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white text-xxs xs:text-xs text-center py-1.5 xs:py-2 px-2">
                           {getPromoTypeFromModelId(modelo.id)}
                         </div>
                       </div>
@@ -694,7 +712,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
               </div>
               
               {/* Contenedor con data-preview-content para múltiples productos */}
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 p-2 print-content" data-preview-content>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 xs:gap-3 sm:gap-4 p-2 xs:p-3 sm:p-4 print-content" data-preview-content>
                 {selectedProducts.map((product: Product, productIndex: number) => {
                   // Para multiproductos, usar el modelo seleccionado o el primero disponible
                   const modelo = modeloSeleccionado 
@@ -703,8 +721,8 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
 
                   if (!modelo) {
                     return (
-                      <div key={`no-template-${productIndex}`} className="p-4 border border-red-200 rounded-lg bg-red-50">
-                        <p className="text-red-600 text-sm">
+                      <div key={`no-template-${productIndex}`} className="p-3 xs:p-4 border border-red-200 rounded-lg bg-red-50">
+                        <p className="text-red-600 text-xs xs:text-sm">
                           No hay plantilla disponible para: {product.name}
                         </p>
                       </div>
@@ -716,12 +734,12 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                   return (
                     <div
                       key={`${product.id}-${productIndex}`}
-                      className="border rounded-lg p-3 hover:border-indigo-400 hover:shadow-md transition-all duration-300 relative bg-white cursor-pointer"
+                      className="border rounded-lg p-2 xs:p-3 hover:border-indigo-400 hover:shadow-md transition-all duration-300 relative bg-white cursor-pointer"
                       onClick={() => setExpandedProductIndex(productIndex)}
                       title={`Click para ver ${product.name} en grande`}
                     >
                       {/* Número de orden del producto */}
-                      <div className="absolute -top-2 -left-2 w-6 h-6 bg-indigo-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-10">
+                      <div className="absolute -top-1.5 -left-1.5 xs:-top-2 xs:-left-2 w-5 h-5 xs:w-6 xs:h-6 bg-indigo-500 text-white text-xxs xs:text-xs font-bold rounded-full flex items-center justify-center z-10">
                         {productIndex + 1}
                       </div>
                       
@@ -731,41 +749,41 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                           e.stopPropagation();
                           handleRemoveProduct(product.id);
                         }}
-                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-20 hover:bg-red-600 transition-colors shadow-md"
+                        className="absolute -top-1.5 -right-1.5 xs:-top-2 xs:-right-2 w-5 h-5 xs:w-6 xs:h-6 bg-red-500 text-white text-xxs xs:text-xs font-bold rounded-full flex items-center justify-center z-20 hover:bg-red-600 transition-colors shadow-md"
                         title={`Eliminar ${product.name} de la selección`}
                       >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-2.5 h-2.5 xs:w-3 xs:h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
                       
                       {/* Contenedor del cartel con data-cartel-content para impresión */}
-                      <div className="w-full h-[280px] flex items-center justify-center overflow-hidden" data-cartel-content>
+                      <div className="w-full h-[200px] xs:h-[240px] sm:h-[280px] flex items-center justify-center overflow-hidden" data-cartel-content>
                         {Component && typeof Component === "function" ? (
-                          <div className="max-w-full max-h-full scale-90 transform">
+                          <div className="max-w-full max-h-full scale-75 xs:scale-80 sm:scale-90 transform">
                             <Component 
                               key={`${product.id}-${refreshKeyState}`}
                               {...generateTemplateProps(product)} 
                             />
                           </div>
                         ) : (
-                          <div className="text-red-500 text-sm text-center">
+                          <div className="text-red-500 text-xs xs:text-sm text-center">
                             Error al cargar el componente para: {product.name}
                           </div>
                         )}
                       </div>
                       
                       {/* Información del producto */}
-                      <div className="mt-2 p-2 bg-gray-50 rounded text-center">
-                        <p className="text-xs font-medium text-gray-800 truncate" title={product.name}>
+                      <div className="mt-1.5 xs:mt-2 p-1.5 xs:p-2 bg-gray-50 rounded text-center">
+                        <p className="text-xxs xs:text-xs font-medium text-gray-800 truncate" title={product.name}>
                           {product.name}
                         </p>
-                        <p className="text-xs text-gray-600">SKU: {product.sku || 'N/A'}</p>
-                        <p className="text-sm font-bold text-indigo-600">${product.price}</p>
+                        <p className="text-xxs xs:text-xs text-gray-600">SKU: {product.sku || 'N/A'}</p>
+                        <p className="text-xs xs:text-sm font-bold text-indigo-600">${product.price}</p>
                       </div>
                       
                       {/* Indicador de que se puede expandir */}
-                      <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-80">
+                      <div className="absolute top-1.5 right-1.5 xs:top-2 xs:right-2 bg-blue-500 text-white text-xxs xs:text-xs px-1.5 xs:px-2 py-0.5 xs:py-1 rounded opacity-80">
                         Click para ampliar
                       </div>
                     </div>

@@ -2051,7 +2051,7 @@ export default function Dashboard({
         </motion.div>
 
         {/* Action Buttons Section */}
-        <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8 lg:gap-12 mb-8 sm:mb-12 py-6 sm:py-12 px-4">
+        <div className="flex flex-col xs:flex-row xs:flex-wrap sm:flex-nowrap justify-center gap-3 xs:gap-4 sm:gap-6 lg:gap-8 xl:gap-12 mb-6 sm:mb-8 lg:mb-12 py-4 sm:py-6 lg:py-12 px-2 sm:px-4">
           {/* Botón de Productos - Siempre activo para easypilar */}
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -2065,15 +2065,15 @@ export default function Dashboard({
               delay: 0.1
             }}
             onClick={onProducts}
-            className="group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+            className="group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
               bg-gradient-to-br from-white to-gray-50 border-gray-100 shadow-[0_0_20px_rgba(0,0,0,0.1)]
               transition-all duration-300"
           >
-            <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600
+            <div className="mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600
               transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-              <Package2 className="w-10 h-10 text-white" />
+              <Package2 className="w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-white" />
             </div>
-            <span className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+            <span className="text-base xs:text-lg sm:text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent text-center">
               Productos
             </span>
           </motion.button>
@@ -2091,15 +2091,15 @@ export default function Dashboard({
               delay: 0.2
             }}
             onClick={onPromotions}
-            className="group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+            className="group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
               bg-gradient-to-br from-white to-gray-50 border-gray-100 shadow-[0_0_20px_rgba(0,0,0,0.1)]
               transition-all duration-300"
           >
-            <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600
+            <div className="mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600
               transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-              <Tags className="w-10 h-10 text-white" />
+              <Tags className="w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-white" />
             </div>
-            <span className="text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+            <span className="text-base xs:text-lg sm:text-xl font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent text-center">
               Promociones
             </span>
           </motion.button>
@@ -2109,20 +2109,20 @@ export default function Dashboard({
             whileHover={!isEasyPilarUser(userEmail) ? { scale: 1.05 } : {}}
             whileTap={!isEasyPilarUser(userEmail) ? { scale: 0.95 } : {}}
             onClick={!isEasyPilarUser(userEmail) ? onNewPoster : undefined}
-            className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+            className={`group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
               ${!isEasyPilarUser(userEmail)
                 ? 'bg-gradient-to-br from-violet-500 to-violet-600 text-white hover:shadow-[0_0_35px_rgba(139,92,246,0.4)]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             disabled={isEasyPilarUser(userEmail)}
           >
-            <div className={`mb-4 p-4 rounded-2xl ${
+            <div className={`mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl ${
               !isEasyPilarUser(userEmail)
                 ? 'bg-white/20 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
                 : 'bg-gray-300'
             }`}>
-              <FileText className={`w-10 h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
+              <FileText className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
             </div>
-            <span className="text-xl font-semibold">
+            <span className="text-base xs:text-lg sm:text-xl font-semibold text-center">
               Cartel
             </span>
           </motion.button>
@@ -2132,20 +2132,20 @@ export default function Dashboard({
             whileHover={!isEasyPilarUser(userEmail) ? { scale: 1.05 } : {}}
             whileTap={!isEasyPilarUser(userEmail) ? { scale: 0.95 } : {}}
             onClick={!isEasyPilarUser(userEmail) ? onDigitalPoster : undefined}
-            className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+            className={`group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
               ${!isEasyPilarUser(userEmail)
                 ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white hover:shadow-[0_0_35px_rgba(16,185,129,0.4)]'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             disabled={isEasyPilarUser(userEmail)}
           >
-            <div className={`mb-4 p-4 rounded-2xl ${
+            <div className={`mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl ${
               !isEasyPilarUser(userEmail)
                 ? 'bg-white/20 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
                 : 'bg-gray-300'
             }`}>
-              <Monitor className={`w-10 h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
+              <Monitor className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
             </div>
-            <span className="text-xl font-semibold">
+            <span className="text-base xs:text-lg sm:text-xl font-semibold text-center">
               Cartel Digital
             </span>
           </motion.button>
@@ -2155,20 +2155,20 @@ export default function Dashboard({
             whileHover={!isEasyPilarUser(userEmail) ? { scale: 1.05 } : {}}
             whileTap={!isEasyPilarUser(userEmail) ? { scale: 0.95 } : {}}
             onClick={!isEasyPilarUser(userEmail) ? onNewTemplate : undefined}
-            className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+            className={`group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
               ${!isEasyPilarUser(userEmail)
                 ? 'bg-gradient-to-br from-white to-gray-100 border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             disabled={isEasyPilarUser(userEmail)}
           >
-            <div className={`mb-4 p-4 rounded-2xl ${
+            <div className={`mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl ${
               !isEasyPilarUser(userEmail)
                 ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
                 : 'bg-gray-300'
             }`}>
-              <LayoutTemplate className={`w-10 h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
+              <LayoutTemplate className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
             </div>
-            <span className={`text-xl font-semibold ${!isEasyPilarUser(userEmail) ? 'bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent' : ''}`}>
+            <span className={`text-base xs:text-lg sm:text-xl font-semibold text-center ${!isEasyPilarUser(userEmail) ? 'bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent' : ''}`}>
               Builder
             </span>
           </motion.button>
@@ -2178,20 +2178,20 @@ export default function Dashboard({
             whileHover={!isEasyPilarUser(userEmail) ? { scale: 1.05 } : {}}
             whileTap={!isEasyPilarUser(userEmail) ? { scale: 0.95 } : {}}
             onClick={!isEasyPilarUser(userEmail) ? onSettings : undefined}
-            className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+            className={`group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
               ${!isEasyPilarUser(userEmail)
                 ? 'bg-gradient-to-br from-white to-gray-100 border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             disabled={isEasyPilarUser(userEmail)}
           >
-            <div className={`mb-4 p-4 rounded-2xl ${
+            <div className={`mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl ${
               !isEasyPilarUser(userEmail)
                 ? 'bg-gradient-to-br from-yellow-500 to-yellow-600 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
                 : 'bg-gray-300'
             }`}>
-              <Settings className={`w-10 h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
+              <Settings className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
             </div>
-            <span className={`text-xl font-semibold ${!isEasyPilarUser(userEmail) ? 'bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent' : ''}`}>
+            <span className={`text-base xs:text-lg sm:text-xl font-semibold text-center ${!isEasyPilarUser(userEmail) ? 'bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent' : ''}`}>
               Config
             </span>
           </motion.button>
@@ -2201,20 +2201,20 @@ export default function Dashboard({
             whileHover={!isEasyPilarUser(userEmail) ? { scale: 1.05 } : {}}
             whileTap={!isEasyPilarUser(userEmail) ? { scale: 0.95 } : {}}
             onClick={!isEasyPilarUser(userEmail) ? onAnalytics : undefined}
-            className={`group flex flex-col items-center w-56 px-8 py-8 rounded-3xl
+            className={`group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
               ${!isEasyPilarUser(userEmail)
                 ? 'bg-gradient-to-br from-white to-gray-100 border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             disabled={isEasyPilarUser(userEmail)}
           >
-            <div className={`mb-4 p-4 rounded-2xl ${
+            <div className={`mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl ${
               !isEasyPilarUser(userEmail)
                 ? 'bg-gradient-to-br from-purple-500 to-purple-600 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
                 : 'bg-gray-300'
             }`}>
-              <BarChart3 className={`w-10 h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
+              <BarChart3 className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
             </div>
-            <span className={`text-xl font-semibold ${!isEasyPilarUser(userEmail) ? 'bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent' : ''}`}>
+            <span className={`text-base xs:text-lg sm:text-xl font-semibold text-center ${!isEasyPilarUser(userEmail) ? 'bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent' : ''}`}>
               Analítica
             </span>
           </motion.button>
@@ -2225,44 +2225,44 @@ export default function Dashboard({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 mb-12 px-2 md:px-0"
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 xs:gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12 px-2 sm:px-4 lg:px-0"
         >
           {/* Productos Stats */}
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className="rounded-xl p-6 transition-all duration-300
+            className="rounded-lg sm:rounded-xl p-4 sm:p-6 transition-all duration-300
               bg-white border-gray-200 shadow-lg hover:shadow-xl border"
           >
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-blue-500 
+            <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-sky-500 to-blue-500 
                             flex items-center justify-center shadow-lg shadow-sky-500/20">
-                <Package2 className="w-6 h-6 text-white" />
+                <Package2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-medium text-slate-900">
+                <h3 className="text-base sm:text-lg font-medium text-slate-900">
                   Productos
                 </h3>
-                <p className="text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500">
                   Vista general
                 </p>
               </div>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-slate-500">Total</span>
-                  <span className="text-2xl font-semibold text-slate-900">
+                  <span className="text-xs sm:text-sm text-slate-500">Total</span>
+                  <span className="text-xl sm:text-2xl font-semibold text-slate-900">
                     {stats.products.total}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Activos</span>
-                  <span className="text-slate-900">
+                  <span className="text-xs sm:text-sm text-slate-500">Activos</span>
+                  <span className="text-sm sm:text-base text-slate-900">
                     {stats.products.active}
                   </span>
                 </div>
               </div>
-              <div className="text-sm text-slate-500">
+              <div className="text-xs sm:text-sm text-slate-500">
                 <span className="text-emerald-400">+{stats.products.lastWeek}</span> nuevos esta semana
               </div>
             </div>
@@ -2271,16 +2271,16 @@ export default function Dashboard({
           {/* Promociones Stats */}
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className={`rounded-xl p-6 transition-colors border
+            className={`rounded-lg sm:rounded-xl p-4 sm:p-6 transition-colors border
               bg-white border-slate-200 shadow-lg`}
           >
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 
+            <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 
                             flex items-center justify-center shadow-lg shadow-rose-500/20">
-                <Tags className="w-6 h-6 text-white" />
+                <Tags className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <h3 className={`text-lg font-medium text-slate-900`}>
+                <h3 className={`text-base sm:text-lg font-medium text-slate-900`}>
                   Promociones
                 </h3>
                 <p className={`text-slate-500`}>

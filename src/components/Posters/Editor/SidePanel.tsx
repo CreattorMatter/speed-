@@ -116,11 +116,11 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   };
 
   return (
-    <div className="col-span-3 h-full flex flex-col">
-      <div className="bg-white rounded-xl shadow-lg p-6 space-y-6 border border-gray-200 h-full flex flex-col w-full">
+    <div className="h-full flex flex-col">
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-3 xs:p-4 sm:p-6 space-y-3 xs:space-y-4 sm:space-y-6 border border-gray-200 h-full flex flex-col w-full">
         
-        <div className="border-gray-200 pt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="border-gray-200 pt-3 xs:pt-4 sm:pt-6">
+          <label className="block text-xs xs:text-sm font-medium text-gray-700 mb-1">
             Familia:
           </label>
           <PlantillaSelect
@@ -131,8 +131,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           />
         </div>
 
-        <div className="border-t border-gray-200 pt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="border-t border-gray-200 pt-3 xs:pt-4 sm:pt-6">
+          <label className="block text-xs xs:text-sm font-medium text-gray-700 mb-1">
             Plantilla:
           </label>
           <ComboSelect
@@ -143,8 +143,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           />
         </div>
 
-        <div className="border-t border-gray-200 pt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="border-t border-gray-200 pt-3 xs:pt-4 sm:pt-6">
+          <label className="block text-xs xs:text-sm font-medium text-gray-700 mb-1">
             Categorías:
           </label>
           <ComboSelect
@@ -155,12 +155,12 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           />
         </div>
 
-        <div className="mb-4">
+        <div className="mb-3 xs:mb-4">
           <div className="flex justify-between items-center">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs xs:text-sm font-medium text-gray-700 mb-1">
               Productos (seleccione los que necesite)
             </label>
-            <span className="text-xs text-gray-500 mb-1">
+            <span className="text-xxs xs:text-xs text-gray-500 mb-1">
               {selectedProductIds.length} seleccionado{selectedProductIds.length !== 1 ? 's' : ''}
             </span>
           </div>
@@ -181,22 +181,22 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           />
           
           {selectedProductIds.length > 0 && (
-            <div className="mt-2 text-sm text-gray-500">
+            <div className="mt-1 xs:mt-2 text-xs xs:text-sm text-gray-500">
               {selectedProductIds.length} producto(s) seleccionado(s)
             </div>
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-3 xs:gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1"></label>
-            <div className="flex items-center gap-3">
+            <label className="block text-xs xs:text-sm font-medium text-gray-700 mb-1"></label>
+            <div className="flex items-center gap-2 xs:gap-3">
               <button
                 onClick={() => setIsFinancingModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+                className="flex items-center gap-1.5 xs:gap-2 px-3 xs:px-4 py-1.5 xs:py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 text-xs xs:text-sm"
               >
-                <CreditCard className="w-5 h-5 text-gray-500" />
-                <span>
+                <CreditCard className="w-4 h-4 xs:w-5 xs:h-5 text-gray-500" />
+                <span className="truncate">
                   {selectedFinancing.length > 0 ? `${selectedFinancing.length} financiación${
                         selectedFinancing.length > 1 ? "es" : ""
                       }` : "Ver financiación"}
@@ -206,8 +206,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           </div>
         </div>
 
-        <div className="border-t border-gray-200 pt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="border-t border-gray-200 pt-3 xs:pt-4 sm:pt-6">
+          <label className="block text-xs xs:text-sm font-medium text-gray-700 mb-1">
             Tamaño de papel:
           </label>
           <PaperFormatSelect
