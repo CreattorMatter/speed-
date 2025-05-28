@@ -1,5 +1,5 @@
-import React from 'react';
-import { CreditCard } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { CreditCard, ShoppingCart, Package, Filter } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 
 // Importar acciones y selectores del slice de poster
@@ -16,8 +16,8 @@ import {
   selectSelectedCategory,
   selectSelectedProducts,
   selectFormatoSeleccionado,
-  selectMaxProductsReached,
   selectSelectedFinancing,
+  setIsFinancingModalOpen,
 } from '../../../store/features/poster/posterSlice';
 import { RootState, AppDispatch } from '../../../store';
 
@@ -27,6 +27,7 @@ import { ProductSelect } from './Selectors/ProductSelect';
 import PaperFormatSelect from './Selectors/PaperFormatSelect';
 import { products, type Product } from '../../../data/products';
 import { FinancingOption } from '../../../types/financing';
+import { ProductSelectionModal } from './ProductSelectionModal';
 
 // Tipos que se mantienen
 interface PaperFormatOption {
@@ -45,20 +46,21 @@ interface SidePanelProps {
   // Props que se mantienen (lógica local o computada en el padre)
   plantillasDisponibles: SelectOption[];
   combosDisponibles: SelectOption[];
-  categories: SelectOption[];
   // Funciones que aún vienen del padre
-  setIsFinancingModalOpen: (value: boolean) => void;
-  setSelectedProduct: (value: Product | null) => void; 
+  setIsFinancingModalOpen: (isOpen: boolean) => void;
+  setSelectedProduct: (product: Product | null) => void; 
 }
 
 export const SidePanel: React.FC<SidePanelProps> = ({
   plantillasDisponibles,
   combosDisponibles,
-  categories,
   setIsFinancingModalOpen,
   setSelectedProduct
 }) => {
   const dispatch = useDispatch<AppDispatch>();
+
+  // Estado para el modal de selección de productos
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
   // Obtener estado del store de Redux
   const plantillaSeleccionada = useSelector(selectPlantillaSeleccionada);
@@ -66,11 +68,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const selectedCategory = useSelector(selectSelectedCategory);
   const selectedProductIds = useSelector(selectSelectedProducts);
   const formatoSeleccionado = useSelector(selectFormatoSeleccionado);
-  const maxProductsReached = useSelector(selectMaxProductsReached);
   const selectedFinancing = useSelector(selectSelectedFinancing);
 
-  // Convertir IDs de productos a objetos Product para el ProductSelect
-  const selectedProductsForSelect: Product[] = React.useMemo(() => 
+  // Convertir IDs de productos a objetos Product para el modal
+  const selectedProductsForModal: Product[] = React.useMemo(() => 
     selectedProductIds.map(id => products.find(p => p.id === id)).filter(Boolean) as Product[]
   , [selectedProductIds]);
 
@@ -86,29 +87,19 @@ export const SidePanel: React.FC<SidePanelProps> = ({
     dispatch(setComboSeleccionado(option));
   };
 
-  const handleCategoryChange = (option: SelectOption | null) => {
-    dispatch(setSelectedCategory(option ? option.value : ""));
-    setSelectedProduct(null); // Este sigue siendo un prop local por ahora
+  // Handler para el modal de selección de productos
+  const handleProductModalConfirm = (selectedProducts: Product[]) => {
+    dispatch(setSelectedProducts(selectedProducts.map(p => p.id)));
+    setIsProductModalOpen(false);
   };
 
-  const handleProductSelectionChange = (selectedOptions: Product[] | Product | null) => {
-    if (Array.isArray(selectedOptions)) {
-      // Eliminar límite de productos
-      dispatch(setSelectedProducts(selectedOptions.map(s => s.id)));
-      // Establecer el primer producto como producto único para compatibilidad
-      if (selectedOptions.length > 0) {
-        setSelectedProduct(selectedOptions[0]);
-      } else {
-        setSelectedProduct(null);
-      }
-    } else if (selectedOptions) {
-      // Si se pasa un producto único, agregarlo a la lista
-      dispatch(setSelectedProducts([selectedOptions.id]));
-      setSelectedProduct(selectedOptions);
-    } else {
-      dispatch(setSelectedProducts([]));
-      setSelectedProduct(null);
-    }
+  const handleRemoveProduct = (productId: string) => {
+    const newSelectedProducts = selectedProductIds.filter(id => id !== productId);
+    dispatch(setSelectedProducts(newSelectedProducts));
+  };
+
+  const handleClearAllProducts = () => {
+    dispatch(setSelectedProducts([]));
   };
 
   const handleFormatoChange = (option: PaperFormatOption | null) => {
@@ -143,46 +134,92 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           />
         </div>
 
-        <div className="border-t border-gray-200 pt-3 xs:pt-4 sm:pt-6">
-          <label className="block text-xs xs:text-sm font-medium text-gray-700 mb-1">
-            Categorías:
-          </label>
-          <ComboSelect
-            value={categories.find(cat => cat.value === selectedCategory) || null}
-            onChange={handleCategoryChange}
-            options={categories}
-            placeholder="Seleccionar categoría..."
-          />
-        </div>
-
         <div className="mb-3 xs:mb-4">
-          <div className="flex justify-between items-center">
-            <label className="block text-xs xs:text-sm font-medium text-gray-700 mb-1">
-              Productos (seleccione los que necesite)
+          <div className="flex justify-between items-center mb-2">
+            <label className="block text-xs xs:text-sm font-medium text-gray-700">
+              <Package className="w-4 h-4 inline mr-1" />
+              Productos
             </label>
-            <span className="text-xxs xs:text-xs text-gray-500 mb-1">
+            <span className="text-xxs xs:text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
               {selectedProductIds.length} seleccionado{selectedProductIds.length !== 1 ? 's' : ''}
             </span>
           </div>
           
-          <ProductSelect
-            products={selectedCategory ? products.filter(p => p.category === selectedCategory) : products}
-            value={selectedProductsForSelect.length > 0 ? selectedProductsForSelect.map(p => ({ label: p.name, value: p })) : null}
-            onChange={(selected) => {
-              if (Array.isArray(selected)) {
-                handleProductSelectionChange(selected.map(s => s.value as Product));
-              } else {
-                handleProductSelectionChange(selected ? (selected.value as Product) : null);
-              }
-            }}
-            isMulti={true}
-            className="w-full"
-            placeholder="Buscar productos..."
-          />
+          <button
+            onClick={() => setIsProductModalOpen(true)}
+            className="w-full flex items-center justify-between p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition-all duration-200 group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                <ShoppingCart className="w-4 h-4 text-indigo-600" />
+              </div>
+              <div className="text-left">
+                <div className="text-sm font-medium text-gray-700 group-hover:text-indigo-700">
+                  {selectedProductIds.length > 0 
+                    ? `Gestionar ${selectedProductIds.length} producto${selectedProductIds.length !== 1 ? 's' : ''}`
+                    : 'Seleccionar Productos'
+                  }
+                </div>
+                <div className="text-xs text-gray-500">
+                  {selectedProductIds.length > 0 
+                    ? 'Click para modificar la selección'
+                    : 'Buscar y seleccionar múltiples productos'
+                  }
+                </div>
+              </div>
+            </div>
+            <Filter className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+          </button>
           
           {selectedProductIds.length > 0 && (
-            <div className="mt-1 xs:mt-2 text-xs xs:text-sm text-gray-500">
-              {selectedProductIds.length} producto(s) seleccionado(s)
+            <div className="mt-3 space-y-2 max-h-32 overflow-y-auto">
+              {selectedProductsForModal.slice(0, 3).map((product, index) => (
+                <div
+                  key={product.id}
+                  className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-6 h-6 bg-indigo-100 rounded flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-indigo-600">{index + 1}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium text-gray-900 truncate" title={product.name}>
+                        {product.name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        ${product.price.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveProduct(product.id);
+                    }}
+                    className="w-5 h-5 text-gray-400 hover:text-red-500 flex items-center justify-center rounded transition-colors"
+                    title={`Eliminar ${product.name}`}
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              
+              {selectedProductIds.length > 3 && (
+                <div className="text-xs text-gray-500 text-center py-1">
+                  +{selectedProductIds.length - 3} producto{selectedProductIds.length - 3 !== 1 ? 's' : ''} más...
+                </div>
+              )}
+              
+              {selectedProductIds.length > 1 && (
+                <button
+                  onClick={handleClearAllProducts}
+                  className="w-full text-xs text-red-600 hover:text-red-700 py-1 text-center border border-red-200 rounded hover:bg-red-50 transition-colors"
+                >
+                  Limpiar todo ({selectedProductIds.length})
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -216,6 +253,14 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           />
         </div>
       </div>
+
+      <ProductSelectionModal
+        isOpen={isProductModalOpen}
+        onClose={() => setIsProductModalOpen(false)}
+        onConfirm={handleProductModalConfirm}
+        initialSelectedProducts={selectedProductsForModal}
+        title="Seleccionar Productos para Carteles"
+      />
     </div>
   );
 }; 

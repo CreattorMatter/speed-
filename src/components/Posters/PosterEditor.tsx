@@ -36,7 +36,6 @@ import {
   selectSelectedFinancing,
   selectFormatoSeleccionado,
   selectSelectedProduct,
-  selectMaxProductsReached,
   selectModeloSeleccionado,
   
   // Selectores de búsqueda
@@ -130,11 +129,6 @@ interface PosterEditorProps {
   userName: string;
 }
 
-// Extraer categorías únicas de los productos
-const CATEGORIES = Array.from(new Set(products.map((p) => p.category))).map(
-  (cat) => ({ label: cat, value: cat })
-);
-
 export const PosterEditor: React.FC<PosterEditorProps> = ({
   onBack,
   onLogout,
@@ -178,7 +172,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
   const selectedFinancing = useSelector(selectSelectedFinancing);
   const formatoSeleccionado = useSelector(selectFormatoSeleccionado);
   const selectedProduct = useSelector(selectSelectedProduct);
-  const maxProductsReached = useSelector(selectMaxProductsReached);
   const modeloSeleccionado = useSelector(selectModeloSeleccionado);
   
   // Selectores de búsqueda
@@ -324,7 +317,6 @@ export const PosterEditor: React.FC<PosterEditorProps> = ({
                 <SidePanel
                   plantillasDisponibles={plantillasDisponibles}
                   combosDisponibles={combosDisponibles}
-                  categories={CATEGORIES}
                   setIsFinancingModalOpen={(open) => dispatch(setIsFinancingModalOpen(open))}
                   setSelectedProduct={(product) => dispatch(setSelectedProduct(product))}
                 />

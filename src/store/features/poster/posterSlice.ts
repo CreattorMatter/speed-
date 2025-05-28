@@ -74,7 +74,6 @@ interface PosterState {
   selectedFinancing: FinancingOption[];
   formatoSeleccionado: PaperFormatOption | null;
   selectedProduct: Product | null; // Para producto único
-  maxProductsReached: boolean;
   modeloSeleccionado: string | null;
   
   // Estados de búsqueda
@@ -143,7 +142,6 @@ const initialState: PosterState = {
   selectedFinancing: [],
   formatoSeleccionado: getA4Format(),
   selectedProduct: null,
-  maxProductsReached: false,
   modeloSeleccionado: null,
   
   // Estados de búsqueda
@@ -173,7 +171,6 @@ export const posterSlice = createSlice({
     },
     setSelectedProducts: (state, action: PayloadAction<string[]>) => {
       state.selectedProducts = action.payload;
-      state.maxProductsReached = false;
     },
     toggleProductSelection: (state, action: PayloadAction<string>) => {
       const productId = action.payload;
@@ -183,14 +180,12 @@ export const posterSlice = createSlice({
       } else {
         state.selectedProducts.splice(currentIndex, 1);
       }
-      state.maxProductsReached = false;
     },
     setSelectedCategory: (state, action: PayloadAction<string>) => {
       state.selectedCategory = action.payload;
       // Resetear productos al cambiar categoría
       state.selectedProducts = [];
       state.selectedProduct = null;
-      state.maxProductsReached = false;
     },
     setShowLogo: (state, action: PayloadAction<boolean>) => {
       state.showLogo = action.payload;
@@ -242,14 +237,32 @@ export const posterSlice = createSlice({
       state.isLandscape = action.payload;
     },
     
-    // Estados de plantillas
+    // Estados de plantillas con mejor manejo de cambios
     setPlantillaSeleccionada: (state, action: PayloadAction<SelectOption | null>) => {
+      const previousPlantilla = state.plantillaSeleccionada;
       state.plantillaSeleccionada = action.payload;
-      // Resetear combo si la plantilla cambia y el combo ya no es válido
-      // Esta lógica se puede mover a un middleware o thunk si se vuelve compleja
+      
+      // Si cambia la plantilla, resetear el modelo seleccionado para evitar incompatibilidades
+      if (previousPlantilla?.value !== action.payload?.value) {
+        state.modeloSeleccionado = null;
+        console.log('🔄 Plantilla cambiada, reseteando modelo seleccionado');
+      }
+      
+      // Si no hay plantilla seleccionada, limpiar también el combo
+      if (!action.payload) {
+        state.comboSeleccionado = null;
+        state.modeloSeleccionado = null;
+      }
     },
     setComboSeleccionado: (state, action: PayloadAction<SelectOption | null>) => {
+      const previousCombo = state.comboSeleccionado;
       state.comboSeleccionado = action.payload;
+      
+      // Si cambia el combo, resetear el modelo seleccionado para evitar incompatibilidades
+      if (previousCombo?.value !== action.payload?.value) {
+        state.modeloSeleccionado = null;
+        console.log('🔄 Combo cambiado, reseteando modelo seleccionado');
+      }
     },
     setSelectedTemplate: (state, action: PayloadAction<string>) => {
       state.selectedTemplate = action.payload;
@@ -265,6 +278,7 @@ export const posterSlice = createSlice({
     },
     setModeloSeleccionado: (state, action: PayloadAction<string | null>) => {
       state.modeloSeleccionado = action.payload;
+      console.log('🎨 Modelo seleccionado:', action.payload);
     },
     
     // Estados de búsqueda
@@ -282,12 +296,10 @@ export const posterSlice = createSlice({
     removeProduct: (state, action: PayloadAction<string>) => {
       const productId = action.payload;
       state.selectedProducts = state.selectedProducts.filter(id => id !== productId);
-      state.maxProductsReached = false;
     },
     removeAllProducts: (state) => {
       state.selectedProducts = [];
       state.selectedProduct = null;
-      state.maxProductsReached = false;
     },
     
     // Acción para inicializar con productos iniciales
@@ -296,10 +308,9 @@ export const posterSlice = createSlice({
       if (action.payload.promotion) {
         state.promotion = action.payload.promotion;
       }
-      state.maxProductsReached = action.payload.products.length >= 9;
     },
     
-    // Acciones para manejo de cambios de productos
+    // Acciones para manejo de cambios de productos mejoradas
     trackProductChange: (state, action: PayloadAction<{
       productId: string;
       productName: string;
@@ -309,50 +320,80 @@ export const posterSlice = createSlice({
     }>) => {
       const { productId, productName, field, originalValue, newValue } = action.payload;
       
-      // No trackear si el valor no cambió
-      if (originalValue === newValue) {
-        return;
-      }
-      
-      const change: ProductChange = {
-        productId,
-        field,
-        originalValue,
-        newValue,
-        timestamp: new Date()
-      };
-      
-      if (state.productChanges[productId]) {
-        // Actualizar producto existente
-        const existingProduct = state.productChanges[productId];
-        // Remover cambio anterior del mismo campo si existe
-        existingProduct.changes = existingProduct.changes.filter(c => c.field !== field);
-        // Agregar el nuevo cambio
-        existingProduct.changes.push(change);
-        existingProduct.isEdited = true;
-      } else {
-        // Crear nuevo producto editado
+      // Crear el registro del producto editado si no existe
+      if (!state.productChanges[productId]) {
         state.productChanges[productId] = {
           productId,
           productName,
-          changes: [change],
-          isEdited: true
+          changes: [],
+          isEdited: false
         };
       }
       
-      // Actualizar flag global
+      const editedProduct = state.productChanges[productId];
+      
+      // Buscar si ya existe un cambio para este campo
+      const existingChangeIndex = editedProduct.changes.findIndex(change => change.field === field);
+      
+      if (existingChangeIndex !== -1) {
+        // Si ya existe un cambio para este campo, actualizar el nuevo valor
+        const existingChange = editedProduct.changes[existingChangeIndex];
+        
+        // Si el nuevo valor es igual al valor original, remover el cambio
+        if (newValue === existingChange.originalValue) {
+          editedProduct.changes.splice(existingChangeIndex, 1);
+          console.log(`🔄 Campo '${field}' restaurado a su valor original, removiendo cambio`);
+        } else {
+          // Actualizar solo el nuevo valor, manteniendo el valor original
+          existingChange.newValue = newValue;
+          existingChange.timestamp = new Date();
+          console.log(`✏️ Campo '${field}' actualizado: ${existingChange.originalValue} → ${newValue}`);
+        }
+      } else {
+        // Si el nuevo valor es diferente al original, crear un nuevo cambio
+        if (newValue !== originalValue) {
+          editedProduct.changes.push({
+            productId,
+            field,
+            originalValue,
+            newValue,
+            timestamp: new Date()
+          });
+          console.log(`➕ Nuevo cambio registrado en '${field}': ${originalValue} → ${newValue}`);
+        }
+      }
+      
+      // Actualizar el estado isEdited y hasAnyChanges
+      editedProduct.isEdited = editedProduct.changes.length > 0;
+      
+      // Si no hay cambios, remover el producto del registro
+      if (editedProduct.changes.length === 0) {
+        delete state.productChanges[productId];
+        console.log(`🗑️ Producto '${productName}' removido del registro (sin cambios)`);
+      }
+      
+      // Actualizar el flag global de cambios
       state.hasAnyChanges = Object.keys(state.productChanges).length > 0;
+      
+      console.log(`📊 Estado de cambios: ${Object.keys(state.productChanges).length} productos editados`);
     },
     
     clearProductChanges: (state) => {
+      const previousCount = Object.keys(state.productChanges).length;
       state.productChanges = {};
       state.hasAnyChanges = false;
+      console.log(`🧹 Limpiados todos los cambios de productos (${previousCount} productos afectados)`);
     },
     
     removeProductChanges: (state, action: PayloadAction<string>) => {
       const productId = action.payload;
+      const productName = state.productChanges[productId]?.productName || productId;
+      const changeCount = state.productChanges[productId]?.changes.length || 0;
+      
       delete state.productChanges[productId];
       state.hasAnyChanges = Object.keys(state.productChanges).length > 0;
+      
+      console.log(`🗑️ Cambios removidos para producto '${productName}' (${changeCount} cambios)`);
     },
     
     // Nuevas acciones para impresión
@@ -455,7 +496,6 @@ export const selectSelectedTemplate = (state: RootState) => state.poster.selecte
 export const selectSelectedFinancing = (state: RootState) => state.poster.selectedFinancing;
 export const selectFormatoSeleccionado = (state: RootState) => state.poster.formatoSeleccionado;
 export const selectSelectedProduct = (state: RootState) => state.poster.selectedProduct;
-export const selectMaxProductsReached = (state: RootState) => state.poster.maxProductsReached;
 export const selectModeloSeleccionado = (state: RootState) => state.poster.modeloSeleccionado;
 
 // Selectores de búsqueda
