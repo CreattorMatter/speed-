@@ -132,22 +132,103 @@ Creado `src/styles/templates-responsive.css` con:
 - ✅ **ReportModal** - Información organizada
 - ✅ **DeleteProductModal** - Compacto en móviles
 
+### 🔍 Mejoras Específicas para Zoom y Viewport
+
+#### Problema Identificado
+Los modales se desbordaban cuando el zoom del navegador estaba al 100% en ciertas resoluciones, pero funcionaban correctamente al 50% de zoom. Esto indicaba problemas con:
+- Dimensiones fijas que no consideraban el viewport real
+- Falta de manejo adecuado de diferentes niveles de zoom
+- Contenedores que no se adaptaban al espacio disponible
+
+#### Soluciones Implementadas
+
+##### 1. Contenedores con Viewport Units
+```tsx
+// ✅ Antes: Dimensiones fijas
+className="max-w-2xl max-h-[90vh]"
+
+// ✅ Después: Dimensiones adaptativas con viewport
+className="max-w-[95vw] xs:max-w-[90vw] sm:max-w-[85vw] lg:max-w-5xl xl:max-w-6xl h-[95vh] xs:h-[90vh] sm:h-[85vh]"
+```
+
+##### 2. Layout Flexbox para Modales
+```tsx
+// ✅ Estructura flex para mejor control
+<div className="flex flex-col overflow-hidden">
+  <div className="flex-shrink-0"> {/* Header */}
+  <div className="flex-1 overflow-y-auto"> {/* Content */}
+  <div className="flex-shrink-0"> {/* Footer */}
+</div>
+```
+
+##### 3. CSS con min() para Zoom Handling
+```css
+/* ✅ Tamaños que se adaptan al zoom */
+.modal-lg {
+  max-width: min(95vw, 48rem);
+  max-height: min(95vh, 60rem);
+}
+
+@media (min-width: 1024px) {
+  .modal-lg {
+    max-width: min(85vw, 64rem);
+    max-height: min(85vh, 70rem);
+  }
+}
+```
+
+##### 4. Breakpoints Específicos para Zoom
+```css
+/* Para viewport muy pequeños (zoom alto) */
+@media (max-width: 320px) {
+  .modal-container {
+    max-width: 98vw;
+    max-height: 98vh;
+  }
+  
+  .modal-header {
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* Para viewport muy grandes (zoom bajo) */
+@media (min-width: 1920px) {
+  .modal-lg {
+    max-width: min(70vw, 100rem);
+    max-height: min(70vh, 90rem);
+  }
+}
+```
+
+##### 5. Mejoras para Pantallas de Alta Densidad
+```css
+@media (min-resolution: 1.5dppx) {
+  .modal-container {
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.25);
+  }
+  
+  .modal-content {
+    scrollbar-width: thin;
+  }
+}
+```
+
 ### Características de Modales Responsivos
 
 #### 1. Contenedores Adaptativos
 ```tsx
 // ✅ Contenedor responsivo
-className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 xs:p-4"
+className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 xs:p-3 sm:p-4"
 
 // ✅ Modal adaptativo
-className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-xs xs:max-w-sm sm:max-w-2xl lg:max-w-4xl xl:max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden"
+className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-[95vw] xs:max-w-[90vw] sm:max-w-[85vw] lg:max-w-5xl xl:max-w-6xl h-[95vh] xs:h-[90vh] sm:h-[85vh] flex flex-col overflow-hidden"
 ```
 
 #### 2. Headers Responsivos
 ```tsx
 // ✅ Header adaptativo
-<div className="p-3 xs:p-4 sm:p-6 border-b border-gray-200">
-  <h3 className="text-base xs:text-lg font-medium text-gray-900 truncate">
+<div className="p-3 xs:p-4 sm:p-5 lg:p-6 border-b border-gray-200 flex-shrink-0">
+  <h3 className="text-sm xs:text-base sm:text-lg font-medium text-gray-900 truncate">
     Título del Modal
   </h3>
   <button className="text-gray-400 hover:text-gray-500 transition-colors p-1 ml-2 flex-shrink-0">
@@ -158,18 +239,19 @@ className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-xs xs:max-w-
 
 #### 3. Contenido Flexible
 ```tsx
-// ✅ Grid responsivo
-<div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 xs:gap-4">
-
-// ✅ Layout adaptativo
-<div className="flex flex-col lg:grid lg:grid-cols-5 gap-4 sm:gap-6">
+// ✅ Contenido con scroll independiente
+<div className="flex-1 overflow-y-auto">
+  <div className="p-3 xs:p-4 sm:p-5 lg:p-6">
+    {/* Contenido del modal */}
+  </div>
+</div>
 ```
 
 #### 4. Botones Responsivos
 ```tsx
 // ✅ Botones adaptativos
-<div className="flex flex-col xs:flex-row gap-2 xs:gap-3">
-  <button className="flex-1 px-3 xs:px-4 py-2 xs:py-3 text-sm xs:text-base">
+<div className="flex flex-col xs:flex-row gap-2 xs:gap-3 p-3 xs:p-4 sm:p-5 lg:p-6 border-t bg-gray-50 flex-shrink-0">
+  <button className="flex-1 px-3 xs:px-4 py-2 xs:py-2.5 text-sm xs:text-base">
     Cancelar
   </button>
 </div>
@@ -190,66 +272,76 @@ className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-xs xs:max-w-
   padding: 0.5rem;
 }
 
-/* Tamaños específicos de modales */
-.modal-xs { max-width: 20rem; }
-.modal-sm { max-width: 24rem; }
-.modal-md { max-width: 32rem; }
-.modal-lg { max-width: 48rem; }
-
-/* Botones responsivos en modales */
-.modal-btn {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: 0.5rem;
-  transition: all 0.2s;
+/* Tamaños específicos de modales con viewport units */
+.modal-xs { 
+  max-width: min(95vw, 20rem);
+  max-height: min(95vh, 32rem);
 }
 
-@media (min-width: 475px) {
-  .modal-btn {
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-  }
+.modal-sm { 
+  max-width: min(90vw, 24rem);
+  max-height: min(90vh, 36rem);
+}
+
+.modal-md { 
+  max-width: min(95vw, 32rem);
+  max-height: min(95vh, 48rem);
+}
+
+.modal-lg { 
+  max-width: min(95vw, 48rem);
+  max-height: min(95vh, 60rem);
+}
+
+.modal-xl {
+  max-width: min(95vw, 64rem);
+  max-height: min(95vh, 70rem);
+}
+
+/* Contenido con scroll mejorado */
+.modal-content {
+  flex: 1;
+  min-height: 0; /* Importante para flex scroll */
+  overflow-y: auto;
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
 }
 ```
 
 ### Mejoras Específicas por Modal
 
-#### SendingModal
-- Layout de columnas que se convierte en grid en pantallas grandes
-- Resumen lateral que se adapta al contenido
-- Lista de sucursales con scroll independiente
-- Botones de acción responsivos
+#### ReportModal
+- **Problema**: Se desbordaba en zoom 100% mostrando scroll horizontal
+- **Solución**: Layout flex con altura fija y contenido scrolleable
+- **Resultado**: Modal que se adapta perfectamente al viewport disponible
 
-#### FinancingModal
-- Grid de tarjetas que se adapta de 1 a 2 columnas
-- Resumen de selecciones con scroll limitado
-- Botones de acción en fila o columna según el espacio
+#### SendingModal
+- **Problema**: Grid de dos columnas no se adaptaba bien
+- **Solución**: Layout flex que cambia a grid en pantallas grandes
+- **Resultado**: Experiencia fluida en todos los tamaños
 
 #### SearchModal
-- Grid adaptativo de 1 a 4 columnas según el dispositivo
-- Imágenes de carteles con alturas responsivas
-- Búsqueda con iconos adaptativos
+- **Problema**: Grid de carteles causaba overflow
+- **Solución**: Grid adaptativo de 1 a 5 columnas según el espacio
+- **Resultado**: Visualización óptima de carteles en cualquier resolución
 
-#### PosterModal
-- Contenedor que se adapta al contenido
-- Botón de cierre posicionado responsivamente
-- Preview que mantiene proporciones
-
-#### TemplateSelect
-- Grid de plantillas responsivo
-- Descripciones que se truncan apropiadamente
-- Iconos y texto escalables
-
-#### ReportModal
-- Layout que cambia de columna a fila en pantallas grandes
-- Información organizada en grids adaptativos
-- Texto que se ajusta al espacio disponible
-
-#### DeleteProductModal
-- Información del producto organizada eficientemente
-- Alertas con iconos responsivos
-- Botones que se apilan en móviles
+#### Otros Modales
+- Todos los modales ahora usan el mismo sistema de dimensiones adaptativas
+- Headers, contenido y footers con padding responsivo
+- Botones que se adaptan al espacio disponible
+- Texto que se trunca apropiadamente
 
 ## 📊 Resultados Obtenidos
 

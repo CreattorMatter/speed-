@@ -144,20 +144,20 @@ export const SendingModal: React.FC<SendingModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 xs:p-4"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 xs:p-3 sm:p-4"
           onClick={handleBackdropClick}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-xs xs:max-w-sm sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden"
+            className="bg-white rounded-lg sm:rounded-xl shadow-xl w-full max-w-[95vw] xs:max-w-[90vw] sm:max-w-[85vw] lg:max-w-5xl xl:max-w-6xl h-[95vh] xs:h-[90vh] sm:h-[85vh] flex flex-col overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="p-3 xs:p-4 sm:p-6 border-b border-gray-200">
+            <div className="p-3 xs:p-4 sm:p-5 lg:p-6 border-b border-gray-200 flex-shrink-0">
               <div className="flex justify-between items-center">
-                <h3 className="text-base xs:text-lg font-medium text-gray-900 truncate">
+                <h3 className="text-sm xs:text-base sm:text-lg font-medium text-gray-900 truncate">
                   {step === 'selection' && 'Seleccionar sucursales'}
                   {(step === 'sending' || step === 'complete') && 'Enviando a sucursales'}
                 </h3>
@@ -174,9 +174,9 @@ export const SendingModal: React.FC<SendingModalProps> = ({
 
             {/* Content */}
             {step === 'selection' && (
-              <div className="flex flex-col lg:grid lg:grid-cols-5 gap-4 sm:gap-6 max-h-[calc(95vh-8rem)] sm:max-h-[calc(90vh-8rem)] overflow-hidden">
+              <div className="flex-1 flex flex-col lg:grid lg:grid-cols-5 gap-4 sm:gap-6 overflow-hidden">
                 {/* Columna izquierda: Selección */}
-                <div className="lg:col-span-3 lg:border-r border-gray-200 p-3 xs:p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
+                <div className="lg:col-span-3 lg:border-r border-gray-200 p-3 xs:p-4 sm:p-5 lg:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
                   <LocationSelection
                     locations={locationOptions}
                     selectedLocations={selectedLocations}
@@ -192,20 +192,20 @@ export const SendingModal: React.FC<SendingModalProps> = ({
                 </div>
 
                 {/* Columna derecha: Resumen */}
-                <div className="lg:col-span-2 p-3 xs:p-4 sm:p-6 bg-gray-50 overflow-y-auto">
+                <div className="lg:col-span-2 p-3 xs:p-4 sm:p-5 lg:p-6 bg-gray-50 overflow-y-auto">
                   <div className="space-y-3 xs:space-y-4">
-                    <h4 className="text-base xs:text-lg font-medium text-gray-900">Resumen del envío</h4>
+                    <h4 className="text-sm xs:text-base sm:text-lg font-medium text-gray-900">Resumen del envío</h4>
                     
                     <div className="space-y-2 xs:space-y-3">
-                      <div className="flex justify-between text-sm xs:text-base">
+                      <div className="flex justify-between text-xs xs:text-sm sm:text-base">
                         <span className="text-gray-600">Productos:</span>
                         <span className="font-medium">{productsCount}</span>
                       </div>
-                      <div className="flex justify-between text-sm xs:text-base">
+                      <div className="flex justify-between text-xs xs:text-sm sm:text-base">
                         <span className="text-gray-600">Sucursales:</span>
                         <span className="font-medium">{selectedLocations.length}</span>
                       </div>
-                      <div className="flex justify-between text-sm xs:text-base">
+                      <div className="flex justify-between text-xs xs:text-sm sm:text-base">
                         <span className="text-gray-600">Impresora:</span>
                         <span className="font-medium text-xs xs:text-sm truncate ml-2">
                           {selectedPrinter ? PRINTERS.find(p => p.id === selectedPrinter)?.name : 'No seleccionada'}
@@ -215,8 +215,8 @@ export const SendingModal: React.FC<SendingModalProps> = ({
 
                     {selectedLocations.length > 0 && (
                       <div className="mt-4 xs:mt-6">
-                        <h5 className="text-sm xs:text-base font-medium text-gray-900 mb-2 xs:mb-3">Sucursales seleccionadas:</h5>
-                        <div className="space-y-1 xs:space-y-2 max-h-32 xs:max-h-40 overflow-y-auto">
+                        <h5 className="text-xs xs:text-sm sm:text-base font-medium text-gray-900 mb-2 xs:mb-3">Sucursales seleccionadas:</h5>
+                        <div className="space-y-1 xs:space-y-2 max-h-24 xs:max-h-32 sm:max-h-40 overflow-y-auto">
                           {selectedLocations.map(locationId => {
                             const location = locationOptions.find(l => l.id === locationId);
                             return (
@@ -234,7 +234,7 @@ export const SendingModal: React.FC<SendingModalProps> = ({
                       <button
                         onClick={handleStartSending}
                         disabled={selectedLocations.length === 0 || !selectedPrinter}
-                        className="w-full px-3 xs:px-4 py-2 xs:py-3 bg-indigo-600 text-white text-sm xs:text-base font-medium rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        className="w-full px-3 xs:px-4 py-2 xs:py-3 bg-indigo-600 text-white text-xs xs:text-sm sm:text-base font-medium rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                       >
                         Enviar a {selectedLocations.length} sucursal{selectedLocations.length !== 1 ? 'es' : ''}
                       </button>
@@ -246,7 +246,7 @@ export const SendingModal: React.FC<SendingModalProps> = ({
 
             {/* Progreso de envío */}
             {(step === 'sending' || step === 'complete') && (
-              <div className="p-3 xs:p-4 sm:p-6">
+              <div className="flex-1 p-3 xs:p-4 sm:p-5 lg:p-6 overflow-y-auto">
                 <SendingProgress
                   locations={locationOptions.filter(loc => selectedLocations.includes(loc.id))}
                   sentLocations={sentLocations}
@@ -258,10 +258,10 @@ export const SendingModal: React.FC<SendingModalProps> = ({
 
             {/* Footer para pantalla de progreso */}
             {step === 'sending' && (
-              <div className="px-3 xs:px-4 sm:px-6 py-3 xs:py-4 border-t border-gray-200 bg-gray-50">
+              <div className="px-3 xs:px-4 sm:px-5 lg:px-6 py-3 xs:py-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
                 <button
                   onClick={handleCancel}
-                  className="px-3 xs:px-4 py-2 text-sm xs:text-base text-gray-600 hover:text-gray-800 transition-colors"
+                  className="px-3 xs:px-4 py-2 text-xs xs:text-sm sm:text-base text-gray-600 hover:text-gray-800 transition-colors"
                 >
                   Cancelar envío
                 </button>
@@ -269,10 +269,10 @@ export const SendingModal: React.FC<SendingModalProps> = ({
             )}
 
             {step === 'complete' && (
-              <div className="px-3 xs:px-4 sm:px-6 py-3 xs:py-4 border-t border-gray-200 bg-gray-50 text-center">
+              <div className="px-3 xs:px-4 sm:px-5 lg:px-6 py-3 xs:py-4 border-t border-gray-200 bg-gray-50 text-center flex-shrink-0">
                 <button
                   onClick={handleClose}
-                  className="px-4 xs:px-6 py-2 xs:py-3 bg-green-600 text-white text-sm xs:text-base font-medium rounded-lg hover:bg-green-700 transition-colors"
+                  className="px-4 xs:px-6 py-2 xs:py-3 bg-green-600 text-white text-xs xs:text-sm sm:text-base font-medium rounded-lg hover:bg-green-700 transition-colors"
                 >
                   Cerrar
                 </button>
