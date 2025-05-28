@@ -10,6 +10,7 @@ import {
   setSelectedProducts,
   setFormatoSeleccionado,
   toggleProductSelection,
+  trackProductChange,
   selectPlantillaSeleccionada,
   selectComboSeleccionado,
   selectSelectedCategory,

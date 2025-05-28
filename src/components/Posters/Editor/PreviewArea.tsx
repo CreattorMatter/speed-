@@ -11,18 +11,20 @@ import {
   selectSelectedProducts,
   selectSelectedFinancing,
   selectFormatoSeleccionado,
+  selectProductChanges,
   setModeloSeleccionado,
   removeProduct,
   removeAllProducts,
+  trackProductChange,
 } from '../../../store/features/poster/posterSlice';
 import { RootState, AppDispatch } from '../../../store';
 
 import { type Product } from '../../../data/products';
 import { type TemplateModel } from '../../../constants/posters/templates';
+import { type ProductChange } from '../../../store/features/poster/posterSlice';
 import { EditableField } from './EditableField';
 import { DeleteProductModal } from './DeleteProductModal';
 import { PrintButton } from './PrintButton';
-import { useProductChanges } from '../../../hooks/useProductChanges';
 import { 
   getTemplateFields, 
   getAvailableFields, 
@@ -110,8 +112,13 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
   // Estado para forzar re-renders cuando hay cambios
   const [refreshKeyState, setRefreshKeyState] = React.useState(0);
   
-  // Hook para tracking de cambios
-  const { trackChange, getEditedProduct } = useProductChanges();
+  // Obtener cambios de productos desde Redux
+  const productChanges = useSelector(selectProductChanges);
+  
+  // Función helper para obtener producto editado
+  const getEditedProduct = (productId: string) => {
+    return productChanges[productId] || null;
+  };
 
   // Obtener configuración de campos para la plantilla actual
   const templateFields = getTemplateFields(
@@ -211,8 +218,14 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
 
     const originalValue = getCurrentProductValue(product, field);
     
-    // Trackear el cambio
-    trackChange(productId, field, originalValue as string | number, newValue, product);
+    // Trackear el cambio usando Redux
+    dispatch(trackProductChange({
+      productId,
+      productName: product.name,
+      field,
+      originalValue: originalValue as string | number,
+      newValue
+    }));
     
     // Actualizar el producto si la función está disponible
     if (onUpdateProduct) {
@@ -422,7 +435,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
 
                       {/* Preview de la plantilla con datos de ejemplo */}
                       <div className="flex-1 flex items-center justify-center p-4">
-                        <div className="w-full h-full flex items-center justify-center max-w-[900px] max-h-[800px]" data-preview-content>
+                        <div className="w-full h-full flex items-center justify-center max-w-[900px] max-h-[800px] print-content" data-preview-content>
                           {Component && typeof Component === "function" ? (
                             <Component 
                               key={`example-product-${refreshKeyState}`}
@@ -579,7 +592,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                                     Cambios realizados ({editedProduct.changes.length})
                                   </h4>
                                   <div className="space-y-1">
-                                    {editedProduct.changes.map((change, index) => (
+                                    {editedProduct.changes.map((change: ProductChange, index: number) => (
                                       <div key={index} className="text-xs text-blue-700">
                                         <span className="font-medium">{change.field}:</span> {change.originalValue} → {change.newValue}
                                       </div>
@@ -593,7 +606,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
 
                         {/* Preview de la plantilla */}
                         <div className="flex-1 flex items-center justify-center p-4">
-                          <div className="w-full h-full flex items-center justify-center max-w-[900px] max-h-[800px]" data-preview-content>
+                          <div className="w-full h-full flex items-center justify-center max-w-[900px] max-h-[800px] print-content" data-preview-content>
                             {Component && typeof Component === "function" ? (
                               <Component 
                                 key={`${selectedProduct?.id || 'no-product'}-${refreshKeyState}`}
@@ -681,7 +694,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
               </div>
               
               {/* Contenedor con data-preview-content para múltiples productos */}
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 p-2" data-preview-content>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 p-2 print-content" data-preview-content>
                 {selectedProducts.map((product: Product, productIndex: number) => {
                   // Para multiproductos, usar el modelo seleccionado o el primero disponible
                   const modelo = modeloSeleccionado 
@@ -902,7 +915,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                               Cambios realizados ({editedProduct.changes.length})
                             </h4>
                             <div className="space-y-1">
-                              {editedProduct.changes.map((change, index) => (
+                              {editedProduct.changes.map((change: ProductChange, index: number) => (
                                 <div key={index} className="text-xs text-blue-700">
                                   <span className="font-medium">{change.field}:</span> {change.originalValue} → {change.newValue}
                                 </div>
@@ -915,7 +928,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
 
                     {/* Preview de la plantilla */}
                     <div className="flex-1 flex items-center justify-center p-6">
-                      <div className="w-full h-full flex items-center justify-center max-w-[900px] max-h-[800px]" data-preview-content>
+                      <div className="w-full h-full flex items-center justify-center max-w-[900px] max-h-[800px] print-content" data-preview-content>
                         {Component && typeof Component === "function" ? (
                           <Component 
                             key={`${selectedProduct?.id || 'no-product'}-${refreshKeyState}`}

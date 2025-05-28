@@ -51,8 +51,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   const totalChanges = editedProducts.reduce((sum, product) => sum + product.changes.length, 0);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 print:hidden">
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden print:hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b bg-orange-50">
           <div className="flex items-center gap-3">

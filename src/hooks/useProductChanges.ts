@@ -81,6 +81,20 @@ export const useProductChanges = () => {
       }
 
       console.log('trackChange: Estado actualizado, total productos editados:', updated.size);
+      
+      // Disparar evento personalizado para notificar cambios
+      const event = new CustomEvent('productChanged', {
+        detail: {
+          productId,
+          field,
+          originalValue,
+          newValue,
+          totalEditedProducts: updated.size
+        }
+      });
+      window.dispatchEvent(event);
+      console.log('trackChange: Evento productChanged disparado');
+      
       return updated;
     });
   }, []);
@@ -120,6 +134,13 @@ export const useProductChanges = () => {
   const clearChanges = useCallback(() => {
     console.log('clearChanges: Limpiando todos los cambios');
     setEditedProducts(new Map());
+    
+    // Disparar evento de cambio
+    const event = new CustomEvent('productChanged', {
+      detail: { action: 'clearAll' }
+    });
+    window.dispatchEvent(event);
+    console.log('clearChanges: Evento productChanged disparado');
   }, []);
 
   const removeProductChanges = useCallback((productId: string) => {
@@ -129,6 +150,18 @@ export const useProductChanges = () => {
       const existed = updated.has(productId);
       updated.delete(productId);
       console.log(`removeProductChanges: Producto ${productId} ${existed ? 'eliminado' : 'no existía'}`);
+      
+      // Disparar evento de cambio
+      const event = new CustomEvent('productChanged', {
+        detail: { 
+          action: 'removeProduct',
+          productId,
+          totalEditedProducts: updated.size
+        }
+      });
+      window.dispatchEvent(event);
+      console.log('removeProductChanges: Evento productChanged disparado');
+      
       return updated;
     });
   }, []);

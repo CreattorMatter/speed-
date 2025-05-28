@@ -4,6 +4,22 @@ import { Product } from '../../../data/products'; // Ajusta la ruta
 import { PAPER_FORMATS } from '../../../constants/posters'; // Ajusta la ruta
 import { FinancingOption } from '../../../types/financing';
 
+// Tipos para el manejo de cambios de productos
+export interface ProductChange {
+  productId: string;
+  field: string;
+  originalValue: string | number;
+  newValue: string | number;
+  timestamp: Date;
+}
+
+export interface EditedProduct {
+  productId: string;
+  productName: string;
+  changes: ProductChange[];
+  isEdited: boolean;
+}
+
 // Tipos que ya podrías tener definidos y que usaremos
 interface SelectOption {
   value: string;
@@ -65,6 +81,14 @@ interface PosterState {
   searchResults: SearchResult[];
   searchTerm: string;
   allPosters: SearchResult[];
+  
+  // Estados de cambios de productos
+  productChanges: Record<string, EditedProduct>; // productId -> EditedProduct
+  hasAnyChanges: boolean;
+  
+  // Nuevas acciones para impresión
+  printInProgress: boolean;
+  printConfiguration: any;
 }
 
 // Estado inicial
@@ -113,7 +137,7 @@ const initialState: PosterState = {
   isLandscape: false,
   
   // Estados de plantillas
-  plantillaSeleccionada: null,
+  plantillaSeleccionada: { label: "Superprecio", value: "Superprecio" },
   comboSeleccionado: null,
   selectedTemplate: "",
   selectedFinancing: [],
@@ -126,6 +150,14 @@ const initialState: PosterState = {
   searchResults: [],
   searchTerm: "",
   allPosters: [],
+  
+  // Estados de cambios de productos
+  productChanges: {},
+  hasAnyChanges: false,
+  
+  // Nuevas acciones para impresión
+  printInProgress: false,
+  printConfiguration: null,
 };
 
 export const posterSlice = createSlice({
@@ -266,6 +298,71 @@ export const posterSlice = createSlice({
       }
       state.maxProductsReached = action.payload.products.length >= 9;
     },
+    
+    // Acciones para manejo de cambios de productos
+    trackProductChange: (state, action: PayloadAction<{
+      productId: string;
+      productName: string;
+      field: string;
+      originalValue: string | number;
+      newValue: string | number;
+    }>) => {
+      const { productId, productName, field, originalValue, newValue } = action.payload;
+      
+      // No trackear si el valor no cambió
+      if (originalValue === newValue) {
+        return;
+      }
+      
+      const change: ProductChange = {
+        productId,
+        field,
+        originalValue,
+        newValue,
+        timestamp: new Date()
+      };
+      
+      if (state.productChanges[productId]) {
+        // Actualizar producto existente
+        const existingProduct = state.productChanges[productId];
+        // Remover cambio anterior del mismo campo si existe
+        existingProduct.changes = existingProduct.changes.filter(c => c.field !== field);
+        // Agregar el nuevo cambio
+        existingProduct.changes.push(change);
+        existingProduct.isEdited = true;
+      } else {
+        // Crear nuevo producto editado
+        state.productChanges[productId] = {
+          productId,
+          productName,
+          changes: [change],
+          isEdited: true
+        };
+      }
+      
+      // Actualizar flag global
+      state.hasAnyChanges = Object.keys(state.productChanges).length > 0;
+    },
+    
+    clearProductChanges: (state) => {
+      state.productChanges = {};
+      state.hasAnyChanges = false;
+    },
+    
+    removeProductChanges: (state, action: PayloadAction<string>) => {
+      const productId = action.payload;
+      delete state.productChanges[productId];
+      state.hasAnyChanges = Object.keys(state.productChanges).length > 0;
+    },
+    
+    // Nuevas acciones para impresión
+    setPrintInProgress: (state, action: PayloadAction<boolean>) => {
+      state.printInProgress = action.payload;
+    },
+    
+    setPrintConfiguration: (state, action: PayloadAction<any>) => {
+      state.printConfiguration = action.payload;
+    },
   },
 });
 
@@ -315,6 +412,15 @@ export const {
   removeProduct,
   removeAllProducts,
   initializeWithProducts,
+  
+  // Acciones para manejo de cambios de productos
+  trackProductChange,
+  clearProductChanges,
+  removeProductChanges,
+  
+  // Nuevas acciones para impresión
+  setPrintInProgress,
+  setPrintConfiguration,
 } = posterSlice.actions;
 
 // Selectores
@@ -356,6 +462,18 @@ export const selectModeloSeleccionado = (state: RootState) => state.poster.model
 export const selectSearchResults = (state: RootState) => state.poster.searchResults;
 export const selectSearchTerm = (state: RootState) => state.poster.searchTerm;
 export const selectAllPosters = (state: RootState) => state.poster.allPosters;
+
+// Selectores de cambios de productos
+export const selectProductChanges = (state: RootState) => state.poster.productChanges;
+export const selectHasAnyChanges = (state: RootState) => state.poster.hasAnyChanges;
+export const selectProductChangesByProductId = (productId: string) => (state: RootState) => 
+  state.poster.productChanges[productId];
+export const selectChangedProductsCount = (state: RootState) => 
+  Object.keys(state.poster.productChanges).length;
+
+// Nuevos selectores para impresión
+export const selectPrintInProgress = (state: RootState) => state.poster.printInProgress;
+export const selectPrintConfiguration = (state: RootState) => state.poster.printConfiguration;
 
 // Exportar el reducer del slice
 export default posterSlice.reducer; 

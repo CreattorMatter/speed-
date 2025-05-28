@@ -2,6 +2,62 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Estilos específicos para impresión */
+@media print {
+  /* Ocultar elementos de UI durante la impresión */
+  .print\\:hidden,
+  [class*="modal"],
+  [class*="Modal"],
+  .fixed:not([data-preview-content]):not([data-cartel-content]),
+  .z-50:not([data-preview-content]):not([data-cartel-content]),
+  .z-40:not([data-preview-content]):not([data-cartel-content]),
+  .z-30:not([data-preview-content]):not([data-cartel-content]),
+  nav,
+  header,
+  .sidebar,
+  .side-panel,
+  button:not([data-print-button]),
+  .bg-gray-50,
+  .bg-gray-100 {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Mostrar solo el contenido de los carteles */
+  [data-preview-content],
+  [data-cartel-content],
+  .print-content {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Asegurar que el contenido principal sea visible */
+  body, html {
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Configuración de página para impresión */
+  @page {
+    margin: 0.5in;
+    size: auto;
+  }
+  
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  /* Ocultar scrollbars y elementos de navegación */
+  ::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }
