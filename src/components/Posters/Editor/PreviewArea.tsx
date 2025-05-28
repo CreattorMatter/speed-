@@ -604,9 +604,9 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                           </div>
                         )}
 
-                        {/* Preview de la plantilla */}
-                        <div className="flex-1 flex items-center justify-center p-3 xs:p-4 sm:p-6 order-1 lg:order-2 min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]">
-                          <div className="w-full h-full flex items-center justify-center max-w-full lg:max-w-[900px] max-h-[400px] sm:max-h-[600px] lg:max-h-[800px] print-content" data-preview-content>
+                        {/* Preview de la plantilla con responsividad mejorada */}
+                        <div className="flex-1 flex items-center justify-center bg-gray-50 p-3 xs:p-4 sm:p-6 order-1 lg:order-2 min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] overflow-auto">
+                          <div className="w-full h-full flex items-center justify-center max-w-full lg:max-w-[900px] max-h-[400px] sm:max-h-[600px] lg:max-h-[800px] print-content overflow-visible" data-preview-content>
                             {Component && typeof Component === "function" ? (
                               <Component 
                                 key={`${selectedProduct?.id || 'no-product'}-${refreshKeyState}`}

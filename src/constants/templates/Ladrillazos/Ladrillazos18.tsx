@@ -77,17 +77,17 @@ const Ladrillazos18: React.FC<MockupProps> = ({
   return (
     <div className="w-full h-full flex items-center justify-center bg-white">
       <div
-        className={`transition-transform duration-300 ease-in-out ${
-          small ? "scale-[0.65] max-w-[300px] xs:max-w-[350px] sm:max-w-[450px]" : "scale-100 max-w-[600px] sm:max-w-[700px] lg:max-w-[800px]"
-        } w-full`}
+        className={`transition-transform duration-300 ease-in-out w-full ${
+          small ? "scale-[0.65] max-w-[95vw] sm:max-w-[450px]" : "scale-100 max-w-[90vw] sm:max-w-[700px] lg:max-w-[800px]"
+        }`}
       >
-        <div className={`border-2 border-black font-sans w-full bg-white ${
-          small ? "min-w-[280px] xs:min-w-[320px] sm:min-w-[400px] max-h-[400px] xs:max-h-[450px] sm:max-h-[500px]" : "min-w-[500px] sm:min-w-[600px] lg:min-w-[650px] max-h-[600px] sm:max-h-[700px] lg:max-h-[750px]"
-        } overflow-hidden rounded-responsive`}>
+        <div className={`border-2 border-black font-sans w-full bg-white overflow-hidden ${
+          small ? "max-h-[85vh] sm:max-h-[500px]" : "max-h-[90vh] sm:max-h-[700px] lg:max-h-[750px]"
+        }`}>
           {/* Header con imagen de ladrillo LADRILLAZOS - SIN texto superpuesto */}
           <div 
-            className={`relative ${
-              small ? "min-h-[60px] xs:min-h-[70px] sm:min-h-[80px]" : "min-h-[100px] sm:min-h-[120px] lg:min-h-[140px]"
+            className={`relative w-full ${
+              small ? "h-[50px] xs:h-[60px] sm:h-[80px]" : "h-[80px] sm:h-[100px] lg:h-[120px]"
             }`}
             style={{
               backgroundImage: `url('${getLadrillazoHeaderUrl()}')`,
@@ -101,9 +101,9 @@ const Ladrillazos18: React.FC<MockupProps> = ({
           
           {/* Descripción del producto */}
           <div className={`text-center font-bold px-2 xs:px-3 leading-tight text-gray-700 ${
-            small ? "text-xs xs:text-sm mt-1 xs:mt-2" : "text-base sm:text-lg lg:text-xl mt-2 sm:mt-3"
+            small ? "text-xs xs:text-sm mt-1 xs:mt-2" : "text-sm sm:text-base lg:text-lg mt-2 sm:mt-3"
           }`}>
-            {nombre || "MacBook Pro M3 Pro 14\""}
+            <span className="break-words">{nombre || "MacBook Pro M3 Pro 14\""}</span>
           </div>
           
           {/* Logo de financiación dinámico */}
@@ -130,31 +130,31 @@ const Ladrillazos18: React.FC<MockupProps> = ({
           }`}>
             {/* Columna izquierda: AHORA y ANTES */}
             <div className={`text-center flex-shrink-0 ${
-              small ? "w-16 xs:w-18 sm:w-20" : "w-24 sm:w-28 lg:w-32"
+              small ? "w-12 xs:w-14 sm:w-16" : "w-20 sm:w-24 lg:w-28"
             }`}>
               {/* AHORA */}
               <div className={small ? "mb-1 xs:mb-2" : "mb-2 sm:mb-3 lg:mb-4"}>
                 <div className={`font-bold text-black ${
-                  small ? "text-xs xs:text-sm" : "text-sm sm:text-base lg:text-lg"
+                  small ? "text-xxs xs:text-xs" : "text-xs sm:text-sm lg:text-base"
                 }`}>AHORA</div>
                 <div className={`font-bold text-black ${
-                  small ? "text-xl xs:text-2xl sm:text-3xl mt-0.5 xs:mt-1" : "text-3xl sm:text-4xl lg:text-6xl mt-1 sm:mt-2"
+                  small ? "text-lg xs:text-xl sm:text-2xl mt-0.5 xs:mt-1" : "text-2xl sm:text-3xl lg:text-4xl mt-1 sm:mt-2"
                 }`}>$</div>
-                <div className={`font-bold text-black ${
+                <div className={`font-bold text-black leading-tight ${
                   small ? "text-xxs xs:text-xs mt-0.5 xs:mt-1" : "text-xs sm:text-sm mt-1 sm:mt-2"
-                }`}>PRECIO</div>
-                <div className={`font-bold text-black ${
-                  small ? "text-xxs xs:text-xs" : "text-xs sm:text-sm"
-                }`}>CONTADO</div>
+                }`}>
+                  <div>PRECIO</div>
+                  <div>CONTADO</div>
+                </div>
               </div>
               
               {/* ANTES */}
               <div className="text-center">
                 <div className={`font-bold text-black ${
-                  small ? "text-xs xs:text-sm" : "text-sm sm:text-base lg:text-lg"
+                  small ? "text-xxs xs:text-xs" : "text-xs sm:text-sm lg:text-base"
                 }`}>ANTES</div>
                 <div className={`font-bold text-black line-through ${
-                  small ? "text-xs xs:text-sm mt-0.5 xs:mt-1" : "text-base sm:text-lg lg:text-xl mt-1 sm:mt-2"
+                  small ? "text-xs xs:text-sm mt-0.5 xs:mt-1" : "text-sm sm:text-base lg:text-lg mt-1 sm:mt-2"
                 }`}>
                   ${Number(precioAntes).toLocaleString('es-AR')}
                 </div>
@@ -163,21 +163,23 @@ const Ladrillazos18: React.FC<MockupProps> = ({
             
             {/* Columna central: Precio principal */}
             <div className={`text-center flex-1 ${
-              small ? "mx-1 xs:mx-2" : "mx-3 sm:mx-4 lg:mx-6"
+              small ? "mx-1 xs:mx-2" : "mx-2 sm:mx-3 lg:mx-4"
             }`}>
-              <div className={`font-bold text-gray-500 leading-none break-words ${
-                small ? "text-lg xs:text-xl sm:text-2xl" : "text-2xl sm:text-4xl lg:text-6xl"
+              <div className={`font-bold text-gray-500 leading-none ${
+                small ? "text-base xs:text-lg sm:text-xl" : "text-xl sm:text-2xl lg:text-4xl"
               }`}>
-                {Number(precioBase).toLocaleString('es-AR', { 
-                  minimumFractionDigits: 2, 
-                  maximumFractionDigits: 2 
-                })}
+                <span className="break-all">
+                  {Number(precioBase).toLocaleString('es-AR', { 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                  })}
+                </span>
               </div>
             </div>
             
             {/* Columna derecha: Cuotas */}
             <div className={`text-right flex-shrink-0 ${
-              small ? "w-20 xs:w-22 sm:w-24" : "w-28 sm:w-32 lg:w-40"
+              small ? "w-16 xs:w-18 sm:w-20" : "w-24 sm:w-28 lg:w-32"
             }`}>
               <div className={`font-bold text-black leading-tight ${
                 small ? "text-xxs xs:text-xs" : "text-xs sm:text-sm"
@@ -185,7 +187,7 @@ const Ladrillazos18: React.FC<MockupProps> = ({
                 <span className="break-words">{cuotasTexto}</span>
               </div>
               <div className={`font-bold text-black ${
-                small ? "text-xs xs:text-sm mt-0.5 xs:mt-1" : "text-lg sm:text-xl lg:text-2xl mt-1 sm:mt-2"
+                small ? "text-xs xs:text-sm mt-0.5 xs:mt-1" : "text-sm sm:text-base lg:text-lg mt-1 sm:mt-2"
               }`}>
                 ${Number(cuotasPorMes).toLocaleString('es-AR')}<sup className={`align-super ${
                   small ? "text-xxs xs:text-xs" : "text-xs sm:text-sm"
@@ -200,13 +202,13 @@ const Ladrillazos18: React.FC<MockupProps> = ({
           }`}>
             <div className="text-right space-y-0.5">
               <div className="break-words"><span className="font-bold">PRECIO TOTAL FINANCIADO:</span> ${Number(precioBase).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              <div><span className="font-bold">TASA EFECTIVA ANUAL:</span> 0,00%</div>
-              <div><span className="font-bold">TASA NOMINAL ANUAL:</span> 0,00%</div>
-              <div><span className="font-bold">COSTO FINANCIERO TOTAL (CFT):</span> 0,00%</div>
+              <div className="break-words"><span className="font-bold">TASA EFECTIVA ANUAL:</span> 0,00%</div>
+              <div className="break-words"><span className="font-bold">TASA NOMINAL ANUAL:</span> 0,00%</div>
+              <div className="break-words"><span className="font-bold">COSTO FINANCIERO TOTAL (CFT):</span> 0,00%</div>
             </div>
             <div className="text-right mt-1">
               <div className={`font-bold text-black ${
-                small ? "text-xs xs:text-sm" : "text-base sm:text-lg lg:text-xl"
+                small ? "text-xs xs:text-sm" : "text-sm sm:text-base lg:text-lg"
               }`}>CFT: 0,00%</div>
             </div>
           </div>

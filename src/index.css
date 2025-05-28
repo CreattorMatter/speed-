@@ -299,3 +299,6 @@ body {
 .poster-editor {
   @apply bg-black;
 }
+
+/* Importar estilos responsivos para plantillas */
+@import './styles/templates-responsive.css';

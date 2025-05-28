@@ -37,14 +37,16 @@ const Ladrillazos17: React.FC<MockupProps> = ({
   return (
     <div className="w-full h-full flex items-center justify-center bg-white">
       <div
-        className={`transition-transform duration-300 ease-in-out ${
-          small ? "scale-[0.6] max-w-[400px]" : "scale-100 max-w-[600px]"
-        } w-full`}
+        className={`transition-transform duration-300 ease-in-out w-full ${
+          small ? "scale-[0.6] max-w-[95vw] sm:max-w-[400px]" : "scale-100 max-w-[90vw] sm:max-w-[600px]"
+        }`}
       >
-        <div className="border-2 border-black font-sans w-full bg-white min-w-[500px]">
+        <div className="border-2 border-black font-sans w-full bg-white overflow-hidden">
           {/* Header con imagen de ladrillo LADRILLAZOS */}
           <div 
-            className="text-white text-xl font-bold text-center py-4 relative min-h-[60px]"
+            className={`text-white text-xl font-bold text-center py-4 relative w-full ${
+              small ? "h-[40px] xs:h-[50px] sm:h-[60px]" : "h-[50px] sm:h-[60px] lg:h-[70px]"
+            }`}
             style={{
               backgroundImage: `url('${getLadrillazoHeaderUrl()}')`,
               backgroundSize: "cover",
@@ -54,15 +56,21 @@ const Ladrillazos17: React.FC<MockupProps> = ({
           >
           </div>
           
-          {/* DescripciÃ³n del producto */}
-          <div className="text-center text-lg font-bold mt-4 px-2 leading-tight text-gray-600">
-            {nombre || "DESCRIPCIÃ“N PRODUCTO"}
+          {/* Descripción del producto */}
+          <div className={`text-center font-bold px-2 leading-tight text-gray-600 ${
+            small ? "text-sm xs:text-base mt-2 xs:mt-3" : "text-base sm:text-lg mt-3 sm:mt-4"
+          }`}>
+            <span className="break-words">{nombre || "DESCRIPCIÓN PRODUCTO"}</span>
           </div>
           
           {/* Logo Cencopay en la esquina superior derecha */}
-          <div className="flex justify-end px-4 mt-2">
-            <div className="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold">
-              cencopay CRÃ‰DITO
+          <div className={`flex justify-end px-4 ${
+            small ? "mt-1 xs:mt-2" : "mt-2"
+          }`}>
+            <div className={`bg-blue-600 text-white rounded font-bold ${
+              small ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm"
+            }`}>
+              cencopay CRÉDITO
             </div>
           </div>
           
@@ -100,7 +108,7 @@ const Ladrillazos17: React.FC<MockupProps> = ({
             </div>
           </div>
           
-          {/* InformaciÃ³n de financiaciÃ³n detallada - lado derecho */}
+          {/* Información de financiación detallada - lado derecho */}
           <div className="bg-gray-100 p-3 mt-4 mx-4 text-xs">
             <div className="text-left space-y-1">
               <div><span className="font-bold">PRECIO TOTAL FINANCIADO:</span> ${precioActual || "0"}</div>
@@ -113,14 +121,14 @@ const Ladrillazos17: React.FC<MockupProps> = ({
             </div>
           </div>
           
-          {/* InformaciÃ³n adicional */}
+          {/* Información adicional */}
           <div className="flex justify-between px-3 text-xs font-bold mt-4">
             <div>{fechasDesde || "23/05/2025"}-{fechasHasta || "23/05/2025"}</div>
             <div>SAP:{sap || "00000000"}</div>
             <div>ORIGEN: {origen || "XXXXXXX"}</div>
           </div>
           
-          {/* Pie de pÃ¡gina */}
+          {/* Pie de página */}
           <div className="text-center text-xs text-gray-700 mt-2 mb-2 px-2 leading-tight">
             PRECIO SIN IMPUESTOS NACIONALES: ${precioSinImpuestos || "0000,00"}<br />
             NO ACUMULABLE CON OTRAS PROMOCIONES Y/O DESCUENTOS
