@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CreditCard, ShoppingCart, Package, Filter } from 'lucide-react';
+import { CreditCard, ShoppingCart, Package, Filter, Settings, Printer } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 
 // Importar acciones y selectores del slice de poster
@@ -18,6 +18,8 @@ import {
   selectFormatoSeleccionado,
   selectSelectedFinancing,
   setIsFinancingModalOpen,
+  selectPrintSettings,
+  actualizarPrintSettings,
 } from '../../../store/features/poster/posterSlice';
 import { RootState, AppDispatch } from '../../../store';
 
@@ -28,6 +30,7 @@ import PaperFormatSelect from './Selectors/PaperFormatSelect';
 import { products, type Product } from '../../../data/products';
 import { FinancingOption } from '../../../types/financing';
 import { ProductSelectionModal } from './ProductSelectionModal';
+import { type PrintSettings } from '../../../types/index';
 
 // Tipos que se mantienen
 interface PaperFormatOption {
@@ -69,6 +72,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const selectedProductIds = useSelector(selectSelectedProducts);
   const formatoSeleccionado = useSelector(selectFormatoSeleccionado);
   const selectedFinancing = useSelector(selectSelectedFinancing);
+  const printSettings = useSelector(selectPrintSettings);
 
   // Convertir IDs de productos a objetos Product para el modal
   const selectedProductsForModal: Product[] = React.useMemo(() => 
@@ -104,6 +108,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({
 
   const handleFormatoChange = (option: PaperFormatOption | null) => {
     dispatch(setFormatoSeleccionado(option));
+  };
+
+  const handlePrintSettingsChange = (settings: PrintSettings) => {
+    dispatch(actualizarPrintSettings(settings));
   };
 
   return (
@@ -245,12 +253,98 @@ export const SidePanel: React.FC<SidePanelProps> = ({
 
         <div className="border-t border-gray-200 pt-3 xs:pt-4 sm:pt-6">
           <label className="block text-xs xs:text-sm font-medium text-gray-700 mb-1">
-            Tamaño de papel:
+            <Settings className="w-4 h-4 inline mr-1" />
+            Configuración de impresión:
           </label>
-          <PaperFormatSelect
-            value={formatoSeleccionado}
-            onChange={handleFormatoChange}
-          />
+          
+          <div className="space-y-3 bg-gray-50 p-3 rounded-lg border">
+            {/* Tamaño de página */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Tamaño de página
+              </label>
+              <select
+                value={printSettings.pageSize}
+                onChange={(e) => handlePrintSettingsChange({
+                  ...printSettings,
+                  pageSize: e.target.value as 'A4' | 'A3' | 'Letter' | 'Custom'
+                })}
+                className="w-full p-2 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="A4">A4 (210×297mm)</option>
+                <option value="A3">A3 (297×420mm)</option>
+                <option value="Letter">Letter (216×279mm)</option>
+              </select>
+            </div>
+
+            {/* Orientación */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Orientación
+              </label>
+              <div className="flex gap-2">
+                <label className="flex items-center flex-1">
+                  <input
+                    type="radio"
+                    value="portrait"
+                    checked={printSettings.orientation === 'portrait'}
+                    onChange={(e) => handlePrintSettingsChange({
+                      ...printSettings,
+                      orientation: e.target.value as 'portrait' | 'landscape'
+                    })}
+                    className="mr-1 scale-75"
+                  />
+                  <span className="text-xs">Vertical</span>
+                </label>
+                <label className="flex items-center flex-1">
+                  <input
+                    type="radio"
+                    value="landscape"
+                    checked={printSettings.orientation === 'landscape'}
+                    onChange={(e) => handlePrintSettingsChange({
+                      ...printSettings,
+                      orientation: e.target.value as 'portrait' | 'landscape'
+                    })}
+                    className="mr-1 scale-75"
+                  />
+                  <span className="text-xs">Horizontal</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Opciones adicionales */}
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={printSettings.pageBreakBetweenProducts}
+                  onChange={(e) => handlePrintSettingsChange({
+                    ...printSettings,
+                    pageBreakBetweenProducts: e.target.checked
+                  })}
+                  className="mr-2 scale-75"
+                />
+                <span className="text-xs text-gray-700">
+                  Salto de página entre productos
+                </span>
+              </label>
+              
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={printSettings.includeProductInfo}
+                  onChange={(e) => handlePrintSettingsChange({
+                    ...printSettings,
+                    includeProductInfo: e.target.checked
+                  })}
+                  className="mr-2 scale-75"
+                />
+                <span className="text-xs text-gray-700">
+                  Incluir información adicional
+                </span>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
 

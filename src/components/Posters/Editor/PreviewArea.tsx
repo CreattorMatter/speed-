@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, Eye, EyeOff, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Trash2, Eye, EyeOff } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 
 // Importar selectores y acciones de Redux
@@ -8,7 +8,7 @@ import {
   selectComboSeleccionado,
   selectModeloSeleccionado,
   selectSelectedProduct,
-  selectSelectedProducts,
+  selectSelectedProductObjects,
   selectSelectedFinancing,
   selectFormatoSeleccionado,
   selectProductChanges,
@@ -24,7 +24,7 @@ import { type TemplateModel } from '../../../constants/posters/templates';
 import { type ProductChange } from '../../../store/features/poster/posterSlice';
 import { EditableField } from './EditableField';
 import { DeleteProductModal } from './DeleteProductModal';
-import { PrintButton } from './PrintButton';
+import { PrintButtonAdvanced } from './PrintButtonAdvanced';
 import { 
   getTemplateFields, 
   getAvailableFields, 
@@ -93,28 +93,10 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
   const comboSeleccionado = useSelector(selectComboSeleccionado);
   const modeloSeleccionado = useSelector(selectModeloSeleccionado);
   const selectedProduct = useSelector(selectSelectedProduct);
-  const selectedProductIds = useSelector(selectSelectedProducts);
+  const selectedProducts = useSelector(selectSelectedProductObjects);
   const selectedFinancing = useSelector(selectSelectedFinancing);
   const formatoSeleccionado = useSelector(selectFormatoSeleccionado);
 
-  // Convertir IDs a objetos Product
-  const selectedProducts = React.useMemo(() => 
-    selectedProductIds.map(id => products.find(p => p.id === id)).filter(Boolean) as Product[]
-  , [selectedProductIds]);
-
-  // Estado para el producto expandido individualmente
-  const [expandedProductIndex, setExpandedProductIndex] = React.useState<number | null>(null);
-  
-  // Estado para controlar la visibilidad del panel de edición
-  const [isEditPanelVisible, setIsEditPanelVisible] = React.useState(true);
-  
-  // Estado para el modal de eliminación
-  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
-  const [productToDelete, setProductToDelete] = React.useState<Product | null>(null);
-  
-  // Estado para forzar re-renders cuando hay cambios
-  const [refreshKeyState, setRefreshKeyState] = React.useState(0);
-  
   // Obtener cambios de productos desde Redux
   const productChanges = useSelector(selectProductChanges);
   
@@ -345,6 +327,19 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
       ...templateProps 
     };
   };
+
+  // Estado para el producto expandido individualmente
+  const [expandedProductIndex, setExpandedProductIndex] = React.useState<number | null>(null);
+  
+  // Estado para controlar la visibilidad del panel de edición
+  const [isEditPanelVisible, setIsEditPanelVisible] = React.useState(true);
+  
+  // Estado para el modal de eliminación
+  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
+  const [productToDelete, setProductToDelete] = React.useState<Product | null>(null);
+  
+  // Estado para forzar re-renders cuando hay cambios
+  const [refreshKeyState, setRefreshKeyState] = React.useState(0);
 
   return (
     <div className="h-full flex flex-col">
@@ -968,7 +963,9 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
                         className="p-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors shadow-md"
                         title="Eliminar producto"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                       </button>
                       
                       {/* Navegación entre productos */}
@@ -1083,19 +1080,19 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
         </div>
       </div>
       
-      {/* PrintButton integrado */}
-      <PrintButton 
+      {/* PrintButton integrado - ahora trabaja directamente con productos seleccionados */}
+      <PrintButtonAdvanced 
         key={`print-button-${refreshKeyState}`}
-        plantillaFamily={plantillaSeleccionada?.value || 'default'}
-        plantillaType={comboSeleccionado?.value || 'default'}
-        selectedProducts={selectedProducts}
-        formatoSeleccionado={formatoSeleccionado}
-        disabled={selectedProducts.length === 0}
         templateComponents={templateComponents}
         PLANTILLA_MODELOS={PLANTILLA_MODELOS}
-        modeloSeleccionado={modeloSeleccionado}
-        selectedFinancing={selectedFinancing}
         getCurrentProductValue={getCurrentProductValue}
+        disabled={selectedProducts.length === 0}
+        plantillaFamily={plantillaSeleccionada?.label || 'Sin especificar'}
+        plantillaType={comboSeleccionado?.label || 'Sin especificar'}
+        selectedProducts={selectedProducts}
+        modeloSeleccionado={modeloSeleccionado}
+        formatoSeleccionado={formatoSeleccionado}
+        selectedFinancing={selectedFinancing}
       />
       
       {/* Modal de eliminación */}
@@ -1109,4 +1106,4 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
       />
     </div>
   );
-}; 
+};

@@ -34,7 +34,7 @@ export const getLadrillazoHeaderUrl = (): string => {
 export const getBankLogoUrl = (bankName: string): string => {
   const bankLogos: Record<string, string> = {
     'cencopay': '/images/banks/cencopay.png',
-    'cencosud': '/images/banks/cencopay.png',
+    'cencosud': '/images/banks/cencosud.png',
     'visa': '/images/banks/visa-logo.png',
     'mastercard': '/images/banks/mastercard-logo.png',
     'american': '/images/banks/amex-logo.png',

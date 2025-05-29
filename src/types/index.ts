@@ -43,4 +43,46 @@ export interface PaperFormat {
   width: string;
   height: string;
   name: string;
+}
+
+export interface ProductoParaImprimir {
+  idUnico: string;
+  idProductoOriginal: string;
+  idModeloPlantilla: string;
+  plantillaHTML: string;
+  estilosCSS: string;
+  datosPersonalizados?: Record<string, any>;
+  dimensionesFisicas: {
+    ancho: number;
+    alto: number;
+    unidad: string;
+  };
+  plantillaSeleccionada?: string;
+  comboSeleccionado?: string;
+  modeloSeleccionado?: string;
+  formatoSeleccionado?: string;
+  financing?: any;
+  product: Product;
+  empresa?: Company;
+  promotion?: Promotion;
+}
+
+export interface PreviewSettings {
+  showMiniatures: boolean;
+  scaleToFit: boolean;
+  maxItemsPerRow: number;
+  aspectRatioMode: 'original' | 'square' | 'custom';
+}
+
+export interface PrintSettings {
+  pageBreakBetweenProducts: boolean;
+  includeProductInfo: boolean;
+  pageSize: 'A4' | 'A3' | 'Letter' | 'Custom';
+  orientation: 'portrait' | 'landscape';
+  margins: {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  };
 } 

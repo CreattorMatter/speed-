@@ -1,8 +1,12 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../../index'; // Ajusta la ruta si es necesario
-import { Product } from '../../../data/products'; // Ajusta la ruta
+import { products, type Product } from '../../../data/products'; // Ajustar import para incluir products
 import { PAPER_FORMATS } from '../../../constants/posters'; // Ajusta la ruta
+import { COMPANIES } from '../../../data/companies'; // Agregar import de COMPANIES
+import { PROMOTIONS } from '../../../constants/posters'; // Agregar import de PROMOTIONS
 import { FinancingOption } from '../../../types/financing';
+import type { ProductoParaImprimir, PreviewSettings, PrintSettings } from '../../../types/index';
+import { createSelector } from '@reduxjs/toolkit';
 
 // Tipos para el manejo de cambios de productos
 export interface ProductChange {
@@ -88,6 +92,12 @@ interface PosterState {
   // Nuevas acciones para impresión
   printInProgress: boolean;
   printConfiguration: any;
+  
+  // Nuevos campos para el sistema de preview e impresión
+  productosParaImprimir: ProductoParaImprimir[];
+  previewSettings: PreviewSettings;
+  printSettings: PrintSettings;
+  isPreviewAreaExpanded: boolean;
 }
 
 // Estado inicial
@@ -156,6 +166,28 @@ const initialState: PosterState = {
   // Nuevas acciones para impresión
   printInProgress: false,
   printConfiguration: null,
+  
+  // Nuevos campos iniciales
+  productosParaImprimir: [],
+  previewSettings: {
+    showMiniatures: true,
+    scaleToFit: true,
+    maxItemsPerRow: 4,
+    aspectRatioMode: 'original'
+  },
+  printSettings: {
+    pageBreakBetweenProducts: true,
+    includeProductInfo: false,
+    pageSize: 'A4',
+    orientation: 'portrait',
+    margins: {
+      top: 20,
+      right: 20,
+      bottom: 20,
+      left: 20
+    }
+  },
+  isPreviewAreaExpanded: false
 };
 
 export const posterSlice = createSlice({
@@ -404,6 +436,100 @@ export const posterSlice = createSlice({
     setPrintConfiguration: (state, action: PayloadAction<any>) => {
       state.printConfiguration = action.payload;
     },
+    
+    // Nuevas acciones para el sistema de preview e impresión
+    agregarProductoParaImprimir: (state, action: PayloadAction<Omit<ProductoParaImprimir, 'idUnico'>>) => {
+      const nuevoProducto: ProductoParaImprimir = {
+        ...action.payload,
+        idUnico: `${action.payload.idProductoOriginal}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      };
+      state.productosParaImprimir.push(nuevoProducto);
+    },
+    
+    eliminarProductoParaImprimir: (state, action: PayloadAction<string>) => {
+      state.productosParaImprimir = state.productosParaImprimir.filter(
+        producto => producto.idUnico !== action.payload
+      );
+    },
+    
+    limpiarProductosParaImprimir: (state) => {
+      state.productosParaImprimir = [];
+    },
+    
+    actualizarProductoParaImprimir: (state, action: PayloadAction<{ idUnico: string; updates: Partial<ProductoParaImprimir> }>) => {
+      const index = state.productosParaImprimir.findIndex(p => p.idUnico === action.payload.idUnico);
+      if (index !== -1) {
+        state.productosParaImprimir[index] = { ...state.productosParaImprimir[index], ...action.payload.updates };
+      }
+    },
+    
+    actualizarPreviewSettings: (state, action: PayloadAction<Partial<PreviewSettings>>) => {
+      state.previewSettings = { ...state.previewSettings, ...action.payload };
+    },
+    
+    actualizarPrintSettings: (state, action: PayloadAction<Partial<PrintSettings>>) => {
+      state.printSettings = { ...state.printSettings, ...action.payload };
+    },
+    
+    togglePreviewAreaExpanded: (state) => {
+      state.isPreviewAreaExpanded = !state.isPreviewAreaExpanded;
+    },
+    
+    convertirProductosSeleccionadosParaImprimir: (state) => {
+      // Convertir productos seleccionados actuales a productos para imprimir
+      if (state.selectedProducts.length > 0 && state.plantillaSeleccionada && state.modeloSeleccionado) {
+        state.selectedProducts.forEach(productId => {
+          const product = products.find(p => p.id === productId);
+          if (product) {
+            const nuevoProducto: ProductoParaImprimir = {
+              idUnico: `${productId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              idProductoOriginal: productId,
+              idModeloPlantilla: state.modeloSeleccionado || '',
+              plantillaHTML: '', // Se rellenará dinámicamente
+              estilosCSS: '', // Se rellenará dinámicamente
+              datosPersonalizados: state.productChanges[productId] || {},
+              dimensionesFisicas: {
+                ancho: state.formatoSeleccionado?.width ? parseFloat(state.formatoSeleccionado.width) : 21,
+                alto: state.formatoSeleccionado?.height ? parseFloat(state.formatoSeleccionado.height) : 29.7,
+                unidad: 'cm'
+              },
+              plantillaSeleccionada: state.plantillaSeleccionada?.value,
+              comboSeleccionado: state.comboSeleccionado?.value,
+              modeloSeleccionado: state.modeloSeleccionado || undefined,
+              formatoSeleccionado: state.formatoSeleccionado?.value,
+              financing: state.selectedFinancing,
+              product: {
+                id: product.id,
+                sku: product.sku,
+                name: product.name,
+                description: product.description,
+                price: product.price,
+                imageUrl: product.imageUrl,
+                category: product.category,
+                pricePerUnit: '',
+                points: '',
+                origin: '',
+                barcode: '',
+                brand: product.brand || '',
+                packUnit: ''
+              },
+              empresa: state.company ? COMPANIES.find(c => c.id === state.company) : undefined,
+              promotion: state.promotion ? PROMOTIONS.find(p => p.id === state.promotion) : undefined
+            };
+            
+            // Solo agregar si no existe ya
+            const existe = state.productosParaImprimir.some(p => 
+              p.idProductoOriginal === productId && 
+              p.idModeloPlantilla === nuevoProducto.idModeloPlantilla
+            );
+            
+            if (!existe) {
+              state.productosParaImprimir.push(nuevoProducto);
+            }
+          }
+        });
+      }
+    }
   },
 });
 
@@ -462,6 +588,16 @@ export const {
   // Nuevas acciones para impresión
   setPrintInProgress,
   setPrintConfiguration,
+  
+  // Nuevas acciones para el sistema de preview e impresión
+  agregarProductoParaImprimir,
+  eliminarProductoParaImprimir,
+  limpiarProductosParaImprimir,
+  actualizarProductoParaImprimir,
+  actualizarPreviewSettings,
+  actualizarPrintSettings,
+  togglePreviewAreaExpanded,
+  convertirProductosSeleccionadosParaImprimir
 } = posterSlice.actions;
 
 // Selectores
@@ -514,6 +650,21 @@ export const selectChangedProductsCount = (state: RootState) =>
 // Nuevos selectores para impresión
 export const selectPrintInProgress = (state: RootState) => state.poster.printInProgress;
 export const selectPrintConfiguration = (state: RootState) => state.poster.printConfiguration;
+
+// Nuevos selectores
+export const selectProductosParaImprimir = (state: RootState) => state.poster.productosParaImprimir;
+export const selectPreviewSettings = (state: RootState) => state.poster.previewSettings;
+export const selectPrintSettings = (state: RootState) => state.poster.printSettings;
+export const selectIsPreviewAreaExpanded = (state: RootState) => state.poster.isPreviewAreaExpanded;
+
+// Selector memoizado para convertir IDs a objetos Product
+export const selectSelectedProductObjects = createSelector(
+  [selectSelectedProducts],
+  (selectedProductIds) => 
+    selectedProductIds
+      .map(id => products.find(p => p.id === id))
+      .filter(Boolean) as Product[]
+);
 
 // Exportar el reducer del slice
 export default posterSlice.reducer; 

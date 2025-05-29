@@ -40,12 +40,12 @@ const FINANCING_OPTIONS = [
   {
     bank: 'Visa',
     logo: '/images/banks/visa-logo.png',
-    cards: [{ name: 'Visa', image: '/images/banks/visa-logo.png', plans: ['6 cuotas con interés', '12 cuotas con Interés'] }]
+    cards: [{ name: 'Visa', image: '/images/banks/visa-logo.png', plans: ['6 cuotas sin interés', '12 cuotas sin Interés'] }]
   },
   {
     bank: 'Mastercard',
     logo: '/images/banks/mastercard-logo.png',
-    cards: [{ name: 'Mastercard', image: '/images/banks/mastercard-logo.png', plans: ['6 cuotas con interés', '12 cuotas con Interés'] }]
+    cards: [{ name: 'Mastercard', image: '/images/banks/mastercard-logo.png', plans: ['6 cuotas sin interés', '12 cuotas sin Interés'] }]
   },
   {
     bank: 'Cencosud',

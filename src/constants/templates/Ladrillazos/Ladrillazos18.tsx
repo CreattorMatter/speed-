@@ -38,17 +38,50 @@ const Ladrillazos18: React.FC<MockupProps> = ({
   const precioBase = precioActual || "1299999.99";
   const precioAntes = Math.round((Number(precioBase) || 0) * (1 + (Number(porcentaje) || 20) / 100)) || "1560000";
   
-  // Información de financiación dinámica
-  const financiacionActiva = financiacion && financiacion.length > 0 ? financiacion[0] : null;
-  const cuotasTexto = financiacionActiva?.plan || "6 CUOTAS CON INTERÉS";
-  const cuotasPorMes = financiacionActiva ? 
-    Math.round((Number(precioBase) || 0) / parseInt(financiacionActiva.plan.split(' ')[0]) || 6) :
-    Math.round((Number(precioBase) || 0) / 6) || "216667";
+  // Procesar todas las financiaciones disponibles
+  const financiacionesValidas = financiacion && financiacion.length > 0 ? financiacion : [];
   
+  // Obtener bancos únicos para mostrar todos los logos
+  const bancosUnicos = [...new Set(financiacionesValidas.map(fin => fin.bank))];
+  
+  // Crear array de todas las opciones de cuotas
+  const opcionesCuotas = financiacionesValidas.map(fin => {
+    const cuotas = parseInt(fin.plan.split(' ')[0]) || 6;
+    const cuotasPorMes = Math.round((Number(precioBase) || 0) / cuotas);
+    return {
+      cuotas,
+      cuotasPorMes,
+      texto: fin.plan || `${cuotas} CUOTAS SIN INTERÉS`,
+      bank: fin.bank
+    };
+  });
+
+  // Deduplicar opciones de cuotas idénticas (mismo número de cuotas Y mismo monto)
+  const opcionesUnicas = opcionesCuotas.reduce((acc, current) => {
+    const existe = acc.find(item => 
+      item.cuotas === current.cuotas && 
+      item.cuotasPorMes === current.cuotasPorMes
+    );
+    if (!existe) {
+      acc.push(current);
+    }
+    return acc;
+  }, [] as typeof opcionesCuotas).sort((a, b) => a.cuotas - b.cuotas); // Ordenar de menor a mayor número de cuotas
+  
+  // Si no hay financiaciones, usar valores por defecto
+  const opcionesFinal = opcionesUnicas.length > 0 ? opcionesUnicas : [{
+    cuotas: 6,
+    cuotasPorMes: Math.round((Number(precioBase) || 0) / 6) || 216667,
+    texto: "6 CUOTAS SIN INTERÉS",
+    bank: "visa"
+  }];
+
   // Obtener icono real de la financiación
   const getBankLogo = (bank: string) => {
     const bankName = bank?.toLowerCase();
-    if (bankName?.includes('cencopay') || bankName?.includes('cencosud')) {
+    if (bankName?.includes('cencosud')) {
+      return '/images/banks/cencosud.png';
+    } else if (bankName?.includes('cencopay')) {
       return '/images/banks/cencopay.png';
     } else if (bankName?.includes('visa')) {
       return '/images/banks/visa-logo.png';
@@ -68,7 +101,9 @@ const Ladrillazos18: React.FC<MockupProps> = ({
       return 'VISA CRÉDITO';
     } else if (bankName?.includes('mastercard')) {
       return 'MASTERCARD';
-    } else if (bankName?.includes('cencopay') || bankName?.includes('cencosud')) {
+    } else if (bankName?.includes('cencosud')) {
+      return 'CENCOSUD';
+    } else if (bankName?.includes('cencopay')) {
       return 'CENCOPAY';
     }
     return 'VISA CRÉDITO';
@@ -106,22 +141,35 @@ const Ladrillazos18: React.FC<MockupProps> = ({
             <span className="break-words">{nombre || "MacBook Pro M3 Pro 14\""}</span>
           </div>
           
-          {/* Logo de financiación dinámico */}
-          <div className={`flex justify-end px-2 xs:px-3 ${small ? "mt-1" : "mt-1 sm:mt-2"}`}>
-            <div className={`bg-blue-600 text-white rounded font-bold flex items-center gap-1 ${
-              small ? "px-1.5 xs:px-2 py-0.5 xs:py-1 text-xxs xs:text-xs" : "px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm"
-            }`}>
-              <img 
-                src={getBankLogoUrl(financiacionActiva?.bank || 'visa')} 
-                alt="Bank Logo" 
-                className={small ? "h-2 xs:h-3 w-auto" : "h-3 sm:h-4 w-auto"}
-                onError={(e) => {
-                  // Fallback si no se puede cargar la imagen
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-              <span className="truncate">{getBankText(financiacionActiva?.bank || 'visa')}</span>
-            </div>
+          {/* Logos de financiación dinámicos - TODOS los bancos únicos seleccionados */}
+          <div className={`flex justify-end gap-1 px-2 xs:px-3 ${small ? "mt-1" : "mt-1 sm:mt-2"}`}>
+            {bancosUnicos.map((bank, index) => (
+              <div key={`${bank}-${index}`} className={` flex items-center justify-center ${
+                small ? "px-1.5 xs:px-2 py-0.5 xs:py-1" : "px-2 sm:px-3 py-1 sm:py-2"
+              }`}>
+                <img 
+                  src={getBankLogoUrl(bank)} 
+                  alt={`Logo ${bank}`} 
+                  className={small ? "h-3 xs:h-4 w-auto" : "h-4 sm:h-5 w-auto"}
+                  onError={(e) => {
+                    // Fallback si no se puede cargar la imagen
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            ))}
+            {/* Si no hay financiaciones, mostrar logo por defecto */}
+            {bancosUnicos.length === 0 && (
+              <div className={`bg-blue-600 rounded font-bold flex items-center justify-center ${
+                small ? "px-1.5 xs:px-2 py-0.5 xs:py-1" : "px-2 sm:px-3 py-1 sm:py-2"
+              }`}>
+                <img 
+                  src={getBankLogoUrl('visa')} 
+                  alt="Logo financiación" 
+                  className={small ? "h-3 xs:h-4 w-auto" : "h-4 sm:h-5 w-auto"}
+                />
+              </div>
+            )}
           </div>
           
           {/* Layout principal responsive */}
@@ -177,22 +225,26 @@ const Ladrillazos18: React.FC<MockupProps> = ({
               </div>
             </div>
             
-            {/* Columna derecha: Cuotas */}
+            {/* Columna derecha: TODAS las opciones de cuotas ordenadas */}
             <div className={`text-right flex-shrink-0 ${
-              small ? "w-16 xs:w-18 sm:w-20" : "w-24 sm:w-28 lg:w-32"
+              small ? "w-20 xs:w-22 sm:w-24" : "w-28 sm:w-32 lg:w-36"
             }`}>
-              <div className={`font-bold text-black leading-tight ${
-                small ? "text-xxs xs:text-xs" : "text-xs sm:text-sm"
-              }`}>
-                <span className="break-words">{cuotasTexto}</span>
-              </div>
-              <div className={`font-bold text-black ${
-                small ? "text-xs xs:text-sm mt-0.5 xs:mt-1" : "text-sm sm:text-base lg:text-lg mt-1 sm:mt-2"
-              }`}>
-                ${Number(cuotasPorMes).toLocaleString('es-AR')}<sup className={`align-super ${
-                  small ? "text-xxs xs:text-xs" : "text-xs sm:text-sm"
-                }`}>00</sup>
-              </div>
+              {opcionesFinal.map((opcion, index) => (
+                <div key={`cuota-${opcion.cuotas}-${index}`} className={`${index > 0 ? 'mt-2' : ''}`}>
+                  <div className={`font-bold text-black leading-tight ${
+                    small ? "text-xxs xs:text-xs" : "text-xs sm:text-sm"
+                  }`}>
+                    <span className="break-words">{opcion.texto}</span>
+                  </div>
+                  <div className={`font-bold text-black ${
+                    small ? "text-xs xs:text-sm mt-0.5 xs:mt-1" : "text-sm sm:text-base lg:text-lg mt-1 sm:mt-2"
+                  }`}>
+                    ${Number(opcion.cuotasPorMes).toLocaleString('es-AR')}<sup className={`align-super ${
+                      small ? "text-xxs xs:text-xs" : "text-xs sm:text-sm"
+                    }`}>00</sup>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
           
@@ -235,8 +287,4 @@ const Ladrillazos18: React.FC<MockupProps> = ({
   );
 };
 
-export default Ladrillazos18; 
-
-
-
-
+export default Ladrillazos18;

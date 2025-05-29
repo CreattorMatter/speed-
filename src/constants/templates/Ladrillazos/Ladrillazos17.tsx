@@ -1,6 +1,6 @@
 ﻿// Plantilla 17: Promociones Especiales
 import React from "react";
-import { getLadrillazoHeaderUrl } from "../../../utils/imageUtils";
+import { getLadrillazoHeaderUrl, getBankLogoUrl } from "../../../utils/imageUtils";
 
 interface FinancingOption {
   bank: string;
@@ -67,10 +67,18 @@ const Ladrillazos17: React.FC<MockupProps> = ({
           <div className={`flex justify-end px-4 ${
             small ? "mt-1 xs:mt-2" : "mt-2"
           }`}>
-            <div className={`bg-blue-600 text-white rounded font-bold ${
-              small ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm"
+            <div className={`bg-blue-600 rounded font-bold flex items-center justify-center ${
+              small ? "px-2 py-0.5" : "px-3 py-1"
             }`}>
-              cencopay CRÉDITO
+              <img 
+                src={getBankLogoUrl('cencopay')} 
+                alt="Logo Cencopay" 
+                className={small ? "h-3 w-auto" : "h-4 w-auto"}
+                onError={(e) => {
+                  // Fallback si no se puede cargar la imagen
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </div>
           </div>
           

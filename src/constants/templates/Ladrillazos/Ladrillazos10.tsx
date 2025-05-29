@@ -1,6 +1,6 @@
 ﻿// Plantilla 10: Variante de ANTES/AHORA con DTO
 import React from "react";
-import { getLadrillazoHeaderUrl } from "../../../utils/imageUtils";
+import { getLadrillazoHeaderUrl, getBankLogoUrl } from "../../../utils/imageUtils";
 
 interface FinancingOption {
   bank: string;
@@ -62,11 +62,16 @@ const Ladrillazos10: React.FC<MockupProps> = ({
           
           {/* Logo Cencopay */}
           <div className="flex justify-end px-4 mt-2">
-            <div className="bg-blue-600 text-white px-3 py-1 rounded text-sm font-bold">
-              cencopay
-            </div>
-            <div className="bg-gray-200 text-black px-2 py-1 rounded-r text-sm font-bold">
-              CRÃ‰DITO
+            <div className="bg-blue-600 rounded font-bold flex items-center justify-center px-3 py-1">
+              <img 
+                src={getBankLogoUrl('cencopay')} 
+                alt="Logo Cencopay" 
+                className="h-4 w-auto"
+                onError={(e) => {
+                  // Fallback si no se puede cargar la imagen
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </div>
           </div>
           
