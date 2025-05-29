@@ -230,7 +230,7 @@ const Ladrillazos18: React.FC<MockupProps> = ({
                   </div>
                 )}
               </div>
-              
+               
               {opcionesFinal.map((opcion, index) => (
                 <div key={`cuota-${opcion.cuotas}-${index}`} className={`${index > 0 ? 'mt-2' : ''}`}>
                   <div className={`font-bold text-black leading-tight ${
