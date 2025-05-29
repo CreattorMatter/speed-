@@ -7,7 +7,7 @@ import {
   selectPlantillaSeleccionada,
   selectComboSeleccionado,
   selectModeloSeleccionado,
-  selectSelectedProduct,
+  selectSingleSelectedProduct,
   selectSelectedProductObjects,
   selectSelectedFinancing,
   selectFormatoSeleccionado,
@@ -15,7 +15,7 @@ import {
   setModeloSeleccionado,
   removeProduct,
   removeAllProducts,
-  trackProductChange,
+  trackProductChange
 } from '../../../store/features/poster/posterSlice';
 import { RootState, AppDispatch } from '../../../store';
 
@@ -92,7 +92,7 @@ export const PreviewArea: React.FC<PreviewAreaProps> = ({
   const plantillaSeleccionada = useSelector(selectPlantillaSeleccionada);
   const comboSeleccionado = useSelector(selectComboSeleccionado);
   const modeloSeleccionado = useSelector(selectModeloSeleccionado);
-  const selectedProduct = useSelector(selectSelectedProduct);
+  const selectedProduct = useSelector(selectSingleSelectedProduct);
   const selectedProducts = useSelector(selectSelectedProductObjects);
   const selectedFinancing = useSelector(selectSelectedFinancing);
   const formatoSeleccionado = useSelector(selectFormatoSeleccionado);

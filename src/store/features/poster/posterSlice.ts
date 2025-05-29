@@ -666,5 +666,12 @@ export const selectSelectedProductObjects = createSelector(
       .filter(Boolean) as Product[]
 );
 
+// Selector computado para obtener el producto único cuando hay exactamente uno seleccionado
+export const selectSingleSelectedProduct = createSelector(
+  [selectSelectedProductObjects],
+  (selectedProducts) => 
+    selectedProducts.length === 1 ? selectedProducts[0] : null
+);
+
 // Exportar el reducer del slice
 export default posterSlice.reducer; 

@@ -147,18 +147,46 @@ export const PrintButtonAdvanced: React.FC<PrintButtonAdvancedProps> = ({
 
   // Función para encontrar el componente de plantilla
   const getTemplateComponent = (product: Product) => {
-    if (!plantillaFamily || !modeloSeleccionado) {
+    if (!plantillaFamily) {
+      console.error('❌ No hay plantillaFamily definida');
       return null;
     }
 
     const modelos = PLANTILLA_MODELOS[plantillaFamily] || [];
-    const modelo = modelos.find(m => m.id === modeloSeleccionado);
+    
+    if (modelos.length === 0) {
+      console.error('❌ No hay modelos disponibles para la familia:', plantillaFamily);
+      return null;
+    }
+    
+    // Usar el modelo seleccionado o el primer modelo disponible como fallback
+    let modelo;
+    if (modeloSeleccionado) {
+      modelo = modelos.find(m => m.id === modeloSeleccionado);
+      if (modelo) {
+        console.log(`🎯 Usando modelo seleccionado: ${modelo.id}`);
+      } else {
+        console.warn(`⚠️ Modelo seleccionado '${modeloSeleccionado}' no encontrado, usando primer modelo disponible`);
+        modelo = modelos[0];
+      }
+    } else {
+      console.log(`🔄 No hay modelo específico seleccionado, usando primer modelo disponible: ${modelos[0].id}`);
+      modelo = modelos[0];
+    }
     
     if (!modelo) {
+      console.error('❌ No se encontró modelo válido');
       return null;
     }
 
-    return templateComponents[modelo.componentPath];
+    const component = templateComponents[modelo.componentPath];
+    if (!component) {
+      console.error(`❌ Componente no encontrado para: ${modelo.componentPath}`);
+      return null;
+    }
+
+    console.log(`✅ Componente encontrado para: ${modelo.id} (${modelo.componentPath})`);
+    return component;
   };
 
   const handlePrint = useReactToPrint({
@@ -375,6 +403,10 @@ export const PrintButtonAdvanced: React.FC<PrintButtonAdvancedProps> = ({
 
             {selectedProducts.map((product, index) => {
               const Component = getTemplateComponent(product);
+              const modelos = PLANTILLA_MODELOS[plantillaFamily] || [];
+              const modeloActual = modeloSeleccionado 
+                ? modelos.find(m => m.id === modeloSeleccionado) 
+                : modelos[0];
               
               return (
                 <div key={product.id} className="print-page">
@@ -388,15 +420,19 @@ export const PrintButtonAdvanced: React.FC<PrintButtonAdvancedProps> = ({
                         <h3 className="text-xl font-bold text-red-600 mb-4">
                           Error al cargar plantilla
                         </h3>
-                        <p className="text-gray-600 mb-2">
-                          Producto: {product.name}
-                        </p>
-                        <p className="text-gray-600 mb-2">
-                          Plantilla: {plantillaFamily}
-                        </p>
-                        <p className="text-gray-600">
-                          Modelo: {modeloSeleccionado}
-                        </p>
+                        <div className="text-left text-gray-600 space-y-2">
+                          <p><span className="font-medium">Producto:</span> {product.name}</p>
+                          <p><span className="font-medium">Plantilla:</span> {plantillaFamily}</p>
+                          <p><span className="font-medium">Modelo seleccionado:</span> {modeloSeleccionado || 'Ninguno'}</p>
+                          <p><span className="font-medium">Modelo actual:</span> {modeloActual?.id || 'No encontrado'}</p>
+                          <p><span className="font-medium">Modelos disponibles:</span> {modelos.length}</p>
+                          <p><span className="font-medium">Componente:</span> {modeloActual?.componentPath || 'No disponible'}</p>
+                        </div>
+                        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                          <p className="text-sm text-yellow-700">
+                            <span className="font-medium">Sugerencia:</span> Verifica que hayas seleccionado una plantilla válida para esta familia.
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>
