@@ -63,9 +63,38 @@ const Ladrillazos17: React.FC<MockupProps> = ({
             <span className="break-words">{nombre || "DESCRIPCIÓN PRODUCTO"}</span>
           </div>
           
-          {/* Logo Cencopay en la esquina superior derecha */}
-          <div className={`flex justify-end px-4 ${
-            small ? "mt-1 xs:mt-2" : "mt-2"
+          {/* Layout principal: AHORA a la izquierda, precio en el centro, ANTES a la derecha */}
+          <div className="flex items-center justify-between px-6 mt-6">
+            {/* AHORA - Lado izquierdo */}
+            <div className="text-left">
+              <div className="text-xl font-bold text-black">AHORA</div>
+              <div className="text-6xl font-bold text-black mt-2">$</div>
+              <div className="text-sm font-bold text-black mt-2">PRECIO</div>
+              <div className="text-sm font-bold text-black">CONTADO</div>
+            </div>
+            
+            {/* Precio principal - Centro - PRECIO MAS GRANDE */}
+            <div className="text-center flex-1 mx-8">
+              <div className="text-9xl font-bold text-gray-500 leading-none">
+                {Number(precioActual || "449999").toLocaleString('es-AR', { 
+                  minimumFractionDigits: 2, 
+                  maximumFractionDigits: 2 
+                }).replace(',', '.')}
+              </div>
+            </div>
+            
+            {/* ANTES - Lado derecho */}
+            <div className="text-right">
+              <div className="text-lg font-bold text-black">ANTES</div>
+              <div className="text-2xl font-bold text-black line-through mt-4">
+                ${Math.round((Number(precioActual) || 999) * 1.25) || "000"}
+              </div>
+            </div>
+          </div>
+          
+          {/* Logo Cencopay arriba de las cuotas sin intereses */}
+          <div className={`flex justify-center px-4 ${
+            small ? "mt-4 xs:mt-6" : "mt-6"
           }`}>
             <div className={`bg-blue-600 rounded font-bold flex items-center justify-center ${
               small ? "px-2 py-0.5" : "px-3 py-1"
@@ -82,37 +111,11 @@ const Ladrillazos17: React.FC<MockupProps> = ({
             </div>
           </div>
           
-          {/* Layout principal: AHORA a la izquierda, precio en el centro, ANTES a la derecha */}
-          <div className="flex items-center justify-between px-6 mt-6">
-            {/* AHORA - Lado izquierdo */}
-            <div className="text-left">
-              <div className="text-xl font-bold text-black">AHORA</div>
-              <div className="text-6xl font-bold text-black mt-2">$</div>
-              <div className="text-sm font-bold text-black mt-2">PRECIO</div>
-              <div className="text-sm font-bold text-black">CONTADO</div>
-            </div>
-            
-            {/* Precio principal - Centro */}
-            <div className="text-center flex-1 mx-8">
-              <div className="text-8xl font-bold text-gray-500 leading-none">
-                {precioActual?.padStart(3, '0') || "000"}
-              </div>
-            </div>
-            
-            {/* ANTES - Lado derecho */}
-            <div className="text-right">
-              <div className="text-lg font-bold text-black">ANTES</div>
-              <div className="text-2xl font-bold text-black line-through mt-4">
-                ${Math.round((Number(precioActual) || 999) * 1.25) || "000"}
-              </div>
-            </div>
-          </div>
-          
           {/* Cuotas sin intereses */}
-          <div className="text-center mt-6">
-            <div className="text-sm font-bold text-black">{Math.round((Number(precioActual) || 999) / 12) || "00"} CUOTAS SIN INTERESES</div>
+          <div className="text-center mt-2">
+            <div className="text-sm font-bold text-black">6 cuotas sin interés</div>
             <div className="text-3xl font-bold text-black mt-1">
-              ${Math.round((Number(precioActual) || 999) / 12) || "000"}<sup className="text-lg align-super">00</sup>
+              $75.000<sup className="text-lg align-super">00</sup>
             </div>
           </div>
           

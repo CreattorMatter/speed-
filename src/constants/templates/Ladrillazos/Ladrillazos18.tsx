@@ -119,16 +119,18 @@ const Ladrillazos18: React.FC<MockupProps> = ({
         <div className={`border-2 border-black font-sans w-full bg-white overflow-hidden ${
           small ? "max-h-[85vh] sm:max-h-[500px]" : "max-h-[90vh] sm:max-h-[700px] lg:max-h-[750px]"
         }`}>
-          {/* Header con imagen de ladrillo LADRILLAZOS - SIN texto superpuesto */}
+          {/* Header con imagen de ladrillo LADRILLAZOS - Ocupando todo el ancho hasta el marco */}
           <div 
             className={`relative w-full ${
-              small ? "h-[50px] xs:h-[60px] sm:h-[80px]" : "h-[80px] sm:h-[100px] lg:h-[120px]"
+              small ? "h-[80px] xs:h-[100px] sm:h-[120px]" : "h-[120px] sm:h-[150px] lg:h-[180px]"
             }`}
             style={{
               backgroundImage: `url('${getLadrillazoHeaderUrl()}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
-              backgroundRepeat: "no-repeat"
+              backgroundRepeat: "no-repeat",
+              margin: 0,
+              padding: 0
             }}
           >
             {/* Sin texto superpuesto - la imagen ya contiene el texto LADRILLAZOS */}
@@ -139,37 +141,6 @@ const Ladrillazos18: React.FC<MockupProps> = ({
             small ? "text-xs xs:text-sm mt-1 xs:mt-2" : "text-sm sm:text-base lg:text-lg mt-2 sm:mt-3"
           }`}>
             <span className="break-words">{nombre || "MacBook Pro M3 Pro 14\""}</span>
-          </div>
-          
-          {/* Logos de financiación dinámicos - TODOS los bancos únicos seleccionados */}
-          <div className={`flex justify-end gap-1 px-2 xs:px-3 ${small ? "mt-1" : "mt-1 sm:mt-2"}`}>
-            {bancosUnicos.map((bank, index) => (
-              <div key={`${bank}-${index}`} className={` flex items-center justify-center ${
-                small ? "px-1.5 xs:px-2 py-0.5 xs:py-1" : "px-2 sm:px-3 py-1 sm:py-2"
-              }`}>
-                <img 
-                  src={getBankLogoUrl(bank)} 
-                  alt={`Logo ${bank}`} 
-                  className={small ? "h-3 xs:h-4 w-auto" : "h-4 sm:h-5 w-auto"}
-                  onError={(e) => {
-                    // Fallback si no se puede cargar la imagen
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-            ))}
-            {/* Si no hay financiaciones, mostrar logo por defecto */}
-            {bancosUnicos.length === 0 && (
-              <div className={`bg-blue-600 rounded font-bold flex items-center justify-center ${
-                small ? "px-1.5 xs:px-2 py-0.5 xs:py-1" : "px-2 sm:px-3 py-1 sm:py-2"
-              }`}>
-                <img 
-                  src={getBankLogoUrl('visa')} 
-                  alt="Logo financiación" 
-                  className={small ? "h-3 xs:h-4 w-auto" : "h-4 sm:h-5 w-auto"}
-                />
-              </div>
-            )}
           </div>
           
           {/* Layout principal responsive */}
@@ -183,13 +154,13 @@ const Ladrillazos18: React.FC<MockupProps> = ({
               {/* AHORA */}
               <div className={small ? "mb-1 xs:mb-2" : "mb-2 sm:mb-3 lg:mb-4"}>
                 <div className={`font-bold text-black ${
-                  small ? "text-xxs xs:text-xs" : "text-xs sm:text-sm lg:text-base"
+                  small ? "text-xs" : "text-xs sm:text-sm lg:text-base"
                 }`}>AHORA</div>
                 <div className={`font-bold text-black ${
                   small ? "text-lg xs:text-xl sm:text-2xl mt-0.5 xs:mt-1" : "text-2xl sm:text-3xl lg:text-4xl mt-1 sm:mt-2"
                 }`}>$</div>
                 <div className={`font-bold text-black leading-tight ${
-                  small ? "text-xxs xs:text-xs mt-0.5 xs:mt-1" : "text-xs sm:text-sm mt-1 sm:mt-2"
+                  small ? "text-xs mt-0.5 xs:mt-1" : "text-xs sm:text-sm mt-1 sm:mt-2"
                 }`}>
                   <div>PRECIO</div>
                   <div>CONTADO</div>
@@ -199,7 +170,7 @@ const Ladrillazos18: React.FC<MockupProps> = ({
               {/* ANTES */}
               <div className="text-center">
                 <div className={`font-bold text-black ${
-                  small ? "text-xxs xs:text-xs" : "text-xs sm:text-sm lg:text-base"
+                  small ? "text-xs" : "text-xs sm:text-sm lg:text-base"
                 }`}>ANTES</div>
                 <div className={`font-bold text-black line-through ${
                   small ? "text-xs xs:text-sm mt-0.5 xs:mt-1" : "text-sm sm:text-base lg:text-lg mt-1 sm:mt-2"
@@ -209,12 +180,12 @@ const Ladrillazos18: React.FC<MockupProps> = ({
               </div>
             </div>
             
-            {/* Columna central: Precio principal */}
+            {/* Columna central: Precio principal - PRECIO MAS GRANDE */}
             <div className={`text-center flex-1 ${
               small ? "mx-1 xs:mx-2" : "mx-2 sm:mx-3 lg:mx-4"
             }`}>
               <div className={`font-bold text-gray-500 leading-none ${
-                small ? "text-base xs:text-lg sm:text-xl" : "text-xl sm:text-2xl lg:text-4xl"
+                small ? "text-xl xs:text-2xl sm:text-3xl" : "text-4xl sm:text-5xl lg:text-7xl"
               }`}>
                 <span className="break-all">
                   {Number(precioBase).toLocaleString('es-AR', { 
@@ -229,10 +200,41 @@ const Ladrillazos18: React.FC<MockupProps> = ({
             <div className={`text-right flex-shrink-0 ${
               small ? "w-20 xs:w-22 sm:w-24" : "w-28 sm:w-32 lg:w-36"
             }`}>
+              {/* Logos de financiación arriba de las cuotas */}
+              <div className={`flex justify-end gap-1 mb-2 ${small ? "mb-1" : "mb-2"}`}>
+                {bancosUnicos.map((bank, index) => (
+                  <div key={`${bank}-${index}`} className={`bg-blue-600 rounded flex items-center justify-center ${
+                    small ? "px-1 py-0.5" : "px-1.5 py-0.5"
+                  }`}>
+                    <img 
+                      src={getBankLogoUrl(bank)} 
+                      alt={`Logo ${bank}`} 
+                      className={small ? "h-2.5 w-auto" : "h-3 w-auto"}
+                      onError={(e) => {
+                        // Fallback si no se puede cargar la imagen
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                ))}
+                {/* Si no hay financiaciones, mostrar logo por defecto */}
+                {bancosUnicos.length === 0 && (
+                  <div className={`bg-blue-600 rounded font-bold flex items-center justify-center ${
+                    small ? "px-1 py-0.5" : "px-1.5 py-0.5"
+                  }`}>
+                    <img 
+                      src={getBankLogoUrl('visa')} 
+                      alt="Logo financiación" 
+                      className={small ? "h-2.5 w-auto" : "h-3 w-auto"}
+                    />
+                  </div>
+                )}
+              </div>
+              
               {opcionesFinal.map((opcion, index) => (
                 <div key={`cuota-${opcion.cuotas}-${index}`} className={`${index > 0 ? 'mt-2' : ''}`}>
                   <div className={`font-bold text-black leading-tight ${
-                    small ? "text-xxs xs:text-xs" : "text-xs sm:text-sm"
+                    small ? "text-xs" : "text-xs sm:text-sm"
                   }`}>
                     <span className="break-words">{opcion.texto}</span>
                   </div>
@@ -240,7 +242,7 @@ const Ladrillazos18: React.FC<MockupProps> = ({
                     small ? "text-xs xs:text-sm mt-0.5 xs:mt-1" : "text-sm sm:text-base lg:text-lg mt-1 sm:mt-2"
                   }`}>
                     ${Number(opcion.cuotasPorMes).toLocaleString('es-AR')}<sup className={`align-super ${
-                      small ? "text-xxs xs:text-xs" : "text-xs sm:text-sm"
+                      small ? "text-xs" : "text-xs sm:text-sm"
                     }`}>00</sup>
                   </div>
                 </div>
@@ -250,7 +252,7 @@ const Ladrillazos18: React.FC<MockupProps> = ({
           
           {/* Información de financiación detallada */}
           <div className={`px-2 xs:px-3 space-y-0.5 ${
-            small ? "mt-1 xs:mt-2 text-xxs xs:text-xs" : "mt-2 sm:mt-3 lg:mt-4 text-xs sm:text-sm"
+            small ? "mt-1 xs:mt-2 text-xs" : "mt-2 sm:mt-3 lg:mt-4 text-xs sm:text-sm"
           }`}>
             <div className="text-right space-y-0.5">
               <div className="break-words"><span className="font-bold">PRECIO TOTAL FINANCIADO:</span> ${Number(precioBase).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
@@ -267,7 +269,7 @@ const Ladrillazos18: React.FC<MockupProps> = ({
           
           {/* Información adicional */}
           <div className={`flex flex-col xs:flex-row justify-between px-2 xs:px-3 font-bold gap-1 xs:gap-0 ${
-            small ? "text-xxs xs:text-xs mt-1 xs:mt-2" : "text-xs sm:text-sm mt-2 sm:mt-3"
+            small ? "text-xs mt-1 xs:mt-2" : "text-xs sm:text-sm mt-2 sm:mt-3"
           }`}>
             <div className="truncate">{fechasDesde || "15/05/2025"}-{fechasHasta || "18/05/2025"}</div>
             <div className="truncate">SAP-TEC-{sap || "001"}</div>
@@ -276,7 +278,7 @@ const Ladrillazos18: React.FC<MockupProps> = ({
           
           {/* Pie de página */}
           <div className={`text-center text-gray-700 px-2 leading-tight ${
-            small ? "text-xxs xs:text-xs mt-1 mb-1 xs:mb-2" : "text-xs sm:text-sm mt-2 mb-2 sm:mb-3"
+            small ? "text-xs mt-1 mb-1 xs:mb-2" : "text-xs sm:text-sm mt-2 mb-2 sm:mb-3"
           }`}>
             <div className="break-words">PRECIO SIN IMPUESTOS NACIONALES: ${Number(precioSinImpuestos || "1078999.99").toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <div className="break-words">NO ACUMULABLE CON OTRAS PROMOCIONES Y/O DESCUENTOS</div>
