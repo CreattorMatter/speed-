@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Importar estilos responsivos para plantillas */
+@import './styles/templates-responsive.css';
+
 /* Estilos específicos para impresión */
 @media print {
   /* Ocultar elementos de UI durante la impresión */
@@ -299,6 +302,3 @@ body {
 .poster-editor {
   @apply bg-black;
 }
-
-/* Importar estilos responsivos para plantillas */
-@import './styles/templates-responsive.css';
