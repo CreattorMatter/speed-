@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, memo, useEffect } from 'react';
 import { Block } from './Block';
 import Rulers from './Rulers';
 import { Block as BlockType, PaperFormat } from '../../types/builder';
@@ -15,7 +15,7 @@ interface CanvasProps {
   canvasRef?: React.RefObject<HTMLDivElement>;
 }
 
-export default function Canvas({ 
+const Canvas = memo(({ 
   blocks, 
   setBlocks, 
   onDropInContainer, 
@@ -23,20 +23,19 @@ export default function Canvas({
   isLandscape = false,
   scale = 1,
   canvasRef
-}: CanvasProps) {
+}: CanvasProps) => {
   const localCanvasRef = useRef<HTMLDivElement>(null);
   const finalCanvasRef = canvasRef || localCanvasRef;
   const GRID_SIZE = 20;
   const RULER_SIZE = 20;
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleDelete = useCallback((id: string) => {
     setBlocks(prev => {
       const blockToDelete = prev.find(b => b.id === id);
       if (blockToDelete?.isContainer) {
-        // Si es un contenedor, eliminar también los bloques hijos
         return prev.filter(block => block.id !== id && block.parentId !== id);
       }
-      // Si no es un contenedor, solo eliminar el bloque
       return prev.filter(block => block.id !== id);
     });
   }, [setBlocks]);
@@ -51,6 +50,7 @@ export default function Canvas({
     const block = blocks.find(b => b.id === id);
     if (!block) return;
 
+    setIsDragging(true);
     const startX = e.clientX;
     const startY = e.clientY;
     const initialBlockPosition = { ...block.position };
@@ -65,7 +65,6 @@ export default function Canvas({
       setBlocks(prev => {
         return prev.map(b => {
           if (b.id === id) {
-            // Mover el contenedor
             return {
               ...b,
               position: {
@@ -74,11 +73,9 @@ export default function Canvas({
               }
             };
           } else if (b.parentId === id) {
-            // Encontrar la posición inicial de este hijo
             const initialPos = childrenInitialPositions.find(p => p.id === b.id)?.position;
             if (!initialPos) return b;
             
-            // Mover el bloque hijo manteniendo su posición relativa
             return {
               ...b,
               position: {
@@ -92,13 +89,22 @@ export default function Canvas({
       });
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', () => {
+    const handleMouseUp = () => {
+      setIsDragging(false);
       document.removeEventListener('mousemove', handleMouseMove);
-    }, { once: true });
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   }, [blocks, setBlocks]);
 
   const handleImageUpload = useCallback((id: string, file: File) => {
+    if (!file.type.startsWith('image/')) {
+      console.error('El archivo debe ser una imagen');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result;
@@ -110,21 +116,32 @@ export default function Canvas({
         ));
       }
     };
+    reader.onerror = () => {
+      console.error('Error al leer el archivo');
+    };
     reader.readAsDataURL(file);
   }, [setBlocks]);
 
   // Ordenar los bloques para que los contenedores se rendericen primero
-  const sortedBlocks = [...blocks].sort((a, b) => {
-    if (a.isContainer && !b.isContainer) return -1;
-    if (!a.isContainer && b.isContainer) return 1;
-    return 0;
-  });
-
-  console.log('Renderizando bloques en Canvas:', sortedBlocks);
+  const sortedBlocks = React.useMemo(() => {
+    return [...blocks].sort((a, b) => {
+      if (a.isContainer && !b.isContainer) return -1;
+      if (!a.isContainer && b.isContainer) return 1;
+      return 0;
+    });
+  }, [blocks]);
 
   // Calcular el tamaño del papel en píxeles
   const paperWidth = isLandscape ? selectedFormat.height : selectedFormat.width;
   const paperHeight = isLandscape ? selectedFormat.width : selectedFormat.height;
+
+  // Efecto para limpiar los event listeners cuando el componente se desmonta
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', () => {});
+      document.removeEventListener('mouseup', () => {});
+    };
+  }, []);
 
   return (
     <div 
@@ -134,7 +151,7 @@ export default function Canvas({
       <Rulers gridSize={GRID_SIZE * scale} />
       <div 
         ref={finalCanvasRef}
-        className="builder-canvas relative overflow-auto scrollbar-custom"
+        className={`builder-canvas relative overflow-auto scrollbar-custom ${isDragging ? 'cursor-grabbing' : ''}`}
         style={{
           width: `calc(100% - ${RULER_SIZE}px)`,
           height: `calc(100% - ${RULER_SIZE}px)`,
@@ -148,7 +165,6 @@ export default function Canvas({
           position: 'relative'
         }}
       >
-        {/* Área del papel */}
         <div
           className="absolute bg-white shadow-lg"
           style={{
@@ -165,7 +181,6 @@ export default function Canvas({
             backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px, ${GRID_SIZE}px ${GRID_SIZE}px, ${GRID_SIZE * 5}px ${GRID_SIZE * 5}px, ${GRID_SIZE * 5}px ${GRID_SIZE * 5}px`
           }}
         >
-          {/* Información del formato */}
           <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white px-3 py-1 rounded-t-lg shadow text-sm text-gray-600 flex items-center gap-2">
             <span className="font-medium">{selectedFormat.name}</span>
             <span className="text-gray-400">({selectedFormat.originalSize})</span>
@@ -192,4 +207,8 @@ export default function Canvas({
       </div>
     </div>
   );
-}
+});
+
+Canvas.displayName = 'Canvas';
+
+export default Canvas;

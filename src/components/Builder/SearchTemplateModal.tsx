@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Dialog } from '@headlessui/react';
 import { X, Search, Loader2, Camera, Trash2 } from 'lucide-react';
 import { builderService } from '../../lib/builderService';
@@ -40,12 +40,12 @@ interface SearchTemplateModalProps {
   onSelectImage?: (imageUrl: string) => void;
 }
 
-export function SearchTemplateModal({
+const SearchTemplateModal = memo(({
   isOpen,
   onClose,
   onSelectTemplate,
   onSelectImage
-}: SearchTemplateModalProps) {
+}: SearchTemplateModalProps) => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [capturedImages, setCapturedImages] = useState<CapturedImage[]>([]);
   const [posters, setPosters] = useState<PosterImage[]>([]);
@@ -56,31 +56,15 @@ export function SearchTemplateModal({
   const [activeTab, setActiveTab] = useState<'templates' | 'images' | 'posters'>('templates');
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadTemplates();
-      loadCapturedImages();
-      loadPosters();
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setSelectedTemplate(null);
-      setSelectedImage(null);
-      setSearchTerm('');
-    }
-  }, [isOpen]);
-
-  const getCurrentUser = () => {
+  const getCurrentUser = useCallback(() => {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
       throw new Error('No hay sesión activa');
     }
     return JSON.parse(storedUser);
-  };
+  }, []);
 
-  const loadTemplates = async () => {
+  const loadTemplates = useCallback(async () => {
     try {
       setIsLoading(true);
       const user = getCurrentUser();
@@ -95,9 +79,9 @@ export function SearchTemplateModal({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getCurrentUser]);
 
-  const loadCapturedImages = async () => {
+  const loadCapturedImages = useCallback(async () => {
     try {
       setIsLoading(true);
       const user = getCurrentUser();
@@ -144,9 +128,9 @@ export function SearchTemplateModal({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getCurrentUser]);
 
-  const loadPosters = async () => {
+  const loadPosters = useCallback(async () => {
     try {
       setIsLoading(true);
       const { data: posterList, error: listError } = await supabase.storage
@@ -190,9 +174,9 @@ export function SearchTemplateModal({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleDeleteTemplate = async (template: Template) => {
+  const handleDeleteTemplate = useCallback(async (template: Template) => {
     if (!confirm('¿Estás seguro de que deseas eliminar esta plantilla?')) {
       return;
     }
@@ -208,9 +192,9 @@ export function SearchTemplateModal({
     } finally {
       setIsDeleting(false);
     }
-  };
+  }, [loadTemplates]);
 
-  const handleDeleteImage = async (image: CapturedImage) => {
+  const handleDeleteImage = useCallback(async (image: CapturedImage) => {
     if (!confirm('¿Estás seguro de que deseas eliminar esta imagen?')) {
       return;
     }
@@ -251,24 +235,69 @@ export function SearchTemplateModal({
                   };
                 })
             );
+
             setCapturedImages(imagesWithUrls);
           }
         } catch (error) {
-          console.error('Error al recargar la lista de imágenes:', error);
+          console.error('Error al recargar las imágenes:', error);
         }
-      }, 2000); // Esperar 2 segundos antes de recargar
-      
+      }, 1000);
     } catch (error) {
       console.error('Error al eliminar la imagen:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al eliminar la imagen');
+      toast.error('Error al eliminar la imagen');
     } finally {
       setIsDeleting(false);
     }
-  };
+  }, []);
+
+  const handleSelectTemplate = useCallback((template: Template) => {
+    setSelectedTemplate(template);
+    onSelectTemplate(template);
+    onClose();
+  }, [onSelectTemplate, onClose]);
+
+  const handleSelectImage = useCallback((image: CapturedImage) => {
+    setSelectedImage(image);
+    if (onSelectImage) {
+      onSelectImage(image.url);
+    }
+    onClose();
+  }, [onSelectImage, onClose]);
+
+  const handleImageClick = useCallback((image: CapturedImage) => {
+    setSelectedImage(image);
+  }, []);
+
+  const handleTemplateClick = useCallback((template: Template) => {
+    setSelectedTemplate(template);
+  }, []);
+
+  const handleSelectPoster = useCallback((poster: PosterImage) => {
+    if (onSelectImage) {
+      onSelectImage(poster.url);
+    }
+    onClose();
+  }, [onSelectImage, onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadTemplates();
+      loadCapturedImages();
+      loadPosters();
+    }
+  }, [isOpen, loadTemplates, loadCapturedImages, loadPosters]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedTemplate(null);
+      setSelectedImage(null);
+      setSearchTerm('');
+    }
+  }, [isOpen]);
 
   const filteredTemplates = templates.filter(template =>
     template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    template.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    template.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredImages = capturedImages.filter(image =>
@@ -279,271 +308,204 @@ export function SearchTemplateModal({
     poster.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSelectTemplate = (template: Template) => {
-    try {
-      console.log('Seleccionando plantilla:', template);
-      setSelectedTemplate(template);
-      onSelectTemplate(template);
-      onClose();
-    } catch (error) {
-      console.error('Error al seleccionar la plantilla:', error);
-      toast.error('Error al seleccionar la plantilla');
-    }
-  };
-
-  const handleSelectImage = (image: CapturedImage) => {
-    try {
-      console.log('Seleccionando imagen:', image);
-      setSelectedImage(image);
-      if (onSelectImage) {
-        onSelectImage(image.url);
-      }
-      onClose();
-    } catch (error) {
-      console.error('Error al seleccionar la imagen:', error);
-      toast.error('Error al seleccionar la imagen');
-    }
-  };
-
-  const handleImageClick = (image: CapturedImage) => {
-    try {
-      console.log('Click en imagen:', image);
-      if (isDeleting) return;
-
-      // Asegurarnos de que la imagen tenga una URL válida
-      if (!image.url) {
-        console.error('La imagen no tiene URL:', image);
-        toast.error('Error al cargar la imagen');
-        return;
-      }
-
-      console.log('Seleccionando imagen:', image);
-      setSelectedImage(image);
-      if (onSelectImage) {
-        onSelectImage(image.url);
-        toast.success('Imagen seleccionada correctamente');
-      }
-      onClose();
-    } catch (error) {
-      console.error('Error al seleccionar la imagen:', error);
-      toast.error('Error al seleccionar la imagen');
-    }
-  };
-
-  const handleTemplateClick = (template: Template) => {
-    try {
-      console.log('Click en plantilla:', template);
-      if (isDeleting) return;
-
-      // Asegurarnos de que la plantilla tenga todos los campos necesarios
-      if (!template.id || !template.image_data || !template.canvas_settings) {
-        console.error('La plantilla no tiene todos los campos necesarios:', template);
-        toast.error('Error al cargar la plantilla');
-        return;
-      }
-
-      console.log('Seleccionando plantilla:', template);
-      setSelectedTemplate(template);
-      onSelectTemplate(template);
-      toast.success('Plantilla seleccionada correctamente');
-      onClose();
-    } catch (error) {
-      console.error('Error al seleccionar la plantilla:', error);
-      toast.error('Error al seleccionar la plantilla');
-    }
-  };
-
-  const handleSelectPoster = (poster: PosterImage) => {
-    try {
-      console.log('Seleccionando cartel:', poster);
-      if (onSelectImage) {
-        onSelectImage(poster.url);
-      }
-      onClose();
-    } catch (error) {
-      console.error('Error al seleccionar el cartel:', error);
-      toast.error('Error al seleccionar el cartel');
-    }
-  };
-
   return (
     <Dialog
       open={isOpen}
       onClose={onClose}
       className="fixed inset-0 z-50 overflow-y-auto"
     >
-      <div className="flex items-center justify-center min-h-screen px-4">
+      <div className="flex items-center justify-center min-h-screen">
         <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
-        
-        <div className="relative bg-white rounded-lg w-full max-w-4xl p-6">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-          >
-            <X size={24} />
-          </button>
+
+        <div className="relative bg-white rounded-lg w-full max-w-4xl mx-4 p-6">
+          <div className="flex justify-between items-center mb-6">
+            <Dialog.Title className="text-2xl font-semibold">
+              Buscar Plantillas
+            </Dialog.Title>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+              aria-label="Cerrar"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
 
           <div className="mb-6">
-            <div className="flex space-x-4 mb-4">
-              <button
-                className={`px-4 py-2 rounded-lg ${
-                  activeTab === 'templates'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                onClick={() => setActiveTab('templates')}
-              >
-                Plantillas
-              </button>
-              <button
-                className={`px-4 py-2 rounded-lg ${
-                  activeTab === 'images'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                onClick={() => setActiveTab('images')}
-              >
-                Imágenes
-              </button>
-              <button
-                className={`px-4 py-2 rounded-lg ${
-                  activeTab === 'posters'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                onClick={() => setActiveTab('posters')}
-              >
-                Carteles
-              </button>
-            </div>
-
             <div className="relative">
               <input
                 type="text"
-                placeholder="Buscar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg pl-10"
+                placeholder="Buscar..."
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
-              <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+              <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
             </div>
           </div>
 
+          <div className="flex space-x-4 mb-6">
+            <button
+              onClick={() => setActiveTab('templates')}
+              className={`px-4 py-2 rounded-lg ${
+                activeTab === 'templates'
+                  ? 'bg-indigo-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Plantillas
+            </button>
+            <button
+              onClick={() => setActiveTab('images')}
+              className={`px-4 py-2 rounded-lg ${
+                activeTab === 'images'
+                  ? 'bg-indigo-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Imágenes
+            </button>
+            <button
+              onClick={() => setActiveTab('posters')}
+              className={`px-4 py-2 rounded-lg ${
+                activeTab === 'posters'
+                  ? 'bg-indigo-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Carteles
+            </button>
+          </div>
+
           {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <Loader2 className="animate-spin text-blue-500" size={32} />
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto p-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {activeTab === 'templates' && filteredTemplates.map((template) => (
-                <motion.div
+                <div
                   key={template.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  className="relative cursor-pointer group"
+                  className={`relative group cursor-pointer ${
+                    selectedTemplate?.id === template.id
+                      ? 'ring-2 ring-indigo-500'
+                      : ''
+                  }`}
+                  onClick={() => handleTemplateClick(template)}
                 >
-                  <div className="relative aspect-video rounded-lg overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
-                    <img
-                      src={template.image_data}
-                      alt={template.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <button
-                          onClick={() => handleTemplateClick(template)}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transform transition-all hover:scale-105"
-                        >
-                          Utilizar
-                        </button>
-                      </div>
-                      <div className="absolute bottom-2 left-2 right-2">
-                        <h3 className="text-white text-sm font-medium truncate">
-                          {template.name}
-                        </h3>
-                      </div>
+                  <img
+                    src={template.image_data}
+                    alt={template.name}
+                    className="w-full h-48 object-cover rounded-lg"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity rounded-lg">
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                      <h3 className="font-semibold">{template.name}</h3>
+                      <p className="text-sm">{template.description}</p>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteTemplate(template);
-                      }}
-                      disabled={isDeleting}
-                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                   </div>
-                </motion.div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteTemplate(template);
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    disabled={isDeleting}
+                    aria-label="Eliminar plantilla"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               ))}
-              
+
               {activeTab === 'images' && filteredImages.map((image) => (
-                <motion.div
+                <div
                   key={image.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  className="relative cursor-pointer group"
+                  className={`relative group cursor-pointer ${
+                    selectedImage?.name === image.name
+                      ? 'ring-2 ring-indigo-500'
+                      : ''
+                  }`}
+                  onClick={() => handleImageClick(image)}
                 >
-                  <div className="relative aspect-video rounded-lg overflow-hidden border-2 border-transparent group-hover:border-blue-500 transition-all">
-                    <img
-                      src={image.url}
-                      alt={image.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <button
-                          onClick={() => handleImageClick(image)}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transform transition-all hover:scale-105"
-                        >
-                          Utilizar
-                        </button>
-                      </div>
-                      <div className="absolute bottom-2 left-2 right-2">
-                        <h3 className="text-white text-sm font-medium truncate">
-                          {image.name}
-                        </h3>
-                      </div>
+                  <img
+                    src={image.url}
+                    alt={image.name}
+                    className="w-full h-48 object-cover rounded-lg"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity rounded-lg">
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-sm truncate">{image.name}</p>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteImage(image);
-                      }}
-                      disabled={isDeleting}
-                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                   </div>
-                </motion.div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteImage(image);
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    disabled={isDeleting}
+                    aria-label="Eliminar imagen"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               ))}
 
               {activeTab === 'posters' && filteredPosters.map((poster) => (
-                <motion.div
+                <div
                   key={poster.name}
-                  className="relative group cursor-pointer rounded-lg overflow-hidden shadow-md"
-                  whileHover={{ scale: 1.02 }}
+                  className="relative group cursor-pointer"
                   onClick={() => handleSelectPoster(poster)}
                 >
                   <img
                     src={poster.url}
                     alt={poster.name}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-48 object-cover rounded-lg"
+                    loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200">
-                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-black bg-opacity-50 text-white text-sm truncate">
-                      {poster.name}
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity rounded-lg">
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-sm truncate">{poster.name}</p>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           )}
+
+          <div className="mt-6 flex justify-end space-x-4">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+            >
+              Cancelar
+            </button>
+            {activeTab === 'templates' && selectedTemplate && (
+              <button
+                onClick={() => handleSelectTemplate(selectedTemplate)}
+                className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+              >
+                Seleccionar
+              </button>
+            )}
+            {activeTab === 'images' && selectedImage && (
+              <button
+                onClick={() => handleSelectImage(selectedImage)}
+                className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+              >
+                Seleccionar
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </Dialog>
   );
-} 
+});
+
+SearchTemplateModal.displayName = 'SearchTemplateModal';
+
+export { SearchTemplateModal }; 
