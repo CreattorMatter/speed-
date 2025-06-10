@@ -38,20 +38,22 @@ interface SearchTemplateModalProps {
   onClose: () => void;
   onSelectTemplate: (template: Template) => void;
   onSelectImage?: (imageUrl: string) => void;
+  selectedTemplate?: Template | null;
 }
 
 const SearchTemplateModal = memo(({
   isOpen,
   onClose,
   onSelectTemplate,
-  onSelectImage
+  onSelectImage,
+  selectedTemplate: selectedTemplateProp = null
 }: SearchTemplateModalProps) => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [capturedImages, setCapturedImages] = useState<CapturedImage[]>([]);
   const [posters, setPosters] = useState<PosterImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(selectedTemplateProp);
   const [selectedImage, setSelectedImage] = useState<CapturedImage | null>(null);
   const [activeTab, setActiveTab] = useState<'templates' | 'images' | 'posters'>('templates');
   const [isDeleting, setIsDeleting] = useState(false);

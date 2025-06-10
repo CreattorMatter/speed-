@@ -1,10 +1,34 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Variables de entorno con fallbacks para desarrollo
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY || 'placeholder-service-key';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Faltan las variables de entorno de Supabase');
-}
+// Verificar si las variables están configuradas
+const isSupabaseConfigured = supabaseUrl !== 'https://placeholder.supabase.co' && 
+                            supabaseAnonKey !== 'placeholder-anon-key';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey); 
+// Cliente normal para uso general
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Cliente admin para operaciones que requieren permisos elevados  
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
+
+// Configuración única para evitar múltiples instancias
+export { supabaseUrl, supabaseAnonKey, supabaseServiceKey, isSupabaseConfigured };
+
+// Log de estado para debugging
+if (typeof window !== 'undefined') {
+  if (isSupabaseConfigured) {
+    console.log('✅ Supabase configurado correctamente');
+  } else {
+    console.warn('⚠️ Supabase NO configurado - usando placeholders');
+    console.warn('💡 Crea un archivo .env.local con tus variables de Supabase');
+  }
+} 

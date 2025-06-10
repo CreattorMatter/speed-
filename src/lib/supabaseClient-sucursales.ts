@@ -1,18 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Faltan las variables de entorno de Supabase');
-}
-
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
+// Importar el cliente admin centralizado
+import { supabaseAdmin } from './supabaseClient';
 
 export interface Empresa {
   id: number;
@@ -137,4 +124,7 @@ export const getSucursalesConEmpresa = async (): Promise<(Sucursal & { empresa: 
     console.error('Error al obtener sucursales con empresa:', error);
     throw error;
   }
-}; 
+};
+
+// Re-exportar el cliente admin para compatibilidad
+export { supabaseAdmin }; 

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Block, PaperFormat } from '../../../types/builder';
 import { PAPER_FORMATS } from '../../../constants/paperFormats';
+import { PromotionFamily, TemplateType } from '../types/promotion';
 
 interface CanvasSettings {
   width: number;
@@ -26,6 +27,8 @@ interface BuilderState {
   scale: number;
   canvasSettings: CanvasSettings;
   isExportModalOpen: boolean;
+  selectedFamily: PromotionFamily | null;
+  selectedTemplate: TemplateType | null;
 }
 
 export const useBuilderState = (): BuilderState & {
@@ -46,6 +49,12 @@ export const useBuilderState = (): BuilderState & {
   setScale: (scale: number) => void;
   setCanvasSettings: (settings: CanvasSettings) => void;
   setIsExportModalOpen: (isOpen: boolean) => void;
+  setSelectedFamily: (family: PromotionFamily | null) => void;
+  setSelectedTemplate: (template: TemplateType | null) => void;
+  updateBlocks: (updater: (prev: Block[]) => Block[]) => void;
+  handleFamilySelect: (family: PromotionFamily) => void;
+  handleTemplateSelect: (template: TemplateType) => void;
+  resetState: () => void;
 } => {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -68,6 +77,36 @@ export const useBuilderState = (): BuilderState & {
     background: '#ffffff'
   });
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [selectedFamily, setSelectedFamily] = useState<PromotionFamily | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType | null>(null);
+
+  const updateBlocks = useCallback((updater: (prev: Block[]) => Block[]) => {
+    setBlocks(updater);
+  }, []);
+
+  const handleFamilySelect = useCallback((family: PromotionFamily) => {
+    setSelectedFamily(family);
+    setSelectedTemplate(null); // Reset template when family changes
+  }, []);
+
+  const handleTemplateSelect = useCallback((template: TemplateType) => {
+    setSelectedTemplate(template);
+    // Here you would typically initialize the canvas with the template's default blocks
+    // This would be implemented based on your template configuration
+  }, []);
+
+  const resetState = useCallback(() => {
+    setBlocks([]);
+    setSelectedFamily(null);
+    setSelectedTemplate(null);
+    setIsGeneratingAI(false);
+    setIsSaveModalOpen(false);
+    setTemplateName('');
+    setTemplateDescription('');
+    setIsPublic(false);
+    setIsSaving(false);
+    setSavingStep('idle');
+  }, []);
 
   return {
     blocks,
@@ -103,6 +142,14 @@ export const useBuilderState = (): BuilderState & {
     canvasSettings,
     setCanvasSettings,
     isExportModalOpen,
-    setIsExportModalOpen
+    setIsExportModalOpen,
+    selectedFamily,
+    setSelectedFamily,
+    selectedTemplate,
+    setSelectedTemplate,
+    updateBlocks,
+    handleFamilySelect,
+    handleTemplateSelect,
+    resetState
   };
 }; 

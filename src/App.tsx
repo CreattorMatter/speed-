@@ -21,6 +21,12 @@ import { toast } from 'react-hot-toast';
 import { DigitalSignageView } from './components/DigitalSignage/DigitalSignageView';
 import { CarouselView } from './components/DigitalCarousel/CarouselView';
 import DashboardEasyPilar from './components/DashboardEasyPilar';
+import { EnhancedBuilder } from './components/Builder/EnhancedBuilder';
+import { NewBuilder } from './components/Builder/NewBuilder';
+import { SimpleTestBuilder } from './components/Builder/SimpleTestBuilder';
+import { BuilderV2 } from './components/BuilderV2/BuilderV2';
+import { BuilderV3 } from './components/BuilderV3/BuilderV3';
+
 
 export interface DashboardProps {
   onLogout: () => void;
@@ -38,12 +44,11 @@ export interface DashboardProps {
 }
 
 interface User {
-  id: number;
+  id: string | number;
   email: string;
   name: string;
   role: string;
   status: 'active' | 'inactive';
-  password?: string;
 }
 
 function AppContent() {
@@ -114,46 +119,53 @@ function AppContent() {
     try {
       console.log('Intentando login con:', email);
       
-      // Verificar credenciales directamente en la tabla users
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .eq('password', password)
-        .single();
+      // Verificar credenciales hardcodeadas para desarrollo
+      const validCredentials = [
+        { email: 'admin@admin.com', password: 'admin', role: 'admin', name: 'Administrador Principal' },
+        { email: 'easypilar@cenco.com', password: 'pilar2024', role: 'admin', name: 'Easy Pilar Manager' },
+        { email: 'easysantafe@cenco.com', password: 'santafe2024', role: 'admin', name: 'Easy Santa Fe Manager' },
+        { email: 'easysolano@cenco.com', password: 'solano2024', role: 'limited', name: 'Easy Solano Manager' },
+        { email: 'easydevoto@cenco.com', password: 'devoto2024', role: 'limited', name: 'Easy Devoto Manager' },
+        { email: 'user@example.com', password: 'user123', role: 'limited', name: 'Usuario Ejemplo' }
+      ];
 
-      if (userError) {
-        console.error('Error al verificar usuario:', userError);
-        setError('Error al verificar credenciales');
-        return;
-      }
+      const validUser = validCredentials.find(cred => 
+        cred.email === email && cred.password === password
+      );
 
-      if (!userData) {
-        console.error('Usuario no encontrado');
+      if (!validUser) {
         setError('Usuario o contraseña incorrectos');
         return;
       }
 
-      if (userData.status !== 'active') {
-        console.error('Usuario inactivo');
-        setError('Usuario inactivo');
+      // Verificar si el usuario existe en la tabla users
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('is_active', true)
+        .single();
+
+      if (userError && userError.code !== 'PGRST116') {
+        console.error('Error al obtener datos del usuario:', userError);
+        setError('Error al verificar usuario en base de datos');
         return;
       }
 
-      // Guardar datos del usuario
+      // Crear objeto de usuario
       const user = {
-        id: userData.id,
-        email: userData.email,
-        name: userData.name,
-        role: userData.role,
-        status: userData.status
+        id: userData?.id || email,
+        email: email,
+        name: userData?.name || validUser.name,
+        role: userData?.role || validUser.role,
+        status: 'active' as const
       };
 
       // Guardar en localStorage y estado
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
       setIsAuthenticated(true);
-      setUserRole(userData.role === 'admin' ? 'admin' : 'limited');
+      setUserRole(user.role === 'admin' ? 'admin' : 'limited');
 
       // Verificar si es dispositivo móvil
       if (isMobile()) {
@@ -178,11 +190,6 @@ function AppContent() {
       setEmail('');
       setPassword('');
       setError('');
-      //setShowBuilder(false);
-      //setShowProducts(false);
-      //setShowPromotions(false);
-      //setShowPosterEditor(false);
-      //setShowAnalytics(false);
       setIsConfigOpen(false);
       
       // Redirigir al login
@@ -229,17 +236,11 @@ function AppContent() {
   };
 
   const isMobile = () => {
-    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
-    
-    // Patrón más detallado para detectar dispositivos móviles
+    const userAgent = navigator.userAgent || navigator.vendor;
     const mobilePattern = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet|ipad/i;
     
     // Verificar también el tipo de dispositivo si está disponible
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    
-    console.log('User Agent:', userAgent);
-    console.log('Es dispositivo táctil:', isTouchDevice);
-    console.log('Coincide con patrón móvil:', mobilePattern.test(userAgent.toLowerCase()));
     
     return mobilePattern.test(userAgent.toLowerCase()) || isTouchDevice;
   };
@@ -399,6 +400,8 @@ function AppContent() {
               >
                 Iniciar Sesión
               </button>
+
+
             </form>
           </div>
         </div>
@@ -420,8 +423,9 @@ function AppContent() {
         <Route
           path="/builder"
           element={
-            <Builder 
+            <BuilderV3 
               onBack={handleBack}
+              onLogout={handleLogout}
               userEmail={user?.email || ''}
               userName={user?.name || ''}
               userRole={userRole}
@@ -502,12 +506,16 @@ function AppContent() {
         />
 
         <Route path="/playlist/:id" element={<CarouselView />} />
+
+        <Route path="/enhanced-builder" element={<EnhancedBuilder />} />
+
+        <Route path="/test-builder" element={<SimpleTestBuilder />} />
       </Routes>
 
       <ConfigurationPortal 
         isOpen={isConfigOpen}
         onClose={() => setIsConfigOpen(false)}
-        currentUser={user || { id: 0, email: '', name: '', role: '' }}
+        currentUser={user || { id: '0', email: '', name: '', role: '' }}
       />
 
       <MobileDetectionModal

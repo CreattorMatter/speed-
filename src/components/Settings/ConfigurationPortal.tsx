@@ -12,7 +12,7 @@ interface ConfigurationPortalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: {
-    id: number;
+    id: string | number;
     email: string;
     name: string;
     role: string;

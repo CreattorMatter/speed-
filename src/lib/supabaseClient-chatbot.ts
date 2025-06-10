@@ -1,18 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+// Importar el cliente admin centralizado para el chatbot
+import { supabaseAdmin } from './supabaseClient';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Faltan las variables de entorno de Supabase');
-}
-
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
+// Re-exportar para compatibilidad con código existente
+export { supabaseAdmin };
 
 export interface Empresa {
   id: number;
