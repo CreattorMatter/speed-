@@ -399,23 +399,26 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Alineación</label>
             <div className="grid grid-cols-4 gap-1">
-              {['left', 'center', 'right', 'justify'].map(align => (
+              {[
+                { value: 'left', label: 'Izquierda', icon: '⬅️' },
+                { value: 'center', label: 'Centro', icon: '↔️' },
+                { value: 'right', label: 'Derecha', icon: '➡️' },
+                { value: 'justify', label: 'Justificar', icon: '═' }
+              ].map(align => (
                 <button
-                  key={align}
+                  key={align.value}
                   onClick={() => handleStyleChange('typography', { 
                     ...selectedComponent?.style?.typography, 
-                    textAlign: align 
+                    textAlign: align.value 
                   })}
-                  className={`px-2 py-2 text-xs rounded ${
-                    selectedComponent?.style?.typography?.textAlign === align
-                      ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                      : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
+                  title={align.label}
+                  className={`px-2 py-2 text-xs rounded transition-all ${
+                    selectedComponent?.style?.typography?.textAlign === align.value
+                      ? 'bg-blue-100 text-blue-700 border border-blue-300 shadow-sm'
+                      : 'bg-gray-100 hover:bg-gray-200 border border-gray-300 hover:border-gray-400'
                   }`}
                 >
-                  {align === 'left' && '⬅'}
-                  {align === 'center' && '↔'}
-                  {align === 'right' && '➡'}
-                  {align === 'justify' && '⟷'}
+                  {align.icon}
                 </button>
               ))}
             </div>
@@ -962,7 +965,7 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
         </div>
 
         {/* Empty state */}
-        <div className="flex-1 flex items-center justify-center p-4">
+        <div className="flex-1 flex items-center justify-center p-4 max-h-[calc(100vh-200px)] overflow-y-auto">
           <div className="text-center text-gray-500">
             <Settings className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <p className="text-sm">Selecciona un componente para ver sus propiedades</p>
@@ -1025,7 +1028,7 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 max-h-[calc(100vh-200px)]">
         {selectedComponent && (
           <>
             {activeTab === 'properties' && renderPropertiesTab()}

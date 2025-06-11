@@ -209,18 +209,34 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
         <div
           className="preview-text"
           style={{
-            fontFamily: content?.fontFamily || 'Arial',
-            fontSize: `${content?.fontSize || 16}px`,
-            fontWeight: content?.fontWeight || 'normal',
-            fontStyle: content?.fontStyle || 'normal',
-            color: content?.color || '#000000',
-            backgroundColor: content?.backgroundColor || 'transparent',
-            textAlign: content?.textAlign || 'left',
-            lineHeight: content?.lineHeight || 1.2,
-            padding: content?.padding || '0px',
-            borderRadius: content?.borderRadius || '0px',
-            border: content?.border || 'none',
-            textShadow: content?.textShadow || 'none'
+            // Tipografía desde component.style.typography
+            fontFamily: component.style?.typography?.fontFamily || 'Arial',
+            fontSize: `${component.style?.typography?.fontSize || 16}px`,
+            fontWeight: component.style?.typography?.fontWeight || 'normal',
+            fontStyle: component.style?.typography?.fontStyle || 'normal',
+            textAlign: component.style?.typography?.textAlign || 'left',
+            lineHeight: component.style?.typography?.lineHeight || 1.2,
+            
+            // Colores desde component.style.color
+            color: component.style?.color?.color || '#000000',
+            backgroundColor: component.style?.color?.backgroundColor || 'transparent',
+            
+            // Bordes desde component.style.border
+            borderRadius: component.style?.border?.radius?.topLeft ? 
+              `${component.style.border.radius.topLeft}px` : '0px',
+            border: component.style?.border ? 
+              `${component.style.border.width}px ${component.style.border.style || 'solid'} ${component.style.border.color}` : 
+              'none',
+            
+            // Efectos desde component.style.effects
+            opacity: component.style?.effects?.opacity ?? 1,
+            
+            // Transform desde component.position
+            transform: `rotate(${component.position.rotation || 0}deg) scale(${component.position.scaleX || 1}, ${component.position.scaleY || 1})`,
+            
+            // Fallbacks desde content (para compatibilidad)
+            ...(content?.padding && { padding: content.padding }),
+            ...(content?.textShadow && { textShadow: content.textShadow })
           }}
         >
           {textContent || 'Texto'}
