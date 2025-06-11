@@ -11,6 +11,7 @@ import { ComponentsPanelV3 } from './components/ComponentsPanelV3';
 import { PropertiesPanelV3 } from './components/PropertiesPanelV3';
 import { LayersPanelV3 } from './components/LayersPanelV3';
 import { PreviewPanelV3 } from './components/PreviewPanelV3';
+import { PreviewModalV3 } from './components/PreviewModalV3';
 import { ToolbarV3 } from './components/ToolbarV3';
 import { StatusBarV3 } from './components/StatusBarV3';
 import { Header } from '../shared/Header';
@@ -355,15 +356,13 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
 
   const handlePreview = useCallback(async () => {
     try {
-      const previewUrl = await operations.generatePreview();
       setShowPreview(true);
-      // Aquí podrías abrir un modal con el preview
-      toast.success('Preview generado');
+      toast.success('Vista previa abierta');
     } catch (error) {
-      toast.error('Error al generar preview');
-      console.error('Error generating preview:', error);
+      toast.error('Error al abrir vista previa');
+      console.error('Error opening preview:', error);
     }
-  }, [operations]);
+  }, []);
 
   const handleExport = useCallback(async () => {
     try {
@@ -752,6 +751,16 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
           </div>
         )}
       </div>
+      
+      {/* Modal de Preview */}
+      {showPreview && state.currentTemplate && (
+        <PreviewModalV3
+          isOpen={showPreview}
+          onClose={() => setShowPreview(false)}
+          state={state}
+          template={state.currentTemplate}
+        />
+      )}
     </div>
   );
 }; 

@@ -122,39 +122,114 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
   const renderComponentContent = (component: DraggableComponentV3): React.ReactNode => {
     const content = component.content as any;
     
-    switch (component.type) {
-      case 'text':
-        let textContent = '';
+    // =====================
+    // MAPEO DE CAMPOS DINÁMICOS
+    // =====================
+    const getFieldValue = (fieldName: string): string => {
+      const fieldMap: Record<string, string> = {
+        // Campos de producto
+        'field-product-name': mockData.product_name,
+        'field-product-description': mockData.product_description,
+        'field-product-sku': mockData.product_sku,
+        'field-product-brand': mockData.product_brand,
         
-        if (dataMode === 'mock' && content?.dynamicTemplate) {
-          textContent = processTemplate(content.dynamicTemplate, mockData);
-        } else if (content?.staticValue) {
-          textContent = content.staticValue;
-        } else if (content?.dynamicTemplate) {
-          textContent = content.dynamicTemplate; // Mostrar template sin procesar
+        // Campos de precio
+        'field-price-original': formatPrice(mockData.product_price),
+        'field-price-without-tax': formatPrice(mockData.price_without_tax),
+        'field-final-price': formatPrice(mockData.final_price),
+        'field-discount-percentage': `${mockData.discount_percentage}%`,
+        
+        // Campos de fechas
+        'field-valid-from': mockData.valid_from,
+        'field-valid-to': mockData.valid_to,
+        
+        // Campos de tienda
+        'field-store-name': mockData.store_name,
+        'field-store-address': mockData.store_address,
+        
+        // Campos SAP genéricos
+        'product_name': mockData.product_name,
+        'product_price': formatPrice(mockData.product_price),
+        'price_without_tax': formatPrice(mockData.price_without_tax),
+        'product_description': mockData.product_description,
+        'product_sku': mockData.product_sku,
+        'product_brand': mockData.product_brand,
+        'discount_percentage': `${mockData.discount_percentage}%`,
+        'final_price': formatPrice(mockData.final_price),
+        'valid_from': mockData.valid_from,
+        'valid_to': mockData.valid_to,
+        'store_name': mockData.store_name,
+        'store_address': mockData.store_address
+      };
+      
+      return fieldMap[fieldName] || fieldName;
+    };
+    
+        // Verificar si es un campo de texto o dinámico
+    const componentType = component.type as string;
+    const isTextField = componentType === 'text' || componentType.startsWith('field-');
+    
+    if (isTextField) {
+      let textContent = '';
+      
+      if (dataMode === 'mock') {
+        // Si es un campo específico, usar su valor
+        if (component.type.startsWith('field-')) {
+          textContent = getFieldValue(component.type);
         }
-        
-        return (
-          <div
-            className="preview-text"
-            style={{
-              fontFamily: content?.fontFamily || 'Arial',
-              fontSize: `${content?.fontSize || 16}px`,
-              fontWeight: content?.fontWeight || 'normal',
-              fontStyle: content?.fontStyle || 'normal',
-              color: content?.color || '#000000',
-              backgroundColor: content?.backgroundColor || 'transparent',
-              textAlign: content?.textAlign || 'left',
-              lineHeight: content?.lineHeight || 1.2,
-              padding: content?.padding || '0px',
-              borderRadius: content?.borderRadius || '0px',
-              border: content?.border || 'none',
-              textShadow: content?.textShadow || 'none'
-            }}
-          >
-            {textContent || 'Texto'}
-          </div>
-        );
+        // Si tiene template dinámico, procesarlo
+        else if (content?.dynamicTemplate) {
+          textContent = processTemplate(content.dynamicTemplate, mockData);
+        }
+        // Si tiene valor estático, usarlo
+        else if (content?.staticValue) {
+          textContent = content.staticValue;
+        }
+        // Si tiene fieldType y field específico
+        else if (content?.fieldType === 'sap-product' && content?.sapField) {
+          textContent = getFieldValue(content.sapField);
+        }
+        // Si tiene fieldType promotion
+        else if (content?.fieldType === 'promotion-data' && content?.promotionField) {
+          textContent = getFieldValue(content.promotionField);
+        }
+        // Fallback para otros tipos
+        else {
+          textContent = getFieldValue(component.type);
+        }
+      } else if (dataMode === 'real') {
+        // En modo real, mostrar datos reales (si están disponibles)
+        textContent = content?.staticValue || 'Datos reales no disponibles';
+      } else {
+        // En modo vacío, mostrar placeholder
+        textContent = content?.staticValue || `[${component.type}]`;
+      }
+      
+      return (
+        <div
+          className="preview-text"
+          style={{
+            fontFamily: content?.fontFamily || 'Arial',
+            fontSize: `${content?.fontSize || 16}px`,
+            fontWeight: content?.fontWeight || 'normal',
+            fontStyle: content?.fontStyle || 'normal',
+            color: content?.color || '#000000',
+            backgroundColor: content?.backgroundColor || 'transparent',
+            textAlign: content?.textAlign || 'left',
+            lineHeight: content?.lineHeight || 1.2,
+            padding: content?.padding || '0px',
+            borderRadius: content?.borderRadius || '0px',
+            border: content?.border || 'none',
+            textShadow: content?.textShadow || 'none'
+          }}
+        >
+          {textContent || 'Texto'}
+        </div>
+      );
+    }
+    
+    // Resto de componentes (imágenes, QR, etc.)
+    switch (component.type) {
       
       case 'image':
       case 'image-header':
