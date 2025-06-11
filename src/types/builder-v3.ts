@@ -671,6 +671,8 @@ export interface BuilderOperationsV3 {
   updateComponent: (componentId: string, updates: Partial<DraggableComponentV3>) => void;
   duplicateComponent: (componentId: string) => DraggableComponentV3;
   duplicateComponents: (componentIds: string[]) => DraggableComponentV3[];
+  copyComponents: (componentIds: string[]) => void;
+  pasteComponents: () => void;
   
   // ===== OPERACIONES DE TRANSFORMACIÓN =====
   moveComponent: (componentId: string, newPosition: PositionV3) => void;
@@ -741,6 +743,14 @@ export interface BuilderOperationsV3 {
     height?: number; 
     quality?: number 
   }) => Promise<string>;
+
+  // ===== GESTIÓN DE UI =====
+  updateUIState: (updates: Partial<BuilderStateV3['ui']>) => void;
+  toggleUIPanel: (panel: 'left' | 'right' | 'bottom', open?: boolean) => void;
+  setUITab: (panel: 'left' | 'right' | 'bottom', tab: string) => void;
+  setZoom: (zoom: number) => void;
+  toggleGrid: () => void;
+  toggleRulers: () => void;
 }
 
 // =====================

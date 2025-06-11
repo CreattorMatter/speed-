@@ -375,74 +375,37 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
       </div>
 
       {/* Enhanced Zoom Controls */}
-      <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg border p-2 flex items-center space-x-2">
+      <div className="absolute bottom-4 right-4 flex items-center space-x-2 bg-white rounded-lg shadow-lg p-2 border">
         <button
-          onClick={operations.zoomOut}
-          className="p-2 hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
-          disabled={canvasState.zoom <= canvasState.minZoom}
-          title="Alejar (Ctrl + -)"
+          onClick={() => operations.zoomOut()}
+          className="p-2 text-gray-600 hover:bg-gray-100 rounded"
+          title="Zoom Out"
         >
-          <span className="text-lg font-mono">−</span>
+          −
         </button>
         
-        <div className="px-3 py-1 text-sm font-medium min-w-[70px] text-center bg-gray-50 rounded">
+        <span className="text-sm text-gray-600 min-w-[50px] text-center">
           {Math.round(canvasState.zoom * 100)}%
-        </div>
+        </span>
         
         <button
-          onClick={operations.zoomIn}
-          className="p-2 hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
-          disabled={canvasState.zoom >= canvasState.maxZoom}
-          title="Acercar (Ctrl + +)"
+          onClick={() => operations.zoomIn()}
+          className="p-2 text-gray-600 hover:bg-gray-100 rounded"
+          title="Zoom In"
         >
-          <span className="text-lg font-mono">+</span>
+          +
         </button>
         
         <div className="w-px h-6 bg-gray-300"></div>
         
         <button
-          onClick={operations.zoomToFit}
-          className="px-3 py-2 text-xs hover:bg-gray-100 rounded transition-colors font-medium"
-          title="Ajustar al canvas (Ctrl + 0)"
+          onClick={() => operations.zoomToFit()}
+          className="px-3 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded"
+          title="Ajustar al canvas"
         >
-          Fit
-        </button>
-
-        <button
-          onClick={operations.zoomToSelection}
-          className="px-3 py-2 text-xs hover:bg-gray-100 rounded transition-colors font-medium disabled:opacity-50"
-          disabled={selectedComponentIds.length === 0}
-          title="Zoom a selección"
-        >
-          Zoom
+          Ajustar
         </button>
       </div>
-
-      {/* Canvas Information */}
-      <div className="absolute top-4 left-4 bg-white rounded-lg shadow-sm border px-3 py-2 text-sm text-gray-600">
-        <div className="flex items-center space-x-2">
-          <span className="font-medium">📐</span>
-          <span>{template.canvas.width} × {template.canvas.height}px</span>
-          {template.canvas.dpi && (
-            <>
-              <span className="text-gray-400">•</span>
-              <span>{template.canvas.dpi} DPI</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Selection Information */}
-      {selectedComponentIds.length > 0 && (
-        <div className="absolute top-4 right-4 bg-white rounded-lg shadow-sm border px-3 py-2 text-sm text-gray-600">
-          <div className="flex items-center space-x-2">
-            <span className="font-medium">🎯</span>
-            <span>
-              {selectedComponentIds.length} elemento{selectedComponentIds.length !== 1 ? 's' : ''} seleccionado{selectedComponentIds.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -477,27 +440,31 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
   operations
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [initialPosition, setInitialPosition] = useState<PositionV3 | null>(null);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!component.isDraggable || component.isLocked) return;
+    // Permitir arrastrar siempre, excepto si está bloqueado
+    if (component.isLocked) {
+      return;
+    }
     
     e.stopPropagation();
     onClick(e);
     
     setIsDragging(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
-    setInitialPosition(component.position);
+    const startPos = { x: e.clientX, y: e.clientY };
+    const startComponentPos = component.position;
+    setDragStart(startPos);
+    setInitialPosition(startComponentPos);
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!dragStart || !initialPosition) return;
+      const deltaX = (moveEvent.clientX - startPos.x) / zoom;
+      const deltaY = (moveEvent.clientY - startPos.y) / zoom;
 
-      const deltaX = (moveEvent.clientX - dragStart.x) / zoom;
-      const deltaY = (moveEvent.clientY - dragStart.y) / zoom;
-
-      let newX = initialPosition.x + deltaX;
-      let newY = initialPosition.y + deltaY;
+      let newX = startComponentPos.x + deltaX;
+      let newY = startComponentPos.y + deltaY;
 
       // Smart snapping
       if (snapToGrid) {
@@ -531,6 +498,10 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
         }
       }
 
+      // Evitar que se salga del canvas
+      newX = Math.max(0, newX);
+      newY = Math.max(0, newY);
+
       operations.moveComponent(component.id, {
         ...component.position,
         x: newX,
@@ -548,7 +519,87 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [component, zoom, onClick, operations, dragStart, initialPosition, snapToGrid, gridSize, snapTolerance, allComponents]);
+  }, [component.isLocked, component.id, component.position, component.size, zoom, onClick, operations, snapToGrid, gridSize, snapTolerance, allComponents]);
+
+  // Función para obtener el nombre amigable del tipo de componente
+  const getComponentDisplayName = (type: ComponentTypeV3): string => {
+    const displayNames: { [key in ComponentTypeV3]: string } = {
+      'text-custom': 'Texto',
+      'text-editable': 'Texto Editable',
+      'text-dynamic': 'Texto Dinámico',
+      'field-product-name': 'Nombre Producto',
+      'field-product-description': 'Descripción',
+      'field-product-sku': 'SKU',
+      'field-product-brand': 'Marca',
+      'field-product-category': 'Categoría',
+      'field-product-origin': 'Origen',
+      'field-price-original': 'Precio Original',
+      'field-price-discount': 'Precio Descuento',
+      'field-price-final': 'Precio Final',
+      'field-discount-percentage': '% Descuento',
+      'field-discount-amount': 'Monto Descuento',
+      'field-price-per-unit': 'Precio/Unidad',
+      'field-price-per-m2': 'Precio/m²',
+      'field-price-combo': 'Precio Combo',
+      'field-installments': 'Cuotas',
+      'field-installment-value': 'Valor Cuota',
+      'field-financed-price': 'Precio Financiado',
+      'field-cft': 'CFT',
+      'field-tea': 'TEA',
+      'field-tna': 'TNA',
+      'field-financing-terms': 'Términos Financ.',
+      'image-header': 'Header',
+      'image-promotional': 'Imagen Promo',
+      'image-product': 'Imagen Producto',
+      'image-brand-logo': 'Logo Marca',
+      'image-background': 'Fondo',
+      'image-decoration': 'Decoración',
+      'qr-product-info': 'QR Producto',
+      'qr-promotion-link': 'QR Promoción',
+      'qr-custom-url': 'QR Personalizado',
+      'qr-payment-link': 'QR Pago',
+      'field-date-from': 'Fecha Desde',
+      'field-date-to': 'Fecha Hasta',
+      'field-promotion-period': 'Período Promo',
+      'field-expiry-date': 'Fecha Vencimiento',
+      'shape-rectangle': 'Rectángulo',
+      'shape-circle': 'Círculo',
+      'shape-polygon': 'Polígono',
+      'divider-line': 'Línea',
+      'icon-custom': 'Ícono',
+      'container-header': 'Contenedor Header',
+      'container-product-info': 'Contenedor Producto',
+      'container-price-block': 'Contenedor Precios',
+      'container-footer': 'Contenedor Footer'
+    };
+    return displayNames[type] || type;
+  };
+
+  // Función para obtener el color del badge según el tipo
+  const getBadgeColor = (type: ComponentTypeV3): string => {
+    if (type.includes('price') || type.includes('discount') || type.includes('installment')) {
+      return 'bg-green-500 text-white';
+    }
+    if (type.includes('product')) {
+      return 'bg-blue-500 text-white';
+    }
+    if (type.includes('image')) {
+      return 'bg-purple-500 text-white';
+    }
+    if (type.includes('date')) {
+      return 'bg-orange-500 text-white';
+    }
+    if (type.includes('qr')) {
+      return 'bg-gray-800 text-white';
+    }
+    if (type.includes('text')) {
+      return 'bg-indigo-500 text-white';
+    }
+    if (type.includes('shape') || type.includes('container')) {
+      return 'bg-gray-500 text-white';
+    }
+    return 'bg-gray-600 text-white';
+  };
 
   const renderComponentContent = () => {
     const baseStyle: React.CSSProperties = {
@@ -590,20 +641,20 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
       case 'image-product':
         return (
           <div style={baseStyle} className="overflow-hidden">
-                          <ImageUploadComponent
-                component={component}
-                isSelected={isSelected}
-                zoom={zoom}
-                onImageUpdate={(imageData: { url: string; alt?: string; file?: File }) => {
-                  operations.updateComponent(component.id, {
-                    content: {
-                      ...component.content,
-                      imageUrl: imageData.url,
-                      imageAlt: imageData.alt
-                    }
-                  });
-                }}
-              />
+            <ImageUploadComponent
+              component={component}
+              isSelected={isSelected}
+              zoom={zoom}
+              onImageUpdate={(imageData: { url: string; alt?: string; file?: File }) => {
+                operations.updateComponent(component.id, {
+                  content: {
+                    ...component.content,
+                    imageUrl: imageData.url,
+                    imageAlt: imageData.alt
+                  }
+                });
+              }}
+            />
           </div>
         );
 
@@ -628,9 +679,9 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
 
   return (
     <div
-      className={`absolute select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} ${
-        component.isLocked ? 'cursor-not-allowed' : ''
-      }`}
+      className={`absolute select-none group transition-all duration-200 ${
+        isDragging ? 'cursor-grabbing z-50' : 'cursor-grab'
+      } ${component.isLocked ? 'cursor-not-allowed' : ''}`}
       style={{
         left: `${component.position.x * zoom}px`,
         top: `${component.position.y * zoom}px`,
@@ -640,29 +691,70 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
         visibility: component.isVisible ? 'visible' : 'hidden',
       }}
       onMouseDown={handleMouseDown}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
       {/* Component Content */}
       <div className="w-full h-full relative">
         {renderComponentContent()}
-        
-        {/* Component Label */}
-        {isSelected && (
-          <div className="absolute -top-6 left-0 bg-blue-600 text-white text-xs px-2 py-1 rounded text-nowrap z-50">
-            {component.name}
-          </div>
-        )}
       </div>
 
-      {/* Enhanced Selection Border */}
-      {isSelected && (
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            border: `2px solid #3B82F6`,
-            boxShadow: `0 0 0 1px rgba(59, 130, 246, 0.3)`,
-          }}
-        />
+      {/* Bordes visuales siempre visibles */}
+      <div 
+        className={`absolute inset-0 pointer-events-none transition-all duration-200 ${
+          isSelected 
+            ? 'border-2 border-blue-500 shadow-lg shadow-blue-500/25' 
+            : isHovered
+              ? 'border border-blue-300 border-dashed'
+              : 'border border-gray-300 border-dashed opacity-30'
+        }`}
+        style={{
+          borderRadius: component.style?.border ? `${component.style.border.radius.topLeft}px` : '0px',
+        }}
+      />
+
+      {/* Etiqueta del tipo de componente - SIEMPRE VISIBLE */}
+      <div 
+        className={`absolute -top-6 left-0 px-2 py-1 rounded text-xs font-medium transition-all duration-200 z-50 ${
+          getBadgeColor(component.type)
+        } ${isSelected || isHovered ? 'opacity-100' : 'opacity-75'}`}
+        style={{
+          fontSize: `${Math.max(10, 12 / zoom)}px`,
+          transform: zoom < 0.5 ? `scale(${1 / zoom})` : 'none',
+          transformOrigin: 'left top'
+        }}
+      >
+        {getComponentDisplayName(component.type)}
+      </div>
+
+      {/* Indicadores de tamaño en las esquinas */}
+      {(isSelected || isHovered) && (
+        <>
+          {/* Indicador superior izquierdo */}
+          <div 
+            className="absolute -top-2 -left-2 bg-white border border-gray-400 rounded-full w-3 h-3 flex items-center justify-center text-xs font-mono text-gray-600"
+            style={{
+              fontSize: `${Math.max(8, 10 / zoom)}px`,
+              transform: zoom < 0.5 ? `scale(${1 / zoom})` : 'none',
+              transformOrigin: 'center'
+            }}
+          >
+            ↖
+          </div>
+          
+          {/* Indicador inferior derecho con dimensiones */}
+          <div 
+            className="absolute -bottom-6 -right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs font-mono"
+            style={{
+              fontSize: `${Math.max(8, 10 / zoom)}px`,
+              transform: zoom < 0.5 ? `scale(${1 / zoom})` : 'none',
+              transformOrigin: 'right bottom'
+            }}
+          >
+            {Math.round(component.size.width)}×{Math.round(component.size.height)}
+          </div>
+        </>
       )}
 
       {/* Enhanced Resize Handles */}
@@ -676,9 +768,14 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
 
       {/* Lock Indicator */}
       {component.isLocked && (
-        <div className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1">
+        <div className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs">
           🔒
         </div>
+      )}
+
+      {/* Drag indicator cuando se está arrastrando */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-blue-500 bg-opacity-20 border-2 border-blue-500 border-dashed animate-pulse" />
       )}
     </div>
   );

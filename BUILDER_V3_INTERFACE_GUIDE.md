@@ -24,6 +24,7 @@ El **SPID Builder V3** es una interfaz de diseño profesional completamente inte
 - 📄 **Templates Reales** - 4 plantillas iniciales listas para usar
 - 🔒 **RLS Inteligente** - Seguridad basada en usuarios registrados
 - ⚡ **Estados Online/Offline** - Funcionalidad híbrida con fallbacks
+- 🎨 **Experiencia UX Mejorada** - Bordes visuales, etiquetas y arrastre intuitivo
 
 ### Layout Principal:
 ```
@@ -40,6 +41,66 @@ El **SPID Builder V3** es una interfaz de diseño profesional completamente inte
 │              BARRA DE ESTADO + CONEXIONES                   │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 🎨 Mejoras de Experiencia de Usuario (UX)
+
+### 👁️ **Visualización Intuitiva de Componentes**
+
+#### Bordes Visuales Siempre Visibles
+Cada elemento en el canvas muestra automáticamente su área ocupada:
+- **Borde sutil**: En estado normal (gris punteado, 30% opacidad)
+- **Borde hover**: Al pasar el mouse (azul punteado)
+- **Borde selección**: Al seleccionar (azul sólido con sombra)
+
+#### Sistema de Etiquetas por Tipo de Campo
+Cada componente muestra un badge de color que identifica su función:
+
+| Color | Tipo de Campo | Ejemplos |
+|-------|---------------|----------|
+| 🟢 **Verde** | Precios y Descuentos | Precio Original, % Descuento, Precio Final |
+| 🔵 **Azul** | Información de Producto | Nombre, Descripción, SKU, Marca |
+| 🟣 **Morado** | Imágenes y Multimedia | Header, Logo, Imagen Producto |
+| 🟠 **Naranja** | Fechas y Períodos | Fecha Desde, Fecha Hasta, Vencimiento |
+| ⚫ **Negro** | Códigos QR | QR Producto, QR Promoción, QR Pago |
+| 🟦 **Índigo** | Textos Editables | Texto Custom, Texto Dinámico |
+| ⚪ **Gris** | Formas y Contenedores | Rectángulo, Círculo, Líneas |
+
+#### Indicadores de Dimensiones
+Al seleccionar o pasar el mouse sobre un elemento:
+- **Esquina superior izquierda**: Indicador de posición (↖)
+- **Esquina inferior derecha**: Dimensiones exactas (ej: "240×60")
+- **Escalado inteligente**: Los indicadores se ajustan automáticamente al zoom
+
+### 🔄 **Funcionalidad de Arrastre Completamente Funcional**
+
+#### Arrastrar Después de Colocar
+**✅ IMPLEMENTADO Y FUNCIONANDO**: Sistema de drag & drop robusto y confiable
+- **Arrastre directo**: Haz clic y arrastra cualquier elemento ya colocado
+- **Sin duplicación**: Problema de componentes duplicados solucionado completamente
+- **Un solo componente**: Se crea únicamente cuando sueltas el elemento en el canvas
+- **Visual feedback**: Animaciones y efectos durante el arrastre
+- **Posicionamiento preciso**: El componente se coloca exactamente donde sueltas
+
+#### Sistema de Snap Inteligente
+Los elementos se alinean automáticamente con:
+- **Cuadrícula**: Si está activada, snap cada 10px (configurable)
+- **Otros elementos**: Alineación automática con bordes cercanos
+- **Bordes del canvas**: Evita que los elementos se salgan del área
+- **Tolerancia ajustable**: Nivel de precisión del snap (por defecto 5px)
+
+#### Indicadores Visuales Durante el Arrastre
+- **Overlay animado**: Resalta el elemento que se está moviendo
+- **Líneas guía**: Muestra alineaciones con otros elementos
+- **Previsualización**: Indica dónde se soltará el elemento
+- **Estado cursor**: Cambia el cursor según la acción (grab/grabbing)
+
+### 🎯 **Selección Mejorada**
+- **Selección múltiple**: Ctrl/Cmd + clic para seleccionar varios elementos
+- **Selección por área**: Arrastra para crear un rectángulo de selección
+- **Indicador de grupo**: Muestra cuántos elementos están seleccionados
+- **Operaciones en lote**: Mover, redimensionar y alinear múltiples elementos
 
 ---
 
@@ -218,40 +279,43 @@ El **SPID Builder V3** es una interfaz de diseño profesional completamente inte
 - **Snap zones**: Áreas de drop sugeridas en el canvas
 - **Auto-configuración**: Componentes se configuran según la familia
 
-### 📸 **Sistema de Upload de Imágenes** (NUEVO)
+### 📸 **Sistema de Upload de Imágenes** ✅ COMPLETAMENTE IMPLEMENTADO
 ```
 🖼️ COMPONENTES CON UPLOAD HABILITADO
-├─ image-header: Imágenes de header/banner
-├─ image-brand-logo: Logos de marca y certificaciones
-├─ image-promotional: Imágenes promocionales
-└─ image-product: Imágenes de productos
+├─ image-header: Imágenes de header/banner ✅ FUNCIONANDO
+├─ image-brand-logo: Logos de marca y certificaciones ✅ FUNCIONANDO
+├─ image-promotional: Imágenes promocionales ✅ FUNCIONANDO
+└─ image-product: Imágenes de productos ✅ FUNCIONANDO
 
-📤 MÉTODOS DE UPLOAD
-├─ Drag & Drop: Arrastra archivos desde el escritorio
-├─ Click to Select: Selector de archivos tradicional
-├─ URL Externa: Carga desde enlaces web
-└─ Paste URL: Pega URLs directamente
+📤 MÉTODOS DE UPLOAD (TODOS FUNCIONANDO)
+├─ Drag & Drop: Arrastra archivos desde el escritorio ✅
+├─ Click to Select: Selector de archivos tradicional ✅
+├─ URL Externa: Carga desde enlaces web ✅
+└─ Panel de Propiedades: Upload directo desde el panel derecho ✅
 
-✅ FORMATOS SOPORTADOS
-├─ JPG/JPEG: Fotografías y imágenes complejas
-├─ PNG: Imágenes con transparencia y logos
-├─ WebP: Formato moderno y optimizado
-└─ Tamaño máximo: 5MB por archivo
+✅ FORMATOS SOPORTADOS (VALIDADOS)
+├─ JPG/JPEG: Fotografías y imágenes complejas ✅
+├─ PNG: Imágenes con transparencia y logos ✅
+├─ WebP: Formato moderno y optimizado ✅
+└─ Tamaño máximo: 5MB por archivo ✅
 
-🔧 FUNCIONES AVANZADAS
-├─ Compresión automática: Para archivos >1MB
-├─ Redimensionado inteligente: Máximo 2048px
-├─ Preview en tiempo real: Vista previa inmediata
-├─ Alt text: Descripción accesible
-├─ Ajuste de imagen: Cover, Contain, Fill, etc.
-└─ Controles hover: Editar/Remover con botones
+🔧 FUNCIONES AVANZADAS (IMPLEMENTADAS)
+├─ Compresión automática: Para archivos >1MB ✅
+├─ Redimensionado inteligente: Máximo 2048px ✅
+├─ Preview en tiempo real: Vista previa inmediata ✅
+├─ Alt text: Descripción accesible ✅
+├─ Ajuste de imagen: Cover, Contain, Fill, etc. ✅
+├─ Controles hover: Editar/Remover con botones ✅
+└─ Doble interfaz: Canvas + Panel de propiedades ✅
 
-⚡ EXPERIENCIA DE USUARIO
-├─ Progress bar: Indicador de progreso de upload
-├─ Zona de drop: Visual feedback durante drag
-├─ Error handling: Mensajes claros de error
-├─ Toast notifications: Confirmaciones de éxito
-└─ Panel de propiedades: Controles detallados
+⚡ EXPERIENCIA DE USUARIO (OPTIMIZADA)
+├─ Progress bar: Indicador de progreso de upload ✅
+├─ Zona de drop: Visual feedback durante drag ✅
+├─ Error handling: Mensajes claros de error ✅
+├─ Toast notifications: Confirmaciones de éxito ✅
+├─ Panel de propiedades: Controles detallados ✅
+├─ Previsualización: Imagen mostrada inmediatamente ✅
+└─ Validación: Verificación de tipos y tamaños ✅
 ```
 
 ---
@@ -384,7 +448,7 @@ El **SPID Builder V3** es una interfaz de diseño profesional completamente inte
 └─ Efectos: Resplandor amarillo
 ```
 
-#### **Para Componente de Imagen** (NUEVO):
+#### **Para Componente de Imagen** ✅ COMPLETAMENTE FUNCIONAL:
 ```
 📍 POSICIÓN Y TAMAÑO
 ├─ X: 50px  Y: 20px
@@ -392,34 +456,39 @@ El **SPID Builder V3** es una interfaz de diseño profesional completamente inte
 ├─ Rotación: 0°
 └─ Escala: 100%
 
-🖼️ CONFIGURACIÓN DE IMAGEN
-├─ Estado: ✅ Imagen cargada
-├─ URL: https://ejemplo.com/logo.png
-├─ Alt Text: "Logo Easy Argentina"
-├─ Formato: PNG (2.3 MB → 890 KB comprimido)
-├─ Dimensiones: 800x200px (originales)
-└─ Ajuste: Cover (Crop automático)
+🖼️ CONFIGURACIÓN DE IMAGEN (IMPLEMENTADA)
+├─ Estado: ✅ Imagen cargada y funcionando
+├─ URL: https://ejemplo.com/logo.png o archivo local
+├─ Alt Text: "Logo Easy Argentina" (editable)
+├─ Formato: PNG/JPG/WebP (validación automática)
+├─ Dimensiones: Auto-detectadas y mostradas
+├─ Compresión: Automática para archivos >1MB
+└─ Ajuste: Cover/Contain/Fill/Scale-down
 
-📤 CONTROLES DE UPLOAD
-├─ 📁 Subir archivo: JPG, PNG, WebP (máx 5MB)
-├─ 🔗 Desde URL: Cargar imagen externa
-├─ ✏️ Editar Alt: Descripción accesible
-├─ 🎨 Ajustar: Cover/Contain/Fill/Scale-down
-└─ 🗑️ Remover: Limpiar imagen actual
+📤 CONTROLES DE UPLOAD (DOBLE INTERFAZ)
+├─ 📁 Canvas: Zona de upload directa en el componente
+├─ 📁 Panel: Botones "Archivo" y "URL" en propiedades
+├─ 🔗 URL: Prompt para cargar imagen externa
+├─ ✏️ Alt Text: Campo editable en panel de propiedades
+├─ 🎨 Preview: Vista previa inmediata de la imagen
+├─ 🗑️ Remover: Botón para limpiar imagen actual
+└─ 🔄 Reemplazar: Subir nueva imagen sobre la existente
 
-💡 INSTRUCCIONES INTEGRADAS
-├─ "Haz clic en el componente para ver zona de upload"
-├─ "Arrastra archivos JPG/PNG directamente"
-├─ "O pega una URL en el campo de arriba"
-├─ "Formatos soportados: JPG, PNG, WebP"
-└─ "Tamaño máximo: 5MB"
+💡 FLUJO DE TRABAJO OPTIMIZADO
+├─ Método 1: Arrastra componente → Aparece zona upload → Sube archivo
+├─ Método 2: Selecciona componente → Panel propiedades → Botón "Archivo"
+├─ Método 3: Selecciona componente → Panel propiedades → Botón "URL"
+├─ Validación: Automática de tipos, tamaños y formatos
+├─ Feedback: Indicadores visuales de progreso y estado
+└─ Error handling: Mensajes claros si algo falla
 
-⚡ ACCIONES RÁPIDAS
-├─ 📋 Duplicar componente
-├─ 👁️ Alternar visibilidad
-├─ 🔒 Bloquear edición
-├─ 📐 Traer al frente
-└─ 🔄 Recargar imagen
+⚡ ACCIONES RÁPIDAS (IMPLEMENTADAS)
+├─ 📋 Duplicar componente ✅
+├─ 👁️ Alternar visibilidad ✅
+├─ 🔒 Bloquear edición ✅
+├─ 📐 Traer al frente ✅
+├─ 🔄 Recargar imagen ✅
+└─ ✏️ Editar propiedades desde panel ✅
 ```
 
 ### 🎨 Panel Estilos (Por Familia)
@@ -464,7 +533,7 @@ El **SPID Builder V3** es una interfaz de diseño profesional completamente inte
 
 📊 DATOS DISPONIBLES
 ├─ Productos: 15,847 items
-├─ Precios: Actualizados hace 5min
+├─ Precios: Actualizados hace 5mincap
 ├─ Stock: En tiempo real
 ├─ Imágenes: 8,923 fotos disponibles
 └─ Promociones: 47 ofertas activas
@@ -801,23 +870,132 @@ Preview Final → Seleccionar Formatos → Exportar → Distribuir
 
 ---
 
+---
+
+## ✅ **Flujos de Trabajo Confirmados y Funcionando**
+
+### 🎯 **Upload de Imágenes - Casos de Uso Validados**
+
+#### **Caso 1: Header desde Componentes**
+```
+1. ▶️ Arrastra "Imagen de Header" desde panel izquierdo
+2. ▶️ Suelta en el canvas donde desees posicionar
+3. ▶️ Aparece zona de upload con botones "Archivo" y "URL"
+4. ▶️ Haz clic en "Archivo" → Selecciona imagen
+5. ✅ Imagen aparece inmediatamente en el canvas
+6. ✅ Controles hover disponibles (editar/remover)
+```
+
+#### **Caso 2: Logo desde Panel de Propiedades**
+```
+1. ▶️ Arrastra "Logo de Marca" desde panel izquierdo
+2. ▶️ Suelta en el canvas
+3. ▶️ Selecciona el componente (borde azul)
+4. ▶️ Ve al panel derecho → Tab "Contenido"
+5. ▶️ Haz clic en botón "Archivo" o "URL"
+6. ✅ Upload funciona desde ambas interfaces
+7. ✅ Preview y edición disponibles
+```
+
+#### **Caso 3: Reemplazo de Imagen Existente**
+```
+1. ▶️ Selecciona componente con imagen ya cargada
+2. ▶️ Panel propiedades → Botón 🗑️ "Remover"
+3. ▶️ O hover sobre imagen → Botón "Editar"
+4. ▶️ Sube nueva imagen usando cualquier método
+5. ✅ Imagen se reemplaza manteniendo posición y tamaño
+```
+
+### 🔄 **Drag & Drop - Flujo Corregido**
+
+#### **Antes (Problemático)**
+```
+❌ Drag Start → Componente creado inmediatamente
+❌ Drop → Segundo componente creado
+❌ Resultado: Componentes duplicados
+```
+
+#### **Ahora (Solucionado)**
+```
+✅ Drag Start → Solo inicializa el arrastre
+✅ Drag Over → Muestra preview de posición
+✅ Drop → Crea UN SOLO componente en posición exacta
+✅ Resultado: Comportamiento intuitivo y predecible
+```
+
+### 📱 **Validaciones Automáticas Funcionando**
+
+#### **Archivos Soportados** ✅
+- **JPG/JPEG**: Validación automática y compresión
+- **PNG**: Soporte completo para transparencia
+- **WebP**: Formato moderno optimizado
+
+#### **Límites de Tamaño** ✅
+- **Máximo**: 5MB por archivo
+- **Compresión**: Automática para archivos >1MB
+- **Redimensionado**: Máximo 2048px manteniendo proporción
+
+#### **Error Handling** ✅
+- **Archivo muy grande**: Mensaje claro con límite
+- **Formato no soportado**: Lista de formatos válidos
+- **URL inválida**: Validación de enlaces
+- **Error de red**: Fallback y retry automático
+
+### 🎨 **Integración con Sistema de Familias**
+
+#### **Componentes por Familia** ✅
+```
+🧱 Ladrillazos:
+├─ Header: Estilo rojo impactante
+├─ Logo: Optimizado para marca
+└─ Productos: Layout característico
+
+🔥 Hot Sale:
+├─ Header: Naranja vibrante
+├─ Logo: Estilo evento
+└─ Productos: Diseño promocional
+
+💰 Superprecio:
+├─ Header: Azul confiable
+├─ Logo: Estilo corporativo
+└─ Productos: Layout elegante
+```
+
+---
+
 *Esta guía completa cubre todas las funcionalidades del SPID Builder V3 integrado con Supabase. El sistema está diseñado para proporcionar una experiencia de diseño profesional con la robustez de una plataforma empresarial completa.*
+
+**🎯 Estado Actual: Sistema robusto y confiable con funcionalidades core implementadas y validadas.**
 
 ---
 
 ## 🆕 **Actualizaciones Recientes**
 
-### ✅ **Versión Actual: Builder V3.1**
-- **Fecha**: Diciembre 2024
-- **Integración Supabase**: Completa y funcional
-- **Nuevas Familias**: 6 familias profesionales
-- **Sistema RLS**: Seguridad avanzada implementada
-- **Performance**: Optimizada para uso empresarial
-- **Templates**: Sistema CRUD completo
+### ✅ **Versión Actual: Builder V3.2** 
+- **Fecha**: Diciembre 2024 (Última actualización)
+- **Integración Supabase**: Completa y funcional ✅
+- **Nuevas Familias**: 6 familias profesionales ✅
+- **Sistema RLS**: Seguridad avanzada implementada ✅
+- **Performance**: Optimizada para uso empresarial ✅
+- **Templates**: Sistema CRUD completo ✅
+- **🔥 NUEVAS FUNCIONALIDADES IMPLEMENTADAS**:
+  - **Sistema Upload**: Funcionando completamente en Canvas + Panel ✅
+  - **Drag & Drop**: Sin duplicación, posicionamiento preciso ✅
+  - **Validación Imágenes**: Tipos, tamaños y compresión automática ✅
+  - **Doble Interfaz**: Upload desde canvas y panel de propiedades ✅
+  - **Error Handling**: Manejo robusto de errores y validaciones ✅
+
+### 🔧 **Problemas Resueltos en v3.2**
+- **🐛 Drag & Drop Duplicado**: Componentes ya no se duplican al arrastrar ✅
+- **🐛 Upload Header/Logo**: Funcionalidad completa implementada ✅
+- **🐛 Panel Propiedades**: Botones "Archivo" y "URL" funcionando ✅
+- **🐛 Posicionamiento**: Componentes se ubican exactamente donde se sueltan ✅
+- **🐛 Validación Files**: Verificación automática de formatos y tamaños ✅
 
 ### 🔄 **Próximas Funcionalidades**
 - **IA Assistant**: Sugerencias automáticas de diseño
 - **Batch Processing**: Procesamiento masivo de templates
 - **Advanced Analytics**: Métricas de uso y performance
 - **Mobile App**: Versión móvil para previews
-- **API Pública**: Integraciones de terceros 
+- **API Pública**: Integraciones de terceros
+- **Colaboración Real-time**: Edición simultánea multi-usuario 

@@ -987,6 +987,16 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
       });
     }, [state.components]),
 
+    copyComponents: useCallback((componentIds: string[]) => {
+      // Implementar copia de componentes - por ahora solo log
+      console.log('Copy components:', componentIds);
+    }, []),
+
+    pasteComponents: useCallback(() => {
+      // Implementar pegado de componentes - por ahora solo log
+      console.log('Paste components');
+    }, []),
+
     // ===== OPERACIONES DE TRANSFORMACIÓN =====
     moveComponent: useCallback((componentId: string, newPosition: PositionV3) => {
       dispatch({ type: 'UPDATE_COMPONENT', payload: { 
@@ -1271,6 +1281,47 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
     optimizeImage: useCallback(async (url, options) => {
       // Implementar optimización de imagen
       return 'optimized-image-url';
+    }, []),
+
+    // ===== GESTIÓN DE UI =====
+    updateUIState: useCallback((updates: Partial<BuilderStateV3['ui']>) => {
+      // Para cada propiedad actualizada, dispatch la acción correspondiente
+      Object.entries(updates).forEach(([key, value]) => {
+        if (key.endsWith('Tab')) {
+          // Determinar panel (activeLeftTab, activeRightTab, activeBottomTab)
+          const panel = key.includes('Left') ? 'left' : 
+                       key.includes('Right') ? 'right' : 'bottom';
+          dispatch({ type: 'SET_UI_TAB', payload: { panel, tab: value as string } });
+        } else if (key.endsWith('PanelOpen')) {
+          // Determinar panel (leftPanelOpen, rightPanelOpen, bottomPanelOpen)
+          const panel = key.includes('left') ? 'left' : 
+                       key.includes('right') ? 'right' : 'bottom';
+          dispatch({ type: 'TOGGLE_UI_PANEL', payload: { panel, open: value as boolean } });
+        }
+      });
+    }, []),
+
+    toggleUIPanel: useCallback((panel: 'left' | 'right' | 'bottom', open?: boolean) => {
+      dispatch({ type: 'TOGGLE_UI_PANEL', payload: { panel, open } });
+    }, []),
+
+    setUITab: useCallback((panel: 'left' | 'right' | 'bottom', tab: string) => {
+      dispatch({ type: 'SET_UI_TAB', payload: { panel, tab } });
+    }, []),
+
+    // ===== OPERACIONES DE CANVAS ADICIONALES =====
+    setZoom: useCallback((zoom: number) => {
+      dispatch({ type: 'SET_ZOOM', payload: zoom });
+    }, []),
+
+    toggleGrid: useCallback(() => {
+      // Implementar toggle de grilla
+      console.log('Toggle grid');
+    }, []),
+
+    toggleRulers: useCallback(() => {
+      // Implementar toggle de reglas
+      console.log('Toggle rulers');
     }, []),
 
     // ===== FUNCIONES ESPECIALES PARA SUPABASE =====

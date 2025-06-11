@@ -668,7 +668,7 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
                     {state.ui.activeLeftTab === 'components' && (
                       <ComponentsPanelV3
                         componentsLibrary={componentsLibrary}
-                        onComponentDragStart={(type) => handleComponentAdd(type, { x: 100, y: 100 })}
+                        onComponentDragStart={handleComponentDragStart}
                       />
                     )}
                     {state.ui.activeLeftTab === 'layers' && (
@@ -697,58 +697,30 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
                   canvasState={state.canvas}
                   selectedComponentIds={state.canvas.selectedComponentIds}
                   onComponentSelect={handleComponentSelect}
+                  onMultipleComponentSelect={handleMultipleComponentSelect}
                   onComponentAdd={handleComponentAdd}
                   operations={operations}
                 />
               </div>
 
-              {/* Panel derecho */}
+              {/* Panel derecho con 4 pestañas */}
               {state.ui.rightPanelOpen && (
                 <div className="w-80 bg-white rounded-lg shadow-sm border overflow-hidden">
-                  <div className="border-b border-gray-200">
-                    <nav className="flex">
-                      {[
-                        { id: 'properties', label: 'Propiedades', icon: Settings },
-                        { id: 'styles', label: 'Estilos', icon: Eye },
-                        { id: 'data', label: 'Datos', icon: Zap }
-                      ].map(tab => (
-                        <button
-                          key={tab.id}
-                          className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                            state.ui.activeRightTab === tab.id
-                              ? 'border-blue-500 text-blue-600 bg-blue-50'
-                              : 'border-transparent text-gray-500 hover:text-gray-700'
-                          }`}
-                        >
-                          <tab.icon className="w-4 h-4 mx-auto mb-1" />
-                          {tab.label}
-                        </button>
-                      ))}
-                    </nav>
-                  </div>
-
-                  <div className="h-full overflow-y-auto">
-                    {state.ui.activeRightTab === 'properties' && (
-                      <PropertiesPanelV3
-                        state={state}
-                        onComponentUpdate={operations.updateComponent}
-                        onComponentDelete={operations.removeComponent}
-                        onComponentDuplicate={operations.duplicateComponent}
-                        onComponentToggleVisibility={(id) => operations.updateComponent(id, { isVisible: !state.components.find(c => c.id === id)?.isVisible })}
-                        onComponentToggleLock={(id) => operations.updateComponent(id, { isLocked: !state.components.find(c => c.id === id)?.isLocked })}
-                      />
-                    )}
-                    {state.ui.activeRightTab === 'styles' && (
-                      <div className="p-4">
-                        <p className="text-gray-500 text-center">Estilos panel - En desarrollo</p>
-                      </div>
-                    )}
-                    {state.ui.activeRightTab === 'data' && (
-                      <div className="p-4">
-                        <p className="text-gray-500 text-center">Datos panel - En desarrollo</p>
-                      </div>
-                    )}
-                  </div>
+                  <PropertiesPanelV3
+                    state={state}
+                    activeTab={state.ui.activeRightTab || 'properties'}
+                    onTabChange={(tab) => {
+                      // Actualizar estado del tab activo
+                      operations.updateUIState({
+                        activeRightTab: tab
+                      });
+                    }}
+                    onComponentUpdate={operations.updateComponent}
+                    onComponentDelete={operations.removeComponent}
+                    onComponentDuplicate={operations.duplicateComponent}
+                    onComponentToggleVisibility={(id) => operations.updateComponent(id, { isVisible: !state.components.find(c => c.id === id)?.isVisible })}
+                    onComponentToggleLock={(id) => operations.updateComponent(id, { isLocked: !state.components.find(c => c.id === id)?.isLocked })}
+                  />
                 </div>
               )}
             </div>
