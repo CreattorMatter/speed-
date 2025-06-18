@@ -1,31 +1,27 @@
 import React, { useState, useEffect, Suspense } from 'react';
-import { LogIn, Lock, User, AlertCircle } from 'lucide-react';
-import Dashboard from './components/Dashboard';
-import Builder from './components/Builder/Builder';
-import Products from './components/Products/Products';
-import Promotions from './components/Promotions';
-import { PosterEditor } from './components/Posters/PosterEditor';
-import { PrintView } from './components/Posters/PrintView';
-import { DigitalCarouselEditor } from './components/DigitalCarousel/DigitalCarouselEditor';
+import { LogIn, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
+import type { User } from './types/index';
+import Dashboard from './features/dashboard/components/Dashboard';
+import Promotions from './features/promotions/components';
+import { PosterEditor } from './features/posters/components/Posters/PosterEditor';
+import { PrintView } from './features/posters/components/Posters/PrintView';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { ConfigurationPortal } from './components/Settings/ConfigurationPortal';
+import { ConfigurationPortal } from './features/settings/components/ConfigurationPortal';
 import { PosterPreviewPage } from './pages/PosterPreview';
-import { Analytics } from './components/Analytics/Analytics';
+import { Analytics } from './features/analytics/components/Analytics';
 import { supabase } from './lib/supabaseClient';
 import { HeaderProvider } from './components/shared/HeaderProvider';
 import { Toaster } from 'react-hot-toast';
 import { MobileDetectionModal } from './components/shared/MobileDetectionModal';
 import { CameraCapture } from './components/shared/CameraCapture';
 import { toast } from 'react-hot-toast';
-import { DigitalSignageView } from './components/DigitalSignage/DigitalSignageView';
-import { CarouselView } from './components/DigitalCarousel/CarouselView';
-import DashboardEasyPilar from './components/DashboardEasyPilar';
-import { EnhancedBuilder } from './components/Builder/EnhancedBuilder';
-import { NewBuilder } from './components/Builder/NewBuilder';
-import { SimpleTestBuilder } from './components/Builder/SimpleTestBuilder';
-import { BuilderV2 } from './components/BuilderV2/BuilderV2';
-import { BuilderV3 } from './components/BuilderV3/BuilderV3';
+import { DigitalSignageView } from './features/digital-signage/components/DigitalSignageView';
+import { CarouselView } from './features/digital-carousel/components/CarouselView';
+import DashboardEasyPilar from './features/dashboard/components/DashboardEasyPilar';
+import { BuilderV3 } from './features/builderV3/components/BuilderV3';
+import Products from './features/products/Products';
+import DigitalCarouselEditor from './features/digital-carousel/components/DigitalCarouselEditor';
 
 
 export interface DashboardProps {
@@ -40,16 +36,9 @@ export interface DashboardProps {
   onSettings: () => void;
   userRole: 'admin' | 'limited';
   onAnalytics: () => void;
-  onDigitalPoster: () => void;
 }
 
-interface User {
-  id: string | number;
-  email: string;
-  name: string;
-  role: string;
-  status: 'active' | 'inactive';
-}
+// Using the User type from types/index.ts instead of local interface
 
 function AppContent() {
   const [email, setEmail] = useState('');
@@ -158,7 +147,9 @@ function AppContent() {
         email: email,
         name: userData?.name || validUser.name,
         role: userData?.role || validUser.role,
-        status: 'active' as const
+        status: 'active' as const,
+        lastLogin: new Date().toISOString(),
+        created_at: userData?.created_at || new Date().toISOString()
       };
 
       // Guardar en localStorage y estado
@@ -231,9 +222,7 @@ function AppContent() {
     navigate('/analytics');
   };
 
-  const handleDigitalPoster = () => {
-    navigate('/digital-carousel');
-  };
+
 
   const isMobile = () => {
     const userAgent = navigator.userAgent || navigator.vendor;
@@ -287,9 +276,9 @@ function AppContent() {
           onPromotions={() => navigate('/promotions')}
           onBack={handleBack}
           userEmail={user?.email || ''}
+          userName={user?.name || ''}
           onSettings={handleSettings}
           onAnalytics={handleAnalytics}
-          onDigitalPoster={handleDigitalPoster}
         />
       );
     }
@@ -306,7 +295,6 @@ function AppContent() {
         onSettings={handleSettings}
         userRole={userRole}
         onAnalytics={handleAnalytics}
-        onDigitalPoster={handleDigitalPoster}
       />
     );
   };
@@ -353,7 +341,7 @@ function AppContent() {
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-4 w-4 xs:h-5 xs:w-5 text-white/40" />
+                    <UserIcon className="h-4 w-4 xs:h-5 xs:w-5 text-white/40" />
                   </div>
                   <input
                     id="email"
@@ -507,15 +495,15 @@ function AppContent() {
 
         <Route path="/playlist/:id" element={<CarouselView />} />
 
-        <Route path="/enhanced-builder" element={<EnhancedBuilder />} />
+        <Route path="/enhanced-builder" element={<div>Enhanced Builder (ruta por definir)</div>} />
 
-        <Route path="/test-builder" element={<SimpleTestBuilder />} />
+        <Route path="/test-builder" element={<div>Test Builder (ruta por definir)</div>} />
       </Routes>
 
       <ConfigurationPortal 
         isOpen={isConfigOpen}
         onClose={() => setIsConfigOpen(false)}
-        currentUser={user || { id: '0', email: '', name: '', role: '' }}
+        currentUser={user || { id: '0', email: '', name: '', role: '', status: 'active', lastLogin: '', created_at: '' }}
       />
 
       <MobileDetectionModal

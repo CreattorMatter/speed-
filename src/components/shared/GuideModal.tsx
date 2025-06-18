@@ -1,10 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Dialog } from '@headlessui/react';
 import {
-  X, Edit3, Save, Download, Search, Wand2, Layout,
-  Image, Type, Palette, ChevronRight, ArrowLeft,
-  MousePointer2, Layers, Grid3X3, PenTool, ImagePlus,
-  TextSelect, Palette as ColorPalette, Move, ZoomIn,
+  X, Layout, ChevronRight, ArrowLeft, PenTool,
   MonitorPlay, ShoppingCart, Tag, BarChart, Settings,
   Volume2, VolumeX
 } from 'lucide-react';

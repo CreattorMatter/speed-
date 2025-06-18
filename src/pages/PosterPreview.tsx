@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { PosterPreview as Poster } from '../components/Posters/PosterPreview';
+import { PosterPreview as Poster } from '../features/posters/components/Posters/PosterPreview';
 import { ArrowLeft } from 'lucide-react';
 
 export const PosterPreviewPage = () => {
@@ -9,28 +9,29 @@ export const PosterPreviewPage = () => {
   const { product, promotion, company, showLogo } = location.state || {};
 
   return (
-    <div className="min-h-screen bg-slate-900 p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="bg-gray-100 min-h-screen">
+      <div className="p-4 bg-white shadow-md">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center text-white/80 hover:text-white mb-8"
+          className="flex items-center text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
-          <span className="font-medium">Volver al editor</span>
+          Volver
         </button>
-
-        {product && (
-          <Poster
-            product={product}
-            promotion={promotion}
-            company={company}
-            showTopLogo={showLogo}
-            pricePerUnit={`${product.price * 2}`}
-            points="49"
-            origin="ARGENTINA"
-            barcode="7790895000782"
-          />
-        )}
+      </div>
+      <div className="p-4">
+        <Poster
+          product={product}
+          promotion={promotion}
+          company={company}
+          showTopLogo={showLogo}
+          pricePerUnit={`${product.price * 2}`}
+          points="49"
+          origin="ARGENTINA"
+          selectedFormat={{ id: 'a4', width: '210mm', height: '297mm', name: 'A4' }}
+          zoom={1}
+          cardSize={1}
+        />
       </div>
     </div>
   );

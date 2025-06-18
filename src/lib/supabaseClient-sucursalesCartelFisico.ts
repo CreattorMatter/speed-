@@ -133,4 +133,40 @@ export const getHistorialCartelesPorSucursal = async (
 };
 
 // Re-exportar el cliente admin para compatibilidad
-export { supabaseAdmin }; 
+export { supabaseAdmin };
+
+export const sendPostersToSucursales = async (
+  posterIds: string[],
+  sucursalIds: string[],
+  empresaId: number
+): Promise<{ success: boolean; error?: any }> => {
+  console.log('Enviando carteles a sucursales:', {
+    posterIds,
+    sucursalIds,
+    empresaId,
+  });
+
+  // Aquí iría la lógica para interactuar con Supabase.
+  // Por ejemplo, un bucle para insertar en una tabla 'envios'.
+
+  // for (const sucursalId of sucursalIds) {
+  //   for (const posterId of posterIds) {
+  //     const { error } = await supabase
+  //       .from('envios_carteles')
+  //       .insert({
+  //         sucursal_id: sucursalId,
+  //         poster_id: posterId,
+  //         empresa_id: empresaId,
+  //         estado: 'pendiente' 
+  //       });
+      
+  //     if (error) {
+  //       console.error('Error al enviar cartel a sucursal:', error);
+  //       return { success: false, error };
+  //     }
+  //   }
+  // }
+  
+  // Simular una operación exitosa por ahora
+  return new Promise(resolve => setTimeout(() => resolve({ success: true }), 1000));
+}; 

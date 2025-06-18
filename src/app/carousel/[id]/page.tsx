@@ -1,4 +1,4 @@
-import { CarouselView } from '@/components/DigitalCarousel/CarouselView';
+import { CarouselView } from '@/features/digital-carousel/components/CarouselView';
 
 interface CarouselPageProps {
   params: {

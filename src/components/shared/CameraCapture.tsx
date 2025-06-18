@@ -130,7 +130,7 @@ export function CameraCapture({ isOpen, onClose, onPhotoTaken }: CameraCapturePr
       const file = new File([capturedImage.blob], fileName, { type: 'image/jpeg' });
 
       // Subir a Supabase
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('builder-images')
         .upload(`captures/${fileName}`, file, {
           upsert: true // Sobrescribir si existe un archivo con el mismo nombre
