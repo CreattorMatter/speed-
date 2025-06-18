@@ -350,8 +350,8 @@ const createMockFamilies = (): FamilyV3[] => [
   {
     id: 'family-hot-sale',
     name: 'Hot Sale',
-    displayName: 'Hot Sale 2024',
-    description: 'La mayor venta del año con descuentos increíbles',
+    displayName: 'Hot Sale',
+    description: 'Ofertas especiales de Hot Sale',
     icon: '🔥',
     headerImage: '/images/headers/hot-sale.png',
     templates: [],
@@ -371,20 +371,50 @@ const createMockFamilies = (): FamilyV3[] => [
       },
       visualEffects: {
         headerStyle: {
-          typography: { fontSize: 48, fontWeight: 'bold' },
+          typography: { 
+            fontFamily: 'Poppins',
+            fontSize: 48, 
+            fontWeight: 'bold',
+            fontStyle: 'normal',
+            lineHeight: 1.2,
+            letterSpacing: 0,
+            textAlign: 'center',
+            textDecoration: 'none',
+            textTransform: 'uppercase'
+          },
           color: { color: '#ffffff', backgroundColor: '#ff4444' }
         },
         priceStyle: {
-          typography: { fontSize: 36, fontWeight: 'bold' },
-          color: { color: '#ff4444' }
+          typography: { 
+            fontFamily: 'Inter',
+            fontSize: 36, 
+            fontWeight: 'bold',
+            fontStyle: 'normal',
+            lineHeight: 1.2,
+            letterSpacing: 0,
+            textAlign: 'center',
+            textDecoration: 'none',
+            textTransform: 'none'
+          },
+          color: { color: '#ff4444', backgroundColor: 'transparent' }
         },
         footerStyle: {
-          typography: { fontSize: 12 },
-          color: { color: '#666666' }
+          typography: { 
+            fontFamily: 'Inter',
+            fontSize: 12,
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            lineHeight: 1.4,
+            letterSpacing: 0,
+            textAlign: 'left',
+            textDecoration: 'none',
+            textTransform: 'none'
+          },
+          color: { color: '#666666', backgroundColor: 'transparent' }
         }
       }
     },
-    recommendedComponents: ['field-price-discount', 'field-discount-percentage', 'image-header'],
+    recommendedComponents: ['field-dynamic-text', 'image-header', 'shape-geometric'],
     migrationConfig: {
       allowMigrationFrom: ['Black Friday', 'Club Easy'],
       headerReplacement: {
@@ -429,20 +459,50 @@ const createMockFamilies = (): FamilyV3[] => [
       },
       visualEffects: {
         headerStyle: {
-          typography: { fontSize: 48, fontWeight: 'bold' },
+          typography: { 
+            fontFamily: 'Poppins',
+            fontSize: 48, 
+            fontWeight: 'bold',
+            fontStyle: 'normal',
+            lineHeight: 1.2,
+            letterSpacing: 0,
+            textAlign: 'center',
+            textDecoration: 'none',
+            textTransform: 'uppercase'
+          },
           color: { color: '#ffaa00', backgroundColor: '#000000' }
         },
         priceStyle: {
-          typography: { fontSize: 36, fontWeight: 'bold' },
-          color: { color: '#ffaa00' }
+          typography: { 
+            fontFamily: 'Inter',
+            fontSize: 36, 
+            fontWeight: 'bold',
+            fontStyle: 'normal',
+            lineHeight: 1.2,
+            letterSpacing: 0,
+            textAlign: 'center',
+            textDecoration: 'none',
+            textTransform: 'none'
+          },
+          color: { color: '#ffaa00', backgroundColor: 'transparent' }
         },
         footerStyle: {
-          typography: { fontSize: 12 },
-          color: { color: '#cccccc' }
+          typography: { 
+            fontFamily: 'Inter',
+            fontSize: 12,
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            lineHeight: 1.4,
+            letterSpacing: 0,
+            textAlign: 'left',
+            textDecoration: 'none',
+            textTransform: 'none'
+          },
+          color: { color: '#cccccc', backgroundColor: 'transparent' }
         }
       }
     },
-    recommendedComponents: ['field-price-discount', 'field-discount-percentage', 'image-header'],
+    recommendedComponents: ['field-dynamic-text', 'image-header'],
     migrationConfig: {
       allowMigrationFrom: ['Hot Sale', 'Club Easy'],
       headerReplacement: {
@@ -466,242 +526,220 @@ const createMockFamilies = (): FamilyV3[] => [
 ];
 
 const createMockComponentsLibrary = (): ComponentsLibraryV3 => ({
-  'Header & Branding': [
+  'Texto y Datos': [
+    {
+      type: 'field-dynamic-text',
+      name: 'Texto Dinámico',
+      description: 'Campo de texto que puede mostrar cualquier información: productos, precios, descripciones, etc.',
+      icon: '📝',
+      category: 'Texto y Datos',
+      defaultSize: { width: 300, height: 40, isProportional: false },
+      defaultStyle: {
+        typography: {
+          fontFamily: 'Inter',
+          fontSize: 16,
+          fontWeight: 'normal',
+          fontStyle: 'normal',
+          lineHeight: 1.4,
+          letterSpacing: 0,
+          textAlign: 'left',
+          textDecoration: 'none',
+          textTransform: 'none'
+        }
+      },
+      defaultContent: { 
+        fieldType: 'static', 
+        staticValue: 'Texto de ejemplo',
+        textConfig: { contentType: 'product-name' }
+      },
+      tags: ['texto', 'dinámico', 'productos', 'precios', 'sap']
+    }
+  ],
+  
+  'Imágenes y Media': [
     {
       type: 'image-header',
       name: 'Imagen de Header',
-      description: 'Imagen promocional principal',
+      description: 'Imagen promocional principal para encabezados',
       icon: '🖼️',
-      category: 'Header & Branding',
-      defaultSize: { width: 400, height: 100, isProportional: true },
+      category: 'Imágenes y Media',
+      defaultSize: { width: 800, height: 200, isProportional: true },
       defaultStyle: {},
-      defaultContent: { fieldType: 'static' },
-      tags: ['header', 'branding', 'image']
+      defaultContent: { 
+        fieldType: 'static', 
+        imageUrl: '/images/headers/default.png',
+        imageAlt: 'Header promocional'
+      },
+      tags: ['imagen', 'header', 'promocional']
+    },
+    {
+      type: 'image-product',
+      name: 'Imagen de Producto',
+      description: 'Imagen del producto conectada al sistema SAP',
+      icon: '📷',
+      category: 'Imágenes y Media',
+      defaultSize: { width: 300, height: 300, isProportional: true },
+      defaultStyle: {},
+      defaultContent: { 
+        fieldType: 'sap-product', 
+        imageUrl: '',
+        imageAlt: 'Imagen del producto'
+      },
+      tags: ['imagen', 'producto', 'sap']
     },
     {
       type: 'image-brand-logo',
       name: 'Logo de Marca',
       description: 'Logo de la marca o empresa',
       icon: '🏷️',
-      category: 'Header & Branding',
+      category: 'Imágenes y Media',
+      defaultSize: { width: 150, height: 75, isProportional: true },
+      defaultStyle: {},
+      defaultContent: { 
+        fieldType: 'static', 
+        imageUrl: '/images/logos/default.png',
+        imageAlt: 'Logo de marca'
+      },
+      tags: ['logo', 'marca', 'branding']
+    },
+    {
+      type: 'image-decorative',
+      name: 'Imagen Decorativa',
+      description: 'Imagen decorativa para elementos gráficos',
+      icon: '🎨',
+      category: 'Imágenes y Media',
+      defaultSize: { width: 200, height: 200, isProportional: true },
+      defaultStyle: {},
+      defaultContent: { 
+        fieldType: 'static', 
+        imageUrl: '',
+        imageAlt: 'Imagen decorativa'
+      },
+      tags: ['imagen', 'decorativo', 'gráfico']
+    }
+  ],
+  
+  'QR y Enlaces': [
+    {
+      type: 'qr-dynamic',
+      name: 'Código QR Dinámico',
+      description: 'Código QR configurable para múltiples propósitos',
+      icon: '📱',
+      category: 'QR y Enlaces',
       defaultSize: { width: 150, height: 150, isProportional: true },
       defaultStyle: {},
-      defaultContent: { fieldType: 'static' },
-      tags: ['logo', 'brand', 'image']
+      defaultContent: { 
+        fieldType: 'static', 
+        qrUrl: 'https://ejemplo.com',
+        qrConfig: { type: 'website' }
+      },
+      tags: ['qr', 'enlace', 'digital']
     }
   ],
-  'Product Information': [
+  
+  'Fechas y Períodos': [
     {
-      type: 'field-product-name',
-      name: 'Nombre del Producto',
-      description: 'Nombre dinámico del producto desde SAP',
-      icon: '📝',
-      category: 'Product Information',
-      defaultSize: { width: 300, height: 40, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'sap-product' },
-      tags: ['product', 'name', 'dynamic']
-    },
-    {
-      type: 'field-product-description',
-      name: 'Descripción del Producto',
-      description: 'Descripción detallada del producto',
-      icon: '📄',
-      category: 'Product Information',
-      defaultSize: { width: 400, height: 80, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'sap-product' },
-      tags: ['product', 'description', 'dynamic']
-    },
-    {
-      type: 'field-product-sku',
-      name: 'SKU del Producto',
-      description: 'Código SKU del producto',
-      icon: '#️⃣',
-      category: 'Product Information',
-      defaultSize: { width: 200, height: 25, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'sap-product' },
-      tags: ['product', 'sku', 'code']
-    }
-  ],
-  'Pricing & Discounts': [
-    {
-      type: 'field-price-original',
-      name: 'Precio Original',
-      description: 'Precio original del producto',
-      icon: '💰',
-      category: 'Pricing & Discounts',
-      defaultSize: { width: 100, height: 30, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'sap-product' },
-      tags: ['price', 'original', 'dynamic']
-    },
-    {
-      type: 'field-price-discount',
-      name: 'Precio con Descuento',
-      description: 'Precio final con descuento aplicado',
-      icon: '🏷️',
-      category: 'Pricing & Discounts',
-      defaultSize: { width: 120, height: 35, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'sap-product' },
-      tags: ['price', 'discount', 'final']
-    },
-    {
-      type: 'field-discount-percentage',
-      name: 'Porcentaje de Descuento',
-      description: 'Porcentaje de descuento aplicado',
-      icon: '📊',
-      category: 'Pricing & Discounts',
-      defaultSize: { width: 80, height: 30, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'promotion-data' },
-      tags: ['discount', 'percentage', 'promotion']
-    }
-  ],
-  'Financial Information': [
-    {
-      type: 'field-installments',
-      name: 'Cuotas',
-      description: 'Número de cuotas disponibles',
-      icon: '💳',
-      category: 'Financial Information',
-      defaultSize: { width: 150, height: 30, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'sap-product' },
-      tags: ['financing', 'installments', 'payment']
-    },
-    {
-      type: 'field-installment-value',
-      name: 'Valor de Cuota',
-      description: 'Valor de cada cuota',
-      icon: '💵',
-      category: 'Financial Information',
-      defaultSize: { width: 120, height: 30, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'sap-product' },
-      tags: ['financing', 'installment', 'value']
-    }
-  ],
-  'Images & Media': [
-    {
-      type: 'image-product',
-      name: 'Imagen de Producto',
-      description: 'Imagen principal del producto',
-      icon: '📷',
-      category: 'Images & Media',
-      defaultSize: { width: 300, height: 300, isProportional: true },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'sap-product' },
-      tags: ['image', 'product', 'photo']
-    },
-    {
-      type: 'image-promotional',
-      name: 'Imagen Promocional',
-      description: 'Imagen decorativa promocional',
-      icon: '🎨',
-      category: 'Images & Media',
-      defaultSize: { width: 200, height: 150, isProportional: true },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'static' },
-      tags: ['image', 'promotional', 'decoration']
-    }
-  ],
-  'QR & Links': [
-    {
-      type: 'qr-product-info',
-      name: 'QR Información del Producto',
-      description: 'QR que enlaza a la página del producto',
-      icon: '📱',
-      category: 'QR & Links',
-      defaultSize: { width: 100, height: 100, isProportional: true },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'sap-product' },
-      tags: ['qr', 'product', 'link']
-    },
-    {
-      type: 'qr-promotion-link',
-      name: 'QR Enlace Promocional',
-      description: 'QR que enlaza a una promoción específica',
-      icon: '🎯',
-      category: 'QR & Links',
-      defaultSize: { width: 100, height: 100, isProportional: true },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'promotion-data' },
-      tags: ['qr', 'promotion', 'link']
-    }
-  ],
-  'Dates & Periods': [
-    {
-      type: 'field-date-from',
-      name: 'Fecha de Inicio',
-      description: 'Fecha de inicio de la promoción',
+      type: 'field-dynamic-date',
+      name: 'Fecha Dinámica',
+      description: 'Campo de fecha configurable para promociones y períodos',
       icon: '📅',
-      category: 'Dates & Periods',
-      defaultSize: { width: 150, height: 25, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'promotion-data' },
-      tags: ['date', 'start', 'promotion']
-    },
-    {
-      type: 'field-date-to',
-      name: 'Fecha de Fin',
-      description: 'Fecha de fin de la promoción',
-      icon: '🗓️',
-      category: 'Dates & Periods',
-      defaultSize: { width: 150, height: 25, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'promotion-data' },
-      tags: ['date', 'end', 'promotion']
+      category: 'Fechas y Períodos',
+      defaultSize: { width: 200, height: 30, isProportional: false },
+      defaultStyle: {
+        typography: {
+          fontFamily: 'Inter',
+          fontSize: 14,
+          fontWeight: 'normal',
+          fontStyle: 'normal',
+          lineHeight: 1.4,
+          letterSpacing: 0,
+          textAlign: 'left',
+          textDecoration: 'none',
+          textTransform: 'none'
+        }
+      },
+      defaultContent: { 
+        fieldType: 'static', 
+        staticValue: new Date().toLocaleDateString('es-ES'),
+        dateConfig: { type: 'current-date' }
+      },
+      tags: ['fecha', 'tiempo', 'promoción']
     }
   ],
-  'Decorative Elements': [
+  
+  'Elementos Decorativos': [
     {
-      type: 'shape-rectangle',
-      name: 'Rectángulo',
-      description: 'Forma rectangular decorativa',
+      type: 'shape-geometric',
+      name: 'Forma Geométrica',
+      description: 'Formas geométricas: círculos, rectángulos, líneas',
       icon: '⬜',
-      category: 'Decorative Elements',
+      category: 'Elementos Decorativos',
       defaultSize: { width: 200, height: 100, isProportional: false },
       defaultStyle: {},
-      defaultContent: { fieldType: 'static' },
-      tags: ['shape', 'rectangle', 'decoration']
+      defaultContent: { 
+        fieldType: 'static',
+        shapeConfig: { type: 'rectangle' }
+      },
+      tags: ['forma', 'geométrico', 'decorativo']
     },
     {
-      type: 'divider-line',
-      name: 'Línea Divisora',
-      description: 'Línea para separar secciones',
+      type: 'decorative-line',
+      name: 'Línea Decorativa',
+      description: 'Líneas y separadores decorativos',
       icon: '➖',
-      category: 'Decorative Elements',
+      category: 'Elementos Decorativos',
       defaultSize: { width: 300, height: 2, isProportional: false },
       defaultStyle: {},
-      defaultContent: { fieldType: 'static' },
-      tags: ['line', 'divider', 'separator']
-    }
-  ],
-  'Containers & Layout': [
-    {
-      type: 'container-product-info',
-      name: 'Contenedor de Producto',
-      description: 'Contenedor para agrupar información del producto',
-      icon: '📦',
-      category: 'Containers & Layout',
-      defaultSize: { width: 400, height: 200, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'static' },
-      tags: ['container', 'product', 'group']
+      defaultContent: { 
+        fieldType: 'static',
+        lineConfig: { type: 'solid' }
+      },
+      tags: ['línea', 'separador', 'decorativo']
     },
     {
-      type: 'container-price-block',
-      name: 'Bloque de Precios',
-      description: 'Contenedor para precios y descuentos',
-      icon: '💰',
-      category: 'Containers & Layout',
-      defaultSize: { width: 300, height: 150, isProportional: false },
+      type: 'decorative-icon',
+      name: 'Ícono Decorativo',
+      description: 'Íconos y elementos gráficos decorativos',
+      icon: '⭐',
+      category: 'Elementos Decorativos',
+      defaultSize: { width: 50, height: 50, isProportional: true },
       defaultStyle: {},
-      defaultContent: { fieldType: 'static' },
-      tags: ['container', 'price', 'block']
+      defaultContent: { 
+        fieldType: 'static',
+        iconConfig: { type: 'star' }
+      },
+      tags: ['ícono', 'decorativo', 'gráfico']
+    }
+  ],
+  
+  'Contenedores y Layout': [
+    {
+      type: 'container-flexible',
+      name: 'Contenedor Flexible',
+      description: 'Contenedor adaptable para agrupar elementos',
+      icon: '📦',
+      category: 'Contenedores y Layout',
+      defaultSize: { width: 400, height: 300, isProportional: false },
+      defaultStyle: {},
+      defaultContent: { 
+        fieldType: 'static',
+        containerConfig: { type: 'flexible' }
+      },
+      tags: ['contenedor', 'layout', 'agrupación']
+    },
+    {
+      type: 'container-grid',
+      name: 'Contenedor Grid',
+      description: 'Contenedor con sistema de grilla para layouts estructurados',
+      icon: '⚏',
+      category: 'Contenedores y Layout',
+      defaultSize: { width: 600, height: 400, isProportional: false },
+      defaultStyle: {},
+      defaultContent: { 
+        fieldType: 'static',
+        containerConfig: { type: 'grid' }
+      },
+      tags: ['contenedor', 'grid', 'estructura']
     }
   ]
 });
@@ -862,7 +900,7 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
       const component: DraggableComponentV3 = {
         id: generateId(),
         type,
-        category: 'Product Information', // Determinar dinámicamente
+        category: 'Texto y Datos', // Determinar dinámicamente
         name: `Component ${type}`,
         description: '',
         icon: '📦',

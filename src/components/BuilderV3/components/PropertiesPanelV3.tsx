@@ -34,6 +34,7 @@ import {
   Upload
 } from 'lucide-react';
 import { BuilderStateV3, DraggableComponentV3, PositionV3, SizeV3 } from '../../../types/builder-v3';
+import { processDynamicContent, defaultMockData, getAvailableFields } from '../../../utils/dynamicContentProcessor';
 
 interface PropertiesPanelV3Props {
   state: BuilderStateV3;
@@ -64,28 +65,23 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
   const [dynamicPreview, setDynamicPreview] = useState<string>('');
 
   // =====================
-  // DYNAMIC DATA OPTIONS
+  // DYNAMIC DATA OPTIONS (usando procesador compartido)
   // =====================
 
-  const sapFieldOptions = [
-    { value: 'product_name', label: 'Nombre del Producto', icon: Tag, example: 'Taladro Percutor Bosch' },
-    { value: 'product_price', label: 'Precio', icon: DollarSign, example: '$25.990' },
-    { value: 'price_without_tax', label: 'Precio sin Impuestos', icon: DollarSign, example: '$21.900' },
-    { value: 'product_sku', label: 'SKU', icon: Hash, example: 'BSH-TD-001' },
-    { value: 'product_brand', label: 'Marca', icon: Tag, example: 'Bosch' },
-    { value: 'product_category', label: 'Categoría', icon: Tag, example: 'Herramientas' },
-    { value: 'product_origin', label: 'Origen', icon: Tag, example: 'Alemania' },
-    { value: 'product_description', label: 'Descripción', icon: Type, example: 'Taladro percutor profesional 850W' }
-  ];
+  const availableFields = getAvailableFields();
+  
+  const sapFieldOptions = availableFields.slice(0, 8).map(field => ({
+    ...field,
+    icon: field.value.includes('price') ? DollarSign : 
+          field.value.includes('sku') ? Hash :
+          field.value.includes('description') ? Type : Tag
+  }));
 
-  const promotionFieldOptions = [
-    { value: 'price_now', label: 'Precio Ahora', icon: DollarSign, example: '$19.990' },
-    { value: 'discount_percentage', label: 'Descuento %', icon: DollarSign, example: '25' },
-    { value: 'discount_amount', label: 'Descuento Monto', icon: DollarSign, example: '$6.000' },
-    { value: 'date_from', label: 'Fecha Desde', icon: Calendar, example: '15/06/2025' },
-    { value: 'date_to', label: 'Fecha Hasta', icon: Calendar, example: '30/06/2025' },
-    { value: 'promotion_name', label: 'Nombre Promoción', icon: Tag, example: 'Hot Sale 2025' }
-  ];
+  const promotionFieldOptions = availableFields.slice(8).map(field => ({
+    ...field,
+    icon: field.value.includes('price') || field.value.includes('amount') ? DollarSign :
+          field.value.includes('date') ? Calendar : Tag
+  }));
 
   // =====================
   // EVENT HANDLERS
@@ -139,45 +135,35 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
   };
 
   // =====================
-  // DYNAMIC PREVIEW LOGIC
+  // DYNAMIC PREVIEW LOGIC (actualizado para usar procesador compartido)
   // =====================
 
   const updateDynamicPreview = (content: string, field: string) => {
     if (field !== 'staticValue' && field !== 'dynamicTemplate') return;
 
-    let preview = content || '';
-    
-    // Reemplazar variables con ejemplos
-    [...sapFieldOptions, ...promotionFieldOptions].forEach(option => {
-      const regex = new RegExp(`\\[${option.value}\\]`, 'gi');
-      preview = preview.replace(regex, option.example);
-    });
+    if (!selectedComponent) return;
 
-    setDynamicPreview(preview);
+    // Crear un componente temporal con el nuevo contenido para procesarlo
+    const tempComponent = {
+      ...selectedComponent,
+      content: {
+        ...selectedComponent.content,
+        [field]: content
+      }
+    };
+
+    const processedValue = processDynamicContent(tempComponent, defaultMockData);
+    setDynamicPreview(processedValue);
   };
 
   const renderPreviewValue = () => {
-    const content = selectedComponent?.content as any;
-    
-    if (content?.fieldType === 'static') {
-      return content?.staticValue || 'Sin contenido';
+    if (!selectedComponent) {
+      return 'Sin componente seleccionado';
     }
     
-    if (content?.fieldType === 'dynamic') {
-      return dynamicPreview || content?.dynamicTemplate || 'Sin plantilla dinámica';
-    }
-    
-    if (content?.fieldType === 'sap-product') {
-      const field = sapFieldOptions.find(f => f.value === content?.sapField);
-      return field ? field.example : 'Campo no seleccionado';
-    }
-    
-    if (content?.fieldType === 'promotion-data') {
-      const field = promotionFieldOptions.find(f => f.value === content?.promotionField);
-      return field ? field.example : 'Campo no seleccionado';
-    }
-    
-    return 'Vista previa no disponible';
+    // Usar el procesador compartido para obtener el valor real
+    const processedValue = processDynamicContent(selectedComponent, defaultMockData);
+    return processedValue;
   };
 
   // =====================
@@ -217,7 +203,7 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
       {/* Tamaño */}
       <div>
         <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
-          <Square className="w-4 h-4 mr-2" />
+          <Move className="w-4 h-4 mr-2" />
           Tamaño
         </h4>
         <div className="grid grid-cols-2 gap-3">
@@ -226,8 +212,8 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
             <input
               type="number"
               value={Math.round(selectedComponent?.size.width || 0)}
-              onChange={(e) => handleSizeChange('width', parseFloat(e.target.value) || 0)}
-              className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => handleSizeChange('width', Number(e.target.value))}
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <div>
@@ -235,11 +221,180 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
             <input
               type="number"
               value={Math.round(selectedComponent?.size.height || 0)}
-              onChange={(e) => handleSizeChange('height', parseFloat(e.target.value) || 0)}
-              className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => handleSizeChange('height', Number(e.target.value))}
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
         </div>
+        
+        {/* Checkbox proporcional */}
+        <div className="mt-3">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={selectedComponent?.size.isProportional || false}
+              onChange={(e) => {
+                if (!selectedComponent) return;
+                onComponentUpdate(selectedComponent.id, {
+                  size: {
+                    ...selectedComponent.size,
+                    isProportional: e.target.checked
+                  }
+                });
+              }}
+              className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="ml-2 text-xs text-gray-700">Mantener proporción</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Configuración de Etiqueta Personalizable */}
+      <div>
+        <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+          <Tag className="w-4 h-4 mr-2" />
+          Etiqueta Personalizada
+        </h4>
+        
+        {/* Mostrar/Ocultar Etiqueta */}
+        <div className="mb-3">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={selectedComponent?.customLabel?.show !== false}
+              onChange={(e) => {
+                if (!selectedComponent) return;
+                onComponentUpdate(selectedComponent.id, {
+                  customLabel: {
+                    ...selectedComponent.customLabel,
+                    name: selectedComponent.customLabel?.name || 'Texto Dinámico',
+                    color: selectedComponent.customLabel?.color || '#3b82f6',
+                    show: e.target.checked
+                  }
+                });
+              }}
+              className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="ml-2 text-xs text-gray-700">Mostrar etiqueta</span>
+          </label>
+        </div>
+
+        {selectedComponent?.customLabel?.show !== false && (
+          <>
+            {/* Nombre de la Etiqueta */}
+            <div className="mb-3">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Nombre de la etiqueta
+              </label>
+              <input
+                type="text"
+                value={selectedComponent?.customLabel?.name || ''}
+                onChange={(e) => {
+                  if (!selectedComponent) return;
+                  onComponentUpdate(selectedComponent.id, {
+                    customLabel: {
+                      ...selectedComponent.customLabel,
+                      name: e.target.value,
+                      color: selectedComponent.customLabel?.color || '#3b82f6',
+                      show: selectedComponent.customLabel?.show !== false
+                    }
+                  });
+                }}
+                placeholder="Ej: Título Principal, Precio Oferta..."
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            {/* Color de Fondo */}
+            <div className="mb-3">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Color de fondo
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="color"
+                  value={selectedComponent?.customLabel?.color || '#3b82f6'}
+                  onChange={(e) => onComponentUpdate(selectedComponent?.id || '', {
+                    customLabel: {
+                      ...selectedComponent?.customLabel,
+                      name: selectedComponent?.customLabel?.name || 'Texto Dinámico',
+                      color: e.target.value,
+                      show: selectedComponent?.customLabel?.show !== false
+                    }
+                  })}
+                  className="w-8 h-6 border border-gray-300 rounded cursor-pointer"
+                />
+                <span className="text-xs text-gray-500">
+                  {selectedComponent?.customLabel?.color || '#3b82f6'}
+                </span>
+              </div>
+            </div>
+
+            {/* Colores Predefinidos */}
+            <div className="mb-3">
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                Colores rápidos
+              </label>
+              <div className="grid grid-cols-6 gap-1">
+                {[
+                  '#3b82f6', // Azul
+                  '#ef4444', // Rojo  
+                  '#10b981', // Verde
+                  '#f59e0b', // Amarillo
+                  '#8b5cf6', // Púrpura
+                  '#06b6d4', // Cian
+                  '#f97316', // Naranja
+                  '#84cc16', // Lima
+                  '#ec4899', // Rosa
+                  '#6b7280', // Gris
+                  '#1f2937', // Gris oscuro
+                  '#dc2626'  // Rojo oscuro
+                ].map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => onComponentUpdate(selectedComponent?.id || '', {
+                      customLabel: {
+                        ...selectedComponent?.customLabel,
+                        name: selectedComponent?.customLabel?.name || 'Texto Dinámico',
+                        color: color,
+                        show: selectedComponent?.customLabel?.show !== false
+                      }
+                    })}
+                    className="w-6 h-6 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Color del Texto */}
+            <div className="mb-3">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Color del texto
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="color"
+                  value={selectedComponent?.customLabel?.textColor || '#ffffff'}
+                  onChange={(e) => onComponentUpdate(selectedComponent?.id || '', {
+                    customLabel: {
+                      ...selectedComponent?.customLabel,
+                      name: selectedComponent?.customLabel?.name || 'Texto Dinámico',
+                      color: selectedComponent?.customLabel?.color || '#3b82f6',
+                      textColor: e.target.value,
+                      show: selectedComponent?.customLabel?.show !== false
+                    }
+                  })}
+                  className="w-8 h-6 border border-gray-300 rounded cursor-pointer"
+                />
+                <span className="text-xs text-gray-500">
+                  {selectedComponent?.customLabel?.textColor || '#ffffff'}
+                </span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Transformación */}
@@ -266,6 +421,7 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
               type="number"
               value={selectedComponent?.position.scaleX || 1}
               onChange={(e) => {
+                if (!selectedComponent) return;
                 const scale = parseFloat(e.target.value) || 1;
                 onComponentUpdate(selectedComponent.id, {
                   position: {

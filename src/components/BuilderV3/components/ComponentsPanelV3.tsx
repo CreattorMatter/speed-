@@ -55,7 +55,7 @@ export const ComponentsPanelV3: React.FC<ComponentsPanelV3Props> = ({
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [expandedCategories, setExpandedCategories] = useState<Set<ComponentCategoryV3>>(
-    new Set(['Header & Branding', 'Product Information', 'Pricing & Discounts'])
+    new Set(['Texto y Datos', 'Imágenes y Media', 'Elementos Decorativos'])
   );
   const [hoveredComponent, setHoveredComponent] = useState<ComponentTypeV3| null>(null);
 
@@ -100,47 +100,32 @@ export const ComponentsPanelV3: React.FC<ComponentsPanelV3Props> = ({
   // =====================
 
   const categoryConfig = {
-    'Header & Branding': {
-      icon: Package,
-      color: 'bg-purple-100 text-purple-800',
-      borderColor: 'border-purple-200'
-    },
-    'Product Information': {
-      icon: Hash,
+    'Texto y Datos': {
+      icon: Type,
       color: 'bg-blue-100 text-blue-800',
       borderColor: 'border-blue-200'
     },
-    'Pricing & Discounts': {
-      icon: DollarSign,
-      color: 'bg-green-100 text-green-800',
-      borderColor: 'border-green-200'
-    },
-    'Financial Information': {
-      icon: Zap,
-      color: 'bg-yellow-100 text-yellow-800',
-      borderColor: 'border-yellow-200'
-    },
-    'Images & Media': {
+    'Imágenes y Media': {
       icon: Image,
       color: 'bg-pink-100 text-pink-800',
       borderColor: 'border-pink-200'
     },
-    'QR & Links': {
+    'QR y Enlaces': {
       icon: QrCode,
       color: 'bg-indigo-100 text-indigo-800',
       borderColor: 'border-indigo-200'
     },
-    'Dates & Periods': {
+    'Fechas y Períodos': {
       icon: Calendar,
       color: 'bg-orange-100 text-orange-800',
       borderColor: 'border-orange-200'
     },
-    'Decorative Elements': {
+    'Elementos Decorativos': {
       icon: Shapes,
       color: 'bg-teal-100 text-teal-800',
       borderColor: 'border-teal-200'
     },
-    'Containers & Layout': {
+    'Contenedores y Layout': {
       icon: Box,
       color: 'bg-gray-100 text-gray-800',
       borderColor: 'border-gray-200'

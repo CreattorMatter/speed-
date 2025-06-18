@@ -5,6 +5,7 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { TemplateV3, DraggableComponentV3, CanvasStateV3, ComponentTypeV3, PositionV3, BuilderOperationsV3, SizeV3 } from '../../../types/builder-v3';
 import { ImageUploadComponent } from './ImageUploadComponent';
+import { processDynamicContent, defaultMockData } from '../../../utils/dynamicContentProcessor';
 
 interface CanvasEditorV3Props {
   template: TemplateV3;
@@ -523,54 +524,19 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
 
   // Función para obtener el nombre amigable del tipo de componente
   const getComponentDisplayName = (type: ComponentTypeV3): string => {
-    const displayNames: { [key in ComponentTypeV3]: string } = {
-      'text-custom': 'Texto',
-      'text-editable': 'Texto Editable',
-      'text-dynamic': 'Texto Dinámico',
-      'field-product-name': 'Nombre Producto',
-      'field-product-description': 'Descripción',
-      'field-product-sku': 'SKU',
-      'field-product-brand': 'Marca',
-      'field-product-category': 'Categoría',
-      'field-product-origin': 'Origen',
-      'field-price-original': 'Precio Original',
-      'field-price-discount': 'Precio Descuento',
-      'field-price-final': 'Precio Final',
-      'field-discount-percentage': '% Descuento',
-      'field-discount-amount': 'Monto Descuento',
-      'field-price-per-unit': 'Precio/Unidad',
-      'field-price-per-m2': 'Precio/m²',
-      'field-price-combo': 'Precio Combo',
-      'field-installments': 'Cuotas',
-      'field-installment-value': 'Valor Cuota',
-      'field-financed-price': 'Precio Financiado',
-      'field-cft': 'CFT',
-      'field-tea': 'TEA',
-      'field-tna': 'TNA',
-      'field-financing-terms': 'Términos Financ.',
-      'image-header': 'Header',
-      'image-promotional': 'Imagen Promo',
-      'image-product': 'Imagen Producto',
+    const displayNames = {
+      'field-dynamic-text': 'Texto Dinámico',
+      'image-header': 'Imagen Header',
+      'image-product': 'Imagen Producto', 
       'image-brand-logo': 'Logo Marca',
-      'image-background': 'Fondo',
-      'image-decoration': 'Decoración',
-      'qr-product-info': 'QR Producto',
-      'qr-promotion-link': 'QR Promoción',
-      'qr-custom-url': 'QR Personalizado',
-      'qr-payment-link': 'QR Pago',
-      'field-date-from': 'Fecha Desde',
-      'field-date-to': 'Fecha Hasta',
-      'field-promotion-period': 'Período Promo',
-      'field-expiry-date': 'Fecha Vencimiento',
-      'shape-rectangle': 'Rectángulo',
-      'shape-circle': 'Círculo',
-      'shape-polygon': 'Polígono',
-      'divider-line': 'Línea',
-      'icon-custom': 'Ícono',
-      'container-header': 'Contenedor Header',
-      'container-product-info': 'Contenedor Producto',
-      'container-price-block': 'Contenedor Precios',
-      'container-footer': 'Contenedor Footer'
+      'image-decorative': 'Imagen Decorativa',
+      'qr-dynamic': 'QR Dinámico',
+      'field-dynamic-date': 'Fecha Dinámica',
+      'shape-geometric': 'Forma Geométrica',
+      'decorative-line': 'Línea Decorativa',
+      'decorative-icon': 'Ícono Decorativo',
+      'container-flexible': 'Contenedor Flexible',
+      'container-grid': 'Grilla de Contenido'
     };
     return displayNames[type] || type;
   };
@@ -602,76 +568,118 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
   };
 
   const renderComponentContent = () => {
-    const baseStyle: React.CSSProperties = {
+    const baseStyle = {
       width: '100%',
       height: '100%',
-      color: component.style?.color?.color || '#000000',
-      backgroundColor: component.style?.color?.backgroundColor || 'transparent',
-      fontSize: `${(component.style?.typography?.fontSize || 16) * zoom}px`,
-      fontFamily: component.style?.typography?.fontFamily || 'Arial',
+      fontSize: `${component.style?.typography?.fontSize || 16}px`,
+      fontFamily: component.style?.typography?.fontFamily || 'Inter',
       fontWeight: component.style?.typography?.fontWeight || 'normal',
-      textAlign: component.style?.typography?.textAlign || 'left',
-      borderRadius: component.style?.border ? `${component.style.border.radius.topLeft}px` : '0px',
-      border: component.style?.border ? 
-        `${component.style.border.width}px ${component.style.border.style} ${component.style.border.color}` : 
-        'none',
-      opacity: component.style?.effects?.opacity ?? 1,
-      transform: `rotate(${component.position.rotation}deg) scale(${component.position.scaleX}, ${component.position.scaleY})`,
+      color: component.style?.color?.color || '#000000',
+      textAlign: component.style?.typography?.textAlign as any || 'left'
     };
 
     switch (component.type) {
-      case 'text-custom':
-      case 'text-editable':
-      case 'text-dynamic':
-      case 'field-product-name':
-      case 'field-price-original':
-      case 'field-price-discount':
+      case 'field-dynamic-text':
+        const dynamicText = processDynamicContent(component, defaultMockData);
         return (
           <div 
             style={baseStyle}
             className="flex items-center justify-center p-2 select-none"
           >
-            {component.content?.staticValue || component.content?.text || 'Texto de ejemplo'}
+            {dynamicText}
           </div>
         );
 
       case 'image-header':
-      case 'image-brand-logo':
-      case 'image-promotional':
       case 'image-product':
+      case 'image-brand-logo':
+      case 'image-decorative':
         return (
-          <div style={baseStyle} className="overflow-hidden">
-            <ImageUploadComponent
-              component={component}
-              isSelected={isSelected}
-              zoom={zoom}
-              onImageUpdate={(imageData: { url: string; alt?: string; file?: File }) => {
-                operations.updateComponent(component.id, {
-                  content: {
-                    ...component.content,
-                    imageUrl: imageData.url,
-                    imageAlt: imageData.alt
-                  }
-                });
-              }}
-            />
+          <div className="w-full h-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center select-none">
+            {component.content?.imageUrl ? (
+              <img 
+                src={component.content.imageUrl} 
+                alt={component.content?.imageAlt || 'Imagen'} 
+                className="w-full h-full object-cover"
+                draggable={false}
+              />
+            ) : (
+              <div className="text-gray-500 text-center">
+                <span className="text-2xl">🖼️</span>
+                <div className="text-xs mt-1">Imagen</div>
+              </div>
+            )}
           </div>
         );
 
-      case 'qr-product-info':
-      case 'qr-promotion-link':
+      case 'qr-dynamic':
         return (
-          <div style={baseStyle} className="bg-white flex items-center justify-center">
-            <div className="w-full h-full bg-black bg-opacity-10 flex items-center justify-center">
-              📱 QR
+          <div className="w-full h-full bg-gray-50 border border-gray-200 flex items-center justify-center select-none">
+            <div className="text-center">
+              <span className="text-3xl">📱</span>
+              <div className="text-xs mt-1">QR Code</div>
+            </div>
+          </div>
+        );
+
+      case 'field-dynamic-date':
+        const dynamicDate = processDynamicContent(component, defaultMockData);
+        return (
+          <div 
+            style={baseStyle}
+            className="flex items-center justify-center p-2 select-none"
+          >
+            {dynamicDate}
+          </div>
+        );
+
+      case 'shape-geometric':
+        return (
+          <div 
+            className="w-full h-full select-none"
+            style={{
+              backgroundColor: component.style?.color?.backgroundColor || '#e5e7eb',
+              borderRadius: component.style?.border?.radius?.topLeft ? `${component.style.border.radius.topLeft}px` : '0px'
+            }}
+          />
+        );
+
+      case 'decorative-line':
+        return (
+          <div 
+            className="w-full select-none"
+            style={{
+              height: '2px',
+              backgroundColor: component.style?.color?.backgroundColor || '#d1d5db',
+              transform: 'translateY(50%)'
+            }}
+          />
+        );
+
+      case 'decorative-icon':
+        return (
+          <div className="w-full h-full flex items-center justify-center select-none">
+            <span style={{ fontSize: `${Math.min(component.size.width, component.size.height) * 0.6}px` }}>
+              {component.content?.staticValue || '⭐'}
+            </span>
+          </div>
+        );
+
+      case 'container-flexible':
+      case 'container-grid':
+        return (
+          <div className="w-full h-full border-2 border-dashed border-blue-300 bg-blue-50 bg-opacity-50 flex items-center justify-center select-none">
+            <div className="text-blue-600 text-center">
+              <span className="text-xl">📦</span>
+              <div className="text-xs mt-1">Contenedor</div>
             </div>
           </div>
         );
 
       default:
         return (
-          <div style={baseStyle} className="flex items-center justify-center text-gray-500">
-            {component.name || component.type}
+          <div className="w-full h-full bg-gray-200 flex items-center justify-center select-none">
+            <span className="text-gray-500 text-xs">Componente desconocido</span>
           </div>
         );
     }
@@ -717,15 +725,20 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
       {/* Etiqueta del tipo de componente - SIEMPRE VISIBLE */}
       <div 
         className={`absolute -top-6 left-0 px-2 py-1 rounded text-xs font-medium transition-all duration-200 z-50 ${
-          getBadgeColor(component.type)
+          component.customLabel?.show !== false 
+            ? (component.customLabel?.color ? '' : getBadgeColor(component.type))
+            : 'opacity-0'
         } ${isSelected || isHovered ? 'opacity-100' : 'opacity-75'}`}
         style={{
           fontSize: `${Math.max(10, 12 / zoom)}px`,
           transform: zoom < 0.5 ? `scale(${1 / zoom})` : 'none',
-          transformOrigin: 'left top'
+          transformOrigin: 'left top',
+          backgroundColor: component.customLabel?.color || undefined,
+          color: component.customLabel?.textColor || (component.customLabel?.color ? '#ffffff' : undefined),
+          display: component.customLabel?.show === false ? 'none' : 'block'
         }}
       >
-        {getComponentDisplayName(component.type)}
+        {component.customLabel?.name || getComponentDisplayName(component.type)}
       </div>
 
       {/* Indicadores de tamaño en las esquinas */}

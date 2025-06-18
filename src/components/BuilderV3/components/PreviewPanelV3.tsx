@@ -23,6 +23,7 @@ import {
   Clock
 } from 'lucide-react';
 import { BuilderStateV3, DraggableComponentV3, TemplateV3 } from '../../../types/builder-v3';
+import { processDynamicContent, MockDataV3 } from '../../../utils/dynamicContentProcessor';
 
 interface PreviewPanelV3Props {
   state: BuilderStateV3;
@@ -106,58 +107,37 @@ export const PreviewPanelV3: React.FC<PreviewPanelV3Props> = ({
   const processedComponents = useMemo(() => {
     if (!state.components || !isLivePreview) return state.components;
 
-    const currentMockData = mockDataSets[selectedPreviewData as keyof typeof mockDataSets];
+    // Convertir mockDataSets al formato MockDataV3
+    const currentMockSet = mockDataSets[selectedPreviewData as keyof typeof mockDataSets];
+    const mockData: MockDataV3 = {
+      product_name: currentMockSet.ProductName,
+      product_price: parseFloat(currentMockSet.PriceOriginal.replace(/[$.,]/g, '')),
+      price_without_tax: parseFloat(currentMockSet.PriceWithoutTax.replace(/[$.,]/g, '')),
+      product_sku: currentMockSet.ProductSku,
+      product_brand: currentMockSet.ProductBrand,
+      product_category: 'Bebidas',
+      product_origin: 'Argentina',
+      product_description: `${currentMockSet.ProductBrand} ${currentMockSet.ProductName}`,
+      price_now: parseFloat(currentMockSet.PriceNow.replace(/[$.,]/g, '')),
+      discount_percentage: parseInt(currentMockSet.DiscountPercentage),
+      discount_amount: parseFloat(currentMockSet.DiscountAmount.replace(/[$.,]/g, '')),
+      date_from: currentMockSet.DateFrom,
+      date_to: currentMockSet.DateTo,
+      promotion_name: currentMockSet.PromotionName,
+      final_price: parseFloat(currentMockSet.PriceNow.replace(/[$.,]/g, '')),
+      store_name: 'Easy Pilar',
+      store_address: 'Av. Presidente Perón 1823, Pilar'
+    };
     
     return state.components.map(component => {
-      if (!component.content) return component;
-
-      const content = component.content as any;
-      let processedContent = { ...content };
-
-      // Process dynamic content
-      if (content.fieldType === 'dynamic' && content.dynamicTemplate) {
-        let processedText = content.dynamicTemplate;
-        Object.entries(currentMockData).forEach(([key, value]) => {
-          if (key !== 'name') {
-            processedText = processedText.replace(new RegExp(`\\[${key}\\]`, 'g'), value);
-          }
-        });
-        processedContent.processedValue = processedText;
-      }
-
-      // Process direct SAP fields
-      if (content.fieldType === 'sap-product' && content.sapField) {
-        const fieldMap: Record<string, string> = {
-          'product-name': currentMockData.ProductName,
-          'product-sku': currentMockData.ProductSku,
-          'product-brand': currentMockData.ProductBrand,
-          'price-original': currentMockData.PriceOriginal,
-          'price-without-tax': currentMockData.PriceWithoutTax,
-        };
-        processedContent.processedValue = fieldMap[content.sapField] || content.sapField;
-      }
-
-      // Process promotion fields
-      if (content.fieldType === 'promotion-data' && content.promotionField) {
-        const fieldMap: Record<string, string> = {
-          'price-now': currentMockData.PriceNow,
-          'discount-percentage': currentMockData.DiscountPercentage + '%',
-          'discount-amount': currentMockData.DiscountAmount,
-          'date-from': currentMockData.DateFrom,
-          'date-to': currentMockData.DateTo,
-          'promotion-name': currentMockData.PromotionName,
-        };
-        processedContent.processedValue = fieldMap[content.promotionField] || content.promotionField;
-      }
-
-      // Process static content
-      if (content.fieldType === 'static' && content.staticValue) {
-        processedContent.processedValue = content.staticValue;
-      }
-
+      const processedValue = processDynamicContent(component, mockData);
+      
       return {
         ...component,
-        content: processedContent
+        content: {
+          ...component.content,
+          processedValue
+        }
       };
     });
   }, [state.components, selectedPreviewData, isLivePreview]);

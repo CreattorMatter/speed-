@@ -8,73 +8,52 @@ import { ComponentsLibraryV3, ComponentTypeV3, PositionV3 } from '../../types/bu
 
 // Mock components library for testing
 const mockComponentsLibrary: ComponentsLibraryV3 = {
-  'Header & Branding': [
+  'Texto y Datos': [
+    {
+      type: 'field-dynamic-text',
+      name: 'Texto Dinámico',
+      description: 'Campo de texto que puede mostrar cualquier información',
+      icon: '📝',
+      category: 'Texto y Datos',
+      defaultSize: { width: 300, height: 40, isProportional: false },
+      defaultStyle: {},
+      defaultContent: { 
+        fieldType: 'static', 
+        staticValue: 'Texto de ejemplo',
+        textConfig: { contentType: 'product-name' }
+      },
+      tags: ['text', 'dynamic', 'universal']
+    }
+  ],
+  'Imágenes y Media': [
     {
       type: 'image-header',
       name: 'Imagen de Header',
       description: 'Imagen promocional principal',
       icon: '🖼️',
-      category: 'Header & Branding',
-      defaultSize: { width: 400, height: 100, isProportional: true },
+      category: 'Imágenes y Media',
+      defaultSize: { width: 400, height: 120, isProportional: true },
       defaultStyle: {},
-      defaultContent: { fieldType: 'static' },
-      tags: ['header', 'branding', 'image']
+      defaultContent: { fieldType: 'static', imageUrl: '', imageAlt: 'Header' },
+      tags: ['image', 'header']
     }
   ],
-  'Product Information': [
+  'QR y Enlaces': [
     {
-      type: 'field-product-name',
-      name: 'Nombre del Producto',
-      description: 'Nombre dinámico del producto desde SAP',
-      icon: '📝',
-      category: 'Product Information',
-      defaultSize: { width: 300, height: 40, isProportional: false },
+      type: 'qr-dynamic',
+      name: 'QR Dinámico',
+      description: 'Código QR configurable',
+      icon: '📱',
+      category: 'QR y Enlaces',
+      defaultSize: { width: 100, height: 100, isProportional: true },
       defaultStyle: {},
-      defaultContent: { fieldType: 'sap-product' },
-      tags: ['product', 'name', 'dynamic']
-    },
-    {
-      type: 'field-product-description',
-      name: 'Descripción del Producto',
-      description: 'Descripción completa del producto',
-      icon: '📄',
-      category: 'Product Information',
-      defaultSize: { width: 350, height: 60, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'sap-product' },
-      tags: ['product', 'description', 'dynamic']
+      defaultContent: { fieldType: 'static', qrUrl: 'https://ejemplo.com' },
+      tags: ['qr', 'dynamic']
     }
   ],
-  'Pricing & Discounts': [
-    {
-      type: 'field-price-original',
-      name: 'Precio Original',
-      description: 'Precio original del producto',
-      icon: '💰',
-      category: 'Pricing & Discounts',
-      defaultSize: { width: 100, height: 30, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'sap-product' },
-      tags: ['price', 'original', 'dynamic']
-    },
-    {
-      type: 'field-discount-percentage',
-      name: 'Porcentaje de Descuento',
-      description: 'Porcentaje de descuento aplicado',
-      icon: '🏷️',
-      category: 'Pricing & Discounts',
-      defaultSize: { width: 80, height: 25, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { fieldType: 'sap-product' },
-      tags: ['discount', 'percentage', 'dynamic']
-    }
-  ],
-  'Financial Information': [],
-  'Images & Media': [],
-  'QR & Links': [],
-  'Dates & Periods': [],
-  'Decorative Elements': [],
-  'Containers & Layout': []
+  'Fechas y Períodos': [],
+  'Elementos Decorativos': [],
+  'Contenedores y Layout': []
 };
 
 export const BuilderV3Simple: React.FC = () => {

@@ -21,6 +21,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { BuilderStateV3, DraggableComponentV3, TemplateV3 } from '../../../types/builder-v3';
+import { processDynamicContent, MockDataV3 } from '../../../utils/dynamicContentProcessor';
 
 interface PreviewModalV3Props {
   isOpen: boolean;
@@ -32,21 +33,7 @@ interface PreviewModalV3Props {
 type PreviewMode = 'desktop' | 'mobile' | 'print' | 'fullscreen';
 type DataMode = 'mock' | 'real' | 'empty';
 
-interface MockProductData {
-  [key: string]: string | number;
-  product_name: string;
-  product_price: number;
-  price_without_tax: number;
-  product_description: string;
-  product_sku: string;
-  product_brand: string;
-  discount_percentage: number;
-  final_price: number;
-  valid_from: string;
-  valid_to: string;
-  store_name: string;
-  store_address: string;
-}
+
 
 export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
   isOpen,
@@ -66,137 +53,54 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
   // MOCK DATA
   // =====================
   
-  const mockData: MockProductData = {
+  const mockData: MockDataV3 = {
+    // Datos de producto
     product_name: 'Taladro Percutor Profesional 20V',
     product_price: 159990,
     price_without_tax: 134447,
-    product_description: 'Taladro percutor inalámbrico con batería de litio de 20V y estuche incluido',
     product_sku: 'TAL-20V-001',
     product_brand: 'MAKITA',
+    product_category: 'Herramientas',
+    product_origin: 'Japón',
+    product_description: 'Taladro percutor inalámbrico con batería de litio de 20V y estuche incluido',
+    
+    // Datos de promoción
+    price_now: 119990,
     discount_percentage: 25,
+    discount_amount: 40000,
+    date_from: '15/12/2024',
+    date_to: '31/12/2024',
+    promotion_name: 'Oferta Especial Navidad',
+    
+    // Datos calculados
     final_price: 119990,
-    valid_from: '15/12/2024',
-    valid_to: '31/12/2024',
+    
+    // Datos de tienda
     store_name: 'Tienda Central',
     store_address: 'Av. Principal 123, Santiago'
   };
 
   // =====================
-  // UTILITY FUNCTIONS
+  // UTILITY FUNCTIONS (Usando procesador unificado)
   // =====================
-
-  const formatPrice = (price: number): string => {
-    return new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP'
-    }).format(price);
-  };
-
-  const formatNumber = (num: number): string => {
-    return new Intl.NumberFormat('es-CL').format(num);
-  };
-
-  const processTemplate = (template: string, data: MockProductData): string => {
-    let processed = template;
-    
-    // Reemplazar variables con datos mock
-    Object.entries(data).forEach(([key, value]) => {
-      const regex = new RegExp(`\\[${key}\\]`, 'g');
-      let formattedValue = value.toString();
-      
-      // Formatear según el tipo de dato
-      if (key.includes('price') && typeof value === 'number') {
-        formattedValue = formatPrice(value);
-      } else if (key.includes('percentage') && typeof value === 'number') {
-        formattedValue = `${value}%`;
-      } else if (typeof value === 'number') {
-        formattedValue = formatNumber(value);
-      }
-      
-      processed = processed.replace(regex, formattedValue);
-    });
-
-    return processed;
-  };
 
   const renderComponentContent = (component: DraggableComponentV3): React.ReactNode => {
     const content = component.content as any;
     
     // =====================
-    // MAPEO DE CAMPOS DINÁMICOS
+    // PROCESAMIENTO CON EL PROCESADOR UNIFICADO
     // =====================
-    const getFieldValue = (fieldName: string): string => {
-      const fieldMap: Record<string, string> = {
-        // Campos de producto
-        'field-product-name': mockData.product_name,
-        'field-product-description': mockData.product_description,
-        'field-product-sku': mockData.product_sku,
-        'field-product-brand': mockData.product_brand,
-        
-        // Campos de precio
-        'field-price-original': formatPrice(mockData.product_price),
-        'field-price-without-tax': formatPrice(mockData.price_without_tax),
-        'field-final-price': formatPrice(mockData.final_price),
-        'field-discount-percentage': `${mockData.discount_percentage}%`,
-        
-        // Campos de fechas
-        'field-valid-from': mockData.valid_from,
-        'field-valid-to': mockData.valid_to,
-        
-        // Campos de tienda
-        'field-store-name': mockData.store_name,
-        'field-store-address': mockData.store_address,
-        
-        // Campos SAP genéricos
-        'product_name': mockData.product_name,
-        'product_price': formatPrice(mockData.product_price),
-        'price_without_tax': formatPrice(mockData.price_without_tax),
-        'product_description': mockData.product_description,
-        'product_sku': mockData.product_sku,
-        'product_brand': mockData.product_brand,
-        'discount_percentage': `${mockData.discount_percentage}%`,
-        'final_price': formatPrice(mockData.final_price),
-        'valid_from': mockData.valid_from,
-        'valid_to': mockData.valid_to,
-        'store_name': mockData.store_name,
-        'store_address': mockData.store_address
-      };
-      
-      return fieldMap[fieldName] || fieldName;
-    };
     
-        // Verificar si es un campo de texto o dinámico
+    // Verificar si es un campo de texto o dinámico
     const componentType = component.type as string;
-    const isTextField = componentType === 'text' || componentType.startsWith('field-');
+    const isTextField = componentType === 'text' || componentType.startsWith('field-') || componentType === 'field-dynamic-text' || componentType === 'field-dynamic-date';
     
     if (isTextField) {
       let textContent = '';
       
       if (dataMode === 'mock') {
-        // Si es un campo específico, usar su valor
-        if (component.type.startsWith('field-')) {
-          textContent = getFieldValue(component.type);
-        }
-        // Si tiene template dinámico, procesarlo
-        else if (content?.dynamicTemplate) {
-          textContent = processTemplate(content.dynamicTemplate, mockData);
-        }
-        // Si tiene valor estático, usarlo
-        else if (content?.staticValue) {
-          textContent = content.staticValue;
-        }
-        // Si tiene fieldType y field específico
-        else if (content?.fieldType === 'sap-product' && content?.sapField) {
-          textContent = getFieldValue(content.sapField);
-        }
-        // Si tiene fieldType promotion
-        else if (content?.fieldType === 'promotion-data' && content?.promotionField) {
-          textContent = getFieldValue(content.promotionField);
-        }
-        // Fallback para otros tipos
-        else {
-          textContent = getFieldValue(component.type);
-        }
+        // Usar el procesador dinámico unificado
+        textContent = processDynamicContent(component, mockData);
       } else if (dataMode === 'real') {
         // En modo real, mostrar datos reales (si están disponibles)
         textContent = content?.staticValue || 'Datos reales no disponibles';
@@ -247,11 +151,10 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
     // Resto de componentes (imágenes, QR, etc.)
     switch (component.type) {
       
-      case 'image':
       case 'image-header':
       case 'image-brand-logo':
-      case 'image-promotional':
       case 'image-product':
+      case 'image-decorative':
         return (
           <img
             src={content?.imageUrl || '/api/placeholder/400/300'}
@@ -266,7 +169,7 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
           />
         );
       
-      case 'qr-code':
+      case 'qr-dynamic':
         return (
           <div className="w-full h-full bg-white flex items-center justify-center border">
             <div className="w-24 h-24 bg-black" style={{

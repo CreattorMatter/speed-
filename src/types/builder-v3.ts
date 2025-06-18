@@ -29,89 +29,45 @@ export type FamilyTypeV3 =
   | 'Custom';
 
 // =====================
-// COMPONENTES ARRASTRABLES AVANZADOS
+// COMPONENTES ARRASTRABLES CONSOLIDADOS
 // =====================
 
 export type ComponentTypeV3 = 
-  // Texto personalizable
-  | 'text-custom'
-  | 'text-editable'
-  | 'text-dynamic'
+  // 📝 Campo de texto dinámico (CONSOLIDADO - reemplaza 25+ componentes de texto)
+  | 'field-dynamic-text'
   
-  // Campos dinámicos de producto
-  | 'field-product-name'
-  | 'field-product-description'
-  | 'field-product-sku'
-  | 'field-product-brand'
-  | 'field-product-category'
-  | 'field-product-origin'
+  // 🖼️ Imágenes especializadas (4 tipos únicos)
+  | 'image-header'           // Header promocional
+  | 'image-product'          // Imagen de producto
+  | 'image-brand-logo'       // Logo de marca
+  | 'image-decorative'       // Imagen decorativa
   
-  // Precios y descuentos dinámicos
-  | 'field-price-original'
-  | 'field-price-discount'
-  | 'field-price-final'
-  | 'field-discount-percentage'
-  | 'field-discount-amount'
-  | 'field-price-per-unit'
-  | 'field-price-per-m2'
-  | 'field-price-combo'
+  // 📱 QR Code dinámico (CONSOLIDADO - reemplaza 4 componentes)
+  | 'qr-dynamic'
   
-  // Campos financieros avanzados
-  | 'field-installments'
-  | 'field-installment-value'
-  | 'field-financed-price'
-  | 'field-cft'
-  | 'field-tea'
-  | 'field-tna'
-  | 'field-financing-terms'
+  // 📅 Fechas dinámicas (CONSOLIDADO - reemplaza 4 componentes)
+  | 'field-dynamic-date'
   
-  // Imágenes personalizadas
-  | 'image-header'
-  | 'image-promotional'
-  | 'image-product'
-  | 'image-brand-logo'
-  | 'image-background'
-  | 'image-decoration'
+  // 🎨 Elementos decorativos únicos (3 tipos)
+  | 'shape-geometric'        // Formas geométricas
+  | 'decorative-line'        // Líneas y separadores
+  | 'decorative-icon'        // Íconos decorativos
   
-  // QR Codes dinámicos
-  | 'qr-product-info'
-  | 'qr-promotion-link'
-  | 'qr-custom-url'
-  | 'qr-payment-link'
-  
-  // Fechas y períodos
-  | 'field-date-from'
-  | 'field-date-to'
-  | 'field-promotion-period'
-  | 'field-expiry-date'
-  
-  // Elementos decorativos
-  | 'shape-rectangle'
-  | 'shape-circle'
-  | 'shape-polygon'
-  | 'divider-line'
-  | 'icon-custom'
-  
-  // Contenedores agrupadores
-  | 'container-header'
-  | 'container-product-info'
-  | 'container-price-block'
-  | 'container-footer';
+  // 📦 Contenedores únicos (2 tipos)
+  | 'container-flexible'     // Contenedor flexible
+  | 'container-grid';        // Contenedor con grilla
 
 // =====================
 // CATEGORÍAS DE COMPONENTES
 // =====================
 
 export type ComponentCategoryV3 = 
-  | 'Header & Branding'
-  | 'Product Information'
-  | 'Pricing & Discounts'
-  | 'Financial Information'
-  | 'Images & Media'
-  | 'QR & Links'
-  | 'Dates & Periods'
-  | 'Decorative Elements'
-  | 'Containers & Layout';
+  | 'Texto y Datos'           // Consolidado: incluye texto dinámico, productos, precios, financiero
+  | 'Imágenes y Media'        // Mantiene: imágenes especializadas
+  | 'QR y Enlaces'           // Consolidado: QR dinámico
+  | 'Fechas y Períodos'      // Consolidado: fechas dinámicas
+  | 'Elementos Decorativos'  // Mantiene: formas, líneas, íconos
+  | 'Contenedores y Layout'; // Consolidado: contenedores flexibles
 
 // =====================
 // POSICIÓN Y TRANSFORMACIONES AVANZADAS
@@ -279,25 +235,77 @@ export interface DynamicContentV3 {
   
   // Contenido QR
   qrUrl?: string;
-  qrData?: string;
-  
-  // Formato de salida
-  outputFormat?: {
-    type: 'currency' | 'percentage' | 'date' | 'number' | 'text';
-    locale?: string;
-    currency?: string;
-    decimals?: number;
-    prefix?: string;
-    suffix?: string;
+  qrConfig?: {
+    type: 'website' | 'product-info' | 'promotion-link' | 'payment-link';
+    qrType?: 'product-info' | 'promotion-link' | 'custom-url' | 'payment-link';
+    baseUrl?: string;
+    customUrl?: string;
+    dynamicParams?: { [key: string]: string };
   };
   
-  // Validaciones
-  validation?: {
-    required: boolean;
-    minLength?: number;
-    maxLength?: number;
+  // Configuración de texto dinámico
+  textConfig?: {
+    contentType: 'product-name' | 'product-description' | 'product-sku' | 'product-brand' |
+                 'price-original' | 'price-discount' | 'price-final' | 'discount-percentage' |
+                 'financing-text' | 'promotion-title' | 'custom';
+    fallbackText?: string;
+    formatters?: Array<{
+      type: 'currency' | 'percentage' | 'uppercase' | 'lowercase' | 'capitalize';
+      options?: any;
+    }>;
+  };
+  
+  // Configuración de fechas
+  dateConfig?: {
+    type: 'current-date' | 'promotion-start' | 'promotion-end' | 'custom';
+    dateType?: 'custom' | 'date-from' | 'date-to' | 'promotion-period' | 'expiry-date';
+    customDateField?: string;
+    format?: string;
+    locale?: string;
+  };
+  
+  // Configuración de formas geométricas
+  shapeConfig?: {
+    type: 'rectangle' | 'circle' | 'triangle' | 'star' | 'polygon';
+    shapeType?: 'rectangle' | 'star' | 'circle' | 'polygon' | 'triangle';
+    customPath?: string;
+    strokeWidth?: number;
+    fillOpacity?: number;
+  };
+  
+  // Configuración de líneas decorativas
+  lineConfig?: {
+    type: 'solid' | 'dashed' | 'dotted' | 'double';
+    thickness?: number;
     pattern?: string;
-    customValidator?: string; // función como string
+  };
+  
+  // Configuración de íconos decorativos
+  iconConfig?: {
+    type: 'star' | 'heart' | 'arrow' | 'check' | 'custom';
+    iconName?: string;
+    customSvg?: string;
+  };
+  
+  // Configuración de contenedores
+  containerConfig?: {
+    type: 'flexible' | 'grid' | 'header' | 'product-info' | 'price-block';
+    containerType?: 'custom' | 'header' | 'product-info' | 'price-block' | 'footer';
+    flexDirection?: 'row' | 'column';
+    justifyContent?: 'center' | 'flex-start' | 'flex-end' | 'space-between' | 'space-around' | 'space-evenly';
+    alignItems?: 'center' | 'flex-start' | 'flex-end' | 'stretch';
+    gap?: number;
+    gridColumns?: number;
+    gridRows?: number;
+  };
+  
+  // Formateo de salida
+  outputFormat?: {
+    type: 'text' | 'currency' | 'percentage' | 'date' | 'number';
+    locale?: string;
+    precision?: number;
+    prefix?: string;
+    suffix?: string;
   };
 }
 
@@ -329,6 +337,14 @@ export interface DraggableComponentV3 {
   isDraggable: boolean;
   isResizable: boolean;
   isEditable: boolean;
+  
+  // Configuración de etiqueta personalizable
+  customLabel?: {
+    name: string;           // Nombre personalizado para la etiqueta
+    color: string;         // Color de fondo de la etiqueta (ej: '#ff4444', 'bg-red-500')
+    textColor?: string;    // Color del texto (opcional, por defecto blanco)
+    show: boolean;         // Mostrar/ocultar etiqueta
+  };
   
   // Jerarquía y agrupación
   parentId?: string;
