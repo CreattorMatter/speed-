@@ -50,6 +50,8 @@ lerna-debug.log*
 *secret*key*
 *service*key*
 *api*key*
+*mapbox*token*
+*pk.eyJ*
 .env.secrets
 config.secrets.*
 

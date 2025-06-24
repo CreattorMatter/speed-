@@ -21,6 +21,9 @@ Mientras configuras Supabase, usa esto:
 VITE_SUPABASE_URL=https://placeholder.supabase.co
 VITE_SUPABASE_ANON_KEY=placeholder-anon-key
 VITE_SUPABASE_SERVICE_ROLE_KEY=placeholder-service-key
+
+# ===== MAPBOX CONFIGURATION =====
+VITE_MAPBOX_TOKEN=your-mapbox-token-here
 ```
 
 ### 3. **Verificar que funcione**
