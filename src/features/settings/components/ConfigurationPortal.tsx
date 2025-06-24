@@ -31,30 +31,6 @@ export const ConfigurationPortal: React.FC<ConfigurationPortalProps> = ({ isOpen
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   
-  // Estados para gestión de familias
-  const [families, setFamilies] = useState<FamilyV3[]>([]);
-  const [isLoadingFamilies, setIsLoadingFamilies] = useState(false);
-  const [isFamilyModalOpen, setIsFamilyModalOpen] = useState(false);
-  const [selectedFamily, setSelectedFamily] = useState<FamilyV3 | null>(null);
-
-  // Cargar familias al abrir la pestaña
-  React.useEffect(() => {
-    if (activeTab === 'families') {
-      loadFamilies();
-    }
-  }, [activeTab]);
-
-  const loadFamilies = async () => {
-    try {
-      setIsLoadingFamilies(true);
-      const fetchedFamilies = await getFamilies();
-      setFamilies(fetchedFamilies);
-    } catch (error) {
-      console.error('Error al cargar familias:', error);
-    } finally {
-      setIsLoadingFamilies(false);
-    }
-  };
 
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
@@ -74,163 +50,6 @@ export const ConfigurationPortal: React.FC<ConfigurationPortalProps> = ({ isOpen
     setIsEditModalOpen(false);
   };
 
-  // Manejadores para familias
-  const handleCreateFamily = () => {
-    setSelectedFamily(null);
-    setIsFamilyModalOpen(true);
-  };
-
-  const handleEditFamily = (family: FamilyV3) => {
-    setSelectedFamily(family);
-    setIsFamilyModalOpen(true);
-  };
-
-  const handleDeleteFamily = async (familyId: string) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar esta familia y todas sus plantillas?')) {
-      try {
-        await deleteFamily(familyId);
-        await loadFamilies(); // Recargar la lista
-      } catch (error) {
-        console.error('Error al eliminar familia:', error);
-        alert('Error al eliminar la familia. Inténtalo de nuevo.');
-      }
-    }
-  };
-
-  const handleSaveFamily = async (familyData: any) => {
-    try {
-      if (selectedFamily) {
-        // Editar familia existente
-        await updateFamily(selectedFamily.id, familyData);
-      } else {
-        // Crear nueva familia - convertir el nombre a lowercase y agregar campos requeridos
-        const familyToCreate = {
-          ...familyData,
-          name: familyData.name.toLowerCase().replace(/\s+/g, '-'), // Normalizar nombre
-          templates: [],
-          featuredTemplates: [],
-          defaultStyle: {
-            brandColors: {
-              primary: '#000000',
-              secondary: '#666666',
-              accent: '#0066cc',
-              text: '#333333',
-              background: '#ffffff'
-            },
-            typography: {
-              primaryFont: 'Inter',
-              secondaryFont: 'Roboto',
-              headerFont: 'Poppins'
-            },
-            visualEffects: {
-              headerStyle: {},
-              priceStyle: {},
-              footerStyle: {}
-            }
-          },
-          recommendedComponents: ['text', 'image', 'price'],
-          migrationConfig: {
-            allowMigrationFrom: [],
-            headerReplacement: {
-              replaceHeaderImages: false,
-              replaceColors: false
-            }
-          },
-          headerImage: '',
-          sortOrder: 0
-        };
-        await createFamily(familyToCreate);
-      }
-      await loadFamilies(); // Recargar la lista
-      setIsFamilyModalOpen(false);
-    } catch (error) {
-      console.error('Error al guardar familia:', error);
-      alert('Error al guardar la familia. Inténtalo de nuevo.');
-    }
-  };
-
-  const renderFamiliesContent = () => {
-    if (isLoadingFamilies) {
-      return (
-        <div className="flex items-center justify-center p-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-gray-600">Cargando familias...</p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Gestión de Familias</h2>
-          <button
-            onClick={handleCreateFamily}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nueva Familia</span>
-          </button>
-        </div>
-
-        {families.length === 0 ? (
-          <div className="text-center py-8">
-            <Folder className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No hay familias</h3>
-            <p className="text-gray-500 mb-4">Crea tu primera familia de plantillas para comenzar.</p>
-            <button
-              onClick={handleCreateFamily}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              Crear primera familia
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {families.map(family => (
-              <div key={family.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-2xl">{family.icon}</span>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{family.displayName}</h3>
-                      <p className="text-sm text-gray-500">{family.name}</p>
-                    </div>
-                  </div>
-                  <div className="flex space-x-1">
-                    <button
-                      onClick={() => handleEditFamily(family)}
-                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                      title="Editar familia"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteFamily(family.id)}
-                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                      title="Eliminar familia"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                
-                <p className="text-sm text-gray-600 mb-3 line-clamp-2">{family.description}</p>
-                
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <span>{family.templates?.length || 0} plantillas</span>
-                  <span className={`px-2 py-1 rounded-full text-xs ${family.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                    {family.isActive ? 'Activa' : 'Inactiva'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -241,8 +60,6 @@ export const ConfigurationPortal: React.FC<ConfigurationPortalProps> = ({ isOpen
                   onEditUser={handleEditUser}
                   onDeleteUser={handleDeleteUser}
                 />;
-      case 'families':
-        return renderFamiliesContent();
       case 'roles':
         return <div className="p-6">Gestión de Roles (próximamente)</div>;
       case 'security':
@@ -273,13 +90,6 @@ export const ConfigurationPortal: React.FC<ConfigurationPortalProps> = ({ isOpen
               >
                 <Users className="w-5 h-5 mr-3" />
                 <span>Gestión de Usuarios</span>
-              </button>
-              <button 
-                onClick={() => setActiveTab('families')}
-                className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-left ${activeTab === 'families' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
-              >
-                <Folder className="w-5 h-5 mr-3" />
-                <span>Gestión de Familias</span>
               </button>
               <button 
                 onClick={() => setActiveTab('roles')}
@@ -315,15 +125,6 @@ export const ConfigurationPortal: React.FC<ConfigurationPortalProps> = ({ isOpen
         />
       )}
 
-      {/* Modal de edición/creación de familia */}
-      {isFamilyModalOpen && (
-        <FamilyModal
-          family={selectedFamily}
-          isOpen={isFamilyModalOpen}
-          onClose={() => setIsFamilyModalOpen(false)}
-          onSave={handleSaveFamily}
-        />
-      )}
     </div>
   );
 };

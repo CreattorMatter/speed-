@@ -34,12 +34,12 @@ A continuación se listan las principales áreas de trabajo identificadas, con u
 **Prioridad: CRÍTICA** - Elementos que bloquean o degradan severamente la usabilidad.
 
 1. **Issues UI/UX críticos:**
-   - [ ] ‼️ **Corregir legibilidad de botones y menú de usuario** (Volver, Administración, etc). Texto blanco sobre fondo blanco.
+   - [~] ‼️ **Corregir legibilidad de botones y menú de usuario** (Volver, Administración, etc). Texto blanco sobre fondo blanco. (En progreso)
    - [ ] ⚠️ Consolidar botones múltiples "Nuevo" en gestión de plantillas.
    - [ ] ⚠️ Bug: Rulers no se actualizan con zoom en BuilderV3.
 
 2. **Flujo de Creación de Familias:**
-   - [ ] **Implementar modal para "Nueva Familia"**, reemplazando la redirección actual.
+   - [ ] **Implementar modal para "Nueva Familia"**, reemplazando la redirección actual. (Se eliminó implementación incorrecta, listo para el desarrollo correcto).
    - [ ] **Integrar la funcionalidad de clonar/importar plantillas** dentro de este nuevo modal.
 
 3. **Política "Cero Mocks":**
@@ -92,10 +92,12 @@ A continuación se listan las principales áreas de trabajo identificadas, con u
 - [x] Cliente admin configurado para bypass RLS.
 - [x] Digital Carousel correctamente deshabilitado.
 - [x] **El editor de carteles (Poster Editor) funciona correctamente.**
+- [x] **Corrección de bug crítico en Builder V3:** Solucionado el problema con la selección múltiple (el punto de inicio era incorrecto y no consideraba zoom/pan).
+- [x] **Limpieza de código:** Eliminado `FamilyModal` del `ConfigurationPortal` para preparar la implementación correcta del flujo de creación de familias.
 
 ### 🔄 **En Progreso:**
 - [~] **Refactorización final de BuilderV3** y sus hooks.
-- [~] **Corrección de Issues UI/UX específicos** (botones, modales, etc.).
+- [~] **Corrección de legibilidad de botones y menú de usuario.**
 - [~] **Transición final a una política de "cero mocks"** para entidades core.
 
 ### ❌ **Pendiente:**
@@ -119,7 +121,7 @@ A continuación se listan las principales áreas de trabajo identificadas, con u
 
 ## 7. Próximos Pasos Inmediatos
 
-1.  **🔧 DESARROLLO (Crítico):** Corregir issues críticos de UI/UX (legibilidad de botones y menús).
+1.  **🔧 DESARROLLO (Crítico):** Finalizar la corrección de issues críticos de UI/UX (legibilidad de botones y menús).
 2.  **🚀 DESARROLLO (Crítico):** Implementar el nuevo flujo de "Crear Familia" con un modal que incluya la opción de clonar.
 3.  **🧹 REFACTOR (Crítico):** Auditar y eliminar por completo el uso de MOCKS para Familias y Plantillas en todo el flujo del Builder y la creación de entidades.
 4.  **📋 GESTIÓN:** Solicitar información pendiente del cliente (AD, Cloud) para desbloquear fases posteriores.

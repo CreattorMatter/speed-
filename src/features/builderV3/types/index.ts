@@ -651,6 +651,8 @@ export interface BuilderStateV3 {
     theme: 'light' | 'dark' | 'auto';
     language: string;
   };
+  
+  componentsLibrary: ComponentsLibraryV3;
 }
 
 // =====================
@@ -679,6 +681,7 @@ export interface BuilderOperationsV3 {
   duplicateTemplate: (templateId: string, newName?: string) => Promise<TemplateV3>;
   saveTemplate: () => Promise<void>;
   setTemplateDirect: (template: TemplateV3) => void; // Función especial para actualizar estado desde Supabase
+  setComponentsLibrary: (library: ComponentsLibraryV3) => void;
   
   // ===== GESTIÓN DE COMPONENTES =====
   createComponent: (type: ComponentTypeV3, position: PositionV3) => DraggableComponentV3;
@@ -774,19 +777,22 @@ export interface BuilderOperationsV3 {
 // CONFIGURACIÓN DE COMPONENTES DISPONIBLES
 // =====================
 
+// Definición para un componente individual en la librería
+export interface ComponentDefinitionV3 {
+  type: ComponentTypeV3;
+  name: string;
+  description: string;
+  icon: string;
+  category: ComponentCategoryV3;
+  tags: string[];
+  defaultSize: { width: number; height: number; isProportional: boolean };
+  defaultStyle: any; // Mantener como any por flexibilidad
+  defaultContent: any; // Mantener como any por flexibilidad
+}
+
+// La librería de componentes es un diccionario agrupado por categoría
 export type ComponentsLibraryV3 = {
-  [K in ComponentCategoryV3]: Array<{
-    type: ComponentTypeV3;
-    name: string;
-    description: string;
-    icon: string;
-    category: K;
-    defaultSize: SizeV3;
-    defaultStyle: Partial<StyleV3>;
-    defaultContent: Partial<DynamicContentV3>;
-    tags: string[];
-    isProOnly?: boolean;
-  }>;
+  [key in ComponentCategoryV3]?: ComponentDefinitionV3[];
 };
 
 // =====================
@@ -799,7 +805,6 @@ export interface UseBuilderV3Return {
   families: FamilyV3[];
   templates: TemplateV3[];
   componentsLibrary: ComponentsLibraryV3;
-  isReady: boolean;
 }
 
 // =====================

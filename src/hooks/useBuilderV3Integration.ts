@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useBuilderV3 } from '../features/builderV3/hooks/useBuilderV3';
-import { familiesV3Service, templatesV3Service } from '../services/builderV3Service';
+import { familiesV3Service, templatesV3Service, componentsV3Service } from '../services/builderV3Service';
 import { FamilyV3, TemplateV3, ComponentTypeV3 } from '../features/builderV3/types';
 import { toast } from 'react-hot-toast';
 
@@ -18,6 +18,10 @@ export const useBuilderV3Integration = () => {
   const [realTemplates, setRealTemplates] = useState<TemplateV3[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
+
+  // Desestructuramos la operación que necesitamos para estabilizar la dependencia
+  const { setComponentsLibrary } = builderCore.operations;
 
   // =====================
   // INICIALIZACIÓN Y CONEXIÓN
@@ -26,22 +30,33 @@ export const useBuilderV3Integration = () => {
   useEffect(() => {
     const initializeConnection = async () => {
       try {
-        console.log('🔌 Conectando con Supabase...');
-        const families = await familiesV3Service.getAll();
+        console.log('🔌 Conectando con Supabase y cargando datos iniciales...');
+        
+        const [families, library] = await Promise.all([
+          familiesV3Service.getAll(),
+          componentsV3Service.getLibrary()
+        ]);
+
         console.log('📦 Familias cargadas:', families.length);
         setRealFamilies(families);
+
+        console.log('📚 Librería de componentes cargada:', Object.keys(library).length, 'categorías');
+        // Usamos la función desestructurada y estable
+        setComponentsLibrary(library);
+
         setIsConnected(true);
-        toast.success('✅ Conectado a Supabase');
+        setIsReady(true);
+        toast.success('✅ Conectado y listo');
       } catch (error) {
-        console.error('❌ Error conectando con Supabase:', error);
+        console.error('❌ Error fatal en la inicialización:', error);
         setConnectionError(error instanceof Error ? error.message : 'Error de conexión');
         setIsConnected(false);
-        setRealFamilies(builderCore.families);
-        toast.error('⚠️ Usando datos offline');
+        setIsReady(true);
+        toast.error('⚠️ Error al conectar con Supabase');
       }
     };
     initializeConnection();
-  }, [builderCore.families]);
+  }, [setComponentsLibrary]); // <-- La dependencia ahora es estable y correcta
 
   // =====================
   // OPERACIONES EXTENDIDAS CON SUPABASE
@@ -142,13 +157,49 @@ export const useBuilderV3Integration = () => {
         return;
       }
       
-      console.log('💾 Guardando plantilla:', builderCore.state.currentTemplate.name);
+      console.log('💾 Guardando plantilla en Supabase:', builderCore.state.currentTemplate.name);
+      console.log('📦 Componentes actuales a guardar:', builderCore.state.components.length);
+      
       try {
-        // TODO: Implementar guardado real en Supabase
+        // Preparar datos actualizados para guardar
+        const updatedTemplate: Partial<TemplateV3> = {
+          name: builderCore.state.currentTemplate.name,
+          description: builderCore.state.currentTemplate.description,
+          canvas: builderCore.state.currentTemplate.canvas,
+          defaultComponents: builderCore.state.components, // ¡AQUÍ ESTÁ LA CLAVE!
+          familyConfig: builderCore.state.currentTemplate.familyConfig,
+          validationRules: builderCore.state.currentTemplate.validationRules,
+          exportSettings: builderCore.state.currentTemplate.exportSettings,
+          isPublic: builderCore.state.currentTemplate.isPublic,
+          isActive: builderCore.state.currentTemplate.isActive,
+          version: (builderCore.state.currentTemplate.version || 1) + 1 // Incrementar versión
+        };
+
+        console.log('📄 Guardando plantilla con componentes:', updatedTemplate.defaultComponents?.length);
+        
+        // Guardar en Supabase usando el servicio real
+        const savedTemplate = await templatesV3Service.update(
+          builderCore.state.currentTemplate.id, 
+          updatedTemplate
+        );
+        
+        // Actualizar estado local con la plantilla guardada
+        builderCore.operations.setTemplateDirect(savedTemplate);
+        
+        // Actualizar lista de plantillas
+        setRealTemplates(prev => 
+          prev.map(t => t.id === savedTemplate.id ? savedTemplate : t)
+        );
+        
+        // Llamar al guardado del hook base para mantener consistencia
         await builderCore.operations.saveTemplate();
-        toast.success('✅ Plantilla guardada');
+        
+        console.log('✅ Plantilla guardada exitosamente en Supabase');
+        toast.success('✅ Plantilla guardada correctamente');
+        
+        return savedTemplate;
       } catch (error) {
-        console.error('❌ Error guardando plantilla:', error);
+        console.error('❌ Error guardando plantilla en Supabase:', error);
         toast.error('Error al guardar plantilla');
         throw error;
       }
@@ -293,7 +344,7 @@ export const useBuilderV3Integration = () => {
     connectionStatus: getConnectionStatus(),
     
     // Utilidades
-    isReady: builderCore.isReady,
+    isReady,
     refreshData,
     
     // Debug info

@@ -18,6 +18,7 @@ interface CanvasEditorV3Props {
   onComponentAdd: (type: ComponentTypeV3, position: PositionV3) => void;
   operations: BuilderOperationsV3;
   rulerUnit?: 'mm' | 'cm';
+  activeTool: 'select' | 'pan' | 'zoom';
 }
 
 export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
@@ -30,22 +31,47 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
   onComponentAdd,
   operations,
   rulerUnit,
+  activeTool,
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const worldRef = useRef<HTMLDivElement>(null);
   const [draggedComponentType, setDraggedComponentType] = useState<ComponentTypeV3 | null>(null);
   const [dropPosition, setDropPosition] = useState<{ x: number; y: number } | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionStart, setSelectionStart] = useState<{ x: number; y: number } | null>(null);
   const [selectionEnd, setSelectionEnd] = useState<{ x: number; y: number } | null>(null);
 
+  const getCanvasCursor = () => {
+    switch (activeTool) {
+      case 'select':
+        return 'cursor-default';
+      case 'pan':
+        return 'cursor-grab';
+      case 'zoom':
+        return 'cursor-zoom-in';
+      default:
+        return 'cursor-crosshair';
+    }
+  };
+
+  const getCanvasCoordinatesFromEvent = useCallback((e: MouseEvent | React.MouseEvent | React.DragEvent) => {
+    if (!worldRef.current) return null;
+    const worldRect = worldRef.current.getBoundingClientRect();
+    const x = (e.clientX - worldRect.left) / canvasState.zoom;
+    const y = (e.clientY - worldRect.top) / canvasState.zoom;
+    return { x, y };
+  }, [canvasState.zoom]);
+
   // =====================
   // EVENT HANDLERS
   // =====================
 
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    onComponentSelect(null);
+    const target = e.target as HTMLElement;
+    // Deseleccionar solo si se hace clic en el fondo del canvas (canvasRef) y no en el mundo (worldRef) o sus hijos.
+    if (target === canvasRef.current) {
+      onComponentSelect(null);
+    }
   }, [onComponentSelect]);
 
   const handleComponentClick = useCallback((componentId: string, e: React.MouseEvent) => {
@@ -69,18 +95,17 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const x = (e.clientX - rect.left) / canvasState.zoom;
-    const y = (e.clientY - rect.top) / canvasState.zoom;
-    let snappedX = x;
-    let snappedY = y;
+    const coords = getCanvasCoordinatesFromEvent(e);
+    if (!coords) return;
+    
+    let snappedX = coords.x;
+    let snappedY = coords.y;
     if (canvasState.snapToGrid) {
-      snappedX = Math.round(x / canvasState.gridSize) * canvasState.gridSize;
-      snappedY = Math.round(y / canvasState.gridSize) * canvasState.gridSize;
+      snappedX = Math.round(coords.x / canvasState.gridSize) * canvasState.gridSize;
+      snappedY = Math.round(coords.y / canvasState.gridSize) * canvasState.gridSize;
     }
     setDropPosition({ x: snappedX, y: snappedY });
-  }, [canvasState.zoom, canvasState.snapToGrid, canvasState.gridSize]);
+  }, [getCanvasCoordinatesFromEvent, canvasState.snapToGrid, canvasState.gridSize]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -97,55 +122,69 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
   // =====================
   // SELECTION BOX
   // =====================
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.target === canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / canvasState.zoom;
-      const y = (e.clientY - rect.top) / canvasState.zoom;
-      
-      setIsSelecting(true);
-      setSelectionStart({ x, y });
-      setSelectionEnd({ x, y });
+  const handleSelectionMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.target !== worldRef.current) {
+      return;
     }
-  }, [canvasState.zoom]);
+    
+    const startCoords = getCanvasCoordinatesFromEvent(e);
+    if (!startCoords) return;
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (isSelecting && selectionStart && canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / canvasState.zoom;
-      const y = (e.clientY - rect.top) / canvasState.zoom;
-      
-      setSelectionEnd({ x, y });
-    }
-  }, [isSelecting, selectionStart, canvasState.zoom]);
+    setIsSelecting(true);
+    setSelectionStart(startCoords);
+    setSelectionEnd(startCoords);
 
-  const handleMouseUp = useCallback(() => {
-    if (isSelecting && selectionStart && selectionEnd) {
-      // Calcular qué componentes están dentro del área de selección
-      const minX = Math.min(selectionStart.x, selectionEnd.x);
-      const maxX = Math.max(selectionStart.x, selectionEnd.x);
-      const minY = Math.min(selectionStart.y, selectionEnd.y);
-      const maxY = Math.max(selectionStart.y, selectionEnd.y);
-
-      const selectedComponents = components.filter(component => {
-        const compX = component.position.x;
-        const compY = component.position.y;
-        const compRight = compX + component.size.width;
-        const compBottom = compY + component.size.height;
-
-        return compX >= minX && compY >= minY && compRight <= maxX && compBottom <= maxY;
-      });
-
-      if (selectedComponents.length > 0) {
-        onComponentSelect(null);
+    const handleDocumentMouseMove = (event: MouseEvent) => {
+      const currentCoords = getCanvasCoordinatesFromEvent(event);
+      if (currentCoords) {
+        setSelectionEnd(currentCoords);
       }
-    }
+    };
 
-    setIsSelecting(false);
-    setSelectionStart(null);
-    setSelectionEnd(null);
-  }, [isSelecting, selectionStart, selectionEnd, components, onComponentSelect]);
+    const handleDocumentMouseUp = (event: MouseEvent) => {
+      setIsSelecting(false);
+      
+      const finalCoords = getCanvasCoordinatesFromEvent(event);
+      if (!startCoords || !finalCoords) {
+        document.removeEventListener('mousemove', handleDocumentMouseMove);
+        document.removeEventListener('mouseup', handleDocumentMouseUp);
+        setSelectionStart(null);
+        setSelectionEnd(null);
+        return;
+      }
+
+      // Evitar deselección si fue solo un clic
+      if (Math.abs(startCoords.x - finalCoords.x) < 5 && Math.abs(startCoords.y - finalCoords.y) < 5) {
+        onComponentSelect(null);
+      } else {
+        const minX = Math.min(startCoords.x, finalCoords.x);
+        const maxX = Math.max(startCoords.x, finalCoords.x);
+        const minY = Math.min(startCoords.y, finalCoords.y);
+        const maxY = Math.max(startCoords.y, finalCoords.y);
+
+        const selectedComponents = components.filter(component => {
+          const compX = component.position.x;
+          const compY = component.position.y;
+          const compRight = compX + component.size.width;
+          const compBottom = compY + component.size.height;
+          
+          // Selección por intersección, no solo por contención completa
+          return compX < maxX && compRight > minX && compY < maxY && compBottom > minY;
+        });
+
+        onMultipleComponentSelect(selectedComponents.map(c => c.id));
+      }
+      
+      setSelectionStart(null);
+      setSelectionEnd(null);
+      
+      document.removeEventListener('mousemove', handleDocumentMouseMove);
+      document.removeEventListener('mouseup', handleDocumentMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleDocumentMouseMove);
+    document.addEventListener('mouseup', handleDocumentMouseUp);
+  }, [getCanvasCoordinatesFromEvent, components, onComponentSelect, onMultipleComponentSelect]);
 
   // =====================
   // KEYBOARD SHORTCUTS
@@ -185,33 +224,34 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
   return (
     <div className="flex-1 h-full bg-gray-100 relative overflow-hidden">
       {/* Enhanced Rulers with Real Measurements */}
-      <EnhancedRulers
-        canvasWidth={template.canvas.width}
-        canvasHeight={template.canvas.height}
-        zoom={canvasState.zoom}
-        offsetX={canvasState.panX}
-        offsetY={canvasState.panY}
-        unit={rulerUnit || 'mm'}
-        visible={canvasState.showRulers}
-      />
+      {canvasState.showRulers && template.canvas && template.canvas.width > 0 && template.canvas.height > 0 && (
+        <EnhancedRulers
+          canvasWidth={template.canvas.width}
+          canvasHeight={template.canvas.height}
+          zoom={canvasState.zoom}
+          offsetX={canvasState.panX}
+          offsetY={canvasState.panY}
+          unit={rulerUnit || 'mm'}
+          visible={true}
+        />
+      )}
 
       {/* Enhanced Canvas */}
       <div
         ref={canvasRef}
-        className="absolute inset-0 overflow-auto cursor-crosshair"
+        className={`absolute inset-0 overflow-auto ${getCanvasCursor()}`}
         style={{
           paddingTop: canvasState.showRulers ? '32px' : '0',
           paddingLeft: canvasState.showRulers ? '32px' : '0'
         }}
         onClick={handleCanvasClick}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
         {/* Canvas Container */}
         <div
+          ref={worldRef}
+          onMouseDown={handleSelectionMouseDown}
           className="relative mx-auto my-8 shadow-2xl border border-gray-300"
           style={{
             width: `${template.canvas.width * canvasState.zoom}px`,
@@ -271,19 +311,6 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
             </div>
           )}
 
-          {/* Selection Box */}
-          {isSelecting && selectionStart && selectionEnd && (
-            <div
-              className="absolute pointer-events-none z-40 border-2 border-blue-500 bg-blue-100 bg-opacity-20"
-              style={{
-                left: `${Math.min(selectionStart.x, selectionEnd.x) * canvasState.zoom}px`,
-                top: `${Math.min(selectionStart.y, selectionEnd.y) * canvasState.zoom}px`,
-                width: `${Math.abs(selectionEnd.x - selectionStart.x) * canvasState.zoom}px`,
-                height: `${Math.abs(selectionEnd.y - selectionStart.y) * canvasState.zoom}px`,
-              }}
-            />
-          )}
-
           {/* Enhanced Components */}
           {components.map(component => (
             <EnhancedComponentRenderer
@@ -300,6 +327,19 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
               operations={operations}
             />
           ))}
+
+          {/* Selection Box */}
+          {isSelecting && selectionStart && selectionEnd && (
+            <div
+              className="absolute pointer-events-none z-40 border-2 border-blue-500 bg-blue-100 bg-opacity-20"
+              style={{
+                left: `${Math.min(selectionStart.x, selectionEnd.x) * canvasState.zoom}px`,
+                top: `${Math.min(selectionStart.y, selectionEnd.y) * canvasState.zoom}px`,
+                width: `${Math.abs(selectionEnd.x - selectionStart.x) * canvasState.zoom}px`,
+                height: `${Math.abs(selectionEnd.y - selectionStart.y) * canvasState.zoom}px`,
+              }}
+            />
+          )}
 
           {/* Multi-Selection Overlay */}
           {selectedComponentIds.length > 1 && (

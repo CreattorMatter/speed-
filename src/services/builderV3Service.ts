@@ -3,7 +3,76 @@
 // ===============================================
 
 import { supabase, supabaseAdmin, isSupabaseConfigured } from '../lib/supabaseClient';
-import { FamilyV3, TemplateV3 } from '../features/builderV3/types';
+import { FamilyV3, TemplateV3, ComponentsLibraryV3, ComponentDefinitionV3, ComponentCategoryV3 } from '../features/builderV3/types';
+import { UnitConverter } from '../features/builderV3/utils/unitConverter';
+
+// ===============================================
+// COMPONENTS V3 SERVICE
+// ===============================================
+
+export const componentsV3Service = {
+  /**
+   * Obtiene la librería completa de componentes desde la base de datos.
+   */
+  async getLibrary(): Promise<ComponentsLibraryV3> {
+    if (!isSupabaseConfigured) {
+      console.warn('Supabase no configurado, no se pueden cargar componentes.');
+      return {};
+    }
+
+    try {
+      console.log('🔑 Usando cliente admin para leer builder_components');
+      const { data, error } = await supabaseAdmin
+        .from('builder_components')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+
+      if (error) {
+        console.error('❌ Error obteniendo componentes del builder:', error);
+        throw error;
+      }
+
+      console.log(`✅ ${data.length} componentes cargados desde Supabase.`);
+      return this.mapDataToLibrary(data);
+
+    } catch (error) {
+      console.error('Error fatal al cargar la librería de componentes, devolviendo vacío:', error);
+      return {};
+    }
+  },
+
+  /**
+   * Transforma los datos planos de la DB a un objeto agrupado por categoría.
+   */
+  mapDataToLibrary(data: any[]): ComponentsLibraryV3 {
+    if (!data) return {};
+
+    const library: ComponentsLibraryV3 = {};
+
+    for (const item of data) {
+      const componentDef: ComponentDefinitionV3 = {
+        type: item.type,
+        name: item.name,
+        description: item.description,
+        icon: item.icon,
+        category: item.category,
+        tags: item.tags || [],
+        defaultSize: item.default_size_json,
+        defaultStyle: item.default_style_json,
+        defaultContent: item.default_content_json,
+      };
+
+      const category = item.category as ComponentCategoryV3;
+      if (!library[category]) {
+        library[category] = [];
+      }
+      library[category].push(componentDef);
+    }
+
+    return library;
+  }
+};
 
 // ===============================================
 // SIMPLE FAMILIES SERVICE
@@ -223,8 +292,7 @@ export const familiesV3Service = {
           default_style: JSON.stringify(family.defaultStyle),
           allowed_components: family.recommendedComponents,
           is_active: family.isActive,
-          sort_order: family.sortOrder,
-          created_by: 'system'
+          sort_order: family.sortOrder
         })
         .select()
         .single();
@@ -417,9 +485,24 @@ export const templatesV3Service = {
       if (updates.name) updateData.name = updates.name;
       if (updates.description) updateData.description = updates.description;
       if (updates.canvas) updateData.canvas_config = updates.canvas;
+      if (updates.defaultComponents) updateData.default_components = updates.defaultComponents; // ¡COMPONENTES!
       if (updates.familyConfig) updateData.family_config = updates.familyConfig;
+      if (updates.validationRules) updateData.validation_rules = updates.validationRules;
+      if (updates.exportSettings) updateData.export_settings = updates.exportSettings;
+      if (typeof updates.isPublic === 'boolean') updateData.is_public = updates.isPublic;
+      if (typeof updates.isActive === 'boolean') updateData.is_active = updates.isActive;
+      if (updates.version) updateData.version = updates.version;
+      
+      // Siempre actualizar timestamp
+      updateData.updated_at = new Date().toISOString();
       
       console.log('🔑 Usando cliente admin para actualizar plantilla (bypass RLS)');
+      console.log('📦 Datos a actualizar:', {
+        id,
+        componentsCount: updates.defaultComponents?.length || 0,
+        fieldsToUpdate: Object.keys(updateData)
+      });
+      
       const { data, error } = await supabaseAdmin
         .from('templates')
         .update(updateData)
@@ -430,6 +513,7 @@ export const templatesV3Service = {
       if (error) throw error;
 
       console.log('✅ Plantilla actualizada en Supabase con admin client:', data.name);
+      console.log('📦 Componentes guardados:', data.default_components?.length || 0);
       return this.mapToV3Template(data);
     } catch (error) {
       console.error('❌ Error actualizando plantilla en Supabase:', error);
@@ -459,6 +543,32 @@ export const templatesV3Service = {
   },
 
   mapToV3Template(data: any): TemplateV3 {
+    let canvasConfig = data.canvas_config || {
+      width: 1080,
+      height: 1350,
+      unit: 'px',
+      dpi: 300,
+      backgroundColor: '#ffffff'
+    };
+
+    // --- INICIO DE LA LÓGICA DE MIGRACIÓN AL VUELO ---
+    const LEGACY_DIMENSION_THRESHOLD = 500; // Si el ancho es menor a esto, asumimos que son mm
+    if (canvasConfig.width < LEGACY_DIMENSION_THRESHOLD) {
+      console.warn(
+        `🎨 Plantilla "${data.name}" (ID: ${data.id}) detectada con dimensiones legadas. ` +
+        `Realizando migración al vuelo de mm a px.`
+      );
+      canvasConfig = {
+        ...canvasConfig,
+        width: canvasConfig.width * UnitConverter.MM_TO_PX,
+        height: canvasConfig.height * UnitConverter.MM_TO_PX,
+      };
+      console.log(
+        `   Dimensiones corregidas: ${Math.round(canvasConfig.width)}px x ${Math.round(canvasConfig.height)}px`
+      );
+    }
+    // --- FIN DE LA LÓGICA DE MIGRACIÓN AL VUELO ---
+
     return {
       id: data.id,
       name: data.name,
@@ -467,13 +577,7 @@ export const templatesV3Service = {
       thumbnail: data.thumbnail || '',
       tags: data.tags || [],
       category: data.category || 'custom',
-      canvas: data.canvas_config || {
-        width: 1080,
-        height: 1350,
-        unit: 'px',
-        dpi: 300,
-        backgroundColor: '#ffffff'
-      },
+      canvas: canvasConfig, // Usar la configuración potencialmente corregida
       defaultComponents: data.default_components || [],
       familyConfig: data.family_config || {
         brandColors: { primary: '#000000', secondary: '#666666', accent: '#0066cc', text: '#333333' },
@@ -500,16 +604,6 @@ export const templatesV3Service = {
 // ===============================================
 // MOCK SERVICES PARA EVITAR ERRORES
 // ===============================================
-
-export const componentsV3Service = {
-  async saveTemplateComponents(): Promise<void> {
-    console.log('💾 Mock: Componentes guardados');
-  },
-
-  async getTemplateComponents(): Promise<any[]> {
-    return [];
-  }
-};
 
 export const favoritesV3Service = {
   async addToFavorites(): Promise<void> {

@@ -2,7 +2,7 @@
 // ENHANCED RULERS COMPONENT - BuilderV3
 // =====================================
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { UnitConverter } from '../utils/unitConverter';
 
 interface EnhancedRulersProps {
@@ -30,15 +30,21 @@ export const EnhancedRulers: React.FC<EnhancedRulersProps> = ({
   const scaledWidth = canvasWidth * zoom;
   const scaledHeight = canvasHeight * zoom;
 
-  // Obtener marcas para las reglas
-  const horizontalMarks = UnitConverter.getRulerMarks(canvasWidth, unit, zoom);
-  const verticalMarks = UnitConverter.getRulerMarks(canvasHeight, unit, zoom);
+  // Obtener marcas para las reglas - memoizado para optimización
+  const horizontalMarks = useMemo(() => 
+    UnitConverter.getRulerMarks(canvasWidth, unit, zoom), 
+    [canvasWidth, unit, zoom]
+  );
+  const verticalMarks = useMemo(() => 
+    UnitConverter.getRulerMarks(canvasHeight, unit, zoom), 
+    [canvasHeight, unit, zoom]
+  );
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-10">
+    <>
       {/* Esquina superior izquierda */}
       <div 
-        className="absolute top-0 left-0 bg-gray-200 border-r border-b border-gray-300 flex items-center justify-center"
+        className="absolute top-0 left-0 bg-white border-r border-b border-gray-300 flex items-center justify-center z-20"
         style={{ width: rulerSize, height: rulerSize }}
       >
         <div className="text-xs text-gray-600 font-mono select-none">
@@ -48,102 +54,89 @@ export const EnhancedRulers: React.FC<EnhancedRulersProps> = ({
 
       {/* Regla horizontal */}
       <div 
-        className="absolute top-0 left-8 bg-gray-100 border-b border-gray-300"
+        className="absolute top-0 bg-white border-b border-gray-300 z-10 overflow-hidden"
         style={{ 
-          width: scaledWidth, 
+          left: rulerSize,
+          width: 'calc(100% - 30px)', // Ocupar el resto del espacio visible
           height: rulerSize,
-          transform: `translateX(${offsetX}px)`
+          pointerEvents: 'none'
         }}
       >
-        <svg width="100%" height="100%" className="absolute inset-0">
-          {horizontalMarks.map((mark, index) => {
-            const scaledPosition = mark.position;
-            
-            return (
-              <g key={index}>
-                {/* Línea de marca */}
-                <line
-                  x1={scaledPosition}
-                  y1={mark.isMajor ? rulerSize - 15 : rulerSize - 8}
-                  x2={scaledPosition}
-                  y2={rulerSize}
-                  stroke="#666"
-                  strokeWidth={mark.isMajor ? 1.5 : 0.5}
-                />
-                
-                {/* Etiqueta para marcas mayores */}
-                {mark.isMajor && mark.label && scaledPosition > 15 && (
-                  <text
-                    x={scaledPosition}
-                    y={rulerSize - 18}
-                    fontSize="10"
-                    fill="#666"
-                    textAnchor="middle"
-                    className="select-none"
-                  >
-                    {mark.label}
-                  </text>
-                )}
-              </g>
-            );
-          })}
-        </svg>
-        
-        {/* Indicador de unidad */}
-        <div className="absolute top-1 right-2 text-xs text-gray-500 bg-white px-1 rounded">
-          {unit}
+        <div 
+          className="relative h-full"
+          style={{
+            width: scaledWidth, // Ancho real del lienzo
+            transform: `translateX(${offsetX}px)` // Sincronizar con paneo
+          }}
+        >
+          <svg width={scaledWidth} height={rulerSize} className="absolute inset-0">
+            {horizontalMarks.map((mark, index) => {
+              const scaledPosition = mark.position * zoom;
+              return (
+                <g key={index}>
+                  <line
+                    x1={scaledPosition} y1={mark.isMajor ? rulerSize - 15 : rulerSize - 8}
+                    x2={scaledPosition} y2={rulerSize}
+                    stroke="#9ca3af" strokeWidth={mark.isMajor ? 0.75 : 0.5}
+                  />
+                  {mark.isMajor && mark.label && (
+                    <text
+                      x={scaledPosition} y={rulerSize - 18}
+                      fontSize="9" fill="#4b5563" textAnchor="middle" className="select-none"
+                    >
+                      {mark.label}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
         </div>
       </div>
 
       {/* Regla vertical */}
       <div 
-        className="absolute top-8 left-0 bg-gray-100 border-r border-gray-300"
+        className="absolute left-0 bg-white border-r border-gray-300 z-10 overflow-hidden"
         style={{ 
+          top: rulerSize,
           width: rulerSize, 
-          height: scaledHeight,
-          transform: `translateY(${offsetY}px)`
+          height: 'calc(100% - 30px)', // Ocupar el resto del espacio visible
+          pointerEvents: 'none'
         }}
       >
-        <svg width="100%" height="100%" className="absolute inset-0">
-          {verticalMarks.map((mark, index) => {
-            const scaledPosition = mark.position;
-            
-            return (
-              <g key={index}>
-                {/* Línea de marca */}
-                <line
-                  x1={mark.isMajor ? rulerSize - 15 : rulerSize - 8}
-                  y1={scaledPosition}
-                  x2={rulerSize}
-                  y2={scaledPosition}
-                  stroke="#666"
-                  strokeWidth={mark.isMajor ? 1.5 : 0.5}
-                />
-                
-                {/* Etiqueta para marcas mayores */}
-                {mark.isMajor && mark.label && scaledPosition > 15 && (
-                  <text
-                    x={rulerSize - 18}
-                    y={scaledPosition}
-                    fontSize="10"
-                    fill="#666"
-                    textAnchor="middle"
-                    className="select-none"
-                    transform={`rotate(-90 ${rulerSize - 18} ${scaledPosition})`}
-                  >
-                    {mark.label}
-                  </text>
-                )}
-              </g>
-            );
-          })}
-        </svg>
-        
-        {/* Indicador de unidad */}
-        <div className="absolute bottom-2 left-1 text-xs text-gray-500 bg-white px-1 rounded rotate-90">
-          {unit}
+        <div
+          className="relative w-full"
+          style={{
+            height: scaledHeight, // Alto real del lienzo
+            transform: `translateY(${offsetY}px)` // Sincronizar con paneo
+          }}
+        >
+          <svg width={rulerSize} height={scaledHeight} className="absolute inset-0">
+            {verticalMarks.map((mark, index) => {
+              const scaledPosition = mark.position * zoom;
+              return (
+                <g key={index}>
+                  <line
+                    x1={mark.isMajor ? rulerSize - 15 : rulerSize - 8} y1={scaledPosition}
+                    x2={rulerSize} y2={scaledPosition}
+                    stroke="#9ca3af" strokeWidth={mark.isMajor ? 0.75 : 0.5}
+                  />
+                  {mark.isMajor && mark.label && (
+                    <text
+                      x={rulerSize - 16} y={scaledPosition + 3}
+                      fontSize="9" fill="#4b5563" textAnchor="middle"
+                      className="select-none"
+                      transform={`rotate(-90 ${rulerSize - 16} ${scaledPosition + 3})`}
+                    >
+                      {mark.label}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
         </div>
       </div>
-    </div>
+    </>
   );
 }; 

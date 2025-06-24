@@ -26,7 +26,7 @@ interface DashboardProps {
   onBack: () => void;
   userEmail?: string;
   onSettings: () => void;
-  userRole: 'admin' | 'limited';
+  userRole: 'admin' | 'limited' | 'sucursal';
   onAnalytics: () => void;
 }
 
@@ -1093,7 +1093,7 @@ const ActivityItem: React.FC<{
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => onPrint(activity.id, location.name)}
+                      onClick={() => onPrint && onPrint(activity.id, location.name)}
                       className="ml-1 p-1 hover:bg-red-200 rounded-full"
                     >
                       <Printer className="w-3 h-3" />
@@ -1105,16 +1105,6 @@ const ActivityItem: React.FC<{
           </div>
         </div>
       </div>
-
-      {/* Modal de detalles de impresión */}
-      {selectedLocation && (
-        <PrintDetailsModal
-          isOpen={!!selectedLocation}
-          onClose={() => setSelectedLocation(null)}
-          locationName={selectedLocation.name}
-          timestamp={selectedLocation.timestamp}
-        />
-      )}
     </>
   );
 };
@@ -1996,7 +1986,7 @@ export default function Dashboard({
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header onBack={onBack} onLogout={handleLogoutClick} onSettings={onSettings} />
+      <Header onBack={onBack} onLogout={handleLogoutClick} userName={userEmail || ''} />ß
       
       {/* Agregar el Modal de Novedades */}
       <NewsModal 

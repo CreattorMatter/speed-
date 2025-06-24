@@ -1,48 +1,9 @@
 import { useState, useCallback } from 'react';
 import { PromotionFamily, Template, TemplateCopyOptions, Block } from '../types/builder';
 
-// Datos de ejemplo para desarrollo
-const mockFamilies: PromotionFamily[] = [
-  {
-    id: '1',
-    name: 'Black Friday 2024',
-    description: 'Promociones para Black Friday con descuentos especiales',
-    color: '#1f2937',
-    headerImage: '',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-    isActive: true,
-    templates: [
-      {
-        id: 't1',
-        name: 'Descuento 50%',
-        description: 'Plantilla para productos con 50% de descuento',
-        familyId: '1',
-        blocks: [],
-        posterSize: 'A4',
-        previewImage: '',
-        isPublic: true,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-        tags: ['descuento', 'liquidacion']
-      }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Navidad 2024',
-    description: 'Promociones navideñas con ambiente festivo',
-    color: '#dc2626',
-    headerImage: '',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-    isActive: true,
-    templates: []
-  }
-];
-
+// ⚠️ DEPRECATED: Este hook será eliminado. Use useBuilderV3Integration para gestión de familias
 export const useFamilyManager = () => {
-  const [families, setFamilies] = useState<PromotionFamily[]>(mockFamilies);
+  const [families, setFamilies] = useState<PromotionFamily[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
 
   const createFamily = useCallback((familyData: Omit<PromotionFamily, 'id' | 'createdAt' | 'updatedAt' | 'templates'>) => {

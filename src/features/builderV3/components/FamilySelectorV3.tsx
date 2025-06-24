@@ -16,7 +16,8 @@ import {
   Settings,
   ChevronDown,
   ChevronUp,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react';
 
 interface FamilySelectorV3Props {
@@ -30,6 +31,7 @@ interface FamilySelectorV3Props {
   }) => void;
   userRole: 'admin' | 'limited';
   onCreateFamily?: () => void;
+  onFamilyDelete?: (familyId: string) => void;
 }
 
 export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
@@ -37,7 +39,8 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
   onFamilySelect,
   onFamilyMigration,
   userRole,
-  onCreateFamily
+  onCreateFamily,
+  onFamilyDelete
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -182,13 +185,26 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
           </button>
           
           {userRole === 'admin' && (
-            <button
-              onClick={() => handleMigrationStart(family)}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition-colors"
-              title="Migrar plantillas"
-            >
-              <Copy className="w-4 h-4" />
-            </button>
+            <>
+              <button
+                onClick={() => handleMigrationStart(family)}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition-colors"
+                title="Migrar plantillas"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                  if (window.confirm(`¿Estás seguro de que deseas eliminar la familia "${family.displayName}"? Esta acción no se puede deshacer.`)) {
+                    onFamilyDelete?.(family.id);
+                  }
+                }}
+                className="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-lg transition-colors"
+                title="Eliminar familia"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
           )}
         </div>
       </div>

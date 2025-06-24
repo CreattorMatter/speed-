@@ -6,137 +6,11 @@ import { FamilyV3 } from '../features/builderV3/types';
  * @returns Una promesa que resuelve a un array de familias.
  */
 export const getFamilies = async (): Promise<FamilyV3[]> => {
-  console.log('Fetching families...');
-  await new Promise(resolve => setTimeout(resolve, 200));
+  console.log('⚠️ DEPRECATED: Este servicio será eliminado. Use familiesV3Service de builderV3Service.ts');
   
-  // Datos mock de familias por defecto si no hay datos de Supabase
-  const mockFamilies = [
-    {
-      id: 'fam_ladrillazos',
-      name: 'ladrillazos',
-      displayName: 'Ladrillazos',
-      description: 'Ofertas especiales en construcción y materiales',
-      icon: '🧱',
-      headerImage: '/images/headers/ladrillazos.png',
-      templates: [],
-      featuredTemplates: [],
-      defaultStyle: {
-        brandColors: {
-          primary: '#d97706',
-          secondary: '#fed7aa',
-          accent: '#dc2626',
-          text: '#ffffff',
-          background: '#d97706'
-        },
-        typography: {
-          primaryFont: 'Arial Black',
-          secondaryFont: 'Arial',
-          headerFont: 'Impact'
-        },
-        visualEffects: {
-          headerStyle: {},
-          priceStyle: {},
-          footerStyle: {}
-        }
-      },
-      recommendedComponents: ['text', 'image', 'price', 'discount'],
-      migrationConfig: {
-        allowMigrationFrom: [],
-        headerReplacement: {
-          replaceHeaderImages: false,
-          replaceColors: false
-        }
-      },
-      isActive: true,
-      sortOrder: 1,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
-    },
-    {
-      id: 'fam_superprecio',
-      name: 'superprecio',
-      displayName: 'Superprecio',
-      description: 'Precios especiales con descuentos destacados',
-      icon: '💰',
-      headerImage: '/images/headers/superprecio.png',
-      templates: [],
-      featuredTemplates: [],
-      defaultStyle: {
-        brandColors: {
-          primary: '#0066cc',
-          secondary: '#ffffff',
-          accent: '#00aaff',
-          text: '#ffffff',
-          background: '#0066cc'
-        },
-        typography: {
-          primaryFont: 'Roboto',
-          secondaryFont: 'Open Sans',
-          headerFont: 'Montserrat'
-        },
-        visualEffects: {
-          headerStyle: {},
-          priceStyle: {},
-          footerStyle: {}
-        }
-      },
-      recommendedComponents: ['text', 'image', 'price'],
-      migrationConfig: {
-        allowMigrationFrom: [],
-        headerReplacement: {
-          replaceHeaderImages: false,
-          replaceColors: false
-        }
-      },
-      isActive: true,
-      sortOrder: 2,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
-    },
-    {
-      id: 'fam_temporada',
-      name: 'temporada',
-      displayName: 'Temporada',
-      description: 'Ofertas y promociones estacionales',
-      icon: '🌟',
-      headerImage: '/images/headers/temporada.png',
-      templates: [],
-      featuredTemplates: [],
-      defaultStyle: {
-        brandColors: {
-          primary: '#ea580c',
-          secondary: '#fed7aa',
-          accent: '#fbbf24',
-          text: '#ffffff',
-          background: '#ea580c'
-        },
-        typography: {
-          primaryFont: 'Montserrat',
-          secondaryFont: 'Open Sans',
-          headerFont: 'Bebas Neue'
-        },
-        visualEffects: {
-          headerStyle: {},
-          priceStyle: {},
-          footerStyle: {}
-        }
-      },
-      recommendedComponents: ['text', 'image', 'price'],
-      migrationConfig: {
-        allowMigrationFrom: [],
-        headerReplacement: {
-          replaceHeaderImages: false,
-          replaceColors: false
-        }
-      },
-      isActive: true,
-      sortOrder: 3,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01')
-    }
-  ] as FamilyV3[];
-  
-  return mockFamilies;
+  // Redirigir al servicio real
+  const { familiesV3Service } = await import('./builderV3Service');
+  return familiesV3Service.getAll();
 };
 
 export const getFamilyById = async (id: string): Promise<FamilyV3 | undefined> => {
@@ -146,16 +20,11 @@ export const getFamilyById = async (id: string): Promise<FamilyV3 | undefined> =
 };
 
 export const createFamily = async (familyData: Omit<FamilyV3, 'id' | 'createdAt' | 'updatedAt'>): Promise<FamilyV3> => {
-  const newFamily: FamilyV3 = {
-    id: `fam_${Date.now()}`,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    ...familyData,
-    templates: [], // Asegurarse de que las propiedades requeridas estén
-  } as FamilyV3;
-  console.log('Creating new family (simulation):', newFamily);
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return newFamily;
+  console.log('⚠️ DEPRECATED: Este servicio será eliminado. Use familiesV3Service de builderV3Service.ts');
+  
+  // Redirigir al servicio real
+  const { familiesV3Service } = await import('./builderV3Service');
+  return familiesV3Service.createFamily(familyData);
 };
 
 export const updateFamily = async (id: string, updates: Partial<FamilyV3>): Promise<FamilyV3> => {

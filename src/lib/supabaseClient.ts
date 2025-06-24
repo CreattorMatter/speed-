@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Variables de entorno con fallbacks para desarrollo
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -10,15 +10,17 @@ const isSupabaseConfigured = supabaseUrl !== 'https://placeholder.supabase.co' &
                             supabaseAnonKey !== 'placeholder-anon-key';
 
 // Cliente normal para uso general
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = isSupabaseConfigured
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : {} as SupabaseClient;
 
 // Cliente admin para operaciones que requieren permisos elevados  
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
+export const supabaseAdmin = 
+  isSupabaseConfigured && supabaseServiceKey
+    ? createClient(supabaseUrl, supabaseServiceKey)
+    : supabase;
+
+console.log('🔑 Supabase Admin Client Initialized:', isSupabaseConfigured && supabaseServiceKey ? 'con privilegios' : 'público');
 
 // Configuración única para evitar múltiples instancias
 export { supabaseUrl, supabaseAnonKey, supabaseServiceKey, isSupabaseConfigured };

@@ -422,10 +422,10 @@ export const TemplateLibraryV3: React.FC<TemplateLibraryV3Props> = ({
               </p>
               <button
                 onClick={onTemplateCreate}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 border-2 border-dashed border-gray-300 hover:border-gray-400 px-6 py-3 rounded-lg font-medium transition-colors flex items-center space-x-2 mx-auto"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2 mx-auto shadow-md"
               >
                 <Plus className="w-5 h-5" />
-                <span>Crear mi primera plantilla</span>
+                <span>Crear Nueva Plantilla</span>
               </button>
             </div>
           </div>

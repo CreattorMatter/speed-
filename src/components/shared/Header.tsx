@@ -26,10 +26,10 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, userName
             {/* Botón de volver a la izquierda */}
             <button
               onClick={onBack}
-              className="group flex items-center gap-2 px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors border border-slate-700 hover:border-slate-600"
+              className="group flex items-center gap-2 px-3 py-2 text-white hover:bg-slate-700/50 rounded-lg transition-colors border border-slate-600 hover:border-slate-500"
             >
-              <ArrowLeft className="w-4 h-4 xs:w-5 xs:h-5 text-slate-400 group-hover:text-white transition-colors" />
-              <span className="hidden sm:inline text-sm font-medium text-slate-300 group-hover:text-white transition-colors">Volver</span>
+              <ArrowLeft className="w-4 h-4 xs:w-5 xs:h-5 text-white group-hover:text-white transition-colors" />
+              <span className="hidden sm:inline text-sm font-medium text-white group-hover:text-white transition-colors">Volver</span>
             </button>
 
             {/* Título centrado */}
@@ -47,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, userName
             <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">
               <button
                 onClick={() => setIsGuideOpen(true)}
-                className="flex items-center gap-1 xs:gap-2 px-2 xs:px-3 py-1.5 xs:py-2 text-xs xs:text-sm font-medium text-white hover:text-white transition-colors rounded-lg hover:bg-white hover:bg-opacity-10"
+                className="flex items-center gap-1 xs:gap-2 px-2 xs:px-3 py-1.5 xs:py-2 text-xs xs:text-sm font-medium text-white transition-colors rounded-lg hover:bg-white/10"
               >
                 <HelpCircle className="w-4 h-4 xs:w-5 xs:h-5 text-white" />
                 <span className="hidden sm:inline text-white">Ayuda</span>
@@ -58,9 +58,9 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, userName
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="flex items-center gap-1 xs:gap-2 p-1 xs:p-1.5 rounded-lg bg-white bg-opacity-10 hover:bg-white hover:bg-opacity-20 transition-colors"
+                  className="flex items-center gap-1 xs:gap-2 p-1 xs:p-1.5 rounded-lg transition-colors bg-white/10 hover:bg-white/20"
                 >
-                  <div className="w-6 h-6 xs:w-8 xs:h-8 bg-white bg-opacity-10 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 xs:w-8 xs:h-8 rounded-full flex items-center justify-center bg-white/10">
                     <User className="w-3 h-3 xs:w-4 xs:h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
                   <span className="text-xs xs:text-sm font-medium text-white hidden sm:block max-w-24 lg:max-w-none truncate">
@@ -75,29 +75,29 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, userName
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      className="absolute right-0 mt-2 w-48 xs:w-56 bg-slate-800 rounded-lg shadow-lg py-1 z-50 border border-white/10"
+                      className="absolute right-0 mt-2 w-48 xs:w-56 rounded-lg shadow-lg py-1 z-50 border bg-slate-800 border-white/10"
                     >
                       <div className="px-3 xs:px-4 py-2 border-b border-white/10">
-                        <p className="text-xs xs:text-sm font-medium text-white/90 truncate">{displayName}</p>
-                        <p className="text-xxs xs:text-xs text-white/60 truncate">
+                        <p className="text-xs xs:text-sm font-medium truncate text-white">{displayName}</p>
+                        <p className="text-xxs xs:text-xs truncate text-white/60">
                           {userEmail} {userRole && <span className="ml-1 text-violet-400">({userRole})</span>}
                         </p>
                       </div>
                       {userRole === 'admin' && onGoToAdmin && (
                         <button
                           onClick={onGoToAdmin}
-                          className="w-full px-3 xs:px-4 py-2 text-left text-xs xs:text-sm text-white/90 hover:bg-white/5 flex items-center gap-2 transition-colors"
+                          className="w-full px-3 xs:px-4 py-2 text-left text-xs xs:text-sm flex items-center gap-2 transition-colors text-white hover:bg-white/10"
                         >
-                          <Settings className="w-3 h-3 xs:w-4 xs:h-4" />
+                          <Settings className="w-3 h-3 xs:w-4 xs:h-4 text-white" />
                           Administración
                         </button>
                       )}
                       {onLogout && (
                         <button
                           onClick={onLogout}
-                          className="w-full px-3 xs:px-4 py-2 text-left text-xs xs:text-sm text-red-400 hover:bg-white/5 flex items-center gap-2 transition-colors"
+                          className="w-full px-3 xs:px-4 py-2 text-left text-xs xs:text-sm flex items-center gap-2 transition-colors text-red-300 hover:text-red-200 hover:bg-red-500/10"
                         >
-                          <LogOut className="w-3 h-3 xs:w-4 xs:h-4" />
+                          <LogOut className="w-3 h-3 xs:w-4 xs:h-4 text-red-300" />
                           Cerrar sesión
                         </button>
                       )}

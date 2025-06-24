@@ -50,6 +50,7 @@ interface ToolbarV3Props {
   onPaperFormatChange: (format: string) => void;
   onCustomPaperFormat?: (width: number, height: number) => void;
   onToggleCanvasInfo?: () => void;
+  onTitleChange: (title: string) => void;
   
   canUndo?: boolean;
   canRedo?: boolean;
@@ -64,6 +65,8 @@ interface ToolbarV3Props {
   paperFormat?: string;
   customWidth?: number;
   customHeight?: number;
+  templateTitle?: string;
+  hasUnsavedChanges?: boolean;
   availablePaperFormats?: Array<{
     id: string;
     name: string;
@@ -95,6 +98,7 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   onPaperFormatChange,
   onCustomPaperFormat,
   onToggleCanvasInfo,
+  onTitleChange,
   
   canUndo = false,
   canRedo = false,
@@ -109,6 +113,8 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   paperFormat = 'A4',
   customWidth = 210,
   customHeight = 297,
+  templateTitle = 'Nueva Plantilla Sin Título',
+  hasUnsavedChanges = false,
   availablePaperFormats = [
     { id: 'A4', name: 'A4', width: 210, height: 297, description: '210 x 297 mm' },
     { id: 'A3', name: 'A3', width: 297, height: 420, description: '297 x 420 mm' },
@@ -202,6 +208,33 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
             disabled={isSaving}
             variant="success"
           />
+
+          {/* Template Title Editor */}
+          <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
+            <span className="text-xs text-gray-500 font-medium">Título:</span>
+            <input
+              type="text"
+              value={templateTitle}
+              onChange={(e) => {
+                const newTitle = e.target.value;
+                if (newTitle.length <= 100) { // Limitar a 100 caracteres
+                  onTitleChange(newTitle);
+                }
+              }}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  e.currentTarget.blur(); // Quitar foco al presionar Enter
+                }
+              }}
+              placeholder="Nombre de la plantilla..."
+              className="bg-transparent text-sm font-medium text-gray-700 border-none focus:outline-none focus:bg-white focus:px-2 focus:py-1 focus:rounded min-w-[200px] max-w-[300px] transition-all"
+              title={`Nombre de la plantilla (${templateTitle?.length || 0}/100 caracteres)`}
+              maxLength={100}
+            />
+            {hasUnsavedChanges && (
+              <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" title="Cambios sin guardar" />
+            )}
+          </div>
           
           <ToolbarButton
             onClick={onPreview}

@@ -20,6 +20,7 @@ import { DigitalSignageView } from './features/digital-signage/components/Digita
 import { CarouselView } from './features/digital-carousel/components/CarouselView';
 import DashboardEasyPilar from './features/dashboard/components/DashboardEasyPilar';
 import { BuilderV3 } from './features/builderV3/components/BuilderV3';
+import { BranchDashboard } from './features/branchView/components/BranchDashboard';
 import Products from './features/products/Products';
 import DigitalCarouselEditor from './features/digital-carousel/components/DigitalCarouselEditor';
 
@@ -34,7 +35,7 @@ export interface DashboardProps {
   userEmail: string;
   userName: string;
   onSettings: () => void;
-  userRole: 'admin' | 'limited';
+  userRole: 'admin' | 'limited' | 'sucursal';
   onAnalytics: () => void;
 }
 
@@ -54,7 +55,7 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [userRole, setUserRole] = useState<'admin' | 'limited'>('admin');
+  const [userRole, setUserRole] = useState<'admin' | 'limited' | 'sucursal'>('admin');
   //const [showAnalytics, setShowAnalytics] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +89,7 @@ function AppContent() {
 
         setUser(parsedUser);
         setIsAuthenticated(true);
-        setUserRole(parsedUser.role === 'admin' ? 'admin' : 'limited');
+        setUserRole(parsedUser.role === 'admin' ? 'admin' : parsedUser.role === 'limited' ? 'limited' : 'sucursal');
 
         if (isMobile()) {
           setShowMobileModal(true);
@@ -108,13 +109,10 @@ function AppContent() {
     try {
       console.log('Intentando login con:', email);
       
-      // Verificar credenciales hardcodeadas para desarrollo
       const validCredentials = [
         { email: 'admin@admin.com', password: 'admin', role: 'admin', name: 'Administrador Principal' },
         { email: 'easypilar@cenco.com', password: 'pilar2024', role: 'admin', name: 'Easy Pilar Manager' },
-        { email: 'easysantafe@cenco.com', password: 'santafe2024', role: 'admin', name: 'Easy Santa Fe Manager' },
-        { email: 'easysolano@cenco.com', password: 'solano2024', role: 'limited', name: 'Easy Solano Manager' },
-        { email: 'easydevoto@cenco.com', password: 'devoto2024', role: 'limited', name: 'Easy Devoto Manager' },
+        { email: 'sucursal@test.com', password: 'sucursal', role: 'sucursal', name: 'Usuario Sucursal' },
         { email: 'user@example.com', password: 'user123', role: 'limited', name: 'Usuario Ejemplo' }
       ];
 
@@ -156,11 +154,18 @@ function AppContent() {
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
       setIsAuthenticated(true);
-      setUserRole(user.role === 'admin' ? 'admin' : 'limited');
+      setUserRole(user.role as any);
 
       // Verificar si es dispositivo móvil
       if (isMobile()) {
         setShowMobileModal(true);
+      }
+
+      // 3. Redirección basada en rol
+      if (user.role === 'sucursal') {
+        navigate('/sucursal');
+      } else {
+        navigate('/');
       }
 
       console.log('Login exitoso:', user);
@@ -409,6 +414,11 @@ function AppContent() {
         />
         
         <Route
+          path="/sucursal"
+          element={<BranchDashboard />}
+        />
+        
+        <Route
           path="/builder"
           element={
             <BuilderV3 
@@ -416,7 +426,7 @@ function AppContent() {
               onLogout={handleLogout}
               userEmail={user?.email || ''}
               userName={user?.name || ''}
-              userRole={userRole}
+              userRole={userRole as any}
             />
           }
         />

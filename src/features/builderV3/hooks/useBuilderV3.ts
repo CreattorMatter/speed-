@@ -19,7 +19,7 @@ import {
 } from '../types';
 import { generateId } from '../../../utils/generateId';
 import { toast } from 'react-hot-toast';
-import { templatesV3Service } from '../../../services/builderV3Service';
+import { templatesV3Service, familiesV3Service } from '../../../services/builderV3Service';
 
 // =====================
 // ESTADO INICIAL
@@ -29,6 +29,7 @@ const createInitialState = (): BuilderStateV3 => ({
   currentFamily: undefined,
   currentTemplate: undefined,
   components: [],
+  componentsLibrary: {},
   canvas: {
     zoom: 1,
     minZoom: 0.1,
@@ -134,7 +135,8 @@ type BuilderAction =
   | { type: 'ADD_ERROR'; payload: { id: string; componentId?: string; type: 'error' | 'warning' | 'info'; message: string } }
   | { type: 'REMOVE_ERROR'; payload: string }
   | { type: 'TOGGLE_UI_PANEL'; payload: { panel: 'left' | 'right' | 'bottom'; open?: boolean } }
-  | { type: 'SET_UI_TAB'; payload: { panel: 'left' | 'right' | 'bottom'; tab: string } };
+  | { type: 'SET_UI_TAB'; payload: { panel: 'left' | 'right' | 'bottom'; tab: string } }
+  | { type: 'SET_COMPONENTS_LIBRARY'; payload: ComponentsLibraryV3 };
 
 // =====================
 // REDUCER
@@ -353,13 +355,22 @@ const builderReducer = (state: BuilderStateV3, action: BuilderAction): BuilderSt
     case 'SET_UI_TAB':
       const { panel: tabPanel, tab } = action.payload;
       const tabKey = `active${tabPanel.charAt(0).toUpperCase() + tabPanel.slice(1)}Tab` as keyof typeof state.ui;
+      console.log('🔄 SET_UI_TAB reducer:', { tabPanel, tab, tabKey, currentValue: state.ui[tabKey] });
       
-      return {
+      const newState = {
         ...state,
         ui: {
           ...state.ui,
           [tabKey]: tab
         }
+      };
+      console.log('🔄 New UI state after SET_UI_TAB:', newState.ui);
+      return newState;
+    
+    case 'SET_COMPONENTS_LIBRARY':
+      return {
+        ...state,
+        componentsLibrary: action.payload
       };
     
     default:
@@ -368,428 +379,13 @@ const builderReducer = (state: BuilderStateV3, action: BuilderAction): BuilderSt
 };
 
 // =====================
-// DATOS MOCK (para desarrollo)
-// =====================
-
-const createMockFamilies = (): FamilyV3[] => [
-  {
-    id: 'family-hot-sale',
-    name: 'Hot Sale',
-    displayName: 'Hot Sale',
-    description: 'Ofertas especiales de Hot Sale',
-    icon: '🔥',
-    headerImage: '/images/headers/hot-sale.png',
-    templates: [],
-    featuredTemplates: [],
-    defaultStyle: {
-      brandColors: {
-        primary: '#ff4444',
-        secondary: '#ffaa00',
-        accent: '#ff6600',
-        text: '#333333',
-        background: '#ffffff'
-      },
-      typography: {
-        primaryFont: 'Inter',
-        secondaryFont: 'Roboto',
-        headerFont: 'Poppins'
-      },
-      visualEffects: {
-        headerStyle: {
-          typography: { 
-            fontFamily: 'Poppins',
-            fontSize: 48, 
-            fontWeight: 'bold',
-            fontStyle: 'normal',
-            lineHeight: 1.2,
-            letterSpacing: 0,
-            textAlign: 'center',
-            textDecoration: 'none',
-            textTransform: 'uppercase'
-          },
-          color: { color: '#ffffff', backgroundColor: '#ff4444' }
-        },
-        priceStyle: {
-          typography: { 
-            fontFamily: 'Inter',
-            fontSize: 36, 
-            fontWeight: 'bold',
-            fontStyle: 'normal',
-            lineHeight: 1.2,
-            letterSpacing: 0,
-            textAlign: 'center',
-            textDecoration: 'none',
-            textTransform: 'none'
-          },
-          color: { color: '#ff4444', backgroundColor: 'transparent' }
-        },
-        footerStyle: {
-          typography: { 
-            fontFamily: 'Inter',
-            fontSize: 12,
-            fontWeight: 'normal',
-            fontStyle: 'normal',
-            lineHeight: 1.4,
-            letterSpacing: 0,
-            textAlign: 'left',
-            textDecoration: 'none',
-            textTransform: 'none'
-          },
-          color: { color: '#666666', backgroundColor: 'transparent' }
-        }
-      }
-    },
-    recommendedComponents: ['field-dynamic-text', 'image-header', 'shape-geometric'],
-    migrationConfig: {
-      allowMigrationFrom: ['Black Friday', 'Club Easy'],
-      headerReplacement: {
-        replaceHeaderImages: true,
-        newHeaderImage: '/images/headers/hot-sale.png',
-        replaceColors: true,
-        newColors: {
-          primary: '#ff4444',
-          secondary: '#ffaa00',
-          accent: '#ff6600',
-          text: '#333333',
-          background: '#ffffff'
-        }
-      }
-    },
-    isActive: true,
-    sortOrder: 1,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: 'family-black-friday',
-    name: 'Black Friday',
-    displayName: 'Black Friday',
-    description: 'Descuentos especiales de Black Friday',
-    icon: '⚫',
-    headerImage: '/images/headers/black-friday.png',
-    templates: [],
-    featuredTemplates: [],
-    defaultStyle: {
-      brandColors: {
-        primary: '#000000',
-        secondary: '#333333',
-        accent: '#ffaa00',
-        text: '#ffffff',
-        background: '#000000'
-      },
-      typography: {
-        primaryFont: 'Inter',
-        secondaryFont: 'Roboto',
-        headerFont: 'Poppins'
-      },
-      visualEffects: {
-        headerStyle: {
-          typography: { 
-            fontFamily: 'Poppins',
-            fontSize: 48, 
-            fontWeight: 'bold',
-            fontStyle: 'normal',
-            lineHeight: 1.2,
-            letterSpacing: 0,
-            textAlign: 'center',
-            textDecoration: 'none',
-            textTransform: 'uppercase'
-          },
-          color: { color: '#ffaa00', backgroundColor: '#000000' }
-        },
-        priceStyle: {
-          typography: { 
-            fontFamily: 'Inter',
-            fontSize: 36, 
-            fontWeight: 'bold',
-            fontStyle: 'normal',
-            lineHeight: 1.2,
-            letterSpacing: 0,
-            textAlign: 'center',
-            textDecoration: 'none',
-            textTransform: 'none'
-          },
-          color: { color: '#ffaa00', backgroundColor: 'transparent' }
-        },
-        footerStyle: {
-          typography: { 
-            fontFamily: 'Inter',
-            fontSize: 12,
-            fontWeight: 'normal',
-            fontStyle: 'normal',
-            lineHeight: 1.4,
-            letterSpacing: 0,
-            textAlign: 'left',
-            textDecoration: 'none',
-            textTransform: 'none'
-          },
-          color: { color: '#cccccc', backgroundColor: 'transparent' }
-        }
-      }
-    },
-    recommendedComponents: ['field-dynamic-text', 'image-header'],
-    migrationConfig: {
-      allowMigrationFrom: ['Hot Sale', 'Club Easy'],
-      headerReplacement: {
-        replaceHeaderImages: true,
-        newHeaderImage: '/images/headers/black-friday.png',
-        replaceColors: true,
-        newColors: {
-          primary: '#000000',
-          secondary: '#333333',
-          accent: '#ffaa00',
-          text: '#ffffff',
-          background: '#000000'
-        }
-      }
-    },
-    isActive: true,
-    sortOrder: 2,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-];
-
-const createMockComponentsLibrary = (): ComponentsLibraryV3 => ({
-  'Texto y Datos': [
-    {
-      type: 'field-dynamic-text',
-      name: 'Texto Dinámico',
-      description: 'Campo de texto que puede mostrar cualquier información: productos, precios, descripciones, etc.',
-      icon: '📝',
-      category: 'Texto y Datos',
-      defaultSize: { width: 300, height: 40, isProportional: false },
-      defaultStyle: {
-        typography: {
-          fontFamily: 'Inter',
-          fontSize: 16,
-          fontWeight: 'normal',
-          fontStyle: 'normal',
-          lineHeight: 1.4,
-          letterSpacing: 0,
-          textAlign: 'left',
-          textDecoration: 'none',
-          textTransform: 'none'
-        }
-      },
-      defaultContent: { 
-        fieldType: 'static', 
-        staticValue: 'Texto de ejemplo',
-        textConfig: { contentType: 'product-name' }
-      },
-      tags: ['texto', 'dinámico', 'productos', 'precios', 'sap']
-    }
-  ],
-  
-  'Imágenes y Media': [
-    {
-      type: 'image-header',
-      name: 'Imagen de Header',
-      description: 'Imagen promocional principal para encabezados',
-      icon: '🖼️',
-      category: 'Imágenes y Media',
-      defaultSize: { width: 800, height: 200, isProportional: true },
-      defaultStyle: {},
-      defaultContent: { 
-        fieldType: 'static', 
-        imageUrl: '/images/headers/default.png',
-        imageAlt: 'Header promocional'
-      },
-      tags: ['imagen', 'header', 'promocional']
-    },
-    {
-      type: 'image-product',
-      name: 'Imagen de Producto',
-      description: 'Imagen del producto conectada al sistema SAP',
-      icon: '📷',
-      category: 'Imágenes y Media',
-      defaultSize: { width: 300, height: 300, isProportional: true },
-      defaultStyle: {},
-      defaultContent: { 
-        fieldType: 'sap-product', 
-        imageUrl: '',
-        imageAlt: 'Imagen del producto'
-      },
-      tags: ['imagen', 'producto', 'sap']
-    },
-    {
-      type: 'image-brand-logo',
-      name: 'Logo de Marca',
-      description: 'Logo de la marca o empresa',
-      icon: '🏷️',
-      category: 'Imágenes y Media',
-      defaultSize: { width: 150, height: 75, isProportional: true },
-      defaultStyle: {},
-      defaultContent: { 
-        fieldType: 'static', 
-        imageUrl: '/images/logos/default.png',
-        imageAlt: 'Logo de marca'
-      },
-      tags: ['logo', 'marca', 'branding']
-    },
-    {
-      type: 'image-decorative',
-      name: 'Imagen Decorativa',
-      description: 'Imagen decorativa para elementos gráficos',
-      icon: '🎨',
-      category: 'Imágenes y Media',
-      defaultSize: { width: 200, height: 200, isProportional: true },
-      defaultStyle: {},
-      defaultContent: { 
-        fieldType: 'static', 
-        imageUrl: '',
-        imageAlt: 'Imagen decorativa'
-      },
-      tags: ['imagen', 'decorativo', 'gráfico']
-    }
-  ],
-  
-  'QR y Enlaces': [
-    {
-      type: 'qr-dynamic',
-      name: 'Código QR Dinámico',
-      description: 'Código QR configurable para múltiples propósitos',
-      icon: '📱',
-      category: 'QR y Enlaces',
-      defaultSize: { width: 150, height: 150, isProportional: true },
-      defaultStyle: {},
-      defaultContent: { 
-        fieldType: 'static', 
-        qrUrl: 'https://ejemplo.com',
-        qrConfig: { type: 'website' }
-      },
-      tags: ['qr', 'enlace', 'digital']
-    }
-  ],
-  
-  'Fechas y Períodos': [
-    {
-      type: 'field-dynamic-date',
-      name: 'Fecha Dinámica',
-      description: 'Campo de fecha configurable para promociones y períodos',
-      icon: '📅',
-      category: 'Fechas y Períodos',
-      defaultSize: { width: 200, height: 30, isProportional: false },
-      defaultStyle: {
-        typography: {
-          fontFamily: 'Inter',
-          fontSize: 14,
-          fontWeight: 'normal',
-          fontStyle: 'normal',
-          lineHeight: 1.4,
-          letterSpacing: 0,
-          textAlign: 'left',
-          textDecoration: 'none',
-          textTransform: 'none'
-        }
-      },
-      defaultContent: { 
-        fieldType: 'static', 
-        staticValue: new Date().toLocaleDateString('es-ES'),
-        dateConfig: { type: 'current-date' }
-      },
-      tags: ['fecha', 'tiempo', 'promoción']
-    }
-  ],
-  
-  'Elementos Decorativos': [
-    {
-      type: 'shape-geometric',
-      name: 'Forma Geométrica',
-      description: 'Formas geométricas: círculos, rectángulos, líneas',
-      icon: '⬜',
-      category: 'Elementos Decorativos',
-      defaultSize: { width: 200, height: 100, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { 
-        fieldType: 'static',
-        shapeConfig: { type: 'rectangle' }
-      },
-      tags: ['forma', 'geométrico', 'decorativo']
-    },
-    {
-      type: 'decorative-line',
-      name: 'Línea Decorativa',
-      description: 'Líneas y separadores decorativos',
-      icon: '➖',
-      category: 'Elementos Decorativos',
-      defaultSize: { width: 300, height: 2, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { 
-        fieldType: 'static',
-        lineConfig: { type: 'solid' }
-      },
-      tags: ['línea', 'separador', 'decorativo']
-    },
-    {
-      type: 'decorative-icon',
-      name: 'Ícono Decorativo',
-      description: 'Íconos y elementos gráficos decorativos',
-      icon: '⭐',
-      category: 'Elementos Decorativos',
-      defaultSize: { width: 50, height: 50, isProportional: true },
-      defaultStyle: {},
-      defaultContent: { 
-        fieldType: 'static',
-        iconConfig: { type: 'star' }
-      },
-      tags: ['ícono', 'decorativo', 'gráfico']
-    }
-  ],
-  
-  'Contenedores y Layout': [
-    {
-      type: 'container-flexible',
-      name: 'Contenedor Flexible',
-      description: 'Contenedor adaptable para agrupar elementos',
-      icon: '📦',
-      category: 'Contenedores y Layout',
-      defaultSize: { width: 400, height: 300, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { 
-        fieldType: 'static',
-        containerConfig: { type: 'flexible' }
-      },
-      tags: ['contenedor', 'layout', 'agrupación']
-    },
-    {
-      type: 'container-grid',
-      name: 'Contenedor Grid',
-      description: 'Contenedor con sistema de grilla para layouts estructurados',
-      icon: '⚏',
-      category: 'Contenedores y Layout',
-      defaultSize: { width: 600, height: 400, isProportional: false },
-      defaultStyle: {},
-      defaultContent: { 
-        fieldType: 'static',
-        containerConfig: { type: 'grid' }
-      },
-      tags: ['contenedor', 'grid', 'estructura']
-    }
-  ]
-});
-
-// =====================
 // HOOK PRINCIPAL
 // =====================
 
 export const useBuilderV3 = (): UseBuilderV3Return => {
   const [state, dispatch] = useReducer(builderReducer, createInitialState());
-  const [families] = useState<FamilyV3[]>(createMockFamilies());
+  const [families] = useState<FamilyV3[]>([]);
   const [templates] = useState<TemplateV3[]>([]);
-  const [componentsLibrary] = useState<ComponentsLibraryV3>(createMockComponentsLibrary());
-  const [isReady, setIsReady] = useState(false);
-
-  // =====================
-  // INICIALIZACIÓN
-  // =====================
-
-  useEffect(() => {
-    // Simular carga inicial
-    setTimeout(() => {
-      setIsReady(true);
-    }, 1000);
-  }, []);
 
   // =====================
   // OPERACIONES
@@ -840,45 +436,14 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
     loadTemplate: useCallback(async (templateId: string) => {
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
-        // Por ahora crear una plantilla mock
-        const mockTemplate: TemplateV3 = {
-          id: templateId,
-          name: 'Plantilla Mock',
-          familyType: state.currentFamily?.name || 'Hot Sale',
-          description: 'Plantilla de ejemplo',
-          thumbnail: '',
-          tags: [],
-          category: 'mock',
-          canvas: {
-            width: 1080,
-            height: 1350,
-            unit: 'px',
-            dpi: 300,
-            backgroundColor: '#ffffff'
-          },
-          defaultComponents: [],
-          familyConfig: state.currentFamily?.defaultStyle || {
-            brandColors: { primary: '#000000', secondary: '#666666', accent: '#0066cc', text: '#333333' },
-            typography: { primaryFont: 'Inter', secondaryFont: 'Roboto', headerFont: 'Poppins' }
-          },
-          validationRules: [],
-          exportSettings: {
-            defaultFormat: 'png',
-            defaultQuality: 90,
-            defaultDPI: 300,
-            bleedArea: 0,
-            cropMarks: false
-          },
-          isPublic: false,
-          isActive: true,
-          version: 1,
-          createdBy: 'user',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
+        const template = await templatesV3Service.getById(templateId);
+        if (!template) {
+          toast.error(`La plantilla con ID ${templateId} no fue encontrada.`);
+          throw new Error('Plantilla no encontrada');
+        }
         
-        dispatch({ type: 'SET_TEMPLATE', payload: mockTemplate });
-        return mockTemplate;
+        dispatch({ type: 'SET_TEMPLATE', payload: template });
+        return template;
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
@@ -1365,17 +930,21 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
 
     // ===== GESTIÓN DE UI =====
     updateUIState: useCallback((updates: Partial<BuilderStateV3['ui']>) => {
+      console.log('🔄 updateUIState called with:', updates);
       // Para cada propiedad actualizada, dispatch la acción correspondiente
       Object.entries(updates).forEach(([key, value]) => {
+        console.log('🔄 Processing UI update:', key, '=', value);
         if (key.endsWith('Tab')) {
           // Determinar panel (activeLeftTab, activeRightTab, activeBottomTab)
           const panel = key.includes('Left') ? 'left' : 
                        key.includes('Right') ? 'right' : 'bottom';
+          console.log('🔄 Dispatching SET_UI_TAB:', { panel, tab: value });
           dispatch({ type: 'SET_UI_TAB', payload: { panel, tab: value as string } });
         } else if (key.endsWith('PanelOpen')) {
           // Determinar panel (leftPanelOpen, rightPanelOpen, bottomPanelOpen)
           const panel = key.includes('left') ? 'left' : 
                        key.includes('right') ? 'right' : 'bottom';
+          console.log('🔄 Dispatching TOGGLE_UI_PANEL:', { panel, open: value });
           dispatch({ type: 'TOGGLE_UI_PANEL', payload: { panel, open: value as boolean } });
         }
       });
@@ -1411,15 +980,12 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
 
     setTemplateDirect: useCallback((template: TemplateV3) => {
       dispatch({ type: 'SET_TEMPLATE_DIRECT', payload: template });
+    }, []),
+
+    setComponentsLibrary: useCallback((library: ComponentsLibraryV3) => {
+      dispatch({ type: 'SET_COMPONENTS_LIBRARY', payload: library });
     }, [])
   };
 
-  return {
-    state,
-    operations,
-    families,
-    templates,
-    componentsLibrary,
-    isReady
-  };
+  return { state, operations, families, templates, componentsLibrary: state.componentsLibrary };
 }; 

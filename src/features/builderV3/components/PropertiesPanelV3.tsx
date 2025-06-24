@@ -2,7 +2,7 @@
 // SPEED BUILDER V3 - ADVANCED PROPERTIES PANEL (4 TABS)
 // =====================================
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Settings, 
   Type, 
@@ -63,6 +63,18 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
 
   const multipleSelection = (state?.canvas?.selectedComponentIds?.length || 0) > 1;
   const [dynamicPreview, setDynamicPreview] = useState<string>('');
+
+  // Debug logging para entender el problema de las pestañas
+  useEffect(() => {
+    console.log('🔍 PropertiesPanelV3 - activeTab changed:', activeTab);
+  }, [activeTab]);
+
+  // Función mejorada para cambio de pestañas con logging
+  const handleTabChange = useCallback((tabId: 'properties' | 'styles' | 'content' | 'data') => {
+    console.log('🔄 PropertiesPanelV3 - handleTabChange called:', tabId);
+    console.log('🔄 Current activeTab:', activeTab);
+    onTabChange(tabId);
+  }, [activeTab, onTabChange]);
 
   // =====================
   // DYNAMIC DATA OPTIONS (usando procesador compartido)
@@ -1106,7 +1118,7 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
             ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => onTabChange(tab.id as any)}
+                onClick={() => handleTabChange(tab.id as any)}
                 className={`flex-1 px-3 py-3 text-xs font-medium border-b-2 transition-colors ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600 bg-blue-50'
@@ -1147,7 +1159,7 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => onTabChange(tab.id as any)}
+              onClick={() => handleTabChange(tab.id as any)}
               className={`flex-1 px-3 py-3 text-xs font-medium border-b-2 transition-colors ${
                 activeTab === tab.id
                   ? 'border-blue-500 text-blue-600 bg-blue-50'
