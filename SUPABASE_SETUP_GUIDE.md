@@ -28,8 +28,8 @@ Crea un archivo `.env.local` en la raíz del proyecto:
 ```env
 # Configuración de Supabase
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-VITE_SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_ANON_KEY=tu-clave-anon-aqui
+VITE_SUPABASE_SERVICE_ROLE_KEY=tu-clave-service-role-aqui
 
 # Configuración SAP (opcional por ahora)
 REACT_APP_SAP_URL=https://tu-sap-servidor.com

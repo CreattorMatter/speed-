@@ -52,8 +52,8 @@ Reemplaza el contenido de `.env.local`:
 ```env
 # ===== CONFIGURACIÓN REAL DE SUPABASE =====
 VITE_SUPABASE_URL=https://tu-proyecto-id.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-VITE_SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_ANON_KEY=tu-clave-anon-aqui
+VITE_SUPABASE_SERVICE_ROLE_KEY=tu-clave-service-role-aqui
 ```
 
 ### **Paso 4: Crear tablas**
