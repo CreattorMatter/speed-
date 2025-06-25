@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { toast } from 'react-hot-toast';
+import { supabase } from '../lib/supabaseClient';
 
 // =====================
 // TIPOS Y CONFIGURACIÓN
@@ -203,24 +204,67 @@ export const useImageUploadV3 = ({
       setIsUploading(true);
       setProgress(0);
 
-      // Simular progreso de upload
-      const progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 15, 85));
-      }, 100);
+      // 1. Validar archivo
+      validateFile(file);
+      setProgress(10);
 
-      // Procesar imagen
-      const result = await processImageFile(file);
+      // 2. Procesar imagen (comprimir si es necesario)
+      const processedFile = file.size > 1024 * 1024 
+        ? await compressImage(file, quality) 
+        : file;
+      
+      setProgress(30);
 
-      // Completar progreso
-      clearInterval(progressInterval);
+      // 3. Generar nombre único para Supabase
+      const fileExt = processedFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `builder/${fileName}`;
+
+      setProgress(40);
+
+      // 4. SUBIR A SUPABASE STORAGE ✨
+      const { error: uploadError } = await supabase.storage
+        .from('assets')
+        .upload(filePath, processedFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw new Error(`Error al subir a Supabase: ${uploadError.message}`);
+      }
+
+      setProgress(70);
+
+      // 5. Obtener URL pública de Supabase
+      const { data } = supabase.storage
+        .from('assets')
+        .getPublicUrl(filePath);
+
+      setProgress(85);
+
+      // 6. Obtener dimensiones de la imagen
+      const dimensions = await getImageDimensions(processedFile);
+
       setProgress(100);
 
-      // Notificar éxito
+      // 7. Crear resultado con URL REAL de Supabase
+      const result: ImageUploadResult = {
+        url: data.publicUrl, // ✅ URL PERMANENTE DE SUPABASE
+        file: processedFile,
+        dimensions,
+        size: processedFile.size,
+        type: processedFile.type,
+        name: processedFile.name
+      };
+
+      // 8. Notificar éxito
       onUpload(result);
-      toast.success(`Imagen subida: ${file.name}`);
+      toast.success(`✅ Imagen subida a Supabase: ${processedFile.name}`);
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error al subir la imagen';
+      console.error('❌ Error subiendo a Supabase:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error al subir la imagen a Supabase';
       toast.error(errorMessage);
       
       if (onError) {
@@ -230,7 +274,7 @@ export const useImageUploadV3 = ({
       setIsUploading(false);
       setProgress(0);
     }
-  }, [processImageFile, onUpload, onError]);
+  }, [validateFile, compressImage, quality, getImageDimensions, onUpload, onError]);
 
   const uploadFromUrl = useCallback(async (url: string): Promise<void> => {
     try {

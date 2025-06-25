@@ -153,8 +153,8 @@ export const getAvailableFields = (config: TemplateFieldConfig): Array<keyof Tem
     .map(([fieldName]) => fieldName as keyof TemplateFieldConfig);
 };
 
-export const getFieldLabel = (fieldName: keyof TemplateFieldConfig): string => {
-  const labels: Record<keyof TemplateFieldConfig, string> = {
+export const getFieldLabel = (fieldName: keyof TemplateFieldConfig | string): string => {
+  const labels: Record<string, string> = {
     nombre: 'Nombre del producto',
     precioActual: 'Precio actual',
     porcentaje: 'Porcentaje de descuento',
@@ -162,23 +162,87 @@ export const getFieldLabel = (fieldName: keyof TemplateFieldConfig): string => {
     fechasDesde: 'Fecha desde',
     fechasHasta: 'Fecha hasta',
     origen: 'Origen',
-    precioSinImpuestos: 'Precio sin impuestos'
+    precioSinImpuestos: 'Precio sin impuestos',
+    descripcion: 'Descripción del producto'
   };
   
-  return labels[fieldName];
+  return labels[fieldName as string] || fieldName as string;
 };
 
-export const getFieldType = (fieldName: keyof TemplateFieldConfig): 'text' | 'price' | 'percentage' | 'date' | 'sap' => {
-  const types: Record<keyof TemplateFieldConfig, 'text' | 'price' | 'percentage' | 'date' | 'sap'> = {
+export type FieldType = 'text' | 'price' | 'percentage' | 'date' | 'sap' | 'currency';
+
+export const getFieldType = (fieldName: keyof TemplateFieldConfig | string): FieldType => {
+  const types: Record<string, FieldType> = {
     nombre: 'text',
-    precioActual: 'price',
+    precioActual: 'currency',
     porcentaje: 'percentage',
     sap: 'sap',
     fechasDesde: 'date',
     fechasHasta: 'date',
     origen: 'text',
-    precioSinImpuestos: 'price'
+    precioSinImpuestos: 'currency',
+    descripcion: 'text'
   };
   
-  return types[fieldName];
+  return types[fieldName as string] || 'text';
+};
+
+/**
+ * 🚀 NUEVA: Detecta automáticamente los campos dinámicos disponibles en una plantilla
+ * Analiza los componentes de la plantilla para encontrar tipos `field-dynamic-text`
+ */
+export const detectTemplateFields = (components: any[]): string[] => {
+  const detectedFields = new Set<string>();
+
+  components.forEach(component => {
+    // Solo procesar componentes de texto dinámico
+    if (component.type === 'field-dynamic-text' && component.content?.textConfig?.contentType) {
+      const contentType = component.content.textConfig.contentType;
+      
+      // Mapear contentType a nuestros campos internos
+      const fieldMapping: Record<string, string> = {
+        'product-name': 'nombre',
+        'product-description': 'descripcion',
+        'product-sku': 'sap',
+        'product-brand': 'origen',
+        'price-original': 'precioActual',
+        'price-final': 'precioActual',
+        'price-discount': 'precioActual', // Se calcula desde precio original
+        'discount-percentage': 'porcentaje',
+        'price-without-taxes': 'precioSinImpuestos',
+        'promotion-start-date': 'fechasDesde',
+        'promotion-end-date': 'fechasHasta'
+      };
+      
+      const internalField = fieldMapping[contentType];
+      if (internalField) {
+        detectedFields.add(internalField);
+        console.log(`🔍 Campo detectado: ${contentType} → ${internalField}`);
+      }
+    }
+  });
+
+  const fieldsArray = Array.from(detectedFields);
+  console.log(`📋 Campos totales detectados en plantilla:`, fieldsArray);
+  return fieldsArray;
+};
+
+/**
+ * 🚀 NUEVA: Obtiene campos por defecto según la familia cuando las plantillas están vacías
+ * Fallback para when detectTemplateFields returns empty array
+ */
+export const getFallbackFieldsForFamily = (familyName: string): string[] => {
+  const familyFieldMap: Record<string, string[]> = {
+    'Black': ['nombre', 'precioActual', 'porcentaje', 'sap', 'fechasDesde', 'fechasHasta'],
+    'Ladrillazos': ['nombre', 'precioActual', 'porcentaje', 'sap', 'fechasDesde', 'fechasHasta', 'origen', 'precioSinImpuestos'],
+    'Hot Sale': ['nombre', 'precioActual', 'porcentaje', 'fechasDesde', 'fechasHasta'],
+    'Superprecio': ['nombre', 'precioActual', 'sap', 'precioSinImpuestos'],
+    'Constructor': ['nombre', 'precioActual', 'sap', 'origen', 'precioSinImpuestos'],
+    'Mundo Experto': ['nombre', 'precioActual', 'porcentaje', 'sap', 'precioSinImpuestos'],
+    'Feria de descuentos': ['nombre', 'precioActual', 'porcentaje', 'sap', 'fechasDesde', 'fechasHasta']
+  };
+  
+  const fallbackFields = familyFieldMap[familyName] || ['nombre', 'precioActual', 'sap'];
+  console.log(`🎯 Usando campos fallback para familia "${familyName}":`, fallbackFields);
+  return fallbackFields;
 }; 

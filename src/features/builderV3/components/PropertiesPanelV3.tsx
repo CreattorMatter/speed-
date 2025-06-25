@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { BuilderStateV3, DraggableComponentV3, PositionV3, SizeV3 } from '../types';
 import { processDynamicContent, defaultMockData, getAvailableFields } from '../../../utils/dynamicContentProcessor';
+import { supabase } from '../../../lib/supabaseClient';
 
 interface PropertiesPanelV3Props {
   state: BuilderStateV3;
@@ -811,23 +812,55 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
             <div className="space-y-3">
               {/* Botones de subida */}
               <div className="flex space-x-2">
-                <button
-                                       onClick={() => {
+                                <button
+                   onClick={async () => {
                      if (!selectedComponent) return;
                      const input = document.createElement('input');
                      input.type = 'file';
                      input.accept = 'image/*';
-                     input.onchange = (e) => {
+                     input.onchange = async (e) => {
                        const file = (e.target as HTMLInputElement).files?.[0];
                        if (file && selectedComponent) {
-                         const url = URL.createObjectURL(file);
-                         onComponentUpdate(selectedComponent.id, {
-                           content: {
-                             ...selectedComponent.content,
-                             imageUrl: url,
-                             imageAlt: file.name
+                         try {
+                           // 🚀 SUBIR A SUPABASE STORAGE EN LUGAR DE BLOB URL
+                           
+                           // 1. Generar nombre único para Supabase
+                           const fileExt = file.name.split('.').pop();
+                           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+                           const filePath = `builder/${fileName}`;
+                           
+                           // 2. Subir a Supabase Storage
+                           const { error: uploadError } = await supabase.storage
+                             .from('assets')
+                             .upload(filePath, file, {
+                               cacheControl: '3600',
+                               upsert: false
+                             });
+                           
+                           if (uploadError) {
+                             throw new Error(`Error al subir: ${uploadError.message}`);
                            }
-                         });
+                           
+                           // 3. Obtener URL pública REAL de Supabase
+                           const { data } = supabase.storage
+                             .from('assets')
+                             .getPublicUrl(filePath);
+                           
+                           // 4. Actualizar componente con URL REAL
+                           onComponentUpdate(selectedComponent.id, {
+                             content: {
+                               ...selectedComponent.content,
+                               imageUrl: data.publicUrl, // ✅ URL PERMANENTE DE SUPABASE
+                               imageAlt: file.name
+                             }
+                           });
+                           
+                           console.log('✅ Imagen subida a Supabase:', data.publicUrl);
+                           
+                         } catch (error) {
+                           console.error('❌ Error subiendo imagen:', error);
+                           alert('Error al subir la imagen. Inténtalo de nuevo.');
+                         }
                        }
                      };
                      input.click();

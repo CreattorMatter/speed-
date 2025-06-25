@@ -13,7 +13,7 @@ import {
 interface EditableFieldProps {
   value: string | number;
   fieldName: string;
-  fieldType: 'text' | 'price' | 'percentage' | 'date' | 'sap';
+  fieldType: 'text' | 'price' | 'percentage' | 'date' | 'sap' | 'currency';
   onSave: (newValue: string | number) => void;
   isRequired?: boolean;
   className?: string;

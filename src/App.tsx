@@ -3,14 +3,14 @@ import { LogIn, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
 import type { User } from './types/index';
 import Dashboard from './features/dashboard/components/Dashboard';
 import Promotions from './features/promotions/components';
-import { PosterEditor } from './features/posters/components/Posters/PosterEditor';
+import { PosterEditorV3 } from './features/posters/components/Posters/PosterEditorV3';
 import { PrintView } from './features/posters/components/Posters/PrintView';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ConfigurationPortal } from './features/settings/components/ConfigurationPortal';
 import { PosterPreviewPage } from './pages/PosterPreview';
 import { Analytics } from './features/analytics/components/Analytics';
-import { supabase } from './lib/supabaseClient';
+import { supabase, supabaseAdmin } from './lib/supabaseClient';
 import { HeaderProvider } from './components/shared/HeaderProvider';
 import { Toaster } from 'react-hot-toast';
 import { MobileDetectionModal } from './components/shared/MobileDetectionModal';
@@ -125,29 +125,32 @@ function AppContent() {
         return;
       }
 
-      // Verificar si el usuario existe en la tabla users
-      const { data: userData, error: userError } = await supabase
+      const { data: userData, error: userError } = await supabaseAdmin
         .from('users')
         .select('*')
         .eq('email', email)
-        .eq('is_active', true)
         .single();
 
-      if (userError && userError.code !== 'PGRST116') {
-        console.error('Error al obtener datos del usuario:', userError);
+      if (userError || !userData) {
         setError('Error al verificar usuario en base de datos');
+        console.error('Error fetching user from Supabase:', userError);
+        return;
+      }
+
+      if (!userData.is_active) {
+        setError('El usuario no está activo');
         return;
       }
 
       // Crear objeto de usuario
-      const user = {
-        id: userData?.id || email,
-        email: email,
-        name: userData?.name || validUser.name,
-        role: userData?.role || validUser.role,
-        status: 'active' as const,
+      const user: User = {
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        role: userData.role,
+        status: 'active', // We already checked userData.active is true
         lastLogin: new Date().toISOString(),
-        created_at: userData?.created_at || new Date().toISOString()
+        created_at: userData.created_at || new Date().toISOString()
       };
 
       // Guardar en localStorage y estado
@@ -453,7 +456,7 @@ function AppContent() {
         <Route
           path="/poster-editor"
           element={
-            <PosterEditor 
+            <PosterEditorV3 
               onBack={handleBack} 
               onLogout={handleLogout}
               userEmail={user?.email || ''}
