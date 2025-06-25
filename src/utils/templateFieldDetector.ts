@@ -189,13 +189,44 @@ export const getFieldType = (fieldName: keyof TemplateFieldConfig | string): Fie
 
 /**
  * 🚀 NUEVA: Detecta automáticamente los campos dinámicos disponibles en una plantilla
- * Analiza los componentes de la plantilla para encontrar tipos `field-dynamic-text`
+ * 🔧 ACTUALIZADA: Funciona con la estructura REAL de la BD (dynamicTemplate)
  */
 export const detectTemplateFields = (components: any[]): string[] => {
   const detectedFields = new Set<string>();
 
   components.forEach(component => {
-    // Solo procesar componentes de texto dinámico
+    // 🔧 ESTRUCTURA REAL: Buscar fieldType: "dynamic" y dynamicTemplate
+    if (component.type === 'field-dynamic-text' && 
+        component.content?.fieldType === 'dynamic' && 
+        component.content?.dynamicTemplate) {
+      
+      const dynamicTemplate = component.content.dynamicTemplate;
+      
+      // Mapear dynamicTemplate de la BD a nuestros campos internos
+      const fieldMapping: Record<string, string> = {
+        '[product_name]': 'nombre',
+        '[product_price]': 'precioActual',
+        '[product_sku]': 'sap',
+        '[product_brand]': 'origen',
+        '[price_original]': 'precioActual',
+        '[price_final]': 'precioActual',
+        '[price_discount]': 'precioActual', // Se calcula desde precio original
+        '[discount_percentage]': 'porcentaje',
+        '[price_without_taxes]': 'precioSinImpuestos',
+        '[promotion_start_date]': 'fechasDesde',
+        '[promotion_end_date]': 'fechasHasta'
+      };
+      
+      const internalField = fieldMapping[dynamicTemplate];
+      if (internalField) {
+        detectedFields.add(internalField);
+        console.log(`🔍 Campo detectado BD: ${dynamicTemplate} → ${internalField}`);
+      } else {
+        console.warn(`⚠️ dynamicTemplate no reconocido: ${dynamicTemplate}`);
+      }
+    }
+    
+    // 🔧 COMPATIBILIDAD: Mantener soporte para textConfig (por si hay plantillas mixtas)
     if (component.type === 'field-dynamic-text' && component.content?.textConfig?.contentType) {
       const contentType = component.content.textConfig.contentType;
       
@@ -217,7 +248,7 @@ export const detectTemplateFields = (components: any[]): string[] => {
       const internalField = fieldMapping[contentType];
       if (internalField) {
         detectedFields.add(internalField);
-        console.log(`🔍 Campo detectado: ${contentType} → ${internalField}`);
+        console.log(`🔍 Campo detectado textConfig: ${contentType} → ${internalField}`);
       }
     }
   });

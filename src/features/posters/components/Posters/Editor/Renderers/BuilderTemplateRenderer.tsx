@@ -12,8 +12,8 @@ interface BuilderTemplateRendererProps {
 }
 
 /**
- * Obtiene el valor de un campo dinámico basado en el producto y el tipo de contenido
- * 🎯 MEJORA: Ahora usa el sistema de mapeo automático y cambios del usuario
+ * Obtiene el valor dinámico de un campo considerando la estructura REAL de la BD
+ * 🔧 CORREGIDO: Ahora funciona con dynamicTemplate de la estructura real
  */
 const getDynamicValue = (
   content: any,
@@ -21,33 +21,6 @@ const getDynamicValue = (
   isPreview?: boolean,
   productChanges?: any // Cambios del usuario desde Redux
 ): string => {
-  // Si no hay producto pero es preview, usar datos de ejemplo
-  if (!product && isPreview) {
-    const exampleProduct = {
-      name: 'Producto de Ejemplo',
-      price: 99999,
-      sku: 'EJ001',
-      category: 'Ejemplo',
-      description: 'Producto de ejemplo para vista previa'
-    };
-    return getDynamicValue(content, exampleProduct as Product, false);
-  }
-  
-  // Si hay valor estático, usarlo
-  if (content?.staticValue) {
-    return content.staticValue;
-  }
-  
-  // Si hay texto directo, usarlo
-  if (content?.text) {
-    return content.text;
-  }
-  
-  // Si no hay producto, usar fallback
-  if (!product) {
-    return content?.fallbackText || '';
-  }
-
   // 🚀 NUEVO: Función para obtener valor considerando cambios del usuario
   const getProductValue = (field: string, fallback: any = '') => {
     // 🎯 PRIMERA PRIORIDAD: Cambios del usuario en Redux
@@ -62,10 +35,12 @@ const getDynamicValue = (
     
     // 🚀 SEGUNDA PRIORIDAD: Mapeo automático calculado
     // Si no hay cambios del usuario, calcular el valor mapeado automáticamente
-    const autoMappedValue = getAutoMappedProductValue(product, field);
-    if (autoMappedValue !== null && autoMappedValue !== undefined) {
-      console.log(`🗺️ Usando valor mapeado automáticamente para ${field}: ${autoMappedValue}`);
-      return autoMappedValue;
+    if (product) {
+      const autoMappedValue = getAutoMappedProductValue(product, field);
+      if (autoMappedValue !== null && autoMappedValue !== undefined) {
+        console.log(`🗺️ Usando valor mapeado automáticamente para ${field}: ${autoMappedValue}`);
+        return autoMappedValue;
+      }
     }
     
     // 🔄 TERCERA PRIORIDAD: Fallback proporcionado
@@ -97,40 +72,107 @@ const getDynamicValue = (
     const mappedValue = fieldMapping[field];
     return mappedValue !== undefined ? mappedValue : null;
   };
-  
-  // Mapear tipos de contenido dinámico a campos del producto
+
+  // 🔧 MAPEO REAL DE LA BASE DE DATOS: Usar dynamicTemplate en lugar de textConfig
+  if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
+    const dynamicTemplate = content.dynamicTemplate;
+    let value: any;
+    
+    console.log(`🔍 Procesando dynamicTemplate: ${dynamicTemplate}`);
+    
+    // Mapear templates de la BD a campos internos
+    switch (dynamicTemplate) {
+      case '[product_name]':
+        value = getProductValue('nombre', product?.name || 'Sin nombre');
+        break;
+      case '[product_price]':
+        value = getProductValue('precioActual', product?.price || 0);
+        break;
+      case '[product_sku]':
+        value = getProductValue('sap', product?.sku || 'N/A');
+        break;
+      case '[product_brand]':
+        value = getProductValue('origen', product?.category || 'ARG');
+        break;
+      case '[price_original]':
+        value = getProductValue('precioActual', product?.price || 0);
+        break;
+      case '[price_discount]':
+        // Calcular precio con descuento
+        const percentage = getProductValue('porcentaje', 20);
+        const originalPrice = getProductValue('precioActual', product?.price || 0);
+        value = originalPrice ? Math.round(originalPrice * (1 - percentage / 100)) : 0;
+        break;
+      case '[discount_percentage]':
+        value = getProductValue('porcentaje', 20);
+        break;
+      case '[price_without_taxes]':
+        value = getProductValue('precioSinImpuestos', product?.price ? Math.round(product.price * 0.83) : 0);
+        break;
+      case '[promotion_start_date]':
+        value = getProductValue('fechasDesde', new Date().toLocaleDateString('es-AR'));
+        break;
+      case '[promotion_end_date]':
+        value = getProductValue('fechasHasta', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-AR'));
+        break;
+      default:
+        console.warn(`⚠️ dynamicTemplate no reconocido: ${dynamicTemplate}`);
+        value = content?.staticValue || `Template: ${dynamicTemplate}`;
+    }
+    
+    // Aplicar formato según el tipo de campo
+    if (dynamicTemplate === '[product_price]' || dynamicTemplate === '[price_original]' || dynamicTemplate === '[price_discount]' || dynamicTemplate === '[price_without_taxes]') {
+      if (typeof value === 'number') {
+        value = new Intl.NumberFormat('es-AR', {
+          style: 'currency',
+          currency: 'ARS',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        }).format(value);
+      }
+    } else if (dynamicTemplate === '[discount_percentage]') {
+      if (typeof value === 'number') {
+        value = `${value}%`;
+      }
+    }
+    
+    console.log(`✅ Valor final para ${dynamicTemplate}: ${value}`);
+    return String(value);
+  }
+
+  // 🔧 COMPATIBILIDAD: Mantener soporte para textConfig (por si hay plantillas mixtas)
   if (content?.textConfig?.contentType) {
     const formatters = content.textConfig.formatters || [];
     let value: any;
     
     switch (content.textConfig.contentType) {
       case 'product-name':
-        value = getProductValue('nombre', product.name);
+        value = getProductValue('nombre', product?.name || 'Sin nombre');
         break;
       case 'product-description':
-        value = product.description || '';
+        value = product?.description || '';
         break;
       case 'product-sku':
-        value = getProductValue('sap', product.sku);
+        value = getProductValue('sap', product?.sku || 'N/A');
         break;
       case 'product-brand':
-        value = getProductValue('origen', product.category || 'ARG');
+        value = getProductValue('origen', product?.category || 'ARG');
         break;
       case 'price-original':
       case 'price-final':
-        value = getProductValue('precioActual', product.price);
+        value = getProductValue('precioActual', product?.price || 0);
         break;
       case 'price-discount':
         // Usar precio con descuento calculado desde porcentaje
         const percentage = getProductValue('porcentaje', 20);
-        const originalPrice = getProductValue('precioActual', product.price);
+        const originalPrice = getProductValue('precioActual', product?.price || 0);
         value = originalPrice ? Math.round(originalPrice * (1 - percentage / 100)) : 0;
         break;
       case 'discount-percentage':
         value = getProductValue('porcentaje', 20);
         break;
       case 'price-without-taxes':
-        value = getProductValue('precioSinImpuestos', product.price ? Math.round(product.price * 0.83) : 0);
+        value = getProductValue('precioSinImpuestos', product?.price ? Math.round(product.price * 0.83) : 0);
         break;
       case 'promotion-start-date':
         value = getProductValue('fechasDesde', new Date().toLocaleDateString('es-AR'));
@@ -176,7 +218,7 @@ const getDynamicValue = (
   }
   
   // Fallback para otros tipos de contenido
-  return content?.fallbackText || '';
+  return content?.staticValue || content?.fallbackText || '';
 };
 
 /**
