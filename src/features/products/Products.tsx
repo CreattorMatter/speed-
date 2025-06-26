@@ -247,7 +247,7 @@ export default function Products({ onBack, onLogout, userEmail, userName }: Prod
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
-        <Header onBack={onBack} onLogout={onLogout} userName={userName} />
+        <Header onBack={onBack} onLogout={onLogout} userName={userName} onGoToAdmin={() => window.location.href = '/'} />
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 py-8">
           {/* Toolbar */}

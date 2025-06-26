@@ -84,22 +84,26 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, userName
                         </p>
                       </div>
                       {userRole === 'admin' && onGoToAdmin && (
-                        <button
-                          onClick={onGoToAdmin}
-                          className="header-admin-button group w-full px-3 xs:px-4 py-2 text-left text-xs xs:text-sm flex items-center gap-2 mx-2 mb-2"
-                        >
-                          <Settings className="w-3 h-3 xs:w-4 xs:h-4 transition-all duration-300 group-hover:rotate-90" />
-                          <span className="transition-all duration-300">Administración</span>
-                        </button>
+                        <div className="px-3 py-1">
+                          <button
+                            onClick={onGoToAdmin}
+                            className="header-admin-button group w-full px-3 xs:px-4 py-2 text-left text-xs xs:text-sm flex items-center gap-2"
+                          >
+                            <Settings className="w-3 h-3 xs:w-4 xs:h-4 transition-all duration-300 group-hover:rotate-90" />
+                            <span className="transition-all duration-300">Administración</span>
+                          </button>
+                        </div>
                       )}
                       {onLogout && (
-                        <button
-                          onClick={onLogout}
-                          className="header-logout-button group w-full px-3 xs:px-4 py-2 text-left text-xs xs:text-sm flex items-center gap-2 mx-2 mb-2"
-                        >
-                          <LogOut className="w-3 h-3 xs:w-4 xs:h-4 transition-all duration-300 group-hover:rotate-12" />
-                          <span className="transition-all duration-300">Cerrar sesión</span>
-                        </button>
+                        <div className="px-3 py-1">
+                          <button
+                            onClick={onLogout}
+                            className="header-logout-button group w-full px-3 xs:px-4 py-2 text-left text-xs xs:text-sm flex items-center gap-2"
+                          >
+                            <LogOut className="w-3 h-3 xs:w-4 xs:h-4 transition-all duration-300 group-hover:rotate-12" />
+                            <span className="transition-all duration-300">Cerrar sesión</span>
+                          </button>
+                        </div>
                       )}
                     </motion.div>
                   )}

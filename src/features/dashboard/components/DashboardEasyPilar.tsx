@@ -870,7 +870,7 @@ const DashboardEasyPilar: React.FC<DashboardEasyPilarProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header onBack={onBack} onLogout={handleLogoutClick} userName={userName || 'Usuario'} />
+      <Header onBack={onBack} onLogout={handleLogoutClick} userName={userName || 'Usuario'} onGoToAdmin={onSettings} />
 
       {/* Modal de Novedades */}
       {showNewsModal && (

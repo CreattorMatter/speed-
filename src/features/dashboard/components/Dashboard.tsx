@@ -1986,7 +1986,7 @@ export default function Dashboard({
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header onBack={onBack} onLogout={handleLogoutClick} userName={userEmail || ''} />ß
+      <Header onBack={onBack} onLogout={handleLogoutClick} userName={userEmail || ''} onGoToAdmin={onSettings} />
       
       {/* Agregar el Modal de Novedades */}
       <NewsModal 

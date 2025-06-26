@@ -901,7 +901,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout, userEmai
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-gray-100">
-        <Header onBack={onBack} onLogout={onLogout} userName={userName} />
+        <Header onBack={onBack} onLogout={onLogout} userName={userName} onGoToAdmin={() => window.location.href = '/'} />
         <main className="p-4 sm:p-6 lg:p-8">
           <AnimatePresence>
             {isLoading && <LoadingModal />}
