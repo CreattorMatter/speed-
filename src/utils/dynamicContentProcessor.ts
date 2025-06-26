@@ -2,7 +2,7 @@
 // PROCESADOR DE CONTENIDO DINÁMICO COMPARTIDO
 // =====================================
 
-import { DraggableComponentV3 } from '../types/builder-v3';
+import { DraggableComponentV3 } from '../features/builderV3/types';
 
 // =====================
 // TIPOS DE DATOS MOCK
@@ -242,22 +242,41 @@ export const validateDynamicTemplate = (template: string): { isValid: boolean; e
 
 export const getAvailableFields = (): Array<{ value: string; label: string; example: string }> => {
   return [
-    // Campos SAP
-    { value: 'product_name', label: 'Nombre del Producto', example: defaultMockData.product_name },
-    { value: 'product_price', label: 'Precio', example: formatPrice(defaultMockData.product_price) },
-    { value: 'price_without_tax', label: 'Precio sin Impuestos', example: formatPrice(defaultMockData.price_without_tax) },
-    { value: 'product_sku', label: 'SKU', example: defaultMockData.product_sku },
-    { value: 'product_brand', label: 'Marca', example: defaultMockData.product_brand },
-    { value: 'product_category', label: 'Categoría', example: defaultMockData.product_category },
-    { value: 'product_origin', label: 'Origen', example: defaultMockData.product_origin },
-    { value: 'product_description', label: 'Descripción', example: defaultMockData.product_description },
+    // === INFORMACIÓN BÁSICA DEL PRODUCTO ===
+    { value: 'product_name', label: 'Nombre del Producto', example: 'Heladera Whirlpool No Frost 375L' },
+    { value: 'product_sku', label: 'Código SKU', example: 'MDH-002' },
+    { value: 'product_description', label: 'Descripción', example: 'Heladera No Frost con freezer superior' },
+    { value: 'product_category', label: 'Categoría', example: 'Electrodomésticos' },
+    { value: 'product_subcategory', label: 'Subcategoría', example: 'Aceites Comunes' },
+    { value: 'product_brand', label: 'Marca', example: 'WHIRLPOOL' },
+    { value: 'product_package', label: 'Tipo de Empaque', example: 'Botella de Plástico' },
+    { value: 'product_volume', label: 'Volumen/Tamaño', example: '1.5 L' },
     
-    // Campos de promoción
-    { value: 'price_now', label: 'Precio Ahora', example: formatPrice(defaultMockData.price_now) },
-    { value: 'discount_percentage', label: 'Descuento %', example: formatPercentage(defaultMockData.discount_percentage) },
-    { value: 'discount_amount', label: 'Descuento Monto', example: formatPrice(defaultMockData.discount_amount) },
-    { value: 'date_from', label: 'Fecha Desde', example: defaultMockData.date_from },
-    { value: 'date_to', label: 'Fecha Hasta', example: defaultMockData.date_to },
-    { value: 'promotion_name', label: 'Nombre Promoción', example: defaultMockData.promotion_name }
+    // === PRECIOS Y FINANZAS ===
+    { value: 'product_price', label: 'Precio con IVA', example: '$ 699.999' },
+    { value: 'price_without_tax', label: 'Precio sin IVA', example: '$ 578.512' }, // ← TU CAMPO!
+    { value: 'price_number_only', label: 'Precio Solo Números', example: '699.999' },
+    { value: 'currency_symbol', label: 'Símbolo de Moneda', example: '$' },
+    { value: 'discount_percentage', label: 'Porcentaje de Descuento', example: '25%' },
+    { value: 'installment_price', label: 'Precio en Cuotas', example: '$ 58.333' },
+    { value: 'installment_count', label: 'Cantidad de Cuotas', example: '12' },
+    
+    // === FECHAS Y PROMOCIONES ===
+    { value: 'current_date', label: 'Fecha Actual', example: '25/01/2025' },
+    { value: 'promotion_end_date', label: 'Fin de Promoción', example: '31/01/2025' },
+    { value: 'promo_validity', label: 'Validez de Promoción', example: 'Válido hasta 31/01/2025' },
+    { value: 'promotion_name', label: 'Nombre de Promoción', example: 'Oferta Especial' },
+    
+    // === FORMATOS ESPECIALES ===
+    { value: 'price_large', label: 'Precio Grande', example: '$ 699.999' },
+    { value: 'price_small', label: 'Precio Pequeño', example: '699.999' },
+    { value: 'product_name_upper', label: 'Nombre en Mayúsculas', example: 'HELADERA WHIRLPOOL NO FROST 375L' },
+    { value: 'product_brand_upper', label: 'Marca en Mayúsculas', example: 'WHIRLPOOL' },
+    
+    // === COMPATIBILIDAD CON CAMPOS LEGACY ===
+    { value: 'price_original', label: 'Precio Original', example: '$ 699.999' },
+    { value: 'price_discount', label: 'Precio con Descuento', example: '$ 559.999' },
+    { value: 'price_without_taxes', label: 'Precio sin Impuestos (Legacy)', example: '$ 580.999' },
+    { value: 'promotion_start_date', label: 'Inicio de Promoción', example: '25/01/2025' }
   ];
 }; 

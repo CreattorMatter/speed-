@@ -26,10 +26,10 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, userName
             {/* Botón de volver a la izquierda */}
             <button
               onClick={onBack}
-              className="group flex items-center gap-2 px-3 py-2 text-white hover:bg-slate-700/50 rounded-lg transition-colors border border-slate-600 hover:border-slate-500"
+              className="group flex items-center gap-2 px-4 py-2.5 text-white/90 hover:text-white rounded-xl transition-all duration-300 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 backdrop-blur-sm shadow-lg hover:shadow-xl hover:scale-105"
             >
-              <ArrowLeft className="w-4 h-4 xs:w-5 xs:h-5 text-white group-hover:text-white transition-colors" />
-              <span className="hidden sm:inline text-sm font-medium text-white group-hover:text-white transition-colors">Volver</span>
+              <ArrowLeft className="w-4 h-4 xs:w-5 xs:h-5 text-white/90 group-hover:text-white transition-all duration-300 group-hover:translate-x-[-2px]" />
+              <span className="hidden sm:inline text-sm font-medium text-white/90 group-hover:text-white transition-all duration-300">Volver</span>
             </button>
 
             {/* Título centrado */}
@@ -47,10 +47,10 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, userName
             <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">
               <button
                 onClick={() => setIsGuideOpen(true)}
-                className="flex items-center gap-1 xs:gap-2 px-2 xs:px-3 py-1.5 xs:py-2 text-xs xs:text-sm font-medium text-white transition-colors rounded-lg hover:bg-white/10"
+                className="group flex items-center gap-2 px-3 xs:px-4 py-2 xs:py-2.5 text-xs xs:text-sm font-medium text-white/90 hover:text-white transition-all duration-300 rounded-xl bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 backdrop-blur-sm shadow-lg hover:shadow-xl hover:scale-105"
               >
-                <HelpCircle className="w-4 h-4 xs:w-5 xs:h-5 text-white" />
-                <span className="hidden sm:inline text-white">Ayuda</span>
+                <HelpCircle className="w-4 h-4 xs:w-5 xs:h-5 text-white/90 group-hover:text-white transition-all duration-300 group-hover:rotate-12" />
+                <span className="hidden sm:inline text-white/90 group-hover:text-white transition-all duration-300">Ayuda</span>
               </button>
 
               <div className="relative">
