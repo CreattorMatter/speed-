@@ -102,7 +102,33 @@ export const familiesV3Service = {
 
       if (error) throw error;
       
-      return data?.map(item => this.mapToV3Family(item)) || this.getDefaultFamilies();
+      // 🚀 NUEVO: Cargar plantillas para cada familia
+      const families = data?.map(item => this.mapToV3Family(item)) || this.getDefaultFamilies();
+      
+      console.log(`📋 Cargando plantillas para ${families.length} familias...`);
+      const familiesWithTemplates: FamilyV3[] = [];
+      
+      for (const family of families) {
+        try {
+          const templates = await templatesV3Service.getByFamily(family.id);
+          console.log(`📝 Familia "${family.displayName}": ${templates.length} plantillas encontradas`);
+          
+          const familyWithTemplates: FamilyV3 = {
+            ...family,
+            templates: templates
+          };
+          
+          familiesWithTemplates.push(familyWithTemplates);
+        } catch (error) {
+          console.error(`❌ Error obteniendo plantillas para familia ${family.displayName}:`, error);
+          // Agregar familia sin plantillas en caso de error
+          familiesWithTemplates.push(family);
+        }
+      }
+      
+      console.log(`✅ ${familiesWithTemplates.length} familias procesadas con sus plantillas`);
+      return familiesWithTemplates;
+      
     } catch (error) {
       console.warn('Error obteniendo familias, usando mock:', error);
       return this.getDefaultFamilies();

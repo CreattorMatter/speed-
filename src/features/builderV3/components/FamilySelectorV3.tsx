@@ -143,19 +143,15 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
           </p>
         </div>
 
-        {/* Estadísticas */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        {/* Estadísticas - SOLO PLANTILLAS */}
+        <div className="flex justify-center mb-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">
               {family.templates.length}
             </div>
-            <div className="text-xs text-gray-500">Plantillas</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {family.recommendedComponents.length}
+            <div className="text-xs text-gray-500">
+              Plantilla{family.templates.length !== 1 ? 's' : ''}
             </div>
-            <div className="text-xs text-gray-500">Componentes</div>
           </div>
         </div>
 
