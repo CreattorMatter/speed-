@@ -26,10 +26,10 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, userName
             {/* Botón de volver a la izquierda */}
             <button
               onClick={onBack}
-              className="group flex items-center gap-2 px-4 py-2.5 text-white/90 hover:text-white rounded-xl transition-all duration-300 bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 backdrop-blur-sm shadow-lg hover:shadow-xl hover:scale-105"
+              className="header-button group flex items-center gap-2 px-4 py-2.5"
             >
-              <ArrowLeft className="w-4 h-4 xs:w-5 xs:h-5 text-white/90 group-hover:text-white transition-all duration-300 group-hover:translate-x-[-2px]" />
-              <span className="hidden sm:inline text-sm font-medium text-white/90 group-hover:text-white transition-all duration-300">Volver</span>
+              <ArrowLeft className="w-4 h-4 xs:w-5 xs:h-5 transition-all duration-300 group-hover:translate-x-[-2px]" />
+              <span className="hidden sm:inline text-sm font-medium transition-all duration-300">Volver</span>
             </button>
 
             {/* Título centrado */}
@@ -47,10 +47,10 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, userName
             <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">
               <button
                 onClick={() => setIsGuideOpen(true)}
-                className="group flex items-center gap-2 px-3 xs:px-4 py-2 xs:py-2.5 text-xs xs:text-sm font-medium text-white/90 hover:text-white transition-all duration-300 rounded-xl bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 border border-white/20 hover:border-white/30 backdrop-blur-sm shadow-lg hover:shadow-xl hover:scale-105"
+                className="header-button group flex items-center gap-2 px-3 xs:px-4 py-2 xs:py-2.5 text-xs xs:text-sm font-medium"
               >
-                <HelpCircle className="w-4 h-4 xs:w-5 xs:h-5 text-white/90 group-hover:text-white transition-all duration-300 group-hover:rotate-12" />
-                <span className="hidden sm:inline text-white/90 group-hover:text-white transition-all duration-300">Ayuda</span>
+                <HelpCircle className="w-4 h-4 xs:w-5 xs:h-5 transition-all duration-300 group-hover:rotate-12" />
+                <span className="hidden sm:inline transition-all duration-300">Ayuda</span>
               </button>
 
               <div className="relative">
@@ -86,19 +86,19 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, userName
                       {userRole === 'admin' && onGoToAdmin && (
                         <button
                           onClick={onGoToAdmin}
-                          className="w-full px-3 xs:px-4 py-2 text-left text-xs xs:text-sm flex items-center gap-2 transition-colors text-white hover:bg-white/10"
+                          className="header-admin-button group w-full px-3 xs:px-4 py-2 text-left text-xs xs:text-sm flex items-center gap-2 mx-2 mb-2"
                         >
-                          <Settings className="w-3 h-3 xs:w-4 xs:h-4 text-white" />
-                          Administración
+                          <Settings className="w-3 h-3 xs:w-4 xs:h-4 transition-all duration-300 group-hover:rotate-90" />
+                          <span className="transition-all duration-300">Administración</span>
                         </button>
                       )}
                       {onLogout && (
                         <button
                           onClick={onLogout}
-                          className="w-full px-3 xs:px-4 py-2 text-left text-xs xs:text-sm flex items-center gap-2 transition-colors text-red-300 hover:text-red-200 hover:bg-red-500/10"
+                          className="header-logout-button group w-full px-3 xs:px-4 py-2 text-left text-xs xs:text-sm flex items-center gap-2 mx-2 mb-2"
                         >
-                          <LogOut className="w-3 h-3 xs:w-4 xs:h-4 text-red-300" />
-                          Cerrar sesión
+                          <LogOut className="w-3 h-3 xs:w-4 xs:h-4 transition-all duration-300 group-hover:rotate-12" />
+                          <span className="transition-all duration-300">Cerrar sesión</span>
                         </button>
                       )}
                     </motion.div>

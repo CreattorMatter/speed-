@@ -294,6 +294,60 @@ button:focus-visible {
   }
 }
 
+/* Estilos específicos para botones del header */
+.header-button {
+  background: linear-gradient(to right, rgba(255,255,255,0.1), rgba(255,255,255,0.05)) !important;
+  color: rgba(255,255,255,0.9) !important;
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  border-radius: 0.75rem;
+  backdrop-filter: blur(4px);
+  transition: all 0.3s ease;
+}
+
+.header-button:hover {
+  background: linear-gradient(to right, rgba(255,255,255,0.2), rgba(255,255,255,0.1)) !important;
+  color: rgba(255,255,255,1) !important;
+  border: 1px solid rgba(255,255,255,0.3) !important;
+  transform: scale(1.05);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Estilo específico para botón cerrar sesión */
+.header-logout-button {
+  background: linear-gradient(to right, rgba(239,68,68,0.1), rgba(239,68,68,0.05)) !important;
+  color: rgba(248,113,113,0.9) !important;
+  border: 1px solid rgba(239,68,68,0.2) !important;
+  border-radius: 0.5rem;
+  backdrop-filter: blur(4px);
+  transition: all 0.3s ease;
+}
+
+.header-logout-button:hover {
+  background: linear-gradient(to right, rgba(239,68,68,0.2), rgba(239,68,68,0.1)) !important;
+  color: rgba(248,113,113,1) !important;
+  border: 1px solid rgba(239,68,68,0.3) !important;
+  transform: scale(1.02);
+  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.1), 0 4px 6px -2px rgba(239, 68, 68, 0.05);
+}
+
+/* Estilo específico para botón administración */
+.header-admin-button {
+  background: linear-gradient(to right, rgba(139,69,19,0.1), rgba(139,69,19,0.05)) !important;
+  color: rgba(168,85,247,0.9) !important;
+  border: 1px solid rgba(139,69,19,0.2) !important;
+  border-radius: 0.5rem;
+  backdrop-filter: blur(4px);
+  transition: all 0.3s ease;
+}
+
+.header-admin-button:hover {
+  background: linear-gradient(to right, rgba(139,69,19,0.2), rgba(139,69,19,0.1)) !important;
+  color: rgba(168,85,247,1) !important;
+  border: 1px solid rgba(139,69,19,0.3) !important;
+  transform: scale(1.02);
+  box-shadow: 0 10px 15px -3px rgba(139, 69, 19, 0.1), 0 4px 6px -2px rgba(139, 69, 19, 0.05);
+}
+
 /* Estilos específicos para impresión */
 @media print {
   /* Ocultar elementos de UI durante la impresión */
