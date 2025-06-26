@@ -73,68 +73,121 @@ const getDynamicValue = (
     return mappedValue !== undefined ? mappedValue : null;
   };
 
-  // 🔧 MAPEO REAL DE LA BASE DE DATOS: Usar dynamicTemplate en lugar de textConfig
+  // 🚀 SISTEMA UNIVERSAL DE CAMPOS DINÁMICOS
   if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
     const dynamicTemplate = content.dynamicTemplate;
     let value: any;
     
     console.log(`🔍 Procesando dynamicTemplate: ${dynamicTemplate}`);
     
-    // Mapear templates de la BD a campos internos
-    switch (dynamicTemplate) {
-      case '[product_name]':
-        value = getProductValue('nombre', product?.name || 'Sin nombre');
-        break;
-      case '[product_price]':
-        value = getProductValue('precioActual', product?.price || 0);
-        break;
-      case '[product_sku]':
-        value = getProductValue('sap', product?.sku || 'N/A');
-        break;
-      case '[product_brand]':
-        value = getProductValue('origen', product?.category || 'ARG');
-        break;
-      case '[price_original]':
-        value = getProductValue('precioActual', product?.price || 0);
-        break;
-      case '[price_discount]':
-        // Calcular precio con descuento
-        const percentage = getProductValue('porcentaje', 20);
-        const originalPrice = getProductValue('precioActual', product?.price || 0);
-        value = originalPrice ? Math.round(originalPrice * (1 - percentage / 100)) : 0;
-        break;
-      case '[discount_percentage]':
-        value = getProductValue('porcentaje', 20);
-        break;
-      case '[price_without_taxes]':
-        value = getProductValue('precioSinImpuestos', product?.price ? Math.round(product.price * 0.83) : 0);
-        break;
-      case '[promotion_start_date]':
-        value = getProductValue('fechasDesde', new Date().toLocaleDateString('es-AR'));
-        break;
-      case '[promotion_end_date]':
-        value = getProductValue('fechasHasta', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-AR'));
-        break;
-      default:
-        console.warn(`⚠️ dynamicTemplate no reconocido: ${dynamicTemplate}`);
-        value = content?.staticValue || `Template: ${dynamicTemplate}`;
-    }
+    // 🎯 MAPEO UNIVERSAL: Extrae el ID del campo del template
+    const fieldId = dynamicTemplate.replace(/[\[\]]/g, ''); // Quitar corchetes [product_name] → product_name
     
-    // Aplicar formato según el tipo de campo
-    if (dynamicTemplate === '[product_price]' || dynamicTemplate === '[price_original]' || dynamicTemplate === '[price_discount]' || dynamicTemplate === '[price_without_taxes]') {
-      if (typeof value === 'number') {
-        value = new Intl.NumberFormat('es-AR', {
+    // 🚀 FUNCIÓN UNIVERSAL DE MAPEO
+    const getUniversalFieldValue = (fieldId: string, product: Product): string => {
+      // Mapeo completo de todos los campos dinámicos
+      const fieldMappings: Record<string, (p: Product) => string> = {
+        // === INFORMACIÓN BÁSICA DEL PRODUCTO ===
+        'product_name': (p) => p.name || 'Sin nombre',
+        'product_sku': (p) => p.sku || 'N/A',
+        'product_description': (p) => p.description || '',
+        'product_category': (p) => p.category || '',
+        'product_subcategory': (p) => p.subCategory || '',
+        'product_brand': (p) => p.brand || '',
+        'product_package': (p) => p.packageType || '',
+        'product_volume': (p) => p.volume || '',
+        
+        // === PRECIOS Y FINANZAS ===
+        'product_price': (p) => formatCurrency(p.price || 0),
+        'price_without_tax': (p) => formatCurrency((p.price || 0) / 1.21), // ← TU CAMPO!
+        'price_number_only': (p) => formatNumber(p.price || 0),
+        'currency_symbol': () => '$',
+        'discount_percentage': (p) => {
+          const original = (p.price || 0) * 1.3; // Simulación 30% más caro originalmente
+          const discount = Math.round(((original - (p.price || 0)) / original) * 100);
+          return discount > 0 ? `${discount}%` : '0%';
+        },
+        'installment_price': (p) => formatCurrency((p.price || 0) / 12),
+        'installment_count': () => '12',
+        
+        // === FECHAS Y PROMOCIONES ===
+        'current_date': () => formatDate(new Date()),
+        'promotion_end_date': () => {
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + 7);
+          return formatDate(endDate);
+        },
+        'promo_validity': () => {
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + 7);
+          return `Válido hasta ${formatDate(endDate)}`;
+        },
+        'promotion_name': () => 'Oferta Especial',
+        
+        // === FORMATOS ESPECIALES ===
+        'price_large': (p) => formatCurrency(Math.floor(p.price || 0)),
+        'price_small': (p) => formatNumber(Math.floor(p.price || 0)),
+        'product_name_upper': (p) => (p.name || '').toUpperCase(),
+        'product_brand_upper': (p) => (p.brand || '').toUpperCase(),
+        
+                 // === COMPATIBILIDAD CON CAMPOS LEGACY ===
+         'price_original': (p) => formatCurrency(p.price || 0),
+         'price_discount': (p) => {
+           const percentage = 20; // 20% descuento por defecto
+           const discountedPrice = (p.price || 0) * (1 - percentage / 100);
+           return formatCurrency(discountedPrice);
+         },
+         'price_without_taxes': (p) => formatCurrency((p.price || 0) * 0.83),
+         'promotion_start_date': () => formatDate(new Date())
+      };
+      
+      // Funciones helper para formateo
+      const formatCurrency = (price: number): string => {
+        return new Intl.NumberFormat('es-AR', {
           style: 'currency',
           currency: 'ARS',
           minimumFractionDigits: 0,
           maximumFractionDigits: 0
-        }).format(value);
+        }).format(price);
+      };
+      
+      const formatNumber = (num: number): string => {
+        return new Intl.NumberFormat('es-AR', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        }).format(num);
+      };
+      
+      const formatDate = (date: Date): string => {
+        return date.toLocaleDateString('es-AR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+      };
+      
+      // Buscar el mapeo y ejecutarlo
+      const mapper = fieldMappings[fieldId];
+      if (mapper) {
+        const result = mapper(product);
+        console.log(`✅ Campo ${fieldId} mapeado: ${result}`);
+        return result;
       }
-    } else if (dynamicTemplate === '[discount_percentage]') {
-      if (typeof value === 'number') {
-        value = `${value}%`;
-      }
-    }
+      
+      // Fallback si no se encuentra el campo
+      console.warn(`⚠️ Campo dinámico no reconocido: ${fieldId}`);
+      return `[${fieldId}]`;
+    };
+    
+         // Aplicar mapeo universal
+     if (product) {
+       value = getProductValue('universal', getUniversalFieldValue(fieldId, product));
+     } else {
+       value = content?.staticValue || `[${fieldId}]`;
+     }
+     
+     // ✅ El formateo ya está incluido en getUniversalFieldValue
+     // No necesitamos aplicar formato adicional porque cada campo ya tiene su formateador
     
     console.log(`✅ Valor final para ${dynamicTemplate}: ${value}`);
     return String(value);
