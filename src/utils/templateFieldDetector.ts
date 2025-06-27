@@ -1,5 +1,7 @@
 // Detecta qué campos utiliza cada plantilla específica
 
+import { extractDynamicFields } from './productFieldsMap';
+
 export interface TemplateFieldConfig {
   nombre: boolean;
   precioActual: boolean;
@@ -189,7 +191,7 @@ export const getFieldType = (fieldName: keyof TemplateFieldConfig | string): Fie
 
 /**
  * 🚀 NUEVA: Detecta automáticamente los campos dinámicos disponibles en una plantilla
- * 🔧 ACTUALIZADA: Funciona con la estructura REAL de la BD (dynamicTemplate)
+ * 🔧 ACTUALIZADA: Funciona con la estructura REAL de la BD (dynamicTemplate) usando sistema universal
  */
 export const detectTemplateFields = (components: any[]): string[] => {
   const detectedFields = new Set<string>();
@@ -202,28 +204,34 @@ export const detectTemplateFields = (components: any[]): string[] => {
       
       const dynamicTemplate = component.content.dynamicTemplate;
       
-      // Mapear dynamicTemplate de la BD a nuestros campos internos
-      const fieldMapping: Record<string, string> = {
-        '[product_name]': 'nombre',
-        '[product_price]': 'precioActual',
-        '[product_sku]': 'sap',
-        '[product_brand]': 'origen',
-        '[price_original]': 'precioActual',
-        '[price_final]': 'precioActual',
-        '[price_discount]': 'precioActual', // Se calcula desde precio original
-        '[discount_percentage]': 'porcentaje',
-        '[price_without_taxes]': 'precioSinImpuestos',
-        '[promotion_start_date]': 'fechasDesde',
-        '[promotion_end_date]': 'fechasHasta'
-      };
+      // 🎯 NUEVA LÓGICA: Usar extractDynamicFields para extraer todos los campos de templates complejos
+      const extractedFields = extractDynamicFields(dynamicTemplate);
       
-      const internalField = fieldMapping[dynamicTemplate];
-      if (internalField) {
-        detectedFields.add(internalField);
-        console.log(`🔍 Campo detectado BD: ${dynamicTemplate} → ${internalField}`);
-      } else {
-        console.warn(`⚠️ dynamicTemplate no reconocido: ${dynamicTemplate}`);
-      }
+      extractedFields.forEach((fieldId: string) => {
+        // Mapear fieldId del sistema moderno a nuestros campos internos para compatibilidad
+        const fieldMapping: Record<string, string> = {
+          'product_name': 'nombre',
+          'product_price': 'precioActual',
+          'product_sku': 'sap',
+          'product_brand': 'origen',
+          'price_original': 'precioActual',
+          'price_final': 'precioActual',
+          'price_discount': 'precioActual',
+          'discount_percentage': 'porcentaje',
+          'price_without_tax': 'precioSinImpuestos', // ✅ CORREGIDO: era 'price_without_taxes'
+          'price_without_taxes': 'precioSinImpuestos',
+          'promotion_start_date': 'fechasDesde',
+          'promotion_end_date': 'fechasHasta'
+        };
+        
+        const internalField = fieldMapping[fieldId];
+        if (internalField) {
+          detectedFields.add(internalField);
+          console.log(`🔍 Campo detectado BD: [${fieldId}] en "${dynamicTemplate}" → ${internalField}`);
+        } else {
+          console.warn(`⚠️ Campo no reconocido: [${fieldId}] en "${dynamicTemplate}"`);
+        }
+      });
     }
     
     // 🔧 COMPATIBILIDAD: Mantener soporte para textConfig (por si hay plantillas mixtas)

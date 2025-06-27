@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Eye, EyeOff, Settings, X } from 'lucide-react';
+import { Trash2, Eye, EyeOff, Settings, X, ChevronLeft, ChevronRight, Grid, ArrowLeft, Package, AlertTriangle, Search } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 
 // Servicios y datos
 import { posterTemplateService, PosterFamilyData, PosterTemplateData } from '../../../../../services/posterTemplateService';
-import { Product } from '../../../../../data/products';
+import { type Product } from '../../../../../data/products';
 
 // Redux
 import {
@@ -22,6 +22,7 @@ import { RootState, AppDispatch } from '../../../../../store';
 import { EditableField } from './EditableField';
 import { DeleteProductModal } from './DeleteProductModal';
 import { BuilderTemplateRenderer } from './Renderers/BuilderTemplateRenderer';
+import { EditModeIndicator } from './EditModeIndicator';
 
 // Utilidades
 import { 
@@ -41,6 +42,8 @@ interface PreviewAreaV3Props {
   selectedCategory?: string;
   onTemplateSelect?: (template: PosterTemplateData | null) => void;
   onUpdateProduct?: (productId: string, updates: Partial<Product>) => void;
+  expandedProductId?: string | null; // NUEVO: Para expandir producto desde el panel lateral
+  onExpandedProductChange?: (productId: string | null) => void; // NUEVO: Callback para cambios de expansión
 }
 
 export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
@@ -50,7 +53,9 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   searchTerm = '',
   selectedCategory = 'all',
   onTemplateSelect,
-  onUpdateProduct
+  onUpdateProduct,
+  expandedProductId,
+  onExpandedProductChange
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   
@@ -67,10 +72,51 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [editPanelMode, setEditPanelMode] = useState<'sidebar' | 'floating' | 'hidden'>('floating');
+
+  // Sincronizar estado local con props externas para expansión
+  useEffect(() => {
+    if (expandedProductId) {
+      const productIndex = selectedProducts.findIndex(p => p.sku?.toString() === expandedProductId);
+      if (productIndex !== -1) {
+        setExpandedProductIndex(productIndex);
+      }
+    } else {
+      setExpandedProductIndex(null);
+    }
+  }, [expandedProductId, selectedProducts]);
   
   // Función helper para obtener producto editado
   const getEditedProduct = (productId: string) => {
     return productChanges[productId] || null;
+  };
+
+  // Funciones para manejar expansión de productos
+  const handleExpandProduct = (productIndex: number) => {
+    setExpandedProductIndex(productIndex);
+    const product = selectedProducts[productIndex];
+    if (product && onExpandedProductChange) {
+      onExpandedProductChange(product.sku?.toString() || null);
+    }
+  };
+
+  const handleCollapseProduct = () => {
+    setExpandedProductIndex(null);
+    if (onExpandedProductChange) {
+      onExpandedProductChange(null);
+    }
+  };
+
+  const handleNavigateProduct = (direction: 'prev' | 'next') => {
+    if (expandedProductIndex === null) return;
+    
+    let newIndex: number;
+    if (direction === 'prev') {
+      newIndex = expandedProductIndex > 0 ? expandedProductIndex - 1 : selectedProducts.length - 1;
+    } else {
+      newIndex = expandedProductIndex < selectedProducts.length - 1 ? expandedProductIndex + 1 : 0;
+    }
+    
+    handleExpandProduct(newIndex);
   };
 
   // 🔍 DETECTAR CAMPOS DINÁMICAMENTE: Analizar la plantilla para encontrar campos editables
@@ -123,8 +169,8 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
               console.log(`📝 Mapeando ${field}: ${productValue}`);
               
               dispatch(trackProductChange({
-                productId: product.id,
-                productName: product.name,
+                productId: product.sku?.toString() || '',
+                productName: product.descripcion || '',
                 field,
                 originalValue: '',
                 newValue: productValue
@@ -159,8 +205,8 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     
     const fieldMapping: Record<string, any> = {
       // Mapeo directo desde el producto
-      nombre: product.name || 'Sin nombre',
-      precioActual: product.price || 0,
+      nombre: product.descripcion || 'Sin nombre',
+      precioActual: product.precio || 0,
       sap: product.sku || 'N/A',
       
       // Valores calculados o por defecto
@@ -168,7 +214,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       fechasDesde: now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
       fechasHasta: nextWeek.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
       origen: 'ARG',
-      precioSinImpuestos: product.price ? Math.round(product.price * 0.83) : 0
+      precioSinImpuestos: product.precio ? Math.round(product.precio * 0.83) : 0
     };
     
     const mappedValue = fieldMapping[field];
@@ -185,7 +231,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     
     dispatch(trackProductChange({
       productId,
-      productName: product.name,
+      productName: product.descripcion || '',
       field,
       originalValue: originalValue as string | number,
       newValue
@@ -260,38 +306,47 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       <div className={panelClasses}>
         {/* Header del panel flotante */}
         {editPanelMode === 'floating' && (
-          <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
             <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-              <Settings className="w-4 h-4 text-blue-500" />
-              Editar Producto
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <Settings className="w-4 h-4 text-green-500" />
+              ✏️ Modo Edición Activo
             </h3>
-            <button
-              onClick={() => setEditPanelMode('hidden')}
-              className="w-6 h-6 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors flex items-center justify-center"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                Edita en tiempo real
+              </span>
+              <button
+                onClick={() => setEditPanelMode('hidden')}
+                className="w-6 h-6 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors flex items-center justify-center"
+                title="Cerrar panel de edición"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
         {/* Contenido del panel */}
         <div className={editPanelMode === 'floating' ? "p-4" : ""}>
           {editPanelMode === 'sidebar' && (
-            <h3 className="text-base xs:text-lg font-semibold text-gray-800 mb-3 xs:mb-4 flex items-center gap-2">
-              <svg className="w-4 h-4 xs:w-5 xs:h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              <span className="truncate">Editar Producto</span>
-            </h3>
+            <div className="mb-3 xs:mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+              <h3 className="text-base xs:text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <Settings className="w-4 h-4 xs:w-5 xs:h-5 text-green-500" />
+                <span className="truncate">✏️ Modo Edición Activo</span>
+              </h3>
+              <p className="text-xs text-green-600 mt-1">Edita valores en tiempo real</p>
+            </div>
           )}
           
           {/* Info del producto */}
           <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="text-sm font-medium text-blue-800 truncate" title={product.name}>
-              {product.name}
+            <div className="text-sm font-medium text-blue-800 truncate" title={product.descripcion}>
+              {product.descripcion}
             </div>
             <div className="text-xs text-blue-600">SKU: {product.sku}</div>
-            <div className="text-xs text-green-600 font-bold">${product.price?.toLocaleString()}</div>
+            <div className="text-xs text-green-600 font-bold">${product.precio?.toLocaleString()}</div>
           </div>
           
           <div className="space-y-3 xs:space-y-4">
@@ -318,10 +373,24 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
             })}
           </div>
 
-          {/* Indicador de cambios automáticos */}
-          <div className="mt-4 p-2 bg-green-50 rounded-lg border border-green-200">
-            <div className="text-xs text-green-700 font-medium">✅ Campos llenados automáticamente</div>
-            <div className="text-xs text-green-600">Los valores se actualizaron al seleccionar el producto</div>
+          {/* Tips de uso y estado */}
+          <div className="mt-4 space-y-3">
+            {/* Indicador de cambios automáticos */}
+            <div className="p-2 bg-green-50 rounded-lg border border-green-200">
+              <div className="text-xs text-green-700 font-medium">✅ Campos llenados automáticamente</div>
+              <div className="text-xs text-green-600">Los valores se actualizaron al seleccionar el producto</div>
+            </div>
+            
+            {/* Tips de edición */}
+            <div className="p-2 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="text-xs text-blue-700 font-medium">💡 Tips de edición rápida:</div>
+              <div className="text-xs text-blue-600 mt-1 space-y-1">
+                <div>• <strong>Hover</strong> en cualquier campo para ver el ícono de edición</div>
+                <div>• <strong>Click</strong> para empezar a editar</div>
+                <div>• <strong>Enter</strong> para guardar, <strong>Escape</strong> para cancelar</div>
+                <div>• Los cambios se aplican <strong>instantáneamente</strong> en el preview</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -353,6 +422,13 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   // Renderizado principal
   return (
     <div className="h-full flex flex-col">
+      {/* Indicador de modo de edición activo */}
+      <EditModeIndicator
+        isActive={selectedProducts.length > 0 && editPanelMode !== 'hidden'}
+        mode={editPanelMode}
+        onToggle={() => setEditPanelMode(editPanelMode === 'hidden' ? 'floating' : 'hidden')}
+      />
+      
       <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-3 xs:p-4 sm:p-6 border border-gray-200 flex flex-1 overflow-hidden max-h-full lg:max-h-[800px] w-full">
         
         <div className="w-full h-full overflow-y-auto scrollbar-hide">
@@ -361,9 +437,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
           {!selectedFamily && (
             <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 p-4">
               <div className="w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 mb-3 xs:mb-4 bg-gray-200 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
+                <Package className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 text-gray-400" />
               </div>
               <h3 className="text-base xs:text-lg font-medium text-gray-700 mb-1 xs:mb-2">Selecciona una familia</h3>
               <p className="text-xs xs:text-sm text-gray-500 text-center max-w-xs xs:max-w-sm sm:max-w-md">
@@ -376,9 +450,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
           {selectedFamily && selectedFamily.templates.length === 0 && (
             <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 p-4">
               <div className="w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 mb-3 xs:mb-4 bg-orange-200 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
+                <AlertTriangle className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 text-orange-400" />
               </div>
               <h3 className="text-base xs:text-lg font-medium text-gray-700 mb-1 xs:mb-2">No hay plantillas disponibles</h3>
               <p className="text-xs xs:text-sm text-gray-500 text-center max-w-xs xs:max-w-sm sm:max-w-md">
@@ -470,9 +542,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-blue-600 font-medium">{selectedFamily.displayName}</span>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
+                            <ChevronRight className="w-4 h-4 text-indigo-500" />
                           </div>
                         </div>
                       </div>
@@ -486,9 +556,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
               ) : (
                 /* Mensaje cuando no hay resultados */
                 <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                  <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.086-2.329C7.76 10.851 9.807 9 12.25 9s4.49 1.851 6.336 3.671" />
-                  </svg>
+                  <Search className="w-16 h-16 mb-4 text-gray-300" />
                   <h3 className="text-lg font-medium text-gray-700 mb-2">No se encontraron plantillas</h3>
                   <p className="text-sm text-gray-500 text-center max-w-md">
                     {searchTerm 
@@ -513,9 +581,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                     className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
                     title="Volver a la grilla de plantillas"
                   >
-                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
+                    <ArrowLeft className="w-4 h-4 text-gray-600" />
                     <span className="text-sm text-gray-700">Volver</span>
                   </button>
                   <div className="flex items-center gap-2">
@@ -528,37 +594,53 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  {/* Controles del panel de edición */}
+                  {/* BOTÓN PRINCIPAL DE MODO EDICIÓN - MUY VISIBLE */}
                   {selectedProducts.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      {/* Selector de modo del panel */}
-                      <select
-                        value={editPanelMode}
-                        onChange={(e) => setEditPanelMode(e.target.value as 'sidebar' | 'floating' | 'hidden')}
-                        className="text-xs px-2 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-                        title="Modo del panel de edición"
+                    <div className="flex items-center gap-3">
+                      {/* Botón principal prominente */}
+                      <button
+                        onClick={() => setEditPanelMode(editPanelMode === 'hidden' ? 'floating' : 'hidden')}
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-md ${
+                          editPanelMode === 'hidden' 
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 shadow-blue-200' 
+                            : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-green-200'
+                        }`}
+                        title={editPanelMode === 'hidden' ? "Activar modo edición" : "Desactivar modo edición"}
                       >
-                        <option value="floating">📋 Panel flotante</option>
-                        <option value="sidebar">📌 Panel lateral</option>
-                        <option value="hidden">👁️ Oculto</option>
-                      </select>
+                        <Settings className="w-4 h-4" />
+                        <span className="text-sm">
+                          {editPanelMode === 'hidden' ? '✏️ Editar Campos' : '✅ Editando'}
+                        </span>
+                      </button>
                       
-                      {/* Botón para mostrar panel si está oculto */}
-                      {editPanelMode === 'hidden' && (
-                        <button
-                          onClick={() => setEditPanelMode('floating')}
-                          className="flex items-center space-x-1 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
-                          title="Mostrar panel de edición"
+                      {/* Selector de modo del panel (solo visible cuando está activo) */}
+                      {editPanelMode !== 'hidden' && (
+                        <select
+                          value={editPanelMode}
+                          onChange={(e) => setEditPanelMode(e.target.value as 'sidebar' | 'floating' | 'hidden')}
+                          className="text-xs px-2 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                          title="Cambiar posición del panel"
                         >
-                          <Settings className="w-3 h-3" />
-                          <span>Editar</span>
-                        </button>
+                          <option value="floating">📋 Panel flotante</option>
+                          <option value="sidebar">📌 Panel lateral</option>
+                        </select>
                       )}
                     </div>
                   )}
                   
-                  <div className="text-xs text-gray-500 px-2 py-1 bg-white/60 rounded">
-                    {selectedProducts.length} producto{selectedProducts.length !== 1 ? 's' : ''}
+                  {/* Indicador de productos */}
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs text-gray-500 px-2 py-1 bg-white/60 rounded">
+                      {selectedProducts.length} producto{selectedProducts.length !== 1 ? 's' : ''}
+                    </div>
+                    
+                    {/* Indicador de modo edición activo */}
+                    {selectedProducts.length > 0 && editPanelMode !== 'hidden' && (
+                      <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span>Modo edición activo</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -589,7 +671,28 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                     </div>
                     <div className="text-gray-500">
                       <h4 className="text-lg font-medium mb-2">Plantilla lista para usar</h4>
-                      <p className="text-sm">Agrega productos desde el panel lateral para empezar a trabajar</p>
+                      <p className="text-sm mb-4">Agrega productos desde el panel lateral para empezar a trabajar</p>
+                      
+                      {/* Instrucciones de edición */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left max-w-md mx-auto">
+                        <h5 className="text-sm font-semibold text-blue-800 mb-2">
+                          🚀 ¿Cómo editar en tiempo real?
+                        </h5>
+                        <div className="text-xs text-blue-700 space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-blue-500 font-bold">1.</span>
+                            <span>Agrega productos desde el panel lateral</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-blue-500 font-bold">2.</span>
+                            <span>Haz click en el botón <strong>"✏️ Editar Campos"</strong></span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-blue-500 font-bold">3.</span>
+                            <span>Edita valores y ve los cambios instantáneamente</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -620,6 +723,115 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                   {editPanelMode === 'floating' && (
                     <EditPanel product={selectedProducts[0]} />
                   )}
+
+                  {/* Quick Actions cuando el panel está oculto */}
+                  {editPanelMode === 'hidden' && (
+                    <div className="fixed bottom-4 right-4 z-40">
+                      <div className="bg-white shadow-lg rounded-lg border border-gray-200 p-3">
+                        <div className="text-xs text-gray-600 mb-2 text-center">
+                          Edición disponible
+                        </div>
+                        <button
+                          onClick={() => setEditPanelMode('floating')}
+                          className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center gap-2"
+                        >
+                          <Settings className="w-4 h-4" />
+                          ✏️ Editar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : expandedProductIndex !== null ? (
+                // Vista expandida de producto individual con navegación
+                <div className="flex-1 flex flex-col">
+                  {/* Header de navegación */}
+                  <div className="flex items-center justify-between mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleCollapseProduct}
+                        className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                        title="Volver a vista de grilla"
+                      >
+                        <Grid className="w-4 h-4 text-gray-600" />
+                        <span className="text-sm text-gray-700">Vista grilla</span>
+                      </button>
+                      
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                          {expandedProductIndex + 1}
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-green-800">
+                            {selectedProducts[expandedProductIndex]?.descripcion}
+                          </div>
+                          <div className="text-xs text-green-600">
+                            Producto {expandedProductIndex + 1} de {selectedProducts.length}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {/* Navegación entre productos */}
+                      <button
+                        onClick={() => handleNavigateProduct('prev')}
+                        className="w-8 h-8 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
+                        title="Producto anterior"
+                      >
+                        <ChevronLeft className="w-4 h-4 text-gray-600" />
+                      </button>
+                      
+                      <span className="text-xs text-gray-500 px-2">
+                        {expandedProductIndex + 1}/{selectedProducts.length}
+                      </span>
+                      
+                      <button
+                        onClick={() => handleNavigateProduct('next')}
+                        className="w-8 h-8 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
+                        title="Producto siguiente"
+                      >
+                        <ChevronRight className="w-4 h-4 text-gray-600" />
+                      </button>
+                      
+                      {/* Botón eliminar producto actual */}
+                      <button
+                        onClick={() => handleDeleteClick(selectedProducts[expandedProductIndex])}
+                        className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-sm flex items-center justify-center"
+                        title="Eliminar este producto"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Vista expandida del producto */}
+                  <div className="flex-1 flex flex-col lg:flex-row bg-white relative">
+                    {/* Panel de edición - sidebar mode */}
+                    {editPanelMode === 'sidebar' && (
+                      <EditPanel product={selectedProducts[expandedProductIndex]} />
+                    )}
+
+                    {/* Vista previa expandida */}
+                    <div className={`flex-1 flex items-center justify-center bg-gray-50 p-6 min-h-[500px] overflow-auto ${
+                      editPanelMode === 'sidebar' ? 'order-1 lg:order-2' : 'order-1'
+                    }`}>
+                      <div className="w-full h-full flex items-center justify-center print-content overflow-visible" data-preview-content>
+                        <BuilderTemplateRenderer 
+                          template={selectedTemplate.template}
+                          components={selectedTemplate.template.defaultComponents}
+                          product={selectedProducts[expandedProductIndex]}
+                          productChanges={productChanges}
+                          key={`${selectedProducts[expandedProductIndex]?.sku || 'no-product'}-${refreshKey}`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Panel de edición - floating mode */}
+                    {editPanelMode === 'floating' && (
+                      <EditPanel product={selectedProducts[expandedProductIndex]} />
+                    )}
+                  </div>
                 </div>
               ) : (
                 // Múltiples productos: vista de grilla de carteles
@@ -627,9 +839,9 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-4">
                     {selectedProducts.map((product, productIndex) => (
                       <div
-                        key={`${product.id}-${productIndex}`}
+                        key={`${product.sku}-${productIndex}`}
                         className="group relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-200 hover:border-indigo-300"
-                        onClick={() => setExpandedProductIndex(productIndex)}
+                        onClick={() => handleExpandProduct(productIndex)}
                       >
                         <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-indigo-500 to-blue-600 text-white p-3 z-20">
                           <div className="flex items-center justify-between">
@@ -647,9 +859,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                               }}
                               className="w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
                             >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
+                              <X className="w-3 h-3" />
                             </button>
                           </div>
                         </div>
@@ -672,12 +882,12 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                         
                         <div className="p-4 bg-white border-t border-gray-100">
                           <div className="text-center space-y-2">
-                            <h3 className="font-bold text-gray-900 text-sm truncate" title={product.name}>
-                              {product.name}
+                            <h3 className="font-bold text-gray-900 text-sm truncate" title={product.descripcion}>
+                              {product.descripcion}
                             </h3>
                             <div className="flex justify-between items-center text-xs text-gray-600">
                               <span>SKU: {product.sku || 'N/A'}</span>
-                              <span className="font-bold text-green-600">${product.price?.toLocaleString()}</span>
+                              <span className="font-bold text-green-600">${product.precio?.toLocaleString()}</span>
                             </div>
                           </div>
                         </div>

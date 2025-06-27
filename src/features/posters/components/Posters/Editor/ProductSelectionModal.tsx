@@ -31,21 +31,20 @@ import {
   type SortingState,
   type ColumnFiltersState
 } from '@tanstack/react-table';
-import { Product } from '@/types/product';
-import { products } from '@/data/products';
+import { ProductoReal } from '../../../../../types/product';
+import { productos } from '../../../../../data/products';
 
 interface ProductSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (selectedProducts: Product[]) => void;
-  initialSelectedProducts?: Product[];
+  onConfirm: (selectedProducts: ProductoReal[]) => void;
+  initialSelectedProducts?: ProductoReal[];
   title?: string;
   maxSelection?: number;
 }
 
-interface ExtendedProduct extends Product {
-  ean?: string;
-  stockSucursal?: number;
+interface ExtendedProduct extends ProductoReal {
+  // ProductoReal ya tiene todos los campos necesarios
 }
 
 const columnHelper = createColumnHelper<ExtendedProduct>();
@@ -72,8 +71,8 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   // Estados de filtros avanzados
   const [activeFilters, setActiveFilters] = useState({
     descripcion: '',
-    categoria: '',
-    subCategoria: '',
+    seccion: '',
+    grupo: '',
     sku: '',
     ean: '',
     precioMin: '',
@@ -83,51 +82,87 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
 
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  // Datos extendidos de productos (simular datos reales)
+  // Datos de productos (ya son ProductoReal)
   const extendedProducts: ExtendedProduct[] = useMemo(() => {
-    return products.map(product => ({
-      ...product,
-      ean: generateEAN(product.id),
-      stockSucursal: Math.floor(Math.random() * 1000) + 1
-    }));
+    return productos;
   }, []);
 
   // Obtener opciones únicas para los filtros
-  const categoriasUnicas = useMemo(() => {
-    const categorias = Array.from(new Set(extendedProducts.map(p => p.category)));
-    return categorias.sort();
+  const seccionesUnicas = useMemo(() => {
+    const secciones = Array.from(new Set(extendedProducts.map(p => p.seccion)));
+    return secciones.sort();
   }, [extendedProducts]);
 
-  const subCategoriasUnicas = useMemo(() => {
-    const subCategorias = Array.from(new Set(
+  const gruposUnicos = useMemo(() => {
+    const grupos = Array.from(new Set(
       extendedProducts
-        .map(p => p.subCategory)
+        .map(p => p.grupo)
         .filter(Boolean) // Filtrar valores undefined/null
     ));
-    return subCategorias.sort();
+    return grupos.sort();
   }, [extendedProducts]);
-
-  function generateEAN(productId: string): string {
-    // Generar EAN de ejemplo basado en el ID del producto
-    const hash = productId.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    return Math.abs(hash).toString().padStart(13, '0').slice(0, 13);
-  }
 
   // Inicializar selección con productos iniciales
   useEffect(() => {
+    console.log('🔄 ProductSelectionModal - Inicializando selectedRows con productos:', {
+      initialSelectedProducts: initialSelectedProducts.map(p => ({ id: p.id, name: p.descripcion })),
+      count: initialSelectedProducts.length
+    });
+    
     if (initialSelectedProducts.length > 0) {
       const initialSelection = initialSelectedProducts.reduce((acc, product) => {
+        console.log('➕ Agregando producto al estado inicial:', { id: product.id, name: product.descripcion });
         acc[product.id] = true;
         return acc;
       }, {} as Record<string, boolean>);
+      
+      console.log('✅ Estado inicial de selectedRows:', initialSelection);
       setSelectedRows(initialSelection);
+    } else {
+      console.log('🚫 No hay productos iniciales, limpiando selectedRows');
+      setSelectedRows({});
     }
   }, [initialSelectedProducts]);
 
-  // Columnas de la tabla
+  // Debug: Log cuando cambia selectedRows
+  useEffect(() => {
+    console.log('📊 Estado de selectedRows actualizado:', {
+      selectedRows,
+      count: Object.keys(selectedRows).length,
+      selectedIds: Object.keys(selectedRows)
+    });
+  }, [selectedRows]);
+
+  // Debug: Validar datos al abrir modal
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🚀 Modal abierto - Validando datos:', {
+        modalOpen: isOpen,
+        extendedProductsCount: extendedProducts.length,
+        firstProduct: extendedProducts[0] ? {
+          id: extendedProducts[0].id,
+          descripcion: extendedProducts[0].descripcion,
+          hasId: !!extendedProducts[0].id
+        } : null,
+        initialSelectedCount: initialSelectedProducts.length,
+        initialSelectedIds: initialSelectedProducts.map(p => p.id)
+      });
+      
+      // Verificar que todos los productos tienen ID
+      const productsWithoutId = extendedProducts.filter(p => !p.id);
+      if (productsWithoutId.length > 0) {
+        console.error('❌ Productos sin ID encontrados:', productsWithoutId);
+      }
+      
+      // Verificar que los productos iniciales tienen ID
+      const initialWithoutId = initialSelectedProducts.filter(p => !p.id);
+      if (initialWithoutId.length > 0) {
+        console.error('❌ Productos iniciales sin ID:', initialWithoutId);
+      }
+    }
+  }, [isOpen, extendedProducts.length, initialSelectedProducts.length]);
+
+  // Columnas de la tabla - ACTUALIZADAS para ProductoReal
   const columns = useMemo<ColumnDef<ExtendedProduct, any>[]>(() => [
     {
       id: 'select',
@@ -136,99 +171,134 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
         const allSelected = currentPageData.length > 0 && currentPageData.every(product => selectedRows[product.id]);
         const someSelected = currentPageData.some(product => selectedRows[product.id]);
         
+        console.log('🔄 Header - Estado de selección:', {
+          currentPageDataCount: currentPageData.length,
+          allSelected,
+          someSelected,
+          selectedIds: Object.keys(selectedRows),
+          currentPageIds: currentPageData.map(p => p.id)
+        });
+        
         return (
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
+            <input
+              type="checkbox"
+              checked={allSelected}
+              ref={(el) => {
+                if (el) {
+                  el.indeterminate = someSelected && !allSelected;
+                }
+              }}
+              onChange={(e) => {
                 const newSelected = { ...selectedRows };
                 
-                if (allSelected) {
-                  // Deseleccionar todos los de la página actual
-                  currentPageData.forEach(product => {
-                    delete newSelected[product.id];
-                  });
-                } else {
+                console.log('🖱️ Header checkbox onChange:', {
+                  checked: e.target.checked,
+                  allSelected,
+                  currentPageData: currentPageData.map(p => ({ id: p.id, name: p.descripcion }))
+                });
+                
+                if (e.target.checked) {
                   // Seleccionar todos los de la página actual
                   currentPageData.forEach(product => {
+                    console.log('✅ Seleccionando desde header:', product.id);
                     newSelected[product.id] = true;
+                  });
+                } else {
+                  // Deseleccionar todos los de la página actual
+                  currentPageData.forEach(product => {
+                    console.log('❌ Deseleccionando desde header:', product.id);
+                    delete newSelected[product.id];
                   });
                 }
                 
+                console.log('📝 Nuevo estado desde header:', newSelected);
                 setSelectedRows(newSelected);
               }}
-              className="w-5 h-5 flex items-center justify-center border-2 border-gray-300 rounded transition-colors hover:border-indigo-500"
-            >
-              {allSelected ? (
-                <CheckSquare className="w-4 h-4 text-indigo-600" />
-              ) : someSelected ? (
-                <div className="w-3 h-3 bg-indigo-600 rounded-sm" />
-              ) : (
-                <Square className="w-4 h-4 text-gray-400" />
-              )}
-            </button>
+              className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+            />
             <span className="text-xs text-gray-500">Todo</span>
           </div>
         );
       },
-      cell: ({ row }) => (
-        <button
-          onClick={() => {
-            const isSelected = selectedRows[row.original.id];
-            const newSelected = { ...selectedRows };
-            
-            if (isSelected) {
-              delete newSelected[row.original.id];
-            } else {
-              newSelected[row.original.id] = true;
-            }
-            
-            setSelectedRows(newSelected);
-          }}
-          className="w-5 h-5 flex items-center justify-center border-2 border-gray-300 rounded transition-colors hover:border-indigo-500"
-        >
-          {selectedRows[row.original.id] ? (
-            <CheckSquare className="w-4 h-4 text-indigo-600" />
-          ) : (
-            <Square className="w-4 h-4 text-gray-400" />
-          )}
-        </button>
-      ),
+      cell: ({ row }) => {
+        const productId = row.original.id;
+        const isSelected = Boolean(selectedRows[productId]);
+        
+        console.log('🔍 Renderizando checkbox simplificado:', {
+          productId,
+          productName: row.original.descripcion,
+          isSelected,
+          selectedRowsKeys: Object.keys(selectedRows),
+          hasKey: productId in selectedRows
+        });
+        
+        return (
+          <div className="flex items-center justify-center">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={(e) => {
+                console.log('🖱️ Checkbox onChange:', {
+                  productId,
+                  checked: e.target.checked,
+                  previousState: selectedRows[productId]
+                });
+                
+                const newSelected = { ...selectedRows };
+                
+                if (e.target.checked) {
+                  newSelected[productId] = true;
+                  console.log('✅ Marcando como seleccionado:', productId);
+                } else {
+                  delete newSelected[productId];
+                  console.log('❌ Desmarcando:', productId);
+                }
+                
+                console.log('📝 Actualizando selectedRows:', newSelected);
+                setSelectedRows(newSelected);
+              }}
+              className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+            />
+          </div>
+        );
+      },
       size: 50,
       enableSorting: false,
       enableColumnFilter: false,
     },
     {
-      accessorKey: 'name',
+      accessorKey: 'descripcion',
       header: 'Descripción',
       cell: ({ getValue, row }) => (
         <div className="min-w-0">
           <div className="font-medium text-gray-900 truncate" title={getValue() as string}>
             {getValue() as string}
           </div>
-          <div className="text-sm text-gray-500 truncate" title={row.original.description}>
-            {row.original.description}
+          <div className="text-sm text-gray-500 truncate" title={row.original.marcaTexto}>
+            {row.original.marcaTexto} • SKU: {row.original.sku}
           </div>
         </div>
       ),
       size: 250,
     },
     {
-      accessorKey: 'category',
-      header: 'Categoría',
+      accessorKey: 'seccion',
+      header: 'Sección',
       cell: ({ getValue }) => (
         <span className="text-sm font-medium text-gray-700">{getValue() as string}</span>
       ),
       size: 120,
     },
     {
-      accessorKey: 'subCategory',
-      header: 'Subcategoría',
+      accessorKey: 'grupo',
+      header: 'Grupo',
       cell: ({ getValue }) => {
-        const subCategory = getValue() as string;
-        return subCategory ? (
-          <span className="text-sm text-gray-600">{subCategory}</span>
+        const grupo = getValue() as string;
+        return grupo ? (
+          <span className="text-sm text-gray-600">{grupo}</span>
         ) : (
-          <span className="text-sm text-gray-400 italic">Sin subcategoría</span>
+          <span className="text-sm text-gray-400 italic">Sin grupo</span>
         );
       },
       size: 150,
@@ -238,7 +308,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
       header: 'SKU',
       cell: ({ getValue }) => (
         <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
-          {getValue() as string}
+          {getValue() as number}
         </span>
       ),
       size: 100,
@@ -247,22 +317,29 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
       accessorKey: 'ean',
       header: 'EAN',
       cell: ({ getValue }) => (
-        <span className="text-xs font-mono text-gray-600">{getValue() as string}</span>
+        <span className="text-xs font-mono text-gray-600">{getValue() as number}</span>
       ),
       size: 120,
     },
     {
-      accessorKey: 'price',
+      accessorKey: 'precio',
       header: 'Precio',
-      cell: ({ getValue }) => (
-        <span className="font-semibold text-green-600">
-          ${(getValue() as number)?.toLocaleString()}
-        </span>
+      cell: ({ getValue, row }) => (
+        <div className="space-y-1">
+          <span className="font-semibold text-green-600">
+            ${(getValue() as number)?.toLocaleString('es-AR')}
+          </span>
+          {row.original.precioAnt && row.original.precioAnt > (getValue() as number) && (
+            <div className="text-xs text-gray-400 line-through">
+              ${row.original.precioAnt.toLocaleString('es-AR')}
+            </div>
+          )}
+        </div>
       ),
-      size: 100,
+      size: 120,
     },
     {
-      accessorKey: 'stockSucursal',
+      accessorKey: 'stockDisponible',
       header: 'Stock',
       cell: ({ getValue }) => {
         const stock = (getValue() as number) || 0;
@@ -277,34 +354,34 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
       },
       size: 80,
     },
-  ], [selectedRows, maxSelection]);
+  ], [selectedRows]);
 
-  // Datos filtrados
+  // Datos filtrados - ACTUALIZADOS para ProductoReal
   const filteredData = useMemo(() => {
     return extendedProducts.filter(product => {
       // Filtros avanzados
-      if (activeFilters.descripcion && !product.name.toLowerCase().includes(activeFilters.descripcion.toLowerCase())) {
+      if (activeFilters.descripcion && !product.descripcion.toLowerCase().includes(activeFilters.descripcion.toLowerCase())) {
         return false;
       }
-      if (activeFilters.categoria && product.category !== activeFilters.categoria) {
+      if (activeFilters.seccion && product.seccion !== activeFilters.seccion) {
         return false;
       }
-      if (activeFilters.subCategoria && product.subCategory !== activeFilters.subCategoria) {
+      if (activeFilters.grupo && product.grupo !== activeFilters.grupo) {
         return false;
       }
-      if (activeFilters.sku && !product.sku?.toLowerCase().includes(activeFilters.sku.toLowerCase())) {
+      if (activeFilters.sku && !product.sku?.toString().includes(activeFilters.sku)) {
         return false;
       }
-      if (activeFilters.ean && !product.ean?.includes(activeFilters.ean)) {
+      if (activeFilters.ean && !product.ean?.toString().includes(activeFilters.ean)) {
         return false;
       }
-      if (activeFilters.precioMin && product.price < parseFloat(activeFilters.precioMin)) {
+      if (activeFilters.precioMin && product.precio && product.precio < parseFloat(activeFilters.precioMin)) {
         return false;
       }
-      if (activeFilters.precioMax && product.price > parseFloat(activeFilters.precioMax)) {
+      if (activeFilters.precioMax && product.precio && product.precio > parseFloat(activeFilters.precioMax)) {
         return false;
       }
-      if (activeFilters.stockMin && (product.stockSucursal || 0) < parseInt(activeFilters.stockMin)) {
+      if (activeFilters.stockMin && (product.stockDisponible || 0) < parseInt(activeFilters.stockMin)) {
         return false;
       }
       
@@ -340,7 +417,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     setTimeout(() => {
       const selectedProducts = Object.keys(selectedRows)
         .map(id => extendedProducts.find(p => p.id === id))
-        .filter(Boolean) as Product[];
+        .filter(Boolean) as ProductoReal[];
       
       onConfirm(selectedProducts);
       setIsLoading(false);
@@ -351,8 +428,8 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   const handleClearFilters = () => {
     setActiveFilters({
       descripcion: '',
-      categoria: '',
-      subCategoria: '',
+      seccion: '',
+      grupo: '',
       sku: '',
       ean: '',
       precioMin: '',
@@ -444,7 +521,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
               </div>
             </div>
 
-            {/* Filtros avanzados */}
+            {/* Filtros avanzados - ACTUALIZADOS para ProductoReal */}
             <AnimatePresence>
               {showAdvancedFilters && (
                 <motion.div
@@ -470,17 +547,17 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       <Package className="w-4 h-4 inline mr-1" />
-                      Categoría
+                      Sección
                     </label>
                     <select
-                      value={activeFilters.categoria}
-                      onChange={(e) => setActiveFilters(prev => ({ ...prev, categoria: e.target.value }))}
+                      value={activeFilters.seccion}
+                      onChange={(e) => setActiveFilters(prev => ({ ...prev, seccion: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                     >
-                      <option value="">Todas las categorías</option>
-                      {categoriasUnicas.map((categoria) => (
-                        <option key={categoria} value={categoria}>
-                          {categoria}
+                      <option value="">Todas las secciones</option>
+                      {seccionesUnicas.map((seccion) => (
+                        <option key={seccion} value={seccion}>
+                          {seccion}
                         </option>
                       ))}
                     </select>
@@ -489,17 +566,17 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       <Hash className="w-4 h-4 inline mr-1" />
-                      Subcategoría
+                      Grupo
                     </label>
                     <select
-                      value={activeFilters.subCategoria}
-                      onChange={(e) => setActiveFilters(prev => ({ ...prev, subCategoria: e.target.value }))}
+                      value={activeFilters.grupo}
+                      onChange={(e) => setActiveFilters(prev => ({ ...prev, grupo: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                     >
-                      <option value="">Todas las subcategorías</option>
-                      {subCategoriasUnicas.map((subCategoria) => (
-                        <option key={subCategoria} value={subCategoria}>
-                          {subCategoria}
+                      <option value="">Todos los grupos</option>
+                      {gruposUnicos.map((grupo) => (
+                        <option key={grupo} value={grupo}>
+                          {grupo}
                         </option>
                       ))}
                     </select>
@@ -532,39 +609,39 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       <DollarSign className="w-4 h-4 inline mr-1" />
-                      Precio Min
+                      Precio Mín.
                     </label>
                     <input
                       type="number"
                       value={activeFilters.precioMin}
                       onChange={(e) => setActiveFilters(prev => ({ ...prev, precioMin: e.target.value }))}
-                      placeholder="0"
+                      placeholder="$ 0"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       <DollarSign className="w-4 h-4 inline mr-1" />
-                      Precio Max
+                      Precio Máx.
                     </label>
                     <input
                       type="number"
                       value={activeFilters.precioMax}
                       onChange={(e) => setActiveFilters(prev => ({ ...prev, precioMax: e.target.value }))}
-                      placeholder="999999"
+                      placeholder="$ 999999"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       <Warehouse className="w-4 h-4 inline mr-1" />
-                      Stock Min
+                      Stock Mín.
                     </label>
                     <input
                       type="number"

@@ -1,11 +1,12 @@
 import React from 'react';
 import { TemplateV3, DraggableComponentV3 } from '../../../../../../features/builderV3/types';
-import { Product } from '../../../../../../data/products';
+import { ProductoReal } from '../../../../../../types/product';
+import { getDynamicFieldValue, processDynamicTemplate } from '../../../../../../utils/productFieldsMap';
 
 interface BuilderTemplateRendererProps {
   template: TemplateV3;
   components: DraggableComponentV3[];
-  product?: Product; // Producto para rellenar los campos dinámicos
+  product?: ProductoReal; // Producto para rellenar los campos dinámicos
   isPreview?: boolean; // Si es vista previa, usar datos de ejemplo
   scale?: number; // Escala para la vista previa
   productChanges?: any; // Cambios del usuario desde Redux
@@ -17,7 +18,7 @@ interface BuilderTemplateRendererProps {
  */
 const getDynamicValue = (
   content: any,
-  product?: Product,
+  product?: ProductoReal,
   isPreview?: boolean,
   productChanges?: any // Cambios del usuario desde Redux
 ): string => {
@@ -49,16 +50,16 @@ const getDynamicValue = (
   };
 
   // 🚀 NUEVA FUNCIÓN: Calcula valores mapeados automáticamente (igual que en PreviewAreaV3)
-  const getAutoMappedProductValue = (product: Product, field: string): string | number | null => {
+  const getAutoMappedProductValue = (product: ProductoReal, field: string): string | number | null => {
     if (!product) return null;
     
     const now = new Date();
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     
     const fieldMapping: Record<string, any> = {
-      // Mapeo directo desde el producto
-      nombre: product.name || 'Sin nombre',
-      precioActual: product.price || 0,
+      // Mapeo directo desde el producto (usando ProductoReal)
+      nombre: product.descripcion || 'Sin nombre',
+      precioActual: product.precio || 0,
       sap: product.sku || 'N/A',
       
       // Valores calculados o por defecto
@@ -66,7 +67,7 @@ const getDynamicValue = (
       fechasDesde: now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
       fechasHasta: nextWeek.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
       origen: 'ARG',
-      precioSinImpuestos: product.price ? Math.round(product.price * 0.83) : 0
+      precioSinImpuestos: product.precio ? Math.round(product.precio * 0.83) : 0
     };
     
     const mappedValue = fieldMapping[field];
@@ -80,114 +81,14 @@ const getDynamicValue = (
     
     console.log(`🔍 Procesando dynamicTemplate: ${dynamicTemplate}`);
     
-    // 🎯 MAPEO UNIVERSAL: Extrae el ID del campo del template
-    const fieldId = dynamicTemplate.replace(/[\[\]]/g, ''); // Quitar corchetes [product_name] → product_name
-    
-    // 🚀 FUNCIÓN UNIVERSAL DE MAPEO
-    const getUniversalFieldValue = (fieldId: string, product: Product): string => {
-      // Mapeo completo de todos los campos dinámicos
-      const fieldMappings: Record<string, (p: Product) => string> = {
-        // === INFORMACIÓN BÁSICA DEL PRODUCTO ===
-        'product_name': (p) => p.name || 'Sin nombre',
-        'product_sku': (p) => p.sku || 'N/A',
-        'product_description': (p) => p.description || '',
-        'product_category': (p) => p.category || '',
-        'product_subcategory': (p) => p.subCategory || '',
-        'product_brand': (p) => p.brand || '',
-        'product_package': (p) => p.packageType || '',
-        'product_volume': (p) => p.volume || '',
-        
-        // === PRECIOS Y FINANZAS ===
-        'product_price': (p) => formatCurrency(p.price || 0),
-        'price_without_tax': (p) => formatCurrency((p.price || 0) / 1.21), // ← TU CAMPO!
-        'price_number_only': (p) => formatNumber(p.price || 0),
-        'currency_symbol': () => '$',
-        'discount_percentage': (p) => {
-          const original = (p.price || 0) * 1.3; // Simulación 30% más caro originalmente
-          const discount = Math.round(((original - (p.price || 0)) / original) * 100);
-          return discount > 0 ? `${discount}%` : '0%';
-        },
-        'installment_price': (p) => formatCurrency((p.price || 0) / 12),
-        'installment_count': () => '12',
-        
-        // === FECHAS Y PROMOCIONES ===
-        'current_date': () => formatDate(new Date()),
-        'promotion_end_date': () => {
-          const endDate = new Date();
-          endDate.setDate(endDate.getDate() + 7);
-          return formatDate(endDate);
-        },
-        'promo_validity': () => {
-          const endDate = new Date();
-          endDate.setDate(endDate.getDate() + 7);
-          return `Válido hasta ${formatDate(endDate)}`;
-        },
-        'promotion_name': () => 'Oferta Especial',
-        
-        // === FORMATOS ESPECIALES ===
-        'price_large': (p) => formatCurrency(Math.floor(p.price || 0)),
-        'price_small': (p) => formatNumber(Math.floor(p.price || 0)),
-        'product_name_upper': (p) => (p.name || '').toUpperCase(),
-        'product_brand_upper': (p) => (p.brand || '').toUpperCase(),
-        
-                 // === COMPATIBILIDAD CON CAMPOS LEGACY ===
-         'price_original': (p) => formatCurrency(p.price || 0),
-         'price_discount': (p) => {
-           const percentage = 20; // 20% descuento por defecto
-           const discountedPrice = (p.price || 0) * (1 - percentage / 100);
-           return formatCurrency(discountedPrice);
-         },
-         'price_without_taxes': (p) => formatCurrency((p.price || 0) * 0.83),
-         'promotion_start_date': () => formatDate(new Date())
-      };
-      
-      // Funciones helper para formateo
-      const formatCurrency = (price: number): string => {
-        return new Intl.NumberFormat('es-AR', {
-          style: 'currency',
-          currency: 'ARS',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-        }).format(price);
-      };
-      
-      const formatNumber = (num: number): string => {
-        return new Intl.NumberFormat('es-AR', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-        }).format(num);
-      };
-      
-      const formatDate = (date: Date): string => {
-        return date.toLocaleDateString('es-AR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        });
-      };
-      
-      // Buscar el mapeo y ejecutarlo
-      const mapper = fieldMappings[fieldId];
-      if (mapper) {
-        const result = mapper(product);
-        console.log(`✅ Campo ${fieldId} mapeado: ${result}`);
-        return result;
-      }
-      
-      // Fallback si no se encuentra el campo
-      console.warn(`⚠️ Campo dinámico no reconocido: ${fieldId}`);
-      return `[${fieldId}]`;
-    };
-    
-         // Aplicar mapeo universal
-     if (product) {
-       value = getProductValue('universal', getUniversalFieldValue(fieldId, product));
-     } else {
-       value = content?.staticValue || `[${fieldId}]`;
-     }
-     
-     // ✅ El formateo ya está incluido en getUniversalFieldValue
-     // No necesitamos aplicar formato adicional porque cada campo ya tiene su formateador
+    // 🎯 NUEVA LÓGICA: Usar sistema universal de procesamiento
+    if (product) {
+      // ✅ Usar processDynamicTemplate que maneja templates complejos
+      // Esto funciona tanto para "[product_name]" como para "Precio sin Impuesto: [price_without_tax]"
+      value = getProductValue('universal', processDynamicTemplate(dynamicTemplate, product));
+    } else {
+      value = content?.staticValue || dynamicTemplate;
+    }
     
     console.log(`✅ Valor final para ${dynamicTemplate}: ${value}`);
     return String(value);
@@ -203,29 +104,29 @@ const getDynamicValue = (
         value = getProductValue('nombre', product?.name || 'Sin nombre');
         break;
       case 'product-description':
-        value = product?.description || '';
+        value = product?.descripcion || '';
         break;
       case 'product-sku':
         value = getProductValue('sap', product?.sku || 'N/A');
         break;
       case 'product-brand':
-        value = getProductValue('origen', product?.category || 'ARG');
+        value = getProductValue('origen', product?.marcaTexto || 'ARG');
         break;
       case 'price-original':
       case 'price-final':
-        value = getProductValue('precioActual', product?.price || 0);
+        value = getProductValue('precioActual', product?.precio || 0);
         break;
       case 'price-discount':
         // Usar precio con descuento calculado desde porcentaje
         const percentage = getProductValue('porcentaje', 20);
-        const originalPrice = getProductValue('precioActual', product?.price || 0);
+        const originalPrice = getProductValue('precioActual', product?.precio || 0);
         value = originalPrice ? Math.round(originalPrice * (1 - percentage / 100)) : 0;
         break;
       case 'discount-percentage':
         value = getProductValue('porcentaje', 20);
         break;
       case 'price-without-taxes':
-        value = getProductValue('precioSinImpuestos', product?.price ? Math.round(product.price * 0.83) : 0);
+        value = getProductValue('precioSinImpuestos', product?.precio ? Math.round(product.precio * 0.83) : 0);
         break;
       case 'promotion-start-date':
         value = getProductValue('fechasDesde', new Date().toLocaleDateString('es-AR'));
@@ -280,7 +181,7 @@ const getDynamicValue = (
  */
 const getDynamicImageUrl = (
   content: any,
-  product?: Product,
+  product?: ProductoReal,
   isPreview?: boolean
 ): string => {
   // Si hay URL estática válida, usarla con cache busting para Supabase
@@ -372,7 +273,7 @@ const extractCSSStyles = (style: any): React.CSSProperties => {
  * Mapa de componentes con renderización inteligente
  * 🎯 MEJORA: Ahora considera cambios del usuario
  */
-const renderComponent = (component: DraggableComponentV3, product?: Product, isPreview?: boolean, productChanges?: any) => {
+const renderComponent = (component: DraggableComponentV3, product?: ProductoReal, isPreview?: boolean, productChanges?: any) => {
   const { type, content, style } = component;
   const cssStyle = extractCSSStyles(style);
   

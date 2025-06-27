@@ -12,10 +12,10 @@ import {
 } from '../../store/features/poster/posterSlice';
 import { RootState, AppDispatch } from '../../store';
 
-import { type Product } from '../../data/products';
+import { type ProductoReal } from '../../types/product';
 
 interface ProductSelectorModalProps {
-  products: Product[];
+  products: ProductoReal[];
   onSelectProduct: (productId: string) => void;
 }
 
@@ -55,33 +55,36 @@ export const ProductSelectorModal: React.FC<ProductSelectorModalProps> = ({
           <div className="grid grid-cols-2 gap-4">
             {products.map(product => (
               <div
-                key={product.id}
+                key={product.sku.toString()}
                 className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-colors
-                  ${selectedProductIds.includes(product.id)
+                  ${selectedProductIds.includes(product.sku.toString())
                     ? 'bg-white/20 border-white/30'
                     : 'bg-white/5 border-white/10 hover:bg-white/10'
                   }`}
-                onClick={() => onSelectProduct(product.id)}
+                onClick={() => onSelectProduct(product.sku.toString())}
               >
-                <div className="w-16 h-16 bg-white/5 rounded-lg overflow-hidden">
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="w-16 h-16 bg-white/5 rounded-lg overflow-hidden flex items-center justify-center">
+                  {/* Placeholder para imagen - ProductoReal no tiene imageUrl */}
+                  <div className="text-white/40 text-xs text-center">
+                    {product.marcaTexto || 'IMG'}
+                  </div>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-white font-medium">{product.name}</h3>
-                  <p className="text-white/60 text-sm">{product.description}</p>
-                  <p className="text-white/80 mt-1">${product.price.toLocaleString('es-AR')}</p>
+                  <h3 className="text-white font-medium">{product.descripcion}</h3>
+                  <p className="text-white/60 text-sm">
+                    {product.marcaTexto} • {product.seccion} • SKU: {product.sku}
+                  </p>
+                  <p className="text-white/80 mt-1">
+                    ${product.precio?.toLocaleString('es-AR') || 'Precio no disponible'}
+                  </p>
                 </div>
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
-                  ${selectedProductIds.includes(product.id)
+                  ${selectedProductIds.includes(product.sku.toString())
                     ? 'border-white bg-white/20'
                     : 'border-white/30'
                   }`}
                 >
-                  {selectedProductIds.includes(product.id) && (
+                  {selectedProductIds.includes(product.sku.toString()) && (
                     <div className="w-3 h-3 bg-white rounded-full" />
                   )}
                 </div>

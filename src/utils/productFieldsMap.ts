@@ -1,8 +1,9 @@
 // =====================================
-// MAPEO UNIVERSAL DE CAMPOS DINÁMICOS
+// MAPEO UNIVERSAL DE CAMPOS DINÁMICOS V2
+// COMPATIBLE CON ENTIDADES REALES DEL SISTEMA ERP
 // =====================================
 
-import { Product } from '../data/products';
+import { ProductoReal } from '../types/product';
 
 // =====================
 // DEFINICIONES DE CAMPOS
@@ -21,7 +22,7 @@ export interface DynamicField {
   description: string;
   fieldKey: string; // Para mapear al producto
   example?: string;
-  formatter?: (value: any, product?: Product) => string;
+  formatter?: (value: any, product?: ProductoReal) => string;
 }
 
 // =====================
@@ -32,15 +33,15 @@ const formatPrice = (price: number): string => {
   return new Intl.NumberFormat('es-AR', {
     style: 'currency',
     currency: 'ARS',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   }).format(price);
 };
 
 const formatPriceWithoutCurrency = (price: number): string => {
   return new Intl.NumberFormat('es-AR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   }).format(price);
 };
 
@@ -52,17 +53,13 @@ const formatDate = (date: Date): string => {
   });
 };
 
-const calculatePriceWithoutTax = (price: number): number => {
-  return price / 1.21; // Quitar IVA del 21%
-};
-
-const calculateDiscountPercentage = (originalPrice: number, currentPrice: number): number => {
-  if (originalPrice <= currentPrice) return 0;
-  return Math.round(((originalPrice - currentPrice) / originalPrice) * 100);
+const calculateDiscountPercentage = (producto: ProductoReal): number => {
+  if (!producto.precio || !producto.precioAnt) return 0;
+  return Math.round(((producto.precioAnt - producto.precio) / producto.precioAnt) * 100);
 };
 
 // =====================
-// CATEGORÍAS DE CAMPOS DINÁMICOS
+// CATEGORÍAS DE CAMPOS DINÁMICOS EXPANDIDAS
 // =====================
 
 export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
@@ -75,7 +72,7 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         id: 'product_name',
         name: 'Nombre del Producto',
         description: 'Nombre completo del producto',
-        fieldKey: 'name',
+        fieldKey: 'descripcion',
         example: 'Heladera Whirlpool No Frost 375L'
       },
       {
@@ -83,80 +80,173 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         name: 'Código SKU',
         description: 'Código único del producto',
         fieldKey: 'sku',
-        example: 'MDH-002'
+        example: '123001'
+      },
+      {
+        id: 'product_ean',
+        name: 'Código EAN',
+        description: 'Código de barras del producto',
+        fieldKey: 'ean',
+        example: '7790123456789'
       },
       {
         id: 'product_description',
         name: 'Descripción',
         description: 'Descripción detallada del producto',
-        fieldKey: 'description',
+        fieldKey: 'descripcion',
         example: 'Heladera No Frost con freezer superior'
-      },
-      {
-        id: 'product_category',
-        name: 'Categoría',
-        description: 'Categoría principal del producto',
-        fieldKey: 'category',
-        example: 'Electrodomésticos'
-      },
-      {
-        id: 'product_subcategory',
-        name: 'Subcategoría',
-        description: 'Subcategoría del producto (si existe)',
-        fieldKey: 'subCategory',
-        example: 'Aceites Comunes'
       },
       {
         id: 'product_brand',
         name: 'Marca',
         description: 'Marca del producto',
-        fieldKey: 'brand',
+        fieldKey: 'marcaTexto',
         example: 'WHIRLPOOL'
       },
       {
-        id: 'product_package',
-        name: 'Tipo de Empaque',
-        description: 'Tipo de empaque/envase',
-        fieldKey: 'packageType',
-        example: 'Botella de Plástico'
+        id: 'product_brand_upper',
+        name: 'Marca en Mayúsculas',
+        description: 'Marca del producto en mayúsculas',
+        fieldKey: 'marcaTexto',
+        example: 'WHIRLPOOL',
+        formatter: (brand: string) => brand ? brand.toUpperCase() : ''
       },
       {
-        id: 'product_volume',
-        name: 'Volumen/Tamaño',
-        description: 'Volumen o tamaño del producto',
-        fieldKey: 'volume',
-        example: '1.5 L'
+        id: 'product_unit',
+        name: 'Unidad de Medida',
+        description: 'Unidad de medida del producto',
+        fieldKey: 'umvExt',
+        example: 'Kg'
+      }
+    ]
+  },
+  {
+    id: 'product-classification',
+    name: 'Clasificación y Categorías',
+    icon: '🏷️',
+    fields: [
+      {
+        id: 'product_seccion',
+        name: 'Sección',
+        description: 'Sección del producto',
+        fieldKey: 'seccion',
+        example: 'Electrodomésticos'
+      },
+      {
+        id: 'product_grupo',
+        name: 'Grupo',
+        description: 'Grupo del producto',
+        fieldKey: 'grupo',
+        example: 'Línea Blanca'
+      },
+      {
+        id: 'product_rubro',
+        name: 'Rubro',
+        description: 'Rubro específico',
+        fieldKey: 'rubro',
+        example: 'Heladeras'
+      },
+      {
+        id: 'product_subrubro',
+        name: 'SubRubro',
+        description: 'SubRubro específico',
+        fieldKey: 'subRubro',
+        example: 'No Frost'
+      },
+      {
+        id: 'classification_complete',
+        name: 'Clasificación Completa',
+        description: 'Jerarquía completa de clasificación',
+        fieldKey: 'static',
+        example: 'Electrodomésticos > Línea Blanca > Heladeras > No Frost',
+        formatter: (_, product?: ProductoReal) => {
+          if (!product) return '';
+          const parts = [product.seccion, product.grupo, product.rubro, product.subRubro]
+            .filter(Boolean);
+          return parts.join(' > ');
+        }
       }
     ]
   },
   {
     id: 'product-pricing',
-    name: 'Precios y Finanzas',
+    name: 'Sistema de Precios',
     icon: '💰',
     fields: [
       {
         id: 'product_price',
-        name: 'Precio con IVA',
-        description: 'Precio final con IVA incluido',
-        fieldKey: 'price',
-        example: '$ 699.999,99',
+        name: 'Precio Actual',
+        description: 'Precio actual de venta',
+        fieldKey: 'precio',
+        example: '$ 699.999',
         formatter: (price: number) => formatPrice(price)
+      },
+      {
+        id: 'price_previous',
+        name: 'Precio Anterior',
+        description: 'Precio anterior (para antes/ahora)',
+        fieldKey: 'precioAnt',
+        example: '$ 849.999',
+        formatter: (price: number) => price ? formatPrice(price) : 'No disponible'
+      },
+      {
+        id: 'price_base',
+        name: 'Precio Base',
+        description: 'Precio sin impuestos nacionales',
+        fieldKey: 'basePrice',
+        example: '$ 578.511',
+        formatter: (price: number) => price ? formatPrice(price) : 'No disponible'
       },
       {
         id: 'price_without_tax',
         name: 'Precio sin IVA',
-        description: 'Precio sin impuestos (IVA)',
-        fieldKey: 'price',
-        example: '$ 578.512,39',
-        formatter: (price: number) => formatPrice(calculatePriceWithoutTax(price))
+        description: 'Precio sin IVA (21%)',
+        fieldKey: 'precio',
+        example: '$ 578.512',
+        formatter: (price: number) => price ? formatPrice(price / 1.21) : 'No disponible'
       },
       {
-        id: 'price_number_only',
-        name: 'Precio Solo Números',
-        description: 'Precio sin símbolo de moneda',
-        fieldKey: 'price',
-        example: '699.999,99',
-        formatter: (price: number) => formatPriceWithoutCurrency(price)
+        id: 'price_unit_alt',
+        name: 'Precio Unidad Alternativa',
+        description: 'Precio por unidad secundaria',
+        fieldKey: 'ppum',
+        example: '$ 866/mL',
+        formatter: (price: number, product?: ProductoReal) => {
+          if (!price || !product?.unidadPpumExt) return 'No disponible';
+          return `${formatPrice(price)}/${product.unidadPpumExt}`;
+        }
+      },
+      {
+        id: 'discount_percentage',
+        name: 'Porcentaje de Descuento',
+        description: 'Descuento real calculado',
+        fieldKey: 'static',
+        example: '18%',
+        formatter: (_, product?: ProductoReal) => {
+          if (!product) return '0%';
+          const discount = calculateDiscountPercentage(product);
+          return discount > 0 ? `${discount}%` : 'Sin descuento';
+        }
+      },
+      {
+        id: 'discount_amount',
+        name: 'Ahorro en Pesos',
+        description: 'Cantidad ahorrada en pesos',
+        fieldKey: 'static',
+        example: '$ 150.000',
+        formatter: (_, product?: ProductoReal) => {
+          if (!product?.precio || !product?.precioAnt) return 'Sin descuento';
+          const ahorro = product.precioAnt - product.precio;
+          return ahorro > 0 ? formatPrice(ahorro) : 'Sin descuento';
+        }
+      },
+      {
+        id: 'installment_price',
+        name: 'Precio en Cuotas',
+        description: 'Precio mensual en cuotas',
+        fieldKey: 'precio',
+        example: '$ 58.333',
+        formatter: (price: number) => price ? formatPrice(price / 12) : 'No disponible'
       },
       {
         id: 'currency_symbol',
@@ -165,35 +255,62 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         fieldKey: 'static',
         example: '$',
         formatter: () => '$'
+      }
+    ]
+  },
+  {
+    id: 'product-origin',
+    name: 'Origen y Ubicación',
+    icon: '🌍',
+    fields: [
+      {
+        id: 'product_origin',
+        name: 'País de Origen',
+        description: 'País de origen del producto',
+        fieldKey: 'paisTexto',
+        example: 'Argentina'
       },
       {
-        id: 'discount_percentage',
-        name: 'Porcentaje de Descuento',
-        description: 'Porcentaje de descuento aplicado',
-        fieldKey: 'price',
-        example: '25%',
-        formatter: (currentPrice: number, product?: Product) => {
-          // En el futuro podríamos tener precio original vs actual
-          const originalPrice = currentPrice * 1.3; // Simulación
-          const discount = calculateDiscountPercentage(originalPrice, currentPrice);
-          return discount > 0 ? `${discount}%` : '0%';
+        id: 'product_origin_code',
+        name: 'Código de Origen',
+        description: 'Código del país de origen',
+        fieldKey: 'origen',
+        example: 'ARG'
+      },
+      {
+        id: 'store_code',
+        name: 'Código de Tienda',
+        description: 'Código de la tienda',
+        fieldKey: 'tienda',
+        example: 'E000'
+      }
+    ]
+  },
+  {
+    id: 'product-stock',
+    name: 'Stock e Inventario',
+    icon: '📊',
+    fields: [
+      {
+        id: 'stock_available',
+        name: 'Stock Disponible',
+        description: 'Cantidad en stock',
+        fieldKey: 'stockDisponible',
+        example: '15 unidades',
+        formatter: (stock: number) => stock ? `${stock} unidades` : 'Sin stock'
+      },
+      {
+        id: 'stock_status',
+        name: 'Estado de Stock',
+        description: 'Estado del inventario',
+        fieldKey: 'stockDisponible',
+        example: 'Disponible',
+        formatter: (stock: number) => {
+          if (!stock) return 'Sin stock';
+          if (stock < 5) return 'Últimas unidades';
+          if (stock < 20) return 'Stock limitado';
+          return 'Disponible';
         }
-      },
-      {
-        id: 'installment_price',
-        name: 'Precio en Cuotas',
-        description: 'Precio mensual en cuotas',
-        fieldKey: 'price',
-        example: '$ 58.333,33',
-        formatter: (price: number) => formatPrice(price / 12) // 12 cuotas por defecto
-      },
-      {
-        id: 'installment_count',
-        name: 'Cantidad de Cuotas',
-        description: 'Número de cuotas disponibles',
-        fieldKey: 'static',
-        example: '12',
-        formatter: () => '12' // Por defecto 12 cuotas
       }
     ]
   },
@@ -218,7 +335,7 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         example: '31/01/2025',
         formatter: () => {
           const endDate = new Date();
-          endDate.setDate(endDate.getDate() + 7); // 7 días desde hoy
+          endDate.setDate(endDate.getDate() + 7);
           return formatDate(endDate);
         }
       },
@@ -240,7 +357,7 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         description: 'Nombre de la promoción activa',
         fieldKey: 'static',
         example: 'Black Friday',
-        formatter: () => 'Oferta Especial' // Por defecto
+        formatter: () => 'Oferta Especial'
       }
     ]
   },
@@ -253,33 +370,36 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         id: 'price_large',
         name: 'Precio Grande',
         description: 'Precio con formato destacado',
-        fieldKey: 'price',
+        fieldKey: 'precio',
         example: '$ 699.999',
-        formatter: (price: number) => formatPrice(Math.floor(price))
+        formatter: (price: number) => price ? formatPrice(Math.floor(price)) : 'No disponible'
       },
       {
         id: 'price_small',
         name: 'Precio Pequeño',
         description: 'Precio con formato reducido',
-        fieldKey: 'price',
+        fieldKey: 'precio',
         example: '699.999',
-        formatter: (price: number) => formatPriceWithoutCurrency(Math.floor(price))
+        formatter: (price: number) => price ? formatPriceWithoutCurrency(Math.floor(price)) : 'No disponible'
       },
       {
         id: 'product_name_upper',
         name: 'Nombre en Mayúsculas',
         description: 'Nombre del producto en mayúsculas',
-        fieldKey: 'name',
+        fieldKey: 'descripcion',
         example: 'HELADERA WHIRLPOOL NO FROST 375L',
-        formatter: (name: string) => name.toUpperCase()
+        formatter: (name: string) => name ? name.toUpperCase() : ''
       },
       {
-        id: 'product_brand_upper',
-        name: 'Marca en Mayúsculas',
-        description: 'Marca en mayúsculas',
-        fieldKey: 'brand',
-        example: 'WHIRLPOOL',
-        formatter: (brand: string) => brand ? brand.toUpperCase() : ''
+        id: 'ean_formatted',
+        name: 'EAN Formateado',
+        description: 'Código EAN con formato',
+        fieldKey: 'ean',
+        example: '7790-123-456-789',
+        formatter: (ean: number) => {
+          const eanStr = ean.toString();
+          return eanStr.replace(/(\d{4})(\d{3})(\d{3})(\d{3})/, '$1-$2-$3-$4');
+        }
       }
     ]
   }
@@ -302,11 +422,11 @@ export const ALL_DYNAMIC_FIELDS = DYNAMIC_FIELD_CATEGORIES.reduce((acc, category
 /**
  * Obtiene el valor de un campo dinámico para un producto específico
  */
-export const getDynamicFieldValue = (fieldId: string, product: Product): string => {
+export const getDynamicFieldValue = (fieldId: string, product: ProductoReal): string => {
   const field = ALL_DYNAMIC_FIELDS[fieldId];
   if (!field) {
     console.warn(`⚠️ Campo dinámico no encontrado: ${fieldId}`);
-    return `[${fieldId}]`; // Fallback
+    return `[${fieldId}]`;
   }
 
   try {
@@ -351,7 +471,7 @@ export const extractDynamicFields = (dynamicTemplate: string): string[] => {
 /**
  * Procesa un template reemplazando todos los campos dinámicos
  */
-export const processDynamicTemplate = (dynamicTemplate: string, product: Product): string => {
+export const processDynamicTemplate = (dynamicTemplate: string, product: ProductoReal): string => {
   if (!dynamicTemplate || !product) {
     return dynamicTemplate || '';
   }
@@ -380,14 +500,14 @@ export const LEGACY_FIELD_MAPPING: Record<string, string> = {
   'product_price': 'product_price', 
   'product_sku': 'product_sku',
   'product_description': 'product_description',
-  'product_category': 'product_category',
+  'product_category': 'product_seccion',
   'product_brand': 'product_brand'
 };
 
 /**
  * Obtiene valor usando mapeo legacy (para compatibilidad)
  */
-export const getLegacyFieldValue = (fieldName: string, product: Product): string => {
+export const getLegacyFieldValue = (fieldName: string, product: ProductoReal): string => {
   const modernFieldId = LEGACY_FIELD_MAPPING[fieldName] || fieldName;
   return getDynamicFieldValue(modernFieldId, product);
 }; 

@@ -31,7 +31,9 @@ import {
   Square,
   FileImage,
   QrCode,
-  Upload
+  Upload,
+  Package,
+  MapPin
 } from 'lucide-react';
 import { BuilderStateV3, DraggableComponentV3, PositionV3, SizeV3 } from '../types';
 import { processDynamicContent, defaultMockData, getAvailableFields } from '../../../utils/dynamicContentProcessor';
@@ -78,22 +80,47 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
   }, [activeTab, onTabChange]);
 
   // =====================
-  // DYNAMIC DATA OPTIONS (usando procesador compartido)
+  // DYNAMIC DATA OPTIONS (FILTRADOS SOLO PARA PRODUCTOS)
   // =====================
 
   const availableFields = getAvailableFields();
   
-  const sapFieldOptions = availableFields.slice(0, 8).map(field => ({
+  // 🎯 SOLO CAMPOS DE PRODUCTOS (primeras 5 categorías)
+  // Excluye fechas/promociones que se usan en la cartelera
+  const productFieldOptions = availableFields.filter(field => {
+    const productRelatedFields = [
+      // Información básica del producto
+      'product_name', 'product_sku', 'product_ean', 'product_description', 
+      'product_brand', 'product_brand_upper', 'product_unit',
+      
+      // Clasificación y categorías  
+      'product_seccion', 'product_grupo', 'product_rubro', 'product_subrubro',
+      'classification_complete',
+      
+      // Sistema de precios
+      'product_price', 'price_previous', 'price_base', 'price_without_tax',
+      'price_unit_alt', 'discount_percentage', 'discount_amount', 
+      'installment_price', 'currency_symbol',
+      
+      // Origen y ubicación
+      'product_origin', 'product_origin_code', 'store_code',
+      
+      // Stock e inventario
+      'stock_available', 'stock_status',
+      
+      // Formato y estilos básicos
+      'price_large', 'price_small', 'product_name_upper', 'ean_formatted'
+    ];
+    
+    return productRelatedFields.includes(field.value);
+  }).map(field => ({
     ...field,
-    icon: field.value.includes('price') ? DollarSign : 
-          field.value.includes('sku') ? Hash :
-          field.value.includes('description') ? Type : Tag
-  }));
-
-  const promotionFieldOptions = availableFields.slice(8).map(field => ({
-    ...field,
-    icon: field.value.includes('price') || field.value.includes('amount') ? DollarSign :
-          field.value.includes('date') ? Calendar : Tag
+    icon: field.value.includes('price') || field.value.includes('discount') ? DollarSign : 
+          field.value.includes('sku') || field.value.includes('ean') ? Hash :
+          field.value.includes('stock') ? Package :
+          field.value.includes('classification') || field.value.includes('seccion') ? Tag :
+          field.value.includes('brand') || field.value.includes('name') ? Type : 
+          field.value.includes('origin') || field.value.includes('store') ? MapPin : Tag
   }));
 
   // =====================
@@ -956,11 +983,14 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
               />
             </div>
 
-            {/* Selector de campos dinámicos */}
+            {/* Selector de campos dinámicos SOLO PRODUCTOS */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-2">Insertar Campos SAP</label>
-              <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2">
-                {sapFieldOptions.map(option => (
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                🎯 Insertar Campos de Producto
+                <span className="text-blue-600 ml-1">(Para cartelera se agregan automáticamente)</span>
+              </label>
+              <div className="grid grid-cols-1 gap-1 max-h-48 overflow-y-auto border border-gray-200 rounded-md p-2">
+                {productFieldOptions.map((option: any) => (
                   <button
                     key={option.value}
                     onClick={() => {
@@ -975,26 +1005,9 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
                   </button>
                 ))}
               </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-2">Insertar Campos de Promoción</label>
-              <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2">
-                {promotionFieldOptions.map(option => (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      const currentValue = (selectedComponent?.content as any)?.dynamicTemplate || '';
-                      handleContentChange('dynamicTemplate', currentValue + `[${option.value}]`);
-                    }}
-                    className="text-left px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded flex items-center space-x-2"
-                  >
-                    <option.icon className="w-3 h-3" />
-                    <span>[{option.value}]</span>
-                    <span className="text-gray-500">({option.example})</span>
-                  </button>
-                ))}
-              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                💡 <strong>Solo campos de productos</strong> - Al usar la plantilla en cartelera, estos campos se llenan automáticamente con el producto seleccionado
+              </p>
             </div>
           </div>
         </div>
@@ -1095,23 +1108,25 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
         <div className="space-y-3">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-gray-700">Campos SAP</span>
+              <span className="text-xs font-medium text-gray-700">🎯 Campos de Producto</span>
               <button className="text-xs text-blue-600 hover:text-blue-800">Actualizar</button>
             </div>
             <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
-              <p>{sapFieldOptions.length} campos disponibles</p>
-              <p className="mt-1">Última actualización: Nunca</p>
+              <p>{productFieldOptions.length} campos disponibles</p>
+              <p className="mt-1">✅ Solo campos necesarios para plantillas</p>
+              <p className="mt-1 text-blue-700">🚀 Se mapean automáticamente en cartelera</p>
             </div>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-gray-700">Campos de Promoción</span>
-              <button className="text-xs text-blue-600 hover:text-blue-800">Actualizar</button>
+          <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
+            <div className="flex items-center space-x-2 mb-2">
+              <span className="text-yellow-600">💡</span>
+              <span className="text-xs font-medium text-yellow-700">Flujo Optimizado</span>
             </div>
-            <div className="text-xs text-gray-500 bg-green-50 p-2 rounded">
-              <p>{promotionFieldOptions.length} campos disponibles</p>
-              <p className="mt-1">Última actualización: Nunca</p>
+            <div className="text-xs text-yellow-700 space-y-1">
+              <p><strong>Builder:</strong> Solo campos de productos</p>
+              <p><strong>Cartelera:</strong> Mapeo automático al seleccionar producto</p>
+              <p><strong>Resultado:</strong> Datos reales sin configuración extra</p>
             </div>
           </div>
         </div>

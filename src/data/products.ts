@@ -1,429 +1,395 @@
-export interface Product {
-  id: string;
-  sku: string;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  category: string;
-  // Campos opcionales específicos
-  subCategory?: string;
-  brand?: string;
-  image?: string;
-  packageType?: string;
-  volume?: string;
-}
+import { ProductoReal } from '../types/product';
 
-export const products: Product[] = [
-  // Productos MDH (Easy) existentes
+// =====================================
+// PRODUCTOS REALES DEL SISTEMA ERP
+// =====================================
+
+export const productos: ProductoReal[] = [
+  // SECCIÓN ELECTRODOMÉSTICOS (12)
   {
-    id: 'MDH-001',
-    sku: 'MDH-001',
-    name: 'Aire Acondicionado Split Surrey 3000FC',
-    price: 449999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1631385309847-960f92ec3585',
-    category: 'MDH',
-    description: 'Split Inverter Frío/Calor 3000 Frigorías'
-  },
-  {
-    id: 'MDH-002',
-    sku: 'MDH-002',
-    name: 'Heladera Whirlpool No Frost 375L',
-    price: 699999.99,
+    id: 'WHIR-001',
+    tienda: 'E000',
+    sku: 123001,
+    ean: 7790123456789,
+    eanPrincipal: true,
+    descripcion: 'Heladera Whirlpool No Frost 375L',
+    umvExt: 'Unidad',
+    precio: 699999,
+    precioAnt: 849999,
+    basePrice: 578511,
+    ppum: 699999,
+    unidadPpumExt: 'Unidad',
+    seccion: 'Electrodomésticos',
+    grupo: 'Línea Blanca',
+    rubro: 'Heladeras',
+    subRubro: 'No Frost',
+    origen: 'ARG',
+    paisTexto: 'Argentina',
+    marcaTexto: 'WHIRLPOOL',
+    stockDisponible: 15,
     imageUrl: 'https://images.unsplash.com/photo-1584568694244-14fbdf83bd30',
-    category: 'MDH',
-    description: 'Heladera No Frost con freezer superior'
+    category: 'Electrodomésticos',
+    subCategory: 'Heladeras',
+    brand: 'WHIRLPOOL',
+    packageType: 'Unidad',
+    volume: '375L',
+    name: 'Heladera Whirlpool No Frost 375L'
   },
   {
-    id: 'MDH-003',
-    sku: 'MDH-003',
-    name: 'Lavarropas Drean Next 8.14',
-    price: 259999.99,
+    id: 'DREAN-001',
+    tienda: 'E000',
+    sku: 123002,
+    ean: 7790234567890,
+    eanPrincipal: true,
+    descripcion: 'Lavarropas Drean Next 8.14 Kg',
+    umvExt: 'Unidad',
+    precio: 259999,
+    precioAnt: 299999,
+    basePrice: 214875,
+    ppum: 259999,
+    unidadPpumExt: 'Unidad',
+    seccion: 'Electrodomésticos',
+    grupo: 'Línea Blanca',
+    rubro: 'Lavarropas',
+    subRubro: 'Automático',
+    origen: 'ARG',
+    paisTexto: 'Argentina',
+    marcaTexto: 'DREAN',
+    stockDisponible: 8,
     imageUrl: 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1',
-    category: 'MDH',
-    description: 'Lavarropas automático de 8kg con 1400RPM'
+    category: 'Electrodomésticos',
+    subCategory: 'Lavarropas',
+    brand: 'DREAN',
+    packageType: 'Unidad',
+    volume: '8Kg',
+    name: 'Lavarropas Drean Next 8.14 Kg'
   },
   {
-    id: 'MDH-004',
-    sku: 'MDH-004',
-    name: 'Smart TV Samsung 55" 4K',
-    price: 349999.99,
+    id: 'SAMS-001',
+    tienda: 'E000',
+    sku: 123003,
+    ean: 7790345678901,
+    eanPrincipal: true,
+    descripcion: 'Smart TV Samsung 55" 4K UHD',
+    umvExt: 'Unidad',
+    precio: 349999,
+    precioAnt: 399999,
+    basePrice: 289255,
+    ppum: 349999,
+    unidadPpumExt: 'Unidad',
+    seccion: 'Tecnología',
+    grupo: 'Audio y Video',
+    rubro: 'Televisores',
+    subRubro: 'Smart TV',
+    origen: 'KOR',
+    paisTexto: 'Corea del Sur',
+    marcaTexto: 'SAMSUNG',
+    stockDisponible: 12,
     imageUrl: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1',
-    category: 'MDH',
-    description: 'Smart TV LED 55" UHD 4K'
-  },
-  {
-    id: 'MDH-005',
-    sku: 'MDH-005',
-    name: 'Microondas BGH 28L',
-    price: 89999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1585659722983-3a675dabf23d',
-    category: 'MDH',
-    description: 'Microondas digital 28L con grill'
-  },
-  {
-    id: 'MDH-006',
-    sku: 'MDH-006',
-    name: 'Aspiradora Robot Gadnic',
-    price: 79999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1563874257547-d19fbb71b46c',
-    category: 'MDH',
-    description: 'Aspiradora Robot con control remoto'
-  },
-  {
-    id: 'MDH-007',
-    sku: 'MDH-007',
-    name: 'Ventilador de Pie Liliana',
-    price: 29999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1575435349939-0ffbdad70905',
-    category: 'MDH',
-    description: 'Ventilador de pie 20" con control remoto'
-  },
-  {
-    id: 'MDH-008',
-    sku: 'MDH-008',
-    name: 'Cafetera Oster',
-    price: 49999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1585515320310-259814833e62',
-    category: 'MDH',
-    description: 'Cafetera automática con molinillo'
-  },
-  {
-    id: 'TEC-001',
-    sku: 'TEC-001',
-    name: 'MacBook Pro M3 Pro 14"',
-    price: 1299999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8',
     category: 'Tecnología',
-    description: 'Laptop Apple M3 Pro 14 pulgadas'
+    subCategory: 'Televisores',
+    brand: 'SAMSUNG',
+    packageType: 'Unidad',
+    volume: '55"',
+    name: 'Smart TV Samsung 55" 4K UHD'
   },
+
+  // SECCIÓN BEBIDAS (2)
   {
-    id: 'TEC-002',
-    sku: 'TEC-002',
-    name: 'iPad Pro 12.9"',
-    price: 799999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0',
-    category: 'Tecnología',
-    description: 'iPad Pro 12.9" M2 256GB'
-  },
-  {
-    id: 'TEC-003',
-    sku: 'TEC-003',
-    name: 'iPhone 15 Pro Max',
-    price: 999999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5',
-    category: 'Tecnología',
-    description: 'iPhone 15 Pro Max 256GB'
-  },
-  {
-    id: 'TEC-004',
-    sku: 'TEC-004',
-    name: 'AirPods Pro 2',
-    price: 199999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1588423771073-b8903fbb85b5',
-    category: 'Tecnología',
-    description: 'AirPods Pro 2nd Generation'
-  },
-  {
-    id: 'TEC-005',
-    sku: 'TEC-005',
-    name: 'Apple Watch Series 9',
-    price: 299999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d',
-    category: 'Tecnología',
-    description: 'Apple Watch Series 9 GPS 45mm'
-  },
-  {
-    id: 'TEC-006',
-    sku: 'TEC-006',
-    name: 'Samsung Galaxy S23 Ultra',
-    price: 899999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf',
-    category: 'Tecnología',
-    description: 'Smartphone Samsung 256GB'
-  },
-  {
-    id: 'TEC-007',
-    sku: 'TEC-007',
-    name: 'Notebook HP Pavilion',
-    price: 699999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed',
-    category: 'Tecnología',
-    description: 'Laptop HP 15" Ryzen 7'
-  },
-  {
-    id: 'BEB-001',
-    sku: 'BEB-001',
-    name: 'Coca Cola Pack x6',
-    price: 4999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1554866585-cd94860890b7',
-    category: 'Bebidas',
-    description: 'Pack x6 botellas de 2.25L'
-  },
-  {
-    id: 'BEB-002',
-    sku: 'BEB-002',
-    name: 'Pepsi Pack x6',
-    price: 4799.99,
-    imageUrl: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e',
-    category: 'Bebidas',
-    description: 'Pack x6 botellas de 2.25L'
-  },
-  {
-    id: 'BEB-003',
-    sku: 'BEB-003',
-    name: 'Sprite Pack x6',
-    price: 4599.99,
-    imageUrl: 'https://images.unsplash.com/photo-1625772299848-391b6a87d7b3',
-    category: 'Bebidas',
-    description: 'Pack x6 botellas de 2.25L'
-  },
-  {
-    id: 'BEB-004',
-    sku: 'BEB-004',
-    name: 'Fanta Pack x6',
-    price: 4599.99,
-    imageUrl: 'https://images.unsplash.com/photo-1624517452488-04869289c4ca',
-    category: 'Bebidas',
-    description: 'Pack x6 botellas de 2.25L'
-  },
-  {
-    id: 'BEB-005',
-    sku: 'BEB-005',
-    name: 'Cerveza Quilmes Pack x6',
-    price: 3999.99,
-    imageUrl: 'https://images.unsplash.com/photo-1608270586620-248524c67de9',
-    category: 'Bebidas',
-    description: 'Pack x6 latas de 473ml'
-  },
-  {
-    id: 'BEB-006',
-    sku: 'BEB-006',
-    name: 'Coca-cola Zero',
-    price: 1299.99,
+    id: 'COCA-001',
+    tienda: 'E000',
+    sku: 234001,
+    ean: 7790895000157,
+    eanPrincipal: true,
+    descripcion: 'Coca Cola Sabor Original',
+    umvExt: 'L',
+    precio: 1299,
+    precioAnt: 1499,
+    basePrice: 1074,
+    ppum: 866,
+    unidadPpumExt: 'mL',
+    seccion: 'Bebidas',
+    grupo: 'Gaseosas',
+    rubro: 'Cola',
+    subRubro: 'Original',
+    origen: 'ARG',
+    paisTexto: 'Argentina',
+    marcaTexto: 'COCA COLA',
+    stockDisponible: 150,
     imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
     category: 'Bebidas',
     subCategory: 'Gaseosas',
     brand: 'COCA COLA',
     packageType: 'Botella de Plástico',
-    volume: '2.25 L',
-    description: 'Gaseosa cola zero sin azúcar'
+    volume: '1.5 L',
+    name: 'Coca Cola Sabor Original'
   },
   {
-    id: 'BEB-007',
-    sku: 'BEB-007',
-    name: 'Coca-cola Zero',
-    price: 899.99,
+    id: 'COCA-002',
+    tienda: 'E000',
+    sku: 234002,
+    ean: 7790895000164,
+    eanPrincipal: true,
+    descripcion: 'Coca Cola Zero',
+    umvExt: 'L',
+    precio: 1199,
+    precioAnt: 1399,
+    basePrice: 991,
+    ppum: 799,
+    unidadPpumExt: 'mL',
+    seccion: 'Bebidas',
+    grupo: 'Gaseosas',
+    rubro: 'Cola',
+    subRubro: 'Zero',
+    origen: 'ARG',
+    paisTexto: 'Argentina',
+    marcaTexto: 'COCA COLA',
+    stockDisponible: 200,
     imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
     category: 'Bebidas',
     subCategory: 'Gaseosas',
     brand: 'COCA COLA',
     packageType: 'Botella de Plástico',
-    volume: '500 Ml',
-    description: 'Gaseosa cola zero sin azúcar'
+    volume: '1.5 L',
+    name: 'Coca Cola Zero'
   },
+
+  // SECCIÓN ALMACÉN (1)
   {
-    id: 'BEB-008',
-    sku: 'BEB-008',
-    name: 'Coca-cola Sabor Liviano',
-    price: 1199.99,
-    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
-    category: 'Bebidas',
-    subCategory: 'Gaseosas',
-    brand: 'COCA COLA',
-    packageType: 'Botella de Plástico',
-    volume: '1.75 L',
-    description: 'Gaseosa cola sabor liviano'
-  },
-  {
-    id: 'BEB-009',
-    sku: 'BEB-009',
-    name: 'Coca-cola Sabor Liviano',
-    price: 1299.99,
-    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
-    category: 'Bebidas',
-    subCategory: 'Gaseosas',
-    brand: 'COCA COLA',
-    packageType: 'Botella de Plástico',
-    volume: '2.25 L',
-    description: 'Gaseosa cola sabor liviano'
-  },
-  {
-    id: 'BEB-010',
-    sku: 'BEB-010',
-    name: 'Coca-cola Zero',
-    price: 699.99,
-    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
-    category: 'Bebidas',
-    subCategory: 'Gaseosas',
-    brand: 'COCA COLA',
-    packageType: 'Lata',
-    volume: '354 Ml',
-    description: 'Gaseosa cola zero sin azúcar'
-  },
-  {
-    id: 'BEB-011',
-    sku: 'BEB-011',
-    name: 'Coca-cola Sabor Liviano',
-    price: 899.99,
-    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
-    category: 'Bebidas',
-    subCategory: 'Gaseosas',
-    brand: 'COCA COLA',
-    packageType: 'Botella de Plástico',
-    volume: '500 Ml',
-    description: 'Gaseosa cola sabor liviano'
-  },
-  {
-    id: 'BEB-012',
-    sku: 'BEB-012',
-    name: 'Coca-cola Sabor Original',
-    price: 1099.99,
-    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
-    category: 'Bebidas',
-    subCategory: 'Gaseosas',
-    brand: 'COCA COLA',
-    packageType: 'Botella de Plástico',
-    volume: '1.25 L',
-    description: 'Gaseosa cola sabor original'
-  },
-  {
-    id: 'BEB-013',
-    sku: 'BEB-013',
-    name: 'Coca-cola Sabor Original',
-    price: 599.99,
-    imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97',
-    category: 'Bebidas',
-    subCategory: 'Gaseosas',
-    brand: 'COCA COLA',
-    packageType: 'Botella de Vidrio',
-    volume: '237 Ml',
-    description: 'Gaseosa cola sabor original retornable'
-  },
-  // Nuevos productos de Aceites
-  {
-    id: 'aceite-natura-1.5',
-    sku: 'ACE-NAT-1.5',
-    name: 'Aceite De Girasol Natura',
+    id: 'NATURA-001',
+    tienda: 'E000',
+    sku: 345001,
+    ean: 7791234567123,
+    eanPrincipal: true,
+    descripcion: 'Aceite De Girasol Natura',
+    umvExt: 'L',
+    precio: 1599,
+    precioAnt: 1799,
+    basePrice: 1321,
+    ppum: 1066,
+    unidadPpumExt: 'mL',
+    seccion: 'Almacén',
+    grupo: 'Aceites',
+    rubro: 'Aceites Comunes',
+    subRubro: 'Girasol',
+    origen: 'ARG',
+    paisTexto: 'Argentina',
+    marcaTexto: 'NATURA',
+    stockDisponible: 85,
+    imageUrl: '/products/aceite-natura.jpg',
     category: 'Almacén',
     subCategory: 'Aceites Comunes',
     brand: 'NATURA',
-    price: 1599.99,
-    image: '/products/aceite-natura.jpg',
-    imageUrl: '/products/aceite-natura.jpg',
     packageType: 'Botella de Plástico',
     volume: '1.5 L',
-    description: 'Aceite de girasol 1.5L'
+    name: 'Aceite De Girasol Natura'
   },
   {
-    id: 'aceite-canuelas-1.5',
-    sku: 'ACE-CAN-1.5',
-    name: 'Aceite Cañuelas De Girasol',
+    id: 'CANUELAS-001',
+    tienda: 'E000',
+    sku: 345002,
+    ean: 7791234567130,
+    eanPrincipal: true,
+    descripcion: 'Aceite Cañuelas De Girasol',
+    umvExt: 'L',
+    precio: 1499,
+    precioAnt: 1699,
+    basePrice: 1239,
+    ppum: 999,
+    unidadPpumExt: 'mL',
+    seccion: 'Almacén',
+    grupo: 'Aceites',
+    rubro: 'Aceites Comunes',
+    subRubro: 'Girasol',
+    origen: 'ARG',
+    paisTexto: 'Argentina',
+    marcaTexto: 'CAÑUELAS',
+    stockDisponible: 120,
+    imageUrl: '/products/aceite-canuelas.jpg',
     category: 'Almacén',
     subCategory: 'Aceites Comunes',
     brand: 'CAÑUELAS',
-    price: 1499.99,
-    image: '/products/aceite-canuelas.jpg',
-    imageUrl: '/products/aceite-canuelas.jpg',
     packageType: 'Botella de Plástico',
     volume: '1.5 L',
-    description: 'Aceite de girasol 1.5L'
+    name: 'Aceite Cañuelas De Girasol'
+  },
+
+  // SECCIÓN FERRETERÍA (13)
+  {
+    id: 'TALADRO-001',
+    tienda: 'E000',
+    sku: 456001,
+    ean: 7792345678901,
+    eanPrincipal: true,
+    descripcion: 'Taladro Percutor Black & Decker 600W',
+    umvExt: 'Unidad',
+    precio: 35999,
+    precioAnt: 42999,
+    basePrice: 29751,
+    ppum: 35999,
+    unidadPpumExt: 'Unidad',
+    seccion: 'Ferretería',
+    grupo: 'Herramientas Eléctricas',
+    rubro: 'Taladros',
+    subRubro: 'Percutor',
+    origen: 'CHN',
+    paisTexto: 'China',
+    marcaTexto: 'BLACK & DECKER',
+    stockDisponible: 25,
+    imageUrl: 'https://images.unsplash.com/photo-1504148455328-c376907d081c',
+    category: 'Ferretería',
+    subCategory: 'Herramientas Eléctricas',
+    brand: 'BLACK & DECKER',
+    packageType: 'Caja',
+    volume: '600W',
+    name: 'Taladro Percutor Black & Decker 600W'
   },
   {
-    id: 'aceite-cocinero-1.5',
-    sku: 'ACE-COC-1.5',
-    name: 'Aceite De Girasol Cocinero',
-    category: 'Almacén',
-    subCategory: 'Aceites Comunes',
-    brand: 'COCINERO',
-    price: 1699.99,
-    image: '/products/aceite-cocinero.jpg',
-    imageUrl: '/products/aceite-cocinero.jpg',
-    packageType: 'Botella de Plástico',
-    volume: '1.5 L',
-    description: 'Aceite de girasol 1.5L'
+    id: 'DESTORNILLADOR-001',
+    tienda: 'E000',
+    sku: 456002,
+    ean: 7792345678918,
+    eanPrincipal: true,
+    descripcion: 'Destornillador Phillips Set x6',
+    umvExt: 'Set',
+    precio: 8999,
+    precioAnt: 10999,
+    basePrice: 7437,
+    ppum: 1500,
+    unidadPpumExt: 'Unidad',
+    seccion: 'Ferretería',
+    grupo: 'Herramientas Manuales',
+    rubro: 'Destornilladores',
+    subRubro: 'Phillips',
+    origen: 'ARG',
+    paisTexto: 'Argentina',
+    marcaTexto: 'BAHCO',
+    stockDisponible: 45,
+    imageUrl: 'https://images.unsplash.com/photo-1609205348077-7509c6a8b5c3',
+    category: 'Ferretería',
+    subCategory: 'Herramientas Manuales',
+    brand: 'BAHCO',
+    packageType: 'Set',
+    volume: '6 piezas',
+    name: 'Destornillador Phillips Set x6'
   },
+
+  // SECCIÓN CONSTRUCCIÓN (14)
   {
-    id: 'aceite-oliva-cocinero-500',
-    sku: 'ACE-OLI-COC-500',
-    name: 'Aceite Oliva Extra Virgen Intenso Cocinero',
-    category: 'Almacén',
-    subCategory: 'Aceites Especiales',
-    brand: 'COCINERO',
-    price: 2499.99,
-    image: '/products/aceite-oliva-cocinero.jpg',
-    imageUrl: '/products/aceite-oliva-cocinero.jpg',
-    packageType: 'Botella de Vidrio',
-    volume: '500 Ml',
-    description: 'Aceite de oliva extra virgen 500ml'
+    id: 'TABLON-001',
+    tienda: 'E000',
+    sku: 567001,
+    ean: 7793456789012,
+    eanPrincipal: true,
+    descripcion: 'Tablón Pino 2x8x3.20m',
+    umvExt: 'Metro',
+    precio: 4599,
+    precioAnt: 5299,
+    basePrice: 3801,
+    ppum: 1437,
+    unidadPpumExt: 'Metro lineal',
+    seccion: 'Construcción',
+    grupo: 'Madera',
+    rubro: 'Tablones',
+    subRubro: 'Pino',
+    origen: 'ARG',
+    paisTexto: 'Argentina',
+    marcaTexto: 'MADERAS DEL SUR',
+    stockDisponible: 180,
+    imageUrl: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7',
+    category: 'Construcción',
+    subCategory: 'Madera',
+    brand: 'MADERAS DEL SUR',
+    packageType: 'Unidad',
+    volume: '2x8x3.20m',
+    name: 'Tablón Pino 2x8x3.20m'
   },
+
+  // SECCIÓN LIMPIEZA (3)
   {
-    id: 'aceite-oliva-nucete-2000',
-    sku: 'ACE-OLI-NUC-2000',
-    name: 'Aceite De Oliva Extra Virgen Nucete',
-    category: 'Almacén',
-    subCategory: 'Aceites Especiales',
-    brand: 'NUCETE',
-    price: 8999.99,
-    image: '/products/aceite-oliva-nucete.jpg',
-    imageUrl: '/products/aceite-oliva-nucete.jpg',
-    packageType: 'Botella de Vidrio',
-    volume: '2000 Ml',
-    description: 'Aceite de oliva extra virgen 2L'
+    id: 'CIF-001',
+    tienda: 'E000',
+    sku: 678001,
+    ean: 7794567890123,
+    eanPrincipal: true,
+    descripcion: 'Limpiador CIF Original',
+    umvExt: 'mL',
+    precio: 1899,
+    precioAnt: 2199,
+    basePrice: 1569,
+    ppum: 3,
+    unidadPpumExt: 'mL',
+    seccion: 'Limpieza',
+    grupo: 'Limpiadores',
+    rubro: 'Multiuso',
+    subRubro: 'Cremoso',
+    origen: 'BRA',
+    paisTexto: 'Brasil',
+    marcaTexto: 'CIF',
+    stockDisponible: 300,
+    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64',
+    category: 'Limpieza',
+    subCategory: 'Limpiadores',
+    brand: 'CIF',
+    packageType: 'Frasco',
+    volume: '500 mL',
+    name: 'Limpiador CIF Original'
   }
 ];
 
-export const categories = [
-  'MDH',
-  'Tecnología',
-  'Electrodomésticos',
-  'Bebidas',
-  'Alimentos',
-  'Bazar',
-  'Almacén'
-];
+// =====================================
+// FUNCIONES DE UTILIDAD
+// =====================================
 
-export const productCategories = [
-  'Aceites Comunes',
-  'Aceites Especiales',
-  'Acetos',
-  'Jugos de Limón',
-  'Vinagres',
-  'Gaseosas'
-];
+export const getProductoByEan = (ean: number): ProductoReal | undefined => {
+  return productos.find(producto => producto.ean === ean);
+};
 
-export const packageTypes = [
-  'Aerosol',
-  'Botella',
-  'Botella de Plástico',
-  'Botella de Vidrio',
-  'Lata',
-  'Pote',
-  'Spray'
-];
+export const getProductosBySku = (sku: number): ProductoReal | undefined => {
+  return productos.find(producto => producto.sku === sku);
+};
 
-export const brands = [
-  'ALCAZAR',
-  'BEEPURE',
-  'CASALTA',
-  'CAÑUELAS',
-  'CHIA GRAAL',
-  'COCINERO',
-  'COWS PURE',
-  'CUISINE & CO NBE MP',
-  'DICOMERE',
-  'DOS ANCLAS',
-  'NATURA',
-  'NUCETE',
-  'Samsung',
-  'Apple',
-  'HP',
-  'Whirlpool',
-  'BGH',
-  'Drean',
-  'Liliana',
-  'Oster',
-  'Gadnic',
-  'Surrey',
-  'COCA COLA'
-]; 
+export const getProductosBySeccion = (seccion: string): ProductoReal[] => {
+  return productos.filter(producto => producto.seccion === seccion);
+};
+
+export const getProductosByTienda = (tienda: string): ProductoReal[] => {
+  return productos.filter(producto => producto.tienda === tienda);
+};
+
+export const getProductosConDescuento = (): ProductoReal[] => {
+  return productos.filter(producto => 
+    producto.precio && producto.precioAnt && 
+    producto.precio < producto.precioAnt
+  );
+};
+
+export const calcularDescuentoPorcentaje = (producto: ProductoReal): number => {
+  if (!producto.precio || !producto.precioAnt) return 0;
+  return Math.round(((producto.precioAnt - producto.precio) / producto.precioAnt) * 100);
+};
+
+export const getProductosConStock = (minimo: number = 1): ProductoReal[] => {
+  return productos.filter(producto => 
+    producto.stockDisponible && producto.stockDisponible >= minimo
+  );
+};
+
+// =====================================
+// EXPORTS PARA COMPATIBILIDAD
+// =====================================
+
+// Alias para compatibilidad con código existente
+export const products = productos;
+export type Product = ProductoReal;
+
+// Arrays de categorías para UI
+export const categorias = [...new Set(productos.map(p => p.seccion).filter(Boolean))];
+export const marcas = [...new Set(productos.map(p => p.marcaTexto).filter(Boolean))];
+export const paises = [...new Set(productos.map(p => p.paisTexto).filter(Boolean))];
+
+// Legacy exports
+export const categories = categorias;
+export const productCategories = [...new Set(productos.map(p => p.rubro).filter(Boolean))];
+export const packageTypes = [...new Set(productos.map(p => p.packageType).filter(Boolean))];
+export const brands = marcas; 
