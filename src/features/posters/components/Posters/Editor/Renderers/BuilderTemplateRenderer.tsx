@@ -2,6 +2,7 @@ import React from 'react';
 import { TemplateV3, DraggableComponentV3 } from '../../../../../../features/builderV3/types';
 import { ProductoReal } from '../../../../../../types/product';
 import { getDynamicFieldValue, processDynamicTemplate } from '../../../../../../utils/productFieldsMap';
+import { InlineEditableText } from './InlineEditableText';
 
 interface BuilderTemplateRendererProps {
   template: TemplateV3;
@@ -10,6 +11,8 @@ interface BuilderTemplateRendererProps {
   isPreview?: boolean; // Si es vista previa, usar datos de ejemplo
   scale?: number; // Escala para la vista previa
   productChanges?: any; // Cambios del usuario desde Redux
+  onEditField?: (fieldType: string, newValue: string) => void; // 🆕 Callback para edición inline
+  enableInlineEdit?: boolean; // 🆕 Habilitar edición inline directa
 }
 
 /**
@@ -270,48 +273,149 @@ const extractCSSStyles = (style: any): React.CSSProperties => {
 };
 
 /**
- * Mapa de componentes con renderización inteligente
- * 🎯 MEJORA: Ahora considera cambios del usuario
+ * 🆕 NUEVA FUNCIÓN: Mapea contenido a tipo de campo para edición inline
  */
-const renderComponent = (component: DraggableComponentV3, product?: ProductoReal, isPreview?: boolean, productChanges?: any) => {
+const getFieldType = (content: any): string => {
+  // Para campos con textConfig (configuración de texto dinámico)
+  if (content?.textConfig?.contentType) {
+    const contentType = content.textConfig.contentType;
+    
+    switch (contentType) {
+      case 'product-name': return 'nombre';
+      case 'product-sku': return 'sap';
+      case 'product-brand': return 'origen';
+      case 'price-original':
+      case 'price-final': return 'precioActual';
+      case 'price-discount': return 'precioConDescuento';
+      case 'discount-percentage': return 'porcentaje';
+      case 'price-without-taxes': return 'precioSinImpuestos';
+      case 'promotion-start-date': return 'fechasDesde';
+      case 'promotion-end-date': return 'fechasHasta';
+      default: return 'texto';
+    }
+  }
+  
+  // Para campos con valor estático o texto
+  if (content?.staticValue || content?.text) {
+    const value = (content.staticValue || content.text || '').toLowerCase();
+    
+    if (value.includes('nombre') || value.includes('name')) return 'nombre';
+    if (value.includes('precio') || value.includes('price') || value.includes('$')) return 'precioActual';
+    if (value.includes('sku') || value.includes('sap')) return 'sap';
+    if (value.includes('porcentaje') || value.includes('percentage') || value.includes('%')) return 'porcentaje';
+    if (value.includes('fecha') || value.includes('date')) return 'fechas';
+    if (value.includes('origen') || value.includes('brand')) return 'origen';
+    if (value.includes('sin_impuesto') || value.includes('without_tax')) return 'precioSinImpuestos';
+  }
+  
+  // Para campos SAP conectados
+  if (content?.fieldType === 'sap-product' && content?.sapConnection?.fieldName) {
+    const fieldName = content.sapConnection.fieldName.toLowerCase();
+    
+    if (fieldName.includes('name') || fieldName.includes('nombre')) return 'nombre';
+    if (fieldName.includes('price') || fieldName.includes('precio')) return 'precioActual';
+    if (fieldName.includes('sku')) return 'sap';
+    
+    return 'universal';
+  }
+  
+  // Fallback para cualquier campo dinámico
+  return 'texto';
+};
+
+/**
+ * 🆕 FUNCIÓN HELPER: Validar textAlign para compatibilidad con React
+ */
+const getValidTextAlign = (textAlign: any): 'left' | 'center' | 'right' | 'justify' => {
+  if (textAlign === 'center' || textAlign === 'right' || textAlign === 'justify') {
+    return textAlign;
+  }
+  return 'left';
+};
+
+/**
+ * Mapa de componentes con renderización inteligente
+ * 🎯 MEJORA: Ahora considera cambios del usuario + edición inline
+ */
+const renderComponent = (
+  component: DraggableComponentV3, 
+  product?: ProductoReal, 
+  isPreview?: boolean, 
+  productChanges?: any,
+  onEditField?: (fieldType: string, newValue: string) => void,
+  enableInlineEdit?: boolean
+) => {
   const { type, content, style } = component;
   const cssStyle = extractCSSStyles(style);
   
   switch (type) {
     case 'field-dynamic-text':
       const textValue = getDynamicValue(content, product, isPreview, productChanges);
+      const fieldType = getFieldType(content);
       
       // Debug: Log del valor dinámico
       if (product) {
         console.log(`🎨 Renderizando campo dinámico:`, {
           contentType: content?.textConfig?.contentType,
+          staticValue: content?.staticValue,
+          text: content?.text,
+          fieldType,
           textValue,
           productName: product.name,
-          hasChanges: !!(productChanges && productChanges[product.id])
+          hasChanges: !!(productChanges && productChanges[product.id]),
+          enableInlineEdit
         });
       }
       
+      const textValidAlign = getValidTextAlign(cssStyle.textAlign);
+
+      const baseStyle: React.CSSProperties = {
+        fontSize: 16,
+        fontFamily: 'inherit',
+        fontWeight: 'normal',
+        color: '#000000',
+        backgroundColor: 'transparent',
+        lineHeight: 1.2,
+        overflow: 'hidden',
+        wordWrap: 'break-word',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: textValidAlign === 'center' ? 'center' : 
+                       textValidAlign === 'right' ? 'flex-end' : 'flex-start',
+        ...cssStyle,
+        textAlign: textValidAlign // Aplicar textAlign válido después de spread
+      };
+      
+      const textContent = textValue || (product ? 'Nuevo componente' : 'Campo dinámico');
+      
+      // 🎯 EDICIÓN INLINE: Si está habilitada, envolver con InlineEditableText
+      if (enableInlineEdit && onEditField && product && !isPreview) {
+        console.log(`🖱️ Habilitando edición inline para campo: ${fieldType}`);
+        
+        return (
+          <InlineEditableText
+            value={textValue}
+            onSave={(newValue) => {
+              console.log(`📝 Guardando edición inline: ${fieldType} = ${newValue}`);
+              onEditField(fieldType, String(newValue));
+            }}
+            fieldType={fieldType}
+            style={baseStyle}
+          >
+            <div title={`${fieldType}: ${textValue}`}>
+              {textContent}
+            </div>
+          </InlineEditableText>
+        );
+      }
+      
+      // 📋 RENDERIZADO NORMAL: Sin edición inline
       return (
         <div 
-          style={{
-            fontSize: 16,
-            fontFamily: 'inherit',
-            fontWeight: 'normal',
-            color: '#000000',
-            backgroundColor: 'transparent',
-            textAlign: 'left',
-            lineHeight: 1.2,
-            overflow: 'hidden',
-            wordWrap: 'break-word',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: cssStyle.textAlign === 'center' ? 'center' : 
-                           cssStyle.textAlign === 'right' ? 'flex-end' : 'flex-start',
-            ...cssStyle
-          }}
+          style={baseStyle}
           title={textValue}
         >
-          {textValue || (product ? 'Nuevo componente' : 'Campo dinámico')}
+          {textContent}
         </div>
       );
       
@@ -392,17 +496,19 @@ const renderComponent = (component: DraggableComponentV3, product?: ProductoReal
         dateValue = content?.staticValue || new Date().toLocaleDateString('es-AR');
       }
       
+      const dateValidAlign = getValidTextAlign(cssStyle.textAlign);
+
       return (
         <div style={{
           fontSize: 14,
           fontFamily: 'inherit',
           color: '#666666',
-          textAlign: 'left',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: cssStyle.textAlign === 'center' ? 'center' : 
-                         cssStyle.textAlign === 'right' ? 'flex-end' : 'flex-start',
-          ...cssStyle
+          justifyContent: dateValidAlign === 'center' ? 'center' : 
+                         dateValidAlign === 'right' ? 'flex-end' : 'flex-start',
+          ...cssStyle,
+          textAlign: dateValidAlign
         }}>
           {dateValue}
         </div>
@@ -517,7 +623,9 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
   product, 
   isPreview = false,
   scale = 1,
-  productChanges
+  productChanges,
+  onEditField,
+  enableInlineEdit = false
 }) => {
   // Filtrar componentes visibles y ordenarlos por z-index
   const visibleComponents = components
@@ -554,7 +662,7 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
 
         return (
           <div key={component.id} style={componentStyle}>
-            {renderComponent(component, product, isPreview, productChanges)}
+            {renderComponent(component, product, isPreview, productChanges, onEditField, enableInlineEdit)}
           </div>
         );
       })}

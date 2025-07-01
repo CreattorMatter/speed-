@@ -22,8 +22,6 @@ interface StatusBarV3Props {
   mousePosition?: { x: number; y: number };
   isOnline?: boolean;
   lastSaved?: string;
-  isConnectedSAP?: boolean;
-  isConnectedPromotions?: boolean;
   gridVisible?: boolean;
   rulersVisible?: boolean;
 }
@@ -34,8 +32,6 @@ export const StatusBarV3: React.FC<StatusBarV3Props> = ({
   mousePosition,
   isOnline = true,
   lastSaved,
-  isConnectedSAP = false,
-  isConnectedPromotions = false,
   gridVisible = false,
   rulersVisible = false
 }) => {
@@ -135,7 +131,7 @@ export const StatusBarV3: React.FC<StatusBarV3Props> = ({
           {/* Zoom level */}
           <StatusItem
             label="Zoom"
-            value={`${zoomLevel}%`}
+            value={`${Math.round(zoomLevel)}%`}
           />
         </div>
 
@@ -160,26 +156,6 @@ export const StatusBarV3: React.FC<StatusBarV3Props> = ({
           </div>
 
           {(gridVisible || rulersVisible) && <Separator />}
-
-          {/* External connections */}
-          <div className="flex items-center space-x-2">
-            {isConnectedSAP && (
-              <StatusItem
-                icon={<CheckCircle className="w-3 h-3" />}
-                label="SAP"
-                color="success"
-              />
-            )}
-            {isConnectedPromotions && (
-              <StatusItem
-                icon={<CheckCircle className="w-3 h-3" />}
-                label="Promociones"
-                color="success"
-              />
-            )}
-          </div>
-
-          {(isConnectedSAP || isConnectedPromotions) && <Separator />}
 
           {/* Save status */}
           <StatusItem

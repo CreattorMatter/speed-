@@ -294,6 +294,21 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     return getAutoMappedValue(product, field);
   };
 
+  // 🆕 CALLBACK PARA EDICIÓN INLINE DIRECTA
+  const handleInlineEdit = (fieldType: string, newValue: string) => {
+    if (selectedProducts.length === 1) {
+      // Para vista de un producto
+      const product = selectedProducts[0];
+      console.log(`🖱️ Edición inline directa: ${fieldType} = ${newValue} para ${product.descripcion}`);
+      handleProductEdit(product.id, fieldType, newValue);
+    } else if (expandedProductIndex !== null) {
+      // Para vista expandida de producto individual
+      const product = selectedProducts[expandedProductIndex];
+      console.log(`🖱️ Edición inline directa: ${fieldType} = ${newValue} para ${product.descripcion}`);
+      handleProductEdit(product.id, fieldType, newValue);
+    }
+  };
+
   // 🎨 PANEL DE EDICIÓN FLOTANTE - Componente mejorado
   const EditPanel = ({ product }: { product: Product }) => {
     if (editPanelMode === 'hidden') return null;
@@ -708,38 +723,36 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                   <div className={`flex-1 flex items-center justify-center bg-gray-50 p-3 xs:p-4 sm:p-6 min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] overflow-auto ${
                     editPanelMode === 'sidebar' ? 'order-1 lg:order-2' : 'order-1'
                   }`}>
-                    <div className="w-full h-full flex items-center justify-center print-content overflow-visible" data-preview-content>
-                      <BuilderTemplateRenderer 
-                        template={selectedTemplate.template}
-                        components={selectedTemplate.template.defaultComponents}
-                        product={selectedProducts[0]}
-                        productChanges={productChanges}
-                        key={`${selectedProducts[0]?.id || 'no-product'}-${refreshKey}`}
-                      />
+                    <div className="w-full h-full flex items-center justify-center print-content overflow-visible relative" data-preview-content>
+                      {/* 🎯 INDICADOR VISUAL DE EDICIÓN ACTIVA */}
+                      {editPanelMode !== 'hidden' && (
+                        <div className="absolute top-2 left-2 z-50 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg border-2 border-white animate-pulse">
+                          ✏️ EDITABLE
+                        </div>
+                      )}
+                      
+                      {/* Container de la plantilla con borde de edición */}
+                      <div className={`transition-all duration-300 ${
+                        editPanelMode !== 'hidden' 
+                          ? 'ring-4 ring-green-400 ring-opacity-50 shadow-2xl rounded-lg overflow-hidden' 
+                          : ''
+                      }`}>
+                        <BuilderTemplateRenderer 
+                          template={selectedTemplate.template}
+                          components={selectedTemplate.template.defaultComponents}
+                          product={selectedProducts[0]}
+                          productChanges={productChanges}
+                          onEditField={handleInlineEdit}
+                          enableInlineEdit={editPanelMode !== 'hidden'}
+                          key={`${selectedProducts[0]?.id || 'no-product'}-${refreshKey}`}
+                        />
+                      </div>
                     </div>
                   </div>
 
                   {/* Panel de edición - floating mode */}
                   {editPanelMode === 'floating' && (
                     <EditPanel product={selectedProducts[0]} />
-                  )}
-
-                  {/* Quick Actions cuando el panel está oculto */}
-                  {editPanelMode === 'hidden' && (
-                    <div className="fixed bottom-4 right-4 z-40">
-                      <div className="bg-white shadow-lg rounded-lg border border-gray-200 p-3">
-                        <div className="text-xs text-gray-600 mb-2 text-center">
-                          Edición disponible
-                        </div>
-                        <button
-                          onClick={() => setEditPanelMode('floating')}
-                          className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center gap-2"
-                        >
-                          <Settings className="w-4 h-4" />
-                          ✏️ Editar
-                        </button>
-                      </div>
-                    </div>
                   )}
                 </div>
               ) : expandedProductIndex !== null ? (
@@ -816,14 +829,30 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                     <div className={`flex-1 flex items-center justify-center bg-gray-50 p-6 min-h-[500px] overflow-auto ${
                       editPanelMode === 'sidebar' ? 'order-1 lg:order-2' : 'order-1'
                     }`}>
-                      <div className="w-full h-full flex items-center justify-center print-content overflow-visible" data-preview-content>
-                        <BuilderTemplateRenderer 
-                          template={selectedTemplate.template}
-                          components={selectedTemplate.template.defaultComponents}
-                          product={selectedProducts[expandedProductIndex]}
-                          productChanges={productChanges}
-                          key={`${selectedProducts[expandedProductIndex]?.sku || 'no-product'}-${refreshKey}`}
-                        />
+                      <div className="w-full h-full flex items-center justify-center print-content overflow-visible relative" data-preview-content>
+                        {/* 🎯 INDICADOR VISUAL DE EDICIÓN ACTIVA */}
+                        {editPanelMode !== 'hidden' && (
+                          <div className="absolute top-2 left-2 z-50 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg border-2 border-white animate-pulse">
+                            ✏️ EDITABLE
+                          </div>
+                        )}
+                        
+                        {/* Container de la plantilla con borde de edición */}
+                        <div className={`transition-all duration-300 ${
+                          editPanelMode !== 'hidden' 
+                            ? 'ring-4 ring-green-400 ring-opacity-50 shadow-2xl rounded-lg overflow-hidden' 
+                            : ''
+                        }`}>
+                          <BuilderTemplateRenderer 
+                            template={selectedTemplate.template}
+                            components={selectedTemplate.template.defaultComponents}
+                            product={selectedProducts[expandedProductIndex]}
+                            productChanges={productChanges}
+                            onEditField={handleInlineEdit}
+                            enableInlineEdit={editPanelMode !== 'hidden'}
+                            key={`${selectedProducts[expandedProductIndex]?.sku || 'no-product'}-${refreshKey}`}
+                          />
+                        </div>
                       </div>
                     </div>
 
@@ -873,6 +902,11 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                                   components={selectedTemplate.template.defaultComponents}
                                   product={product}
                                   productChanges={productChanges}
+                                  onEditField={(fieldType: string, newValue: string) => {
+                                    console.log(`🖱️ Edición inline directa (grilla): ${fieldType} = ${newValue} para ${product.descripcion}`);
+                                    handleProductEdit(product.id, fieldType, newValue);
+                                  }}
+                                  enableInlineEdit={editPanelMode !== 'hidden'}
                                   key={`${product.id}-${refreshKey}`}
                                 />
                               </div>

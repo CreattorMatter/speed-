@@ -3,7 +3,7 @@
 // ===============================================
 
 import { supabase, supabaseAdmin, isSupabaseConfigured } from '../lib/supabaseClient';
-import { FamilyV3, TemplateV3, ComponentsLibraryV3, ComponentDefinitionV3, ComponentCategoryV3 } from '../features/builderV3/types';
+import { FamilyV3, TemplateV3, ComponentsLibraryV3, ComponentDefinitionV3, ComponentCategoryV3, FamilyTypeV3 } from '../features/builderV3/types';
 import { UnitConverter } from '../features/builderV3/utils/unitConverter';
 
 // ===============================================
@@ -147,13 +147,6 @@ export const familiesV3Service = {
         templates: [],
         featuredTemplates: [],
         defaultStyle: {
-          brandColors: {
-            primary: '#ff6b35',
-            secondary: '#f7931e',
-            accent: '#ffaa00',
-            text: '#ffffff',
-            background: '#ff6b35'
-          },
           typography: {
             primaryFont: 'Inter',
             secondaryFont: 'Roboto',
@@ -185,13 +178,6 @@ export const familiesV3Service = {
         templates: [],
         featuredTemplates: [],
         defaultStyle: {
-          brandColors: {
-            primary: '#ff0000',
-            secondary: '#ffff00',
-            accent: '#ff6600',
-            text: '#ffffff',
-            background: '#ff0000'
-          },
           typography: {
             primaryFont: 'Arial Black',
             secondaryFont: 'Arial',
@@ -221,26 +207,18 @@ export const familiesV3Service = {
     const transformDefaultStyle = (style: any) => {
       if (!style) {
         return {
-          brandColors: { primary: '#000000', secondary: '#666666', accent: '#0066cc', text: '#333333', background: '#ffffff' },
           typography: { primaryFont: 'Inter', secondaryFont: 'Roboto', headerFont: 'Poppins' },
           visualEffects: { headerStyle: {}, priceStyle: {}, footerStyle: {} }
         };
       }
 
       // Si ya tiene la estructura correcta, devolverla tal como está
-      if (style.brandColors) {
+      if (style.typography && style.visualEffects) {
         return style;
       }
 
       // Transformar estructura de Supabase a estructura esperada
       return {
-        brandColors: {
-          primary: style.primaryColor || style.primary || '#000000',
-          secondary: style.secondaryColor || style.secondary || '#666666',
-          accent: style.accentColor || style.accent || '#0066cc',
-          text: style.textColor || style.text || '#333333',
-          background: style.backgroundColor || style.background || '#ffffff'
-        },
         typography: {
           primaryFont: style.fontFamily || style.primaryFont || 'Inter',
           secondaryFont: style.secondaryFont || 'Roboto',
@@ -568,6 +546,97 @@ export const templatesV3Service = {
     }
   },
 
+  async delete(templateId: string): Promise<void> {
+    try {
+      console.log('🗑️ Eliminando plantilla de Supabase:', templateId);
+      
+      // Primero verificar que la plantilla existe
+      const template = await this.getById(templateId);
+      if (!template) {
+        throw new Error('Plantilla no encontrada');
+      }
+
+      console.log('🔑 Usando cliente admin para eliminar plantilla (bypass RLS)');
+      const { error } = await supabaseAdmin
+        .from('templates')
+        .delete()
+        .eq('id', templateId);
+
+      if (error) {
+        console.error('❌ Error eliminando plantilla:', error);
+        throw error;
+      }
+
+      console.log('✅ Plantilla eliminada exitosamente:', template.name);
+    } catch (error) {
+      console.error('❌ Error eliminando plantilla en Supabase:', error);
+      throw error;
+    }
+  },
+
+  async cloneTemplates(templateIds: string[], targetFamilyId: string, options?: {
+    replaceHeaders?: boolean;
+    headerImageUrl?: string;
+  }): Promise<TemplateV3[]> {
+    try {
+      console.log(`🔄 Clonando ${templateIds.length} plantillas a familia ${targetFamilyId}`);
+      
+      const clonedTemplates: TemplateV3[] = [];
+      
+      for (const templateId of templateIds) {
+        try {
+          // Obtener plantilla original
+          const original = await this.getById(templateId);
+          if (!original) {
+            console.warn(`⚠️ Plantilla ${templateId} no encontrada, saltando...`);
+            continue;
+          }
+
+          // Preparar datos para la copia
+          let clonedComponents = original.defaultComponents ? [...original.defaultComponents] : [];
+          
+          // Si se debe reemplazar headers y se proporciona una URL
+          if (options?.replaceHeaders && options.headerImageUrl) {
+            clonedComponents = clonedComponents.map(component => {
+              if (component.type === 'image-header' && component.content) {
+                return {
+                  ...component,
+                  content: {
+                    ...component.content,
+                    imageUrl: options.headerImageUrl,
+                    imageAlt: 'Header personalizado'
+                  }
+                };
+              }
+              return component;
+            });
+          }
+
+          // Crear copia con nueva familia
+          const cloned = await this.create({
+            ...original,
+            name: `${original.name} (Copia)`,
+            familyType: targetFamilyId as FamilyTypeV3,
+            defaultComponents: clonedComponents,
+            version: 1
+          });
+
+          clonedTemplates.push(cloned);
+          console.log(`✅ Plantilla clonada: ${original.name} → ${cloned.name}`);
+        } catch (error) {
+          console.error(`❌ Error clonando plantilla ${templateId}:`, error);
+          // Continuar con el siguiente template si hay error
+        }
+      }
+
+      console.log(`✅ ${clonedTemplates.length} plantillas clonadas exitosamente`);
+      return clonedTemplates;
+    } catch (error) {
+      console.error('❌ Error en proceso de clonación:', error);
+      throw error;
+    }
+  },
+
   mapToV3Template(data: any): TemplateV3 {
     let canvasConfig = data.canvas_config || {
       width: 1080,
@@ -606,7 +675,6 @@ export const templatesV3Service = {
       canvas: canvasConfig, // Usar la configuración potencialmente corregida
       defaultComponents: data.default_components || [],
       familyConfig: data.family_config || {
-        brandColors: { primary: '#000000', secondary: '#666666', accent: '#0066cc', text: '#333333' },
         typography: { primaryFont: 'Inter', secondaryFont: 'Roboto', headerFont: 'Poppins' }
       },
       validationRules: data.validation_rules || [],
@@ -662,6 +730,78 @@ export const promotionConnectionV3Service = {
 };
 
 // ===============================================
+// IMAGE UPLOAD SERVICE
+// ===============================================
+
+export const imageUploadService = {
+  async uploadImage(file: File, bucket: string = 'template-images', folder: string = 'headers'): Promise<string> {
+    if (!isSupabaseConfigured) {
+      console.log('📷 Mock: Imagen subida (Supabase no configurado)');
+      return URL.createObjectURL(file);
+    }
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+      console.log('📷 Subiendo imagen a Supabase Storage:', fileName);
+
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('❌ Error subiendo imagen:', error);
+        throw error;
+      }
+
+      // Obtener URL pública
+      const { data: publicUrlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(fileName);
+
+      console.log('✅ Imagen subida exitosamente:', publicUrlData.publicUrl);
+      return publicUrlData.publicUrl;
+    } catch (error) {
+      console.error('❌ Error en upload de imagen:', error);
+      throw error;
+    }
+  },
+
+  async deleteImage(url: string, bucket: string = 'template-images'): Promise<void> {
+    if (!isSupabaseConfigured || !url.includes('supabase')) {
+      console.log('📷 Mock: Imagen eliminada');
+      return;
+    }
+
+    try {
+      // Extraer path del archivo de la URL
+      const urlParts = url.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      const folderPath = urlParts.slice(-2, -1)[0];
+      const filePath = `${folderPath}/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from(bucket)
+        .remove([filePath]);
+
+      if (error) {
+        console.error('❌ Error eliminando imagen:', error);
+        throw error;
+      }
+
+      console.log('✅ Imagen eliminada exitosamente');
+    } catch (error) {
+      console.error('❌ Error eliminando imagen:', error);
+      // No re-throw para evitar fallar operaciones principales
+    }
+  }
+};
+
+// ===============================================
 // EXPORT PRINCIPAL
 // ===============================================
 
@@ -671,7 +811,8 @@ export const builderV3Service = {
   components: componentsV3Service,
   favorites: favoritesV3Service,
   sapConnection: sapConnectionV3Service,
-  promotionConnection: promotionConnectionV3Service
+  promotionConnection: promotionConnectionV3Service,
+  imageUpload: imageUploadService
 };
 
 export default builderV3Service; 

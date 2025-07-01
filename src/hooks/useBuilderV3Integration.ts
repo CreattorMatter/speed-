@@ -233,7 +233,7 @@ export const useBuilderV3Integration = () => {
           },
           defaultComponents: template.defaultComponents || [],
           familyConfig: template.familyConfig || builderCore.state.currentFamily?.defaultStyle || {
-            brandColors: { primary: '#000000', secondary: '#666666', accent: '#0066cc', text: '#333333' },
+    
             typography: { primaryFont: 'Inter', secondaryFont: 'Roboto', headerFont: 'Poppins' }
           },
           validationRules: template.validationRules || [],
@@ -277,6 +277,23 @@ export const useBuilderV3Integration = () => {
       } catch (error) {
         console.error('❌ Error duplicando plantilla:', error);
         toast.error('Error al duplicar plantilla');
+        throw error;
+      }
+    }, []),
+
+    deleteTemplate: useCallback(async (templateId: string) => {
+      console.log('🗑️ Eliminando plantilla:', templateId);
+      try {
+        // Eliminar plantilla de Supabase
+        await templatesV3Service.delete(templateId);
+        
+        // Actualizar estado local removiendo la plantilla
+        setRealTemplates(prev => prev.filter(t => t.id !== templateId));
+        
+        console.log('✅ Plantilla eliminada exitosamente:', templateId);
+        return true;
+      } catch (error) {
+        console.error('❌ Error eliminando plantilla:', error);
         throw error;
       }
     }, []),

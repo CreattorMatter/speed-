@@ -390,7 +390,7 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
             </button>
             
             <span className="text-sm text-gray-600 min-w-12 text-center">
-              {zoom}%
+              {Math.round(zoom)}%
             </span>
             
             <button

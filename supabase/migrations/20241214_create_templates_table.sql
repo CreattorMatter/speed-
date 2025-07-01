@@ -29,12 +29,7 @@ CREATE TABLE templates (
   
   -- Family configuration (stored as JSONB)
   family_config JSONB DEFAULT '{
-    "brandColors": {
-      "primary": "#000000",
-      "secondary": "#666666", 
-      "accent": "#0066cc",
-      "text": "#333333"
-    },
+
     "typography": {
       "primaryFont": "Inter",
       "secondaryFont": "Roboto",

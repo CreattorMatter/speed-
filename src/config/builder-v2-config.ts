@@ -29,11 +29,6 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     compatibleTemplates: ['Precio Lleno', 'Antes/Ahora con dto', 'Antes/Ahora'],
     featuredTemplates: ['Precio Lleno', 'Antes/Ahora con dto'],
     recommendedElements: ['header-imagen', 'precio-contado', 'descripcion-producto', 'sku-sap', 'porcentaje-descuento'],
-    brandColors: {
-      primary: '#2563eb',
-      secondary: '#dbeafe',
-      accent: '#fbbf24'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 32,
@@ -68,11 +63,6 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     compatibleTemplates: ['Descuento plano categoría', 'Antes/Ahora con dto', 'Combo con Descuento'],
     featuredTemplates: ['Descuento plano categoría'],
     recommendedElements: ['porcentaje-descuento', 'precio-antes', 'precio-contado', 'descripcion-producto'],
-    brandColors: {
-      primary: '#dc2626',
-      secondary: '#fecaca',
-      accent: '#fbbf24'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 32,
@@ -106,11 +96,6 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     compatibleTemplates: ['Cuotas', 'Combo Cuotas', 'Cuota simple 12 s/int'],
     featuredTemplates: ['Cuotas'],
     recommendedElements: ['cuotas', 'valor-cuota', 'precio-financiado-cft'],
-    brandColors: {
-      primary: '#059669',
-      secondary: '#a7f3d0',
-      accent: '#fbbf24'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 28,
@@ -144,11 +129,6 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     compatibleTemplates: ['Precio Lleno', 'Antes/Ahora'],
     featuredTemplates: ['Precio Lleno'],
     recommendedElements: ['precio-contado', 'descripcion-producto', 'sku-sap'],
-    brandColors: {
-      primary: '#7c3aed',
-      secondary: '#ddd6fe',
-      accent: '#fbbf24'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 32,
@@ -182,11 +162,6 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     compatibleTemplates: ['Precio Lleno', 'Imágenes personalizadas'],
     featuredTemplates: ['Precio Lleno'],
     recommendedElements: ['precio-contado', 'descripcion-producto'],
-    brandColors: {
-      primary: '#fbbf24',
-      secondary: '#fef3c7',
-      accent: '#dc2626'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 32,
@@ -220,11 +195,6 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     compatibleTemplates: ['Precio Lleno', 'Antes/Ahora', 'Descuento plano categoría'],
     featuredTemplates: ['Antes/Ahora'],
     recommendedElements: ['precio-contado', 'precio-antes', 'fecha-desde', 'fecha-hasta'],
-    brandColors: {
-      primary: '#ea580c',
-      secondary: '#fed7aa',
-      accent: '#fbbf24'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 32,
@@ -258,11 +228,6 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     compatibleTemplates: ['Precio Lleno', 'Antes/Ahora', 'Combo Cuotas'],
     featuredTemplates: ['Antes/Ahora'],
     recommendedElements: ['precio-contado', 'precio-antes', 'porcentaje-descuento'],
-    brandColors: {
-      primary: '#0891b2',
-      secondary: '#a5f3fc',
-      accent: '#fbbf24'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 32,
@@ -296,11 +261,6 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     compatibleTemplates: ['Precio Lleno', 'Antes/Ahora', 'Antes/Ahora con dto'],
     featuredTemplates: ['Antes/Ahora con dto'],
     recommendedElements: ['precio-contado', 'precio-antes', 'porcentaje-descuento'],
-    brandColors: {
-      primary: '#ec4899',
-      secondary: '#fbcfe8',
-      accent: '#fbbf24'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 32,
@@ -341,11 +301,6 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
       'precio-regular-m2', 'precio-regular-caja', 'precio-antes-regular-m2', 
       'precio-antes-regular-caja', 'descripcion-producto', 'sku-sap'
     ],
-    brandColors: {
-      primary: '#d97706',
-      secondary: '#fed7aa',
-      accent: '#dc2626'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 32,
@@ -379,11 +334,6 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     compatibleTemplates: ['Precio Lleno', 'Antes/Ahora', 'Imágenes personalizadas'],
     featuredTemplates: ['Precio Lleno'],
     recommendedElements: ['precio-contado', 'descripcion-producto', 'sku-sap'],
-    brandColors: {
-      primary: '#6b7280',
-      secondary: '#f3f4f6',
-      accent: '#fbbf24'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 32,
@@ -417,11 +367,6 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     compatibleTemplates: ['Precio Lleno', 'Antes/Ahora', 'Combo Cuotas'],
     featuredTemplates: ['Antes/Ahora'],
     recommendedElements: ['precio-contado', 'precio-antes', 'porcentaje-descuento'],
-    brandColors: {
-      primary: '#4338ca',
-      secondary: '#c7d2fe',
-      accent: '#fbbf24'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 32,
@@ -455,11 +400,6 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     compatibleTemplates: ['Combo Cuotas', 'Cuota simple 12 s/int'],
     featuredTemplates: ['Combo Cuotas'],
     recommendedElements: ['cuotas', 'valor-cuota', 'precio-financiado-cft'],
-    brandColors: {
-      primary: '#0d9488',
-      secondary: '#99f6e4',
-      accent: '#fbbf24'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 28,
@@ -493,11 +433,6 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     compatibleTemplates: ['Precio Lleno', 'Imágenes personalizadas'],
     featuredTemplates: ['Precio Lleno'],
     recommendedElements: ['precio-contado', 'descripcion-producto', 'porcentaje-descuento-especial'],
-    brandColors: {
-      primary: '#059669',
-      secondary: '#a7f3d0',
-      accent: '#fbbf24'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 32,
@@ -508,7 +443,7 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
       priceStyle: {
         fontSize: 48,
         fontWeight: 'extrabold',
-        color: '#059669'
+        color: '#dc2626'
       },
       footerStyle: {
         fontSize: 10,
@@ -525,28 +460,23 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     id: 'constructor',
     name: 'Constructor',
     displayName: 'Constructor',
-    description: 'Herramientas y materiales para construcción profesional',
-    color: '#374151',
-    icon: '🏗️',
-    compatibleTemplates: ['Precio Lleno', 'Antes/Ahora', 'Descuento plano categoría'],
+    description: 'Herramientas y materiales para profesionales de la construcción',
+    color: '#991b1b',
+    icon: '👷',
+    compatibleTemplates: ['Precio Lleno', 'Antes/Ahora', 'Flooring'],
     featuredTemplates: ['Precio Lleno'],
     recommendedElements: ['precio-contado', 'descripcion-producto', 'sku-sap'],
-    brandColors: {
-      primary: '#374151',
-      secondary: '#f3f4f6',
-      accent: '#fbbf24'
-    },
     visualPatterns: {
       headerStyle: {
         fontSize: 32,
         fontWeight: 'bold',
         color: '#ffffff',
-        backgroundColor: '#374151'
+        backgroundColor: '#991b1b'
       },
       priceStyle: {
         fontSize: 48,
         fontWeight: 'extrabold',
-        color: '#dc2626'
+        color: '#991b1b'
       },
       footerStyle: {
         fontSize: 10,
@@ -563,31 +493,26 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     id: 'fleje-promocional',
     name: 'Fleje Promocional',
     displayName: 'Fleje Promocional',
-    description: 'Promociones especiales con destaque SPID+',
-    color: '#dc2626',
-    icon: '🎯',
+    description: 'Flejes promocionales para productos destacados',
+    color: '#7c2d12',
+    icon: '🏷️',
     compatibleTemplates: ['Fleje promocional (SPID+)'],
     featuredTemplates: ['Fleje promocional (SPID+)'],
-    recommendedElements: ['precio-con-descuento', 'porcentaje-descuento', 'descripcion-producto'],
-    brandColors: {
-      primary: '#dc2626',
-      secondary: '#fecaca',
-      accent: '#fbbf24'
-    },
+    recommendedElements: ['precio-contado', 'descripcion-producto', 'porcentaje-descuento'],
     visualPatterns: {
       headerStyle: {
-        fontSize: 28,
+        fontSize: 20,
         fontWeight: 'bold',
         color: '#ffffff',
-        backgroundColor: '#dc2626'
+        backgroundColor: '#7c2d12'
       },
       priceStyle: {
-        fontSize: 42,
+        fontSize: 32,
         fontWeight: 'extrabold',
         color: '#dc2626'
       },
       footerStyle: {
-        fontSize: 10,
+        fontSize: 8,
         color: '#6b7280'
       }
     },
@@ -601,28 +526,23 @@ export const FAMILY_CONFIGS: Record<FamilyType, FamilyConfig> = {
     id: 'imagenes-personalizadas',
     name: 'Imágenes personalizadas',
     displayName: 'Imágenes Personalizadas',
-    description: 'Plantillas con imágenes totalmente personalizables',
-    color: '#8b5cf6',
-    icon: '🖼️',
+    description: 'Plantillas con imágenes y diseños completamente personalizables',
+    color: '#6366f1',
+    icon: '🎨',
     compatibleTemplates: ['Imágenes personalizadas'],
     featuredTemplates: ['Imágenes personalizadas'],
-    recommendedElements: ['descripcion-texto-variable', 'precio-contado'],
-    brandColors: {
-      primary: '#8b5cf6',
-      secondary: '#ddd6fe',
-      accent: '#fbbf24'
-    },
+    recommendedElements: ['header-imagen', 'descripcion-producto', 'precio-contado'],
     visualPatterns: {
       headerStyle: {
-        fontSize: 32,
+        fontSize: 28,
         fontWeight: 'bold',
         color: '#ffffff',
-        backgroundColor: '#8b5cf6'
+        backgroundColor: '#6366f1'
       },
       priceStyle: {
-        fontSize: 48,
+        fontSize: 42,
         fontWeight: 'extrabold',
-        color: '#8b5cf6'
+        color: '#dc2626'
       },
       footerStyle: {
         fontSize: 10,

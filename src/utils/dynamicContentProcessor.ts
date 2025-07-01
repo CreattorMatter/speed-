@@ -26,13 +26,39 @@ export interface MockDataV3 {
 }
 
 // =====================
-// DATOS MOCK POR DEFECTO
+// PRODUCTO MOCK REALISTA PARA VISTA PREVIA
+// =====================
+const createMockProduct = (): ProductoReal => ({
+  id: 'mock-product-1',
+  sku: 123001,
+  ean: 7790123456789,
+  descripcion: 'Heladera Whirlpool No Frost 375L',
+  precio: 699999,
+  precioAnt: 849999,
+  basePrice: 578511,
+  ppum: 1866,
+  unidadPpumExt: 'L',
+  umvExt: 'UN',
+  seccion: 'Electrodomésticos',
+  grupo: 'Línea Blanca',
+  rubro: 'Heladeras',
+  subRubro: 'No Frost',
+  marcaTexto: 'WHIRLPOOL',
+  paisTexto: 'Argentina',
+  origen: 'ARG',
+  tienda: 'E000',
+  stockDisponible: 15
+});
+
+// =====================
+// DATOS MOCK POR DEFECTO (CON PRODUCTO REALISTA)
 // =====================
 
 export const defaultMockData: MockDataV3 = {
   fecha_actual: new Date().toLocaleDateString('es-AR'),
   fecha_promocion_fin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-AR'),
-  descuento_calculado: 0,
+  descuento_calculado: 18, // 18% de descuento
+  producto: createMockProduct(), // AHORA INCLUYE PRODUCTO MOCK REALISTA
   tienda: {
     numero: 'E000',
     tienda: 'Easy Casa Central'
@@ -69,14 +95,14 @@ const formatDate = (date: Date): string => {
 // =====================
 
 /**
- * Procesa un template dinámico reemplazando campos con datos reales
+ * Procesa un template dinámico reemplazando campos con datos reales o ejemplos
  */
 export const processTemplate = (template: string, mockData: MockDataV3 = defaultMockData): string => {
   if (!template) return '';
   
   let processedTemplate = template;
   
-  // Usar el producto si está disponible
+  // Usar el producto (real o mock) si está disponible
   if (mockData.producto) {
     // Extraer campos dinámicos del template
     const fieldRegex = /\[([^\]]+)\]/g;
@@ -88,29 +114,41 @@ export const processTemplate = (template: string, mockData: MockDataV3 = default
       processedTemplate = processedTemplate.replace(match[0], fieldValue);
     }
   } else {
-    // Mapeo básico sin producto específico
-    const fieldMappings: Record<string, string> = {
-      'product_name': 'Producto de Ejemplo',
-      'product_price': formatPrice(199999),
-      'product_sku': '123456',
-      'product_brand': 'MARCA EJEMPLO',
-      'current_date': mockData.fecha_actual,
-      'promotion_end_date': mockData.fecha_promocion_fin,
-      'store_code': mockData.tienda?.numero || 'E000',
-      'product_seccion': mockData.seccion?.seccion || 'General'
-    };
+    // Fallback usando ejemplos reales de productFieldsMap
+    const fieldRegex = /\[([^\]]+)\]/g;
+    let match;
     
-    Object.entries(fieldMappings).forEach(([field, value]) => {
-      const regex = new RegExp(`\\[${field}\\]`, 'g');
-      processedTemplate = processedTemplate.replace(regex, value);
-    });
+    while ((match = fieldRegex.exec(template)) !== null) {
+      const fieldId = match[1];
+      const field = ALL_DYNAMIC_FIELDS[fieldId];
+      
+      if (field?.example) {
+        // Usar el ejemplo real del campo
+        processedTemplate = processedTemplate.replace(match[0], field.example);
+      } else {
+        // Mapeo básico como fallback final
+        const fieldMappings: Record<string, string> = {
+          'product_name': 'Heladera Whirlpool No Frost 375L',
+          'product_price': formatPrice(699999),
+          'product_sku': '123001',
+          'product_brand': 'WHIRLPOOL',
+          'current_date': mockData.fecha_actual,
+          'promotion_end_date': mockData.fecha_promocion_fin,
+          'store_code': mockData.tienda?.numero || 'E000',
+          'product_seccion': mockData.seccion?.seccion || 'Electrodomésticos'
+        };
+        
+        const fallbackValue = fieldMappings[fieldId] || `[${fieldId}]`;
+        processedTemplate = processedTemplate.replace(match[0], fallbackValue);
+      }
+    }
   }
   
   return processedTemplate;
 };
 
 /**
- * Obtiene el valor de un campo SAP específico
+ * Obtiene el valor de un campo SAP específico (usando ejemplos reales)
  */
 export const getSAPFieldValue = (fieldName: string, data: MockDataV3): string => {
   if (data.producto) {
@@ -118,16 +156,22 @@ export const getSAPFieldValue = (fieldName: string, data: MockDataV3): string =>
     return getDynamicFieldValue(fieldName, data.producto);
   }
   
-  // Fallback con datos de ejemplo
+  // Usar ejemplos reales de productFieldsMap
+  const field = ALL_DYNAMIC_FIELDS[fieldName];
+  if (field?.example) {
+    return field.example;
+  }
+  
+  // Fallback con datos de ejemplo realistas
   const fieldMap: Record<string, string> = {
-    'product_name': 'Producto de Ejemplo',
-    'product_price': formatPrice(199999),
-    'price_without_tax': formatPrice(165288),
-    'product_sku': '123456',
-    'product_brand': 'MARCA EJEMPLO',
-    'product_seccion': data.seccion?.seccion || 'General',
+    'product_name': 'Heladera Whirlpool No Frost 375L',
+    'product_price': formatPrice(699999),
+    'price_without_tax': formatPrice(578512),
+    'product_sku': '123001',
+    'product_brand': 'WHIRLPOOL',
+    'product_seccion': data.seccion?.seccion || 'Electrodomésticos',
     'product_origin': 'Argentina',
-    'stock_available': '25 unidades'
+    'stock_available': '15 unidades'
   };
   
   return fieldMap[fieldName] || `[${fieldName}]`;
@@ -153,20 +197,20 @@ export const getPromotionFieldValue = (fieldName: string, data: MockDataV3): str
     return fieldMap[fieldName] || `[${fieldName}]`;
   }
   
-  // Valores por defecto
+  // Valores por defecto realistas
   const defaultValues: Record<string, string> = {
     'promo_type': 'Oferta Especial',
     'promo_description': 'Promoción vigente',
     'promo_validity': `Válido hasta ${data.fecha_promocion_fin}`,
     'promo_stores': 'Todas las sucursales',
-    'promo_discount': '20%'
+    'promo_discount': '18%'
   };
   
   return defaultValues[fieldName] || `[${fieldName}]`;
 };
 
 // =====================
-// PROCESADOR PRINCIPAL DE COMPONENTES
+// PROCESADOR PRINCIPAL DE COMPONENTES (MEJORADO)
 // =====================
 
 export const processDynamicContent = (
@@ -184,12 +228,12 @@ export const processDynamicContent = (
     return content?.staticValue || content?.text || 'Texto estático';
   }
   
-  // 2. Plantilla dinámica (PRINCIPAL)
+  // 2. Plantilla dinámica (PRINCIPAL - MEJORADO)
   if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
     return processTemplate(content.dynamicTemplate, mockData);
   }
   
-  // 3. Campo SAP directo
+  // 3. Campo SAP directo (MEJORADO)
   if (content?.fieldType === 'sap-product' && content?.sapField) {
     return getSAPFieldValue(content.sapField, mockData);
   }
@@ -209,17 +253,25 @@ export const processDynamicContent = (
     return 'Imagen';
   }
   
-  // 7. Fallback para valores directos
+  // 7. Fallback para valores directos (MEJORADO)
   if (content?.staticValue) {
+    // Si es un template dinámico en staticValue, procesarlo
+    if (content.staticValue.includes('[') && content.staticValue.includes(']')) {
+      return processTemplate(content.staticValue, mockData);
+    }
     return content.staticValue;
   }
   
   if (content?.text) {
+    // Si es un template dinámico en text, procesarlo
+    if (content.text.includes('[') && content.text.includes(']')) {
+      return processTemplate(content.text, mockData);
+    }
     return content.text;
   }
   
-  // 8. Fallback final
-  return 'Texto de ejemplo';
+  // 8. Fallback final con dato realista
+  return 'Heladera Whirlpool No Frost 375L';
 };
 
 // =====================
@@ -285,12 +337,12 @@ export const createMockDataWithContext = (
 ): MockDataV3 => {
   return {
     ...defaultMockData,
-    producto,
+    producto: producto || createMockProduct(), // Siempre incluir un producto mock
     tienda: tienda || defaultMockData.tienda,
     seccion: seccion || defaultMockData.seccion,
     promocion,
     descuento_calculado: producto?.precioAnt && producto?.precio 
       ? Math.round(((producto.precioAnt - producto.precio) / producto.precioAnt) * 100)
-      : 0
+      : 18 // Descuento por defecto del mock
   };
 }; 

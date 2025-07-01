@@ -30,6 +30,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { ConfigurationPortal } from '@/features/settings/components/ConfigurationPortal';
 import { CreateFamilyModal } from './CreateFamilyModal';
+import { builderV3Service } from '../../../services/builderV3Service';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AppDispatch, RootState } from '@/store';
 
@@ -59,6 +60,7 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
   const [paperFormat, setPaperFormat] = useState<string>('A4');
   const [customWidth, setCustomWidth] = useState<number>(210);
   const [customHeight, setCustomHeight] = useState<number>(297);
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const [rulerUnit, setRulerUnit] = useState<'mm' | 'cm'>('mm');
   const [isPaperModalOpen, setIsPaperModalOpen] = useState(false);
   const [showConfirmExitModal, setShowConfirmExitModal] = useState(false);
@@ -91,8 +93,15 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
   const handleCreateNewTemplate = useCallback(async () => {
     if (!state.currentFamily) return;
     try {
-      const canvasWidthInPx = customWidth * UnitConverter.MM_TO_PX;
-      const canvasHeightInPx = customHeight * UnitConverter.MM_TO_PX;
+      // Considerar la orientación actual para las dimensiones del canvas
+      let canvasWidth = customWidth;
+      let canvasHeight = customHeight;
+      
+      // Si estamos en landscape, las dimensiones ya están intercambiadas
+      // porque customWidth y customHeight reflejan la orientación actual
+      
+      const canvasWidthInPx = canvasWidth * UnitConverter.MM_TO_PX;
+      const canvasHeightInPx = canvasHeight * UnitConverter.MM_TO_PX;
 
       const newTemplate = await operations.createTemplate({
         name: 'Nueva Plantilla Sin Título',
@@ -100,14 +109,14 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
         canvas: { width: canvasWidthInPx, height: canvasHeightInPx, unit: 'px', dpi: 300, backgroundColor: '#ffffff' },
       } as any);
       
-      console.log(`🚀 Nueva plantilla creada con dimensiones ${Math.round(canvasWidthInPx)}x${Math.round(canvasHeightInPx)}px`);
+      console.log(`🚀 Nueva plantilla creada (${orientation}) con dimensiones ${Math.round(canvasWidthInPx)}x${Math.round(canvasHeightInPx)}px (${canvasWidth}×${canvasHeight}mm)`);
       operations.setTemplateDirect(newTemplate);
       setCurrentStep('canvas-editor');
     } catch (error) {
       console.error('❌ Error creando plantilla:', error);
       toast.error('Error al crear nueva plantilla');
     }
-  }, [state.currentFamily, operations, customWidth, customHeight]);
+  }, [state.currentFamily, operations, customWidth, customHeight, orientation]);
 
   const handleCreateFamily = useCallback(() => {
     setIsCreateFamilyModalOpen(true);
@@ -115,29 +124,76 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
 
   const handleFamilyCreated = useCallback(async (familyData: Omit<FamilyV3, 'id' | 'createdAt' | 'updatedAt' | 'templates'>) => {
     try {
-      await operations.createFamily(familyData);
+      const newFamily = await operations.createFamily(familyData);
       toast.success(`Familia "${familyData.displayName}" creada exitosamente.`);
       await refreshData();
       setIsCreateFamilyModalOpen(false);
+      return newFamily; // Retornar la familia creada con su ID real
     } catch (error) {
       toast.error('Error al crear la familia.');
       console.error('Failed to create family:', error);
+      throw error;
     }
   }, [operations, refreshData]);
+
+  const handleCloneTemplates = useCallback(async (
+    sourceTemplateIds: string[], 
+    targetFamilyId: string, 
+    replaceHeaders?: boolean, 
+    headerImageUrl?: string
+  ) => {
+    try {
+      console.log('🔄 BuilderV3 - Iniciando clonación de plantillas:', {
+        templateIds: sourceTemplateIds,
+        targetFamilyId,
+        replaceHeaders,
+        hasHeaderImage: !!headerImageUrl
+      });
+
+      const clonedTemplates = await builderV3Service.templates.cloneTemplates(
+        sourceTemplateIds,
+        targetFamilyId,
+        { replaceHeaders, headerImageUrl }
+      );
+
+      toast.success(`${clonedTemplates.length} plantillas copiadas exitosamente`);
+      await refreshData();
+    } catch (error) {
+      console.error('❌ Error en clonación de plantillas:', error);
+      toast.error('Error al clonar plantillas');
+      throw error;
+    }
+  }, [refreshData]);
 
   const handlePaperFormatChange = useCallback((formatId: string) => {
     setPaperFormat(formatId);
     const format = availablePaperFormats.find(f => f.id === formatId);
     if (format && format.id !== 'CUSTOM' && state.currentTemplate) {
+      // Considerar la orientación actual para determinar las dimensiones finales
+      let finalWidth = format.width;
+      let finalHeight = format.height;
+      
+      // Si estamos en landscape, intercambiar las dimensiones
+      if (orientation === 'landscape') {
+        finalWidth = format.height;
+        finalHeight = format.width;
+      }
+      
+      // Actualizar también las dimensiones personalizadas
+      setCustomWidth(finalWidth);
+      setCustomHeight(finalHeight);
+      
+      console.log(`📄 Formato cambiado a ${format.name} (${orientation}): ${finalWidth}×${finalHeight}mm`);
+      
       operations.updateTemplate(state.currentTemplate.id, {
         canvas: {
           ...state.currentTemplate.canvas,
-          width: format.width * UnitConverter.MM_TO_PX,
-          height: format.height * UnitConverter.MM_TO_PX
+          width: finalWidth * UnitConverter.MM_TO_PX,
+          height: finalHeight * UnitConverter.MM_TO_PX
         }
       });
     }
-  }, [availablePaperFormats, state.currentTemplate, operations]);
+  }, [availablePaperFormats, state.currentTemplate, operations, orientation]);
 
   const handleComponentAdd = useCallback((type: ComponentTypeV3, position: PositionV3) => {
     const component = operations.createComponent(type, position);
@@ -167,6 +223,41 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
       name: trimmedTitle
     });
   }, [state.currentTemplate, operations]);
+
+  const handleOrientationToggle = useCallback(() => {
+    const newOrientation = orientation === 'portrait' ? 'landscape' : 'portrait';
+    setOrientation(newOrientation);
+    
+    if (!state.currentTemplate) return;
+    
+    // Intercambiar las dimensiones del canvas
+    const currentCanvas = state.currentTemplate.canvas;
+    const newWidth = currentCanvas.height;
+    const newHeight = currentCanvas.width;
+    
+    console.log(`📐 Cambiando orientación de ${orientation} a ${newOrientation}:`);
+    console.log(`   ${Math.round(currentCanvas.width / UnitConverter.MM_TO_PX)}×${Math.round(currentCanvas.height / UnitConverter.MM_TO_PX)}mm → ${Math.round(newWidth / UnitConverter.MM_TO_PX)}×${Math.round(newHeight / UnitConverter.MM_TO_PX)}mm`);
+    
+    // Actualizar las dimensiones personalizadas también
+    const newCustomWidth = Math.round(newWidth / UnitConverter.MM_TO_PX);
+    const newCustomHeight = Math.round(newHeight / UnitConverter.MM_TO_PX);
+    setCustomWidth(newCustomWidth);
+    setCustomHeight(newCustomHeight);
+    
+    // Actualizar el template con las nuevas dimensiones
+    operations.updateTemplate(state.currentTemplate.id, {
+      canvas: {
+        ...currentCanvas,
+        width: newWidth,
+        height: newHeight
+      }
+    });
+    
+    // TODO: Aquí podríamos agregar lógica para reposicionar componentes que queden fuera del canvas
+    // Por ahora, solo hacemos el intercambio de dimensiones
+    
+    toast.success(`Orientación cambiada a ${newOrientation === 'portrait' ? 'vertical' : 'horizontal'}`);
+  }, [orientation, state.currentTemplate, operations]);
 
   const executeNavigation = useCallback((navigationFn: () => void) => {
     console.log('🔙 Ejecutando navegación...');
@@ -361,7 +452,18 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
             templates={templates}
             onTemplateSelect={handleTemplateSelect}
             onTemplateCreate={handleCreateNewTemplate}
+            onTemplateDelete={async (templateId: string) => {
+              try {
+                await operations.deleteTemplate(templateId);
+                await refreshData(); // Refrescar datos después de eliminar
+                toast.success('Plantilla eliminada exitosamente');
+              } catch (error) {
+                console.error('Error eliminando plantilla desde BuilderV3:', error);
+                toast.error('Error al eliminar la plantilla');
+              }
+            }}
             userRole={userRole === 'admin' ? 'admin' : 'limited'}
+            onRefresh={refreshData}
           />
         );
       case 'canvas-editor':
@@ -374,35 +476,25 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
                 onSave={operations.saveTemplate}
                 onPreview={() => setShowPreview(true)}
                 onExport={() => operations.exportCanvas(state.exportConfig)}
-                onUndo={operations.undo}
-                onRedo={operations.redo}
-                onConnectSAP={operations.connectToSAP as any}
-                onConnectPromotions={operations.connectToPromotions as any}
                 onToggleGrid={operations.toggleGrid}
                 onToggleRulers={operations.toggleRulers}
                 onZoomIn={() => operations.setZoom(state.canvas.zoom + 0.1)}
                 onZoomOut={() => operations.setZoom(state.canvas.zoom - 0.1)}
                 onZoomReset={() => operations.setZoom(1)}
-                onCopy={() => operations.copyComponents(state.canvas.selectedComponentIds)}
                 onDelete={() => operations.removeComponents(state.canvas.selectedComponentIds)}
-                onAlignLeft={() => operations.alignComponents(state.canvas.selectedComponentIds, 'left')}
-                onAlignCenter={() => operations.alignComponents(state.canvas.selectedComponentIds, 'center')}
-                onAlignRight={() => operations.alignComponents(state.canvas.selectedComponentIds, 'right')}
                 onAlignJustify={() => {}}
                 onPaperFormatChange={handlePaperFormatChange}
                 onTitleChange={handleTitleChange}
+                onOrientationToggle={handleOrientationToggle}
                 templateTitle={state.currentTemplate.name}
                 hasUnsavedChanges={state.hasUnsavedChanges}
-                canUndo={state.canvas.canUndo}
-                canRedo={state.canvas.canRedo}
                 hasSelection={state.canvas.selectedComponentIds.length > 0}
                 gridVisible={state.canvas.showGrid}
                 rulersVisible={state.canvas.showRulers}
                 zoomLevel={state.canvas.zoom * 100}
                 isSaving={state.isSaving}
-                isConnectedSAP={state.sapConnection.isConnected}
-                isConnectedPromotions={state.promotionConnection.isConnected}
                 paperFormat={paperFormat}
+                orientation={orientation}
                 availablePaperFormats={availablePaperFormats}
               />
               <CanvasEditorV3
@@ -459,8 +551,6 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
       <StatusBarV3
         state={state}
         zoomLevel={state.canvas.zoom * 100}
-        isConnectedSAP={state.sapConnection.isConnected}
-        isConnectedPromotions={state.promotionConnection.isConnected}
         gridVisible={state.canvas.showGrid}
         rulersVisible={state.canvas.showRulers}
       />
@@ -478,9 +568,7 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
           onClose={() => setIsCreateFamilyModalOpen(false)}
           onCreateFamily={handleFamilyCreated}
           existingFamilies={families}
-          onCloneTemplates={async (sourceTemplateIds, targetFamilyId, replaceHeaders) => {
-            console.log('Cloning:', { sourceTemplateIds, targetFamilyId, replaceHeaders });
-          }}
+          onCloneTemplates={handleCloneTemplates}
         />
       )}
 

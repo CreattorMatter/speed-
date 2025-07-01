@@ -3,7 +3,9 @@
 // =====================================
 
 import React, { useState, useCallback } from 'react';
-import { FamilyV3, TemplateV3 } from '../types';
+import { FamilyV3, TemplateV3, BuilderStateV3 } from '../types';
+import { PreviewModalV3 } from './PreviewModalV3';
+import { templatesV3Service } from '../../../services/builderV3Service';
 import { 
   Search,
   Filter,
@@ -16,15 +18,22 @@ import {
   Trash2,
   Grid,
   List,
-  ArrowRight
+  ArrowRight,
+  MoreVertical,
+  Loader2
 } from 'lucide-react';
+import { BuilderTemplateRenderer } from '../../posters/components/Posters/Editor/Renderers/BuilderTemplateRenderer';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 interface TemplateLibraryV3Props {
   family: FamilyV3;
   templates: TemplateV3[];
   onTemplateSelect: (templateId: string) => void;
   onTemplateCreate: () => void;
+  onTemplateDelete?: (templateId: string) => void;
   userRole: 'admin' | 'limited';
+  onRefresh?: () => void; // Para refrescar la lista después de duplicar
 }
 
 export const TemplateLibraryV3: React.FC<TemplateLibraryV3Props> = ({
@@ -32,12 +41,27 @@ export const TemplateLibraryV3: React.FC<TemplateLibraryV3Props> = ({
   templates,
   onTemplateSelect,
   onTemplateCreate,
-  userRole
+  onTemplateDelete,
+  userRole,
+  onRefresh
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'name' | 'created' | 'updated' | 'usage'>('updated');
+  
+  // Estados para preview modal
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateV3 | null>(null);
+  const [previewState, setPreviewState] = useState<BuilderStateV3 | null>(null);
+  
+  // Estados para duplicación
+  const [isDuplicating, setIsDuplicating] = useState(false);
+  
+  // Estados para eliminación
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<TemplateV3 | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Filtrar y ordenar plantillas
   const filteredTemplates = templates
@@ -88,14 +112,181 @@ export const TemplateLibraryV3: React.FC<TemplateLibraryV3Props> = ({
 
   const handleTemplatePreview = useCallback((template: TemplateV3, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Implementar preview
-    console.log('Preview template:', template.id);
+    
+    // Crear un estado básico para la previsualización
+    const previewBuilderState: BuilderStateV3 = {
+      currentFamily: family,
+      currentTemplate: template,
+      components: template.defaultComponents || [],
+      canvas: {
+        // Vista y navegación
+        zoom: 1,
+        minZoom: 0.1,
+        maxZoom: 5,
+        panX: 0,
+        panY: 0,
+        
+        // Herramientas activas
+        activeTool: 'select',
+        selectedComponentIds: [],
+        
+        // Configuración visual del canvas
+        showGrid: false,
+        gridSize: 20,
+        gridColor: '#e5e5e5',
+        showRulers: false,
+        showGuides: false,
+        guides: [],
+        
+        // Configuración de ajuste
+        snapToGrid: false,
+        snapToGuides: false,
+        snapToObjects: false,
+        snapTolerance: 5,
+        
+        // Configuración de selección
+        selectionMode: 'single',
+        selectionStyle: {
+          strokeColor: '#2563eb',
+          strokeWidth: 2,
+          handleColor: '#2563eb',
+          handleSize: 8
+        },
+        
+        // Estado de navegación
+        canUndo: false,
+        canRedo: false,
+        historyIndex: 0,
+        maxHistorySize: 50
+      },
+      history: [],
+      sapConnection: {
+        isConnected: false
+      },
+      promotionConnection: {
+        isConnected: false
+      },
+      exportConfig: {
+        format: 'png',
+        quality: 90,
+        dpi: 300,
+        includeBleed: false,
+        bleedSize: 3,
+        cropMarks: false,
+        colorSpace: 'RGB'
+      },
+      ui: {
+        leftPanelOpen: false,
+        rightPanelOpen: false,
+        bottomPanelOpen: false,
+        activeLeftTab: 'components',
+        activeRightTab: 'properties',
+        activeBottomTab: 'preview'
+      },
+      isLoading: false,
+      isSaving: false,
+      isExporting: false,
+      isConnecting: false,
+      hasUnsavedChanges: false,
+      errors: [],
+      userPreferences: {
+        autoSave: true,
+        autoSaveInterval: 30000,
+        gridSnap: false,
+        showTooltips: true,
+        theme: 'light',
+        language: 'es'
+      },
+      componentsLibrary: {}
+    };
+    
+    setPreviewTemplate(template);
+    setPreviewState(previewBuilderState);
+    setShowPreviewModal(true);
+  }, [family]);
+
+  const handleTemplateDuplicate = useCallback(async (template: TemplateV3, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (isDuplicating) return; // Prevenir duplicaciones múltiples
+    
+    setIsDuplicating(true);
+    
+    try {
+      // Generar nombre único para la copia
+      const newName = `${template.name} - Copia`;
+      
+      // Duplicar la plantilla usando el servicio existente
+      const duplicatedTemplate = await templatesV3Service.duplicate(template.id, newName);
+      
+      // Mostrar mensaje de éxito
+      console.log('Plantilla duplicada exitosamente:', duplicatedTemplate.name);
+      
+      // Refrescar la lista para mostrar la nueva plantilla
+      if (onRefresh) {
+        onRefresh();
+      }
+      
+      // Navegar directamente al constructor con la plantilla duplicada
+      onTemplateSelect(duplicatedTemplate.id);
+      
+    } catch (error) {
+      console.error('Error al duplicar plantilla:', error);
+      alert('Error al duplicar la plantilla. Inténtalo de nuevo.');
+    } finally {
+      setIsDuplicating(false);
+    }
+  }, [isDuplicating, onTemplateSelect, onRefresh]);
+
+  const handleTemplateDeleteClick = useCallback((template: TemplateV3, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTemplateToDelete(template);
+    setShowDeleteModal(true);
   }, []);
 
-  const handleTemplateDuplicate = useCallback((template: TemplateV3, e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Implementar duplicación
-    console.log('Duplicate template:', template.id);
+  const handleConfirmDelete = useCallback(async () => {
+    if (!templateToDelete || isDeleting) return;
+
+    setIsDeleting(true);
+
+    try {
+      // Eliminar usando el servicio
+      await templatesV3Service.delete(templateToDelete.id);
+
+      // Mostrar mensaje de éxito
+      toast.success(`Plantilla "${templateToDelete.name}" eliminada exitosamente`);
+      
+      // Cerrar modal
+      setShowDeleteModal(false);
+      setTemplateToDelete(null);
+      
+      // Refrescar la lista para actualizar la vista
+      if (onRefresh) {
+        onRefresh();
+      }
+
+      // Llamar callback de eliminación si existe
+      if (onTemplateDelete) {
+        onTemplateDelete(templateToDelete.id);
+      }
+      
+    } catch (error) {
+      console.error('Error al eliminar plantilla:', error);
+      toast.error('Error al eliminar la plantilla. Inténtalo de nuevo.');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [templateToDelete, isDeleting, onRefresh, onTemplateDelete]);
+
+  const handleCancelDelete = useCallback(() => {
+    setShowDeleteModal(false);
+    setTemplateToDelete(null);
+  }, []);
+
+  const handleClosePreview = useCallback(() => {
+    setShowPreviewModal(false);
+    setPreviewTemplate(null);
+    setPreviewState(null);
   }, []);
 
   const formatDate = (date: Date) => {
@@ -122,13 +313,38 @@ export const TemplateLibraryV3: React.FC<TemplateLibraryV3Props> = ({
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-2 bg-gray-300 rounded-lg flex items-center justify-center">
-                <Edit className="w-8 h-8" />
+          <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative group-hover:scale-105 transition-transform duration-200">
+            {/* Marco tipo tablet con sombra */}
+            <div className="w-40 h-32 bg-gray-800 rounded-lg p-2 shadow-2xl transform rotate-1 group-hover:rotate-0 transition-transform duration-300">
+              <div className="w-full h-full bg-white rounded-md overflow-hidden shadow-inner relative">
+                {/* Indicador de encendido */}
+                <div className="absolute top-1 right-1 w-1 h-1 bg-green-400 rounded-full animate-pulse"></div>
+                
+                {/* Vista previa de la plantilla */}
+                <div className="w-full h-full bg-gradient-to-b from-blue-500 to-purple-600 flex items-center justify-center relative overflow-hidden">
+                  <div 
+                    className="absolute inset-0 scale-[0.8] origin-center flex items-center justify-center"
+                    style={{ filter: 'brightness(0.9)' }}
+                  >
+                    <BuilderTemplateRenderer
+                      template={template}
+                      components={template.defaultComponents}
+                      isPreview={true}
+                      scale={0.15}
+                    />
+                  </div>
+                  
+                  {/* Overlay con información */}
+                  <div className="absolute bottom-1 left-1 right-1 bg-black bg-opacity-60 text-white text-center py-1 rounded text-[0.5rem] font-bold">
+                    {template.name.substring(0, 12)}...
+                  </div>
+                </div>
               </div>
-              <div className="text-sm font-medium">Sin vista previa</div>
             </div>
+            
+            {/* Elementos decorativos */}
+            <div className="absolute top-2 left-2 w-2 h-2 bg-yellow-400 rounded-full opacity-70 animate-pulse"></div>
+            <div className="absolute bottom-3 right-3 w-1 h-1 bg-green-400 rounded-full opacity-80"></div>
           </div>
         )}
         
@@ -143,13 +359,27 @@ export const TemplateLibraryV3: React.FC<TemplateLibraryV3Props> = ({
               <Eye className="w-4 h-4" />
             </button>
             {userRole === 'admin' && (
-              <button
-                onClick={(e) => handleTemplateDuplicate(template, e)}
-                className="bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 p-2 rounded-lg transition-colors"
-                title="Duplicar"
-              >
-                <Copy className="w-4 h-4" />
-              </button>
+              <>
+                <button
+                  onClick={(e) => handleTemplateDuplicate(template, e)}
+                  className="bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 p-2 rounded-lg transition-colors"
+                  title="Duplicar"
+                  disabled={isDuplicating}
+                >
+                  {isDuplicating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+                <button
+                  onClick={(e) => handleTemplateDeleteClick(template, e)}
+                  className="bg-red-500 bg-opacity-90 hover:bg-opacity-100 text-white p-2 rounded-lg transition-colors"
+                  title="Eliminar"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -245,11 +475,29 @@ export const TemplateLibraryV3: React.FC<TemplateLibraryV3Props> = ({
               alt={template.name}
               className="w-full h-full object-cover"
             />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              <Edit className="w-6 h-6" />
+                  ) : (
+          <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative">
+            {/* Marco tipo smartphone pequeño */}
+            <div className="w-8 h-10 bg-gray-800 rounded-md p-0.5 shadow-lg">
+              <div className="w-full h-full bg-white rounded-sm overflow-hidden relative">
+                {/* Vista previa mini */}
+                <div className="w-full h-full bg-gradient-to-b from-blue-500 to-purple-600 flex items-center justify-center">
+                  <div 
+                    className="scale-[0.3] origin-center"
+                    style={{ filter: 'brightness(0.8)' }}
+                  >
+                    <BuilderTemplateRenderer
+                      template={template}
+                      components={template.defaultComponents}
+                      isPreview={true}
+                      scale={0.08}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
+        )}
         </div>
 
         {/* Información */}
@@ -297,13 +545,28 @@ export const TemplateLibraryV3: React.FC<TemplateLibraryV3Props> = ({
           </button>
           
           {userRole === 'admin' && (
-            <button
-              onClick={(e) => handleTemplateDuplicate(template, e)}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-              title="Duplicar"
-            >
-              <Copy className="w-4 h-4" />
-            </button>
+            <>
+              <button
+                onClick={(e) => handleTemplateDuplicate(template, e)}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Duplicar"
+                disabled={isDuplicating}
+              >
+                {isDuplicating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </button>
+              
+              <button
+                onClick={(e) => handleTemplateDeleteClick(template, e)}
+                className="p-2 text-red-500 hover:text-red-700 transition-colors"
+                title="Eliminar"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
           )}
           
           <ArrowRight className="w-4 h-4 text-gray-400" />
@@ -431,6 +694,95 @@ export const TemplateLibraryV3: React.FC<TemplateLibraryV3Props> = ({
           </div>
         )}
       </div>
+
+      {/* Preview Modal */}
+      {showPreviewModal && previewTemplate && previewState !== null && (
+        <PreviewModalV3
+          isOpen={showPreviewModal}
+          template={previewTemplate}
+          state={previewState}
+          onClose={handleClosePreview}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && templateToDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-xl shadow-xl max-w-md w-full"
+            >
+              <div className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                    <Trash2 className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Eliminar Plantilla
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Esta acción no se puede deshacer
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    {templateToDelete.name}
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {templateToDelete.description || 'Sin descripción'}
+                  </p>
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>
+                      {templateToDelete.defaultComponents.length} componentes
+                    </span>
+                    <span>
+                      Actualizada {formatDate(templateToDelete.updatedAt)}
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-600 mb-6">
+                  ¿Estás seguro de que quieres eliminar esta plantilla? 
+                  Esta acción eliminará permanentemente la plantilla y todos sus componentes.
+                </p>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleCancelDelete}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    disabled={isDeleting}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleConfirmDelete}
+                    className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center justify-center space-x-2"
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Eliminando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-4 h-4" />
+                        <span>Eliminar</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }; 

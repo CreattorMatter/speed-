@@ -223,19 +223,6 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
 
   return (
     <div className="flex-1 h-full bg-gray-100 relative overflow-hidden">
-      {/* Enhanced Rulers with Real Measurements */}
-      {canvasState.showRulers && template.canvas && template.canvas.width > 0 && template.canvas.height > 0 && (
-        <EnhancedRulers
-          canvasWidth={template.canvas.width}
-          canvasHeight={template.canvas.height}
-          zoom={canvasState.zoom}
-          offsetX={canvasState.panX}
-          offsetY={canvasState.panY}
-          unit={rulerUnit || 'mm'}
-          visible={true}
-        />
-      )}
-
       {/* Enhanced Canvas */}
       <div
         ref={canvasRef}
@@ -260,6 +247,16 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
             transform: `translate(${canvasState.panX}px, ${canvasState.panY}px)`
           }}
         >
+          {/* Enhanced Rulers - Positioned to align with canvas edges */}
+          {canvasState.showRulers && template.canvas && template.canvas.width > 0 && template.canvas.height > 0 && (
+            <EnhancedRulers
+              width={template.canvas.width * canvasState.zoom}
+              height={template.canvas.height * canvasState.zoom}
+              zoom={canvasState.zoom}
+              visible={true}
+              rulerUnit={rulerUnit || 'mm'}
+            />
+          )}
           {/* Enhanced Grid */}
           {canvasState.showGrid && (
             <div

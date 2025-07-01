@@ -1,5 +1,5 @@
 // =====================================
-// UNIT CONVERTER UTILITY
+// UNIT CONVERTER UTILITY - MEJORADO v2
 // =====================================
 
 export interface UnitConversion {
@@ -126,7 +126,7 @@ export class UnitConverter {
   }
 
   /**
-   * Calcula marcas de regla para una dimensión dada
+   * Calcula marcas de regla para una dimensión dada - ALGORITMO MEJORADO v2
    */
   static getRulerMarks(
     lengthPx: number, 
@@ -142,110 +142,140 @@ export class UnitConverter {
     
     const lengthInUnit = unit === 'mm' ? UnitConverter.pxToMm(lengthPx) : UnitConverter.pxToCm(lengthPx);
     
-    // Determinar el intervalo basado en zoom y unidad - OPTIMIZADO
+    // ALGORITMO MEJORADO v2: Más granular y útil para mediciones precisas
     let majorInterval: number;
     let minorInterval: number;
+    let labelInterval: number; // Nuevo: intervalo para etiquetas
     
-    // Algoritmo FINAL optimizado: intervalos suaves para todos los zooms
     if (unit === 'mm') {
-      if (zoom >= 3) {
-        majorInterval = 5; // cada 5mm
-        minorInterval = 1;  // cada 1mm
+      // Sistema mejorado para milímetros - más granular
+      if (zoom >= 5) {
+        majorInterval = 10;   // cada 1cm - marcas principales
+        minorInterval = 1;    // cada 1mm - marcas menores
+        labelInterval = 5;    // etiquetas cada 5mm
+      } else if (zoom >= 4) {
+        majorInterval = 10;   // cada 1cm
+        minorInterval = 2;    // cada 2mm
+        labelInterval = 10;   // etiquetas cada 1cm
+      } else if (zoom >= 3) {
+        majorInterval = 10;   // cada 1cm
+        minorInterval = 5;    // cada 5mm
+        labelInterval = 10;   // etiquetas cada 1cm
       } else if (zoom >= 2) {
-        majorInterval = 10; // cada 1cm
-        minorInterval = 2;  // cada 2mm
-      } else if (zoom >= 1.2) {
-        majorInterval = 10; // cada 1cm
-        minorInterval = 5;  // cada 5mm
-      } else if (zoom >= 0.9) {
-        majorInterval = 20; // cada 2cm - ÓPTIMO para zoom ~70%
-        minorInterval = 10; // cada 1cm
-      } else if (zoom >= 0.6) {
-        majorInterval = 20; // cada 2cm - PERFECTO para 60-80%
-        minorInterval = 10; // cada 1cm
-      } else if (zoom >= 0.35) {
-        majorInterval = 50; // cada 5cm
-        minorInterval = 20; // cada 2cm
-      } else if (zoom >= 0.2) {
-        majorInterval = 100; // cada 10cm
-        minorInterval = 25;  // cada 2.5cm
+        majorInterval = 20;   // cada 2cm
+        minorInterval = 5;    // cada 5mm
+        labelInterval = 10;   // etiquetas cada 1cm
+      } else if (zoom >= 1.5) {
+        majorInterval = 20;   // cada 2cm
+        minorInterval = 10;   // cada 1cm
+        labelInterval = 20;   // etiquetas cada 2cm
+      } else if (zoom >= 1) {
+        majorInterval = 50;   // cada 5cm
+        minorInterval = 10;   // cada 1cm
+        labelInterval = 20;   // etiquetas cada 2cm
+      } else if (zoom >= 0.75) {
+        majorInterval = 50;   // cada 5cm
+        minorInterval = 25;   // cada 2.5cm
+        labelInterval = 50;   // etiquetas cada 5cm
+      } else if (zoom >= 0.5) {
+        majorInterval = 100;  // cada 10cm
+        minorInterval = 25;   // cada 2.5cm
+        labelInterval = 50;   // etiquetas cada 5cm
       } else {
-        majorInterval = 200; // cada 20cm
-        minorInterval = 50;  // cada 5cm
+        majorInterval = 100;  // cada 10cm
+        minorInterval = 50;   // cada 5cm
+        labelInterval = 100;  // etiquetas cada 10cm
       }
-    } else { // cm - OPTIMIZADO también
-      if (zoom >= 3) {
-        majorInterval = 0.5;   // cada 5mm
+    } else { // cm - Sistema mejorado para centímetros
+      if (zoom >= 5) {
+        majorInterval = 1;     // cada 1cm
         minorInterval = 0.1;   // cada 1mm
+        labelInterval = 0.5;   // etiquetas cada 5mm
+      } else if (zoom >= 4) {
+        majorInterval = 1;     // cada 1cm
+        minorInterval = 0.2;   // cada 2mm
+        labelInterval = 1;     // etiquetas cada 1cm
+      } else if (zoom >= 3) {
+        majorInterval = 1;     // cada 1cm
+        minorInterval = 0.5;   // cada 5mm
+        labelInterval = 1;     // etiquetas cada 1cm
       } else if (zoom >= 2) {
-        majorInterval = 1;   // cada 1cm
-        minorInterval = 0.2; // cada 2mm
-      } else if (zoom >= 1.2) {
-        majorInterval = 1;   // cada 1cm
-        minorInterval = 0.5; // cada 5mm
-      } else if (zoom >= 0.9) {
-        majorInterval = 2;   // cada 2cm - ÓPTIMO para zoom ~70%
-        minorInterval = 1;   // cada 1cm
-      } else if (zoom >= 0.6) {
-        majorInterval = 2;   // cada 2cm - PERFECTO para 60-80%
-        minorInterval = 1;   // cada 1cm
-      } else if (zoom >= 0.35) {
-        majorInterval = 5;   // cada 5cm
-        minorInterval = 2;   // cada 2cm
-      } else if (zoom >= 0.2) {
-        majorInterval = 10;  // cada 10cm
-        minorInterval = 2.5; // cada 2.5cm
+        majorInterval = 2;     // cada 2cm
+        minorInterval = 0.5;   // cada 5mm
+        labelInterval = 1;     // etiquetas cada 1cm
+      } else if (zoom >= 1.5) {
+        majorInterval = 2;     // cada 2cm
+        minorInterval = 1;     // cada 1cm
+        labelInterval = 2;     // etiquetas cada 2cm
+      } else if (zoom >= 1) {
+        majorInterval = 5;     // cada 5cm
+        minorInterval = 1;     // cada 1cm
+        labelInterval = 2;     // etiquetas cada 2cm
+      } else if (zoom >= 0.75) {
+        majorInterval = 5;     // cada 5cm
+        minorInterval = 2.5;   // cada 2.5cm
+        labelInterval = 5;     // etiquetas cada 5cm
       } else {
-        majorInterval = 20;  // cada 20cm
-        minorInterval = 5;   // cada 5cm
+        majorInterval = 10;    // cada 10cm
+        minorInterval = 5;     // cada 5cm
+        labelInterval = 10;    // etiquetas cada 10cm
       }
     }
 
-    // Optimización: limitar número máximo de marcas
-    const maxMarks = 200;
+    // Limitar número máximo de marcas para rendimiento
+    const maxMarks = 400; // Aumentado para permitir mayor granularidad
     const estimatedMinorMarks = Math.ceil(lengthInUnit / minorInterval);
     
     if (estimatedMinorMarks > maxMarks) {
-      // Ajustar intervalos si hay demasiadas marcas
       const factor = Math.ceil(estimatedMinorMarks / maxMarks);
       minorInterval *= factor;
-      majorInterval *= factor;
+      majorInterval = Math.max(majorInterval, minorInterval * 2);
+      labelInterval = Math.max(labelInterval, majorInterval);
     }
 
-    // Generar marcas menores de forma optimizada
-    const minorMarkCount = Math.ceil(lengthInUnit / minorInterval);
-    for (let i = 0; i <= minorMarkCount; i++) {
-      const value = i * minorInterval;
+    // GENERACIÓN MEJORADA: Comenzar desde 0 y generar marcas más precisas
+    const allMarks = new Map<number, { isMajor: boolean; hasLabel: boolean }>();
+    
+    // Generar marcas menores (más granulares)
+    for (let value = 0; value <= lengthInUnit; value += minorInterval) {
       if (value > lengthInUnit) break;
-      
+      const roundedValue = Math.round(value * 1000) / 1000;
+      allMarks.set(roundedValue, { isMajor: false, hasLabel: false });
+    }
+    
+    // Marcar las marcas principales
+    for (let value = 0; value <= lengthInUnit; value += majorInterval) {
+      if (value > lengthInUnit) break;
+      const roundedValue = Math.round(value * 1000) / 1000;
+      allMarks.set(roundedValue, { isMajor: true, hasLabel: false });
+    }
+    
+    // Marcar las que deben tener etiquetas
+    for (let value = 0; value <= lengthInUnit; value += labelInterval) {
+      if (value > lengthInUnit) break;
+      const roundedValue = Math.round(value * 1000) / 1000;
+      const existing = allMarks.get(roundedValue);
+      allMarks.set(roundedValue, { 
+        isMajor: existing?.isMajor || false, 
+        hasLabel: true 
+      });
+    }
+    
+    // Convertir a array y generar marcas finales
+    Array.from(allMarks.entries()).sort((a, b) => a[0] - b[0]).forEach(([value, config]) => {
       const positionPx = unit === 'mm' ? UnitConverter.mmToPx(value) : UnitConverter.cmToPx(value);
       
       marks.push({
         position: positionPx,
         value,
-        isMajor: false
+        isMajor: config.isMajor,
+        label: config.hasLabel ? UnitConverter.formatValue(value, unit) : undefined
       });
-    }
-
-    // Generar marcas mayores con etiquetas de forma optimizada
-    const majorMarkCount = Math.ceil(lengthInUnit / majorInterval);
-    for (let i = 0; i <= majorMarkCount; i++) {
-      const value = i * majorInterval;
-      if (value > lengthInUnit) break;
-      
-      const positionPx = unit === 'mm' ? UnitConverter.mmToPx(value) : UnitConverter.cmToPx(value);
-      
-      marks.push({
-        position: positionPx,
-        value,
-        isMajor: true,
-        label: UnitConverter.formatValue(value, unit)
-      });
-    }
+    });
 
     const sortedMarks = marks.sort((a, b) => a.position - b.position);
     
-    // Gestión del cache: limitar tamaño
+    // Gestión del cache
     if (UnitConverter.rulerMarksCache.size >= UnitConverter.cacheMaxSize) {
       const firstKey = UnitConverter.rulerMarksCache.keys().next().value;
       if (firstKey) {

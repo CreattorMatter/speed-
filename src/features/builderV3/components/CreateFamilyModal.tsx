@@ -4,22 +4,22 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Copy, Check, ChevronRight, ChevronDown } from 'lucide-react';
+import { X, Plus, Copy, Check, ChevronRight, ChevronDown, Upload, Image as ImageIcon } from 'lucide-react';
 import { FamilyV3, TemplateV3 } from '../types';
+import { builderV3Service } from '../../../services/builderV3Service';
 
 interface CreateFamilyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateFamily: (familyData: Omit<FamilyV3, 'id' | 'createdAt' | 'updatedAt' | 'templates'>) => Promise<void>;
+  onCreateFamily: (familyData: Omit<FamilyV3, 'id' | 'createdAt' | 'updatedAt' | 'templates'>) => Promise<FamilyV3>;
   existingFamilies: FamilyV3[];
-  onCloneTemplates?: (sourceTemplateIds: string[], targetFamilyId: string, replaceHeaders?: boolean) => Promise<void>;
+  onCloneTemplates?: (sourceTemplateIds: string[], targetFamilyId: string, replaceHeaders?: boolean, headerImageUrl?: string) => Promise<void>;
 }
 
 interface CreateFamilyFormData {
   name: string;
   displayName: string;
   description: string;
-  icon: string;
   isActive: boolean;
 }
 
@@ -38,7 +38,6 @@ export const CreateFamilyModal: React.FC<CreateFamilyModalProps> = ({
     name: '',
     displayName: '',
     description: '',
-    icon: '🏷️',
     isActive: true
   });
 
@@ -48,6 +47,11 @@ export const CreateFamilyModal: React.FC<CreateFamilyModalProps> = ({
   const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>([]);
   const [replaceHeaders, setReplaceHeaders] = useState(true);
   const [expandedFamily, setExpandedFamily] = useState<string | null>(null);
+  
+  // Estado para el upload de header
+  const [headerFile, setHeaderFile] = useState<File | null>(null);
+  const [headerImageUrl, setHeaderImageUrl] = useState<string>('');
+  const [isUploadingHeader, setIsUploadingHeader] = useState(false);
 
   const handleBasicFormSubmit = useCallback(() => {
     if (!formData.displayName.trim()) return;
@@ -63,23 +67,54 @@ export const CreateFamilyModal: React.FC<CreateFamilyModalProps> = ({
     setCurrentStep('confirm');
   }, []);
 
+  const handleReset = useCallback(() => {
+    setCurrentStep('basic');
+    setFormData({
+      name: '',
+      displayName: '',
+      description: '',
+      isActive: true
+    });
+    setEnableCloning(false);
+    setSelectedSourceFamily(null);
+    setSelectedTemplateIds([]);
+    setReplaceHeaders(true);
+    setExpandedFamily(null);
+    setIsSubmitting(false);
+    // Limpiar estado de header upload
+    setHeaderFile(null);
+    setHeaderImageUrl('');
+    setIsUploadingHeader(false);
+  }, []);
+
   const handleFinalSubmit = useCallback(async () => {
     try {
       setIsSubmitting(true);
 
-      // Crear la familia
+      // Subir imagen a Supabase si existe
+      let uploadedImageUrl = '';
+      if (headerFile) {
+        console.log('📷 Subiendo imagen de header a Supabase...');
+        try {
+          uploadedImageUrl = await builderV3Service.imageUpload.uploadImage(
+            headerFile, 
+            'template-images', 
+            'family-headers'
+          );
+          console.log('✅ Imagen subida exitosamente:', uploadedImageUrl);
+        } catch (uploadError) {
+          console.error('❌ Error subiendo imagen:', uploadError);
+          // Continuar sin imagen si falla el upload
+        }
+      }
+
+      // Crear la familia con la imagen subida
       const familyToCreate = {
         ...formData,
         name: formData.displayName.toLowerCase().replace(/\s+/g, '-') as any, // TODO: Mejorar tipado FamilyTypeV3
+        icon: '🏷️', // Icono por defecto
         featuredTemplates: [],
         defaultStyle: {
-          brandColors: {
-            primary: '#0066cc',
-            secondary: '#ffffff',
-            accent: '#00aaff',
-            text: '#333333',
-            background: '#ffffff'
-          },
           typography: {
             primaryFont: 'Inter',
             secondaryFont: 'Roboto',
@@ -99,17 +134,34 @@ export const CreateFamilyModal: React.FC<CreateFamilyModalProps> = ({
             replaceColors: false
           }
         },
-        headerImage: '',
+        headerImage: uploadedImageUrl,
         sortOrder: existingFamilies.length + 1
       };
 
-      await onCreateFamily(familyToCreate);
+      console.log('➕ Creando familia:', familyToCreate.displayName);
+      const newFamily = await onCreateFamily(familyToCreate);
+      console.log('✅ Familia creada con ID:', newFamily.id);
 
       // Si hay clonación habilitada, clonar las plantillas seleccionadas
       if (enableCloning && selectedTemplateIds.length > 0 && onCloneTemplates) {
-        // Nota: En una implementación real, necesitaríamos el ID de la familia recién creada
-        // Por ahora simulamos que la clonación se hará después
-        console.log('Clonando plantillas:', selectedTemplateIds);
+        console.log('🔄 Iniciando clonación de plantillas...');
+        try {
+          await onCloneTemplates(
+            selectedTemplateIds, 
+            newFamily.id, 
+            replaceHeaders, 
+            uploadedImageUrl || undefined
+          );
+          console.log('✅ Plantillas clonadas exitosamente');
+        } catch (cloneError) {
+          console.error('❌ Error clonando plantillas:', cloneError);
+          // No fallar la creación de familia si falla la clonación
+        }
+      }
+
+      // Limpiar blob URL temporal si existe
+      if (headerImageUrl && headerImageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(headerImageUrl);
       }
 
       // Resetear y cerrar
@@ -120,24 +172,7 @@ export const CreateFamilyModal: React.FC<CreateFamilyModalProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, enableCloning, selectedTemplateIds, replaceHeaders, existingFamilies, onCreateFamily, onCloneTemplates, onClose]);
-
-  const handleReset = useCallback(() => {
-    setCurrentStep('basic');
-    setFormData({
-      name: '',
-      displayName: '',
-      description: '',
-      icon: '🏷️',
-      isActive: true
-    });
-    setEnableCloning(false);
-    setSelectedSourceFamily(null);
-    setSelectedTemplateIds([]);
-    setReplaceHeaders(true);
-    setExpandedFamily(null);
-    setIsSubmitting(false);
-  }, []);
+  }, [formData, enableCloning, selectedTemplateIds, replaceHeaders, headerFile, headerImageUrl, existingFamilies, onCreateFamily, onCloneTemplates, onClose, handleReset]);
 
   const handleClose = useCallback(() => {
     handleReset();
@@ -156,6 +191,40 @@ export const CreateFamilyModal: React.FC<CreateFamilyModalProps> = ({
     setExpandedFamily(prev => prev === familyId ? null : familyId);
     setSelectedSourceFamily(existingFamilies.find(f => f.id === familyId) || null);
   }, [existingFamilies]);
+
+  // Handlers para upload de header
+  const handleHeaderFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor selecciona una imagen válida');
+        return;
+      }
+      
+      // Validar tamaño (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen es demasiado grande. Máximo 5MB.');
+        return;
+      }
+      
+      setHeaderFile(file);
+      setIsUploadingHeader(true);
+      
+      // Crear URL temporal para preview
+      const url = URL.createObjectURL(file);
+      setHeaderImageUrl(url);
+      setIsUploadingHeader(false);
+    }
+  }, []);
+
+  const handleRemoveHeaderImage = useCallback(() => {
+    if (headerImageUrl && headerImageUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(headerImageUrl);
+    }
+    setHeaderFile(null);
+    setHeaderImageUrl('');
+  }, [headerImageUrl]);
 
   const renderBasicStep = () => (
     <div className="space-y-6">
@@ -183,20 +252,6 @@ export const CreateFamilyModal: React.FC<CreateFamilyModalProps> = ({
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           rows={3}
           placeholder="Describe el propósito de esta familia de plantillas..."
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Icono (emoji)
-        </label>
-        <input
-          type="text"
-          value={formData.icon}
-          onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
-          className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center"
-          placeholder="🏷️"
-          maxLength={2}
         />
       </div>
 
@@ -281,7 +336,7 @@ export const CreateFamilyModal: React.FC<CreateFamilyModalProps> = ({
       {selectedTemplateIds.length > 0 && (
         <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
           <h4 className="font-medium text-blue-900 mb-2">Opciones de copia</h4>
-          <label className="flex items-center">
+          <label className="flex items-center mb-3">
             <input
               type="checkbox"
               checked={replaceHeaders}
@@ -289,9 +344,70 @@ export const CreateFamilyModal: React.FC<CreateFamilyModalProps> = ({
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <span className="ml-3 text-sm text-blue-700">
-              Actualizar imágenes de header automáticamente
+              Reemplazar imágenes de header con imagen personalizada
             </span>
           </label>
+          
+          {replaceHeaders && (
+            <div className="mt-4 border border-blue-300 rounded-lg p-3 bg-white">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">Imagen de Header Personalizada</span>
+                {headerImageUrl && (
+                  <button
+                    onClick={handleRemoveHeaderImage}
+                    className="text-red-600 hover:text-red-800 text-xs"
+                  >
+                    Remover
+                  </button>
+                )}
+              </div>
+              
+              {!headerImageUrl ? (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <div className="text-sm text-gray-600 mb-2">
+                    Sube una imagen para reemplazar todos los headers
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleHeaderFileSelect}
+                    className="hidden"
+                    id="header-upload"
+                  />
+                  <label
+                    htmlFor="header-upload"
+                    className="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 cursor-pointer"
+                  >
+                    <Upload className="w-4 h-4 mr-1" />
+                    Seleccionar Imagen
+                  </label>
+                  <div className="text-xs text-gray-500 mt-1">
+                    JPG, PNG, WebP • Máximo 5MB
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-3 p-2 bg-gray-50 rounded border">
+                  <img
+                    src={headerImageUrl}
+                    alt="Header preview"
+                    className="w-12 h-8 object-cover rounded"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900 truncate">
+                      {headerFile?.name || 'Imagen seleccionada'}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {headerFile?.size ? `${(headerFile.size / 1024 / 1024).toFixed(2)} MB` : ''}
+                    </div>
+                  </div>
+                  <div className="text-green-600">
+                    <Check className="w-5 h-5" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -307,7 +423,7 @@ export const CreateFamilyModal: React.FC<CreateFamilyModalProps> = ({
 
       <div className="bg-gray-50 rounded-lg p-4 space-y-3">
         <div className="flex items-center space-x-3">
-          <span className="text-2xl">{formData.icon}</span>
+          <span className="text-2xl">🏷️</span>
           <div>
             <div className="font-medium text-gray-900">{formData.displayName}</div>
             <div className="text-sm text-gray-500">{formData.description}</div>
@@ -320,13 +436,36 @@ export const CreateFamilyModal: React.FC<CreateFamilyModalProps> = ({
           <h4 className="font-medium text-blue-900 mb-2">
             Plantillas a copiar ({selectedTemplateIds.length})
           </h4>
-          <div className="text-sm text-blue-700">
+          <div className="text-sm text-blue-700 mb-2">
             {selectedTemplateIds.length === 1 
               ? 'Se copiará 1 plantilla'
               : `Se copiarán ${selectedTemplateIds.length} plantillas`
             }
-            {replaceHeaders && ' con headers actualizados'}
           </div>
+          
+          {replaceHeaders && (
+            <div className="mt-3 pt-3 border-t border-blue-300">
+              <div className="flex items-center space-x-2">
+                <Check className="w-4 h-4 text-blue-600" />
+                <span className="text-sm text-blue-700 font-medium">
+                  Se reemplazarán las imágenes de header
+                </span>
+              </div>
+              
+              {headerImageUrl && (
+                <div className="mt-2 flex items-center space-x-3 p-2 bg-white rounded border border-blue-200">
+                  <img
+                    src={headerImageUrl}
+                    alt="Header preview"
+                    className="w-10 h-6 object-cover rounded"
+                  />
+                  <div className="text-xs text-blue-600">
+                    {headerFile?.name || 'Imagen personalizada'}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

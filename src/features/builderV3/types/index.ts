@@ -399,12 +399,6 @@ export interface TemplateV3 {
   // Configuración de la familia
   familyConfig: {
     headerImage?: string;
-    brandColors: {
-      primary: string;
-      secondary: string;
-      accent: string;
-      text: string;
-    };
     typography: {
       primaryFont: string;
       secondaryFont: string;
@@ -460,13 +454,6 @@ export interface FamilyV3 {
   
   // Configuración visual por defecto
   defaultStyle: {
-    brandColors: {
-      primary: string;
-      secondary: string;
-      accent: string;
-      text: string;
-      background: string;
-    };
     typography: {
       primaryFont: string;
       secondaryFont: string;
@@ -622,7 +609,7 @@ export interface BuilderStateV3 {
     rightPanelOpen: boolean;
     bottomPanelOpen: boolean;
     activeLeftTab: 'components' | 'layers' | 'assets';
-    activeRightTab: 'properties' | 'styles' | 'data';
+    activeRightTab: 'properties' | 'styles' | 'content';
     activeBottomTab: 'preview' | 'export' | 'history';
   };
   

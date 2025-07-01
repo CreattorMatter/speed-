@@ -4,6 +4,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { FamilyV3, FamilyTypeV3 } from '../types';
+import { EditFamilyModal } from './EditFamilyModal';
 import { 
   Search,
   Filter,
@@ -17,7 +18,8 @@ import {
   ChevronDown,
   ChevronUp,
   Plus,
-  Trash2
+  Trash2,
+  Edit3
 } from 'lucide-react';
 
 interface FamilySelectorV3Props {
@@ -32,6 +34,7 @@ interface FamilySelectorV3Props {
   userRole: 'admin' | 'limited';
   onCreateFamily?: () => void;
   onFamilyDelete?: (familyId: string) => void;
+  onFamilyUpdate?: (familyId: string, updates: { displayName: string }) => Promise<void>;
 }
 
 export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
@@ -40,13 +43,16 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
   onFamilyMigration,
   userRole,
   onCreateFamily,
-  onFamilyDelete
+  onFamilyDelete,
+  onFamilyUpdate
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showMigrationModal, setShowMigrationModal] = useState(false);
   const [migrationSource, setMigrationSource] = useState<FamilyV3 | null>(null);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingFamily, setEditingFamily] = useState<FamilyV3 | null>(null);
 
   // Filtrar familias
   const filteredFamilies = families.filter(family => {
@@ -88,6 +94,22 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
     }
   }, [migrationSource, onFamilyMigration]);
 
+  const handleEditFamily = useCallback((family: FamilyV3) => {
+    setEditingFamily(family);
+    setShowEditModal(true);
+  }, []);
+
+  const handleEditFamilyClose = useCallback(() => {
+    setShowEditModal(false);
+    setEditingFamily(null);
+  }, []);
+
+  const handleEditFamilyUpdate = useCallback(async (familyId: string, updates: { displayName: string }) => {
+    if (onFamilyUpdate) {
+      await onFamilyUpdate(familyId, updates);
+    }
+  }, [onFamilyUpdate]);
+
   const renderFamilyCard = (family: FamilyV3) => (
     <div
       key={family.id}
@@ -106,8 +128,7 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
           />
         ) : (
           <div 
-            className="w-full h-full flex items-center justify-center text-white text-4xl font-bold"
-            style={{ backgroundColor: family.defaultStyle.brandColors.primary }}
+            className="w-full h-full flex items-center justify-center text-white text-4xl font-bold bg-gray-500"
           >
             {family.displayName.substring(0, 2).toUpperCase()}
           </div>
@@ -155,20 +176,7 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
           </div>
         </div>
 
-        {/* Colores de la familia */}
-        <div className="mb-4">
-          <div className="text-xs text-gray-500 mb-2">Paleta de colores</div>
-          <div className="flex space-x-2">
-            {Object.values(family.defaultStyle.brandColors).slice(0, 4).map((color, index) => (
-              <div
-                key={index}
-                className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
-                style={{ backgroundColor: color }}
-                title={color}
-              />
-            ))}
-          </div>
-        </div>
+        {/* Sección de colores eliminada - ya no se muestran paletas */}
 
         {/* Acciones */}
         <div className="flex space-x-2">
@@ -183,14 +191,28 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
           {userRole === 'admin' && (
             <>
               <button
-                onClick={() => handleMigrationStart(family)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEditFamily(family);
+                }}
+                className="bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-2 rounded-lg transition-colors"
+                title="Editar nombre de familia"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMigrationStart(family);
+                }}
                 className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition-colors"
                 title="Migrar plantillas"
               >
                 <Copy className="w-4 h-4" />
               </button>
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   if (window.confirm(`¿Estás seguro de que deseas eliminar la familia "${family.displayName}"? Esta acción no se puede deshacer.`)) {
                     onFamilyDelete?.(family.id);
                   }
@@ -341,6 +363,15 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
           }}
         />
       )}
+
+      {/* Modal de edición de familia */}
+      <EditFamilyModal
+        isOpen={showEditModal}
+        onClose={handleEditFamilyClose}
+        onUpdateFamily={handleEditFamilyUpdate}
+        family={editingFamily}
+        existingFamilies={families}
+      />
     </div>
   );
 };

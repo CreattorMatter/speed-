@@ -307,12 +307,7 @@ export interface FamilyConfig {
   recommendedElements: DraggableElementType[];
   excludedElements?: DraggableElementType[];
   
-  // Configuración de branding
-  brandColors: {
-    primary: string;
-    secondary: string;
-    accent: string;
-  };
+  // Configuración de branding eliminada - paletas de colores no utilizadas
   
   // Patrones visuales específicos
   visualPatterns: {

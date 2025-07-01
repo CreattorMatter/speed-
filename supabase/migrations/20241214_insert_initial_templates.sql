@@ -32,13 +32,6 @@ INSERT INTO templates (
     "backgroundColor": "#ff0000"
   }',
   '{
-    "brandColors": {
-      "primary": "#ff0000",
-      "secondary": "#ffff00",
-      "accent": "#ff6600",
-      "text": "#ffffff",
-      "background": "#ff0000"
-    },
     "typography": {
       "primaryFont": "Arial Black",
       "secondaryFont": "Arial",
@@ -65,13 +58,6 @@ INSERT INTO templates (
     "backgroundColor": "#ff0000"
   }',
   '{
-    "brandColors": {
-      "primary": "#ff0000",
-      "secondary": "#ffff00",
-      "accent": "#ff6600",
-      "text": "#ffffff",
-      "background": "#ff0000"
-    },
     "typography": {
       "primaryFont": "Arial Black",
       "secondaryFont": "Arial",
@@ -98,13 +84,6 @@ INSERT INTO templates (
     "backgroundColor": "#ff0000"
   }',
   '{
-    "brandColors": {
-      "primary": "#ff0000",
-      "secondary": "#ffff00",
-      "accent": "#ff6600",
-      "text": "#ffffff",
-      "background": "#ff0000"
-    },
     "typography": {
       "primaryFont": "Arial Black",
       "secondaryFont": "Arial",
@@ -147,13 +126,6 @@ INSERT INTO templates (
     "backgroundColor": "#ff6600"
   }',
   '{
-    "brandColors": {
-      "primary": "#ff6600",
-      "secondary": "#ffffff",
-      "accent": "#ffcc00",
-      "text": "#000000",
-      "background": "#ff6600"
-    },
     "typography": {
       "primaryFont": "Poppins",
       "secondaryFont": "Inter",
@@ -180,13 +152,6 @@ INSERT INTO templates (
     "backgroundColor": "#ff6600"
   }',
   '{
-    "brandColors": {
-      "primary": "#ff6600",
-      "secondary": "#ffffff",
-      "accent": "#ffcc00",
-      "text": "#000000",
-      "background": "#ff6600"
-    },
     "typography": {
       "primaryFont": "Poppins",
       "secondaryFont": "Inter",
@@ -229,13 +194,6 @@ INSERT INTO templates (
     "backgroundColor": "#0066cc"
   }',
   '{
-    "brandColors": {
-      "primary": "#0066cc",
-      "secondary": "#ffffff",
-      "accent": "#00aaff",
-      "text": "#ffffff",
-      "background": "#0066cc"
-    },
     "typography": {
       "primaryFont": "Roboto",
       "secondaryFont": "Open Sans",
