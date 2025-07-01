@@ -126,6 +126,8 @@ type BuilderAction =
   | { type: 'SELECT_COMPONENTS'; payload: string[] }
   | { type: 'SET_ZOOM'; payload: number }
   | { type: 'SET_PAN'; payload: { x: number; y: number } }
+  | { type: 'TOGGLE_GRID' }
+  | { type: 'TOGGLE_RULERS' }
   | { type: 'ADD_TO_HISTORY'; payload: HistoryActionV3 }
   | { type: 'UNDO' }
   | { type: 'REDO' }
@@ -254,6 +256,24 @@ const builderReducer = (state: BuilderStateV3, action: BuilderAction): BuilderSt
           ...state.canvas,
           panX: action.payload.x,
           panY: action.payload.y
+        }
+      };
+    
+    case 'TOGGLE_GRID':
+      return {
+        ...state,
+        canvas: {
+          ...state.canvas,
+          showGrid: !state.canvas.showGrid
+        }
+      };
+    
+    case 'TOGGLE_RULERS':
+      return {
+        ...state,
+        canvas: {
+          ...state.canvas,
+          showRulers: !state.canvas.showRulers
         }
       };
     
@@ -964,13 +984,11 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
     }, []),
 
     toggleGrid: useCallback(() => {
-      // Implementar toggle de grilla
-      console.log('Toggle grid');
+      dispatch({ type: 'TOGGLE_GRID' });
     }, []),
 
     toggleRulers: useCallback(() => {
-      // Implementar toggle de reglas
-      console.log('Toggle rulers');
+      dispatch({ type: 'TOGGLE_RULERS' });
     }, []),
 
     // ===== FUNCIONES ESPECIALES PARA SUPABASE =====
