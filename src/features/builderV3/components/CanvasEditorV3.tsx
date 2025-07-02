@@ -551,7 +551,7 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
       return 'none';
     }
     return shadows.map(shadow => 
-      `${shadow.inset ? 'inset ' : ''}${shadow.offsetX}px ${shadow.offsetY}px ${shadow.blurRadius}px ${shadow.spreadRadius}px ${shadow.color}`
+      `${shadow.inset ? 'inset ' : ''}${shadow.offsetX * zoom}px ${shadow.offsetY * zoom}px ${shadow.blurRadius * zoom}px ${shadow.spreadRadius * zoom}px ${shadow.color}`
     ).join(', ');
   };
 
@@ -559,7 +559,7 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
     const baseStyle: React.CSSProperties = {
       width: '100%',
       height: '100%',
-      fontSize: `${component.style?.typography?.fontSize || 16}px`,
+      fontSize: `${(component.style?.typography?.fontSize || 16) * zoom}px`,
       fontFamily: component.style?.typography?.fontFamily || 'Inter',
       fontWeight: component.style?.typography?.fontWeight || 'normal',
       color: component.style?.color?.color || '#000000',
@@ -637,9 +637,9 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
             className="w-full h-full select-none transition-all duration-200"
             style={{
               backgroundColor,
-              borderRadius: `${borderRadius}px`,
+              borderRadius: `${borderRadius * zoom}px`,
               border: hasBorder 
-                ? `${borderConfig.width}px ${borderConfig.style || 'solid'} ${borderConfig.color || '#000000'}`
+                ? `${borderConfig.width * zoom}px ${borderConfig.style || 'solid'} ${borderConfig.color || '#000000'}`
                 : 'none',
               boxSizing: 'border-box' // Importante para que el borde no afecte el tamaño
             }}
@@ -651,7 +651,7 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
           <div 
             className="w-full select-none"
             style={{
-              height: '2px',
+              height: `${(component.style?.border?.width || 2) * zoom}px`,
               backgroundColor: component.style?.color?.backgroundColor || '#d1d5db',
               transform: 'translateY(50%)'
             }}
@@ -661,7 +661,7 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
       case 'decorative-icon':
         return (
           <div className="w-full h-full flex items-center justify-center select-none">
-            <span style={{ fontSize: `${Math.min(component.size.width, component.size.height) * 0.6}px` }}>
+            <span style={{ fontSize: `${Math.min(component.size.width, component.size.height) * 0.6 * zoom}px` }}>
               {component.content?.staticValue || '⭐'}
             </span>
           </div>
@@ -723,7 +723,7 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
               : 'border border-gray-300 border-dashed opacity-30'
         }`}
         style={{
-          borderRadius: component.style?.border ? `${component.style.border.radius.topLeft}px` : '0px',
+          borderRadius: component.style?.border ? `${component.style.border.radius.topLeft * zoom}px` : '0px',
         }}
       />
 
