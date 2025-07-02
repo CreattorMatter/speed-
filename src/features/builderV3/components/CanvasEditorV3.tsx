@@ -585,16 +585,19 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
       case 'image-brand-logo':
       case 'image-decorative':
         return (
-          <div className="w-full h-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center select-none">
+          <div 
+            className="w-full h-full flex items-center justify-center select-none"
+            style={{ backgroundColor: component.style?.color?.backgroundColor || 'transparent' }}
+          >
             {component.content?.imageUrl ? (
               <img 
                 src={component.content.imageUrl} 
                 alt={component.content?.imageAlt || 'Imagen'} 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 draggable={false}
               />
             ) : (
-              <div className="text-gray-500 text-center">
+              <div className="text-gray-500 text-center p-2 border-2 border-dashed border-gray-300 rounded-md w-full h-full flex flex-col items-center justify-center">
                 <span className="text-2xl">🖼️</span>
                 <div className="text-xs mt-1">Imagen</div>
               </div>

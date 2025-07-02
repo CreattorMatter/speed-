@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { BuilderStateV3, DraggableComponentV3, TemplateV3 } from '../types';
 import { BuilderTemplateRenderer } from '../../posters/components/Posters/Editor/Renderers/BuilderTemplateRenderer';
-import { defaultMockData } from '@/utils/dynamicContentProcessor';
+import { defaultMockData, processDynamicContent } from '@/utils/dynamicContentProcessor';
 
 interface PreviewModalV3Props {
   isOpen: boolean;
@@ -334,15 +334,54 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
               <div 
                 className="relative w-full h-full overflow-hidden"
                 style={{ 
+                  transform: `scale(${previewDimensions.scale})`,
+                  transformOrigin: 'top left',
+                  width: `${template.canvas.width}px`,
+                  height: `${template.canvas.height}px`,
                   backgroundColor: template.canvas.backgroundColor || '#ffffff'
                 }}
               >
-                <BuilderTemplateRenderer
-                  template={template}
-                  components={state.components}
-                  product={dataMode === 'mock' ? mockProduct : undefined}
-                  isPreview={true}
-                />
+                {state.components.map(component => {
+                  const dynamicContent = processDynamicContent(component, defaultMockData);
+                  const componentStyle: React.CSSProperties = {
+                    position: 'absolute',
+                    left: component.position.x,
+                    top: component.position.y,
+                    width: component.size.width,
+                    height: component.size.height,
+                    transform: `rotate(${component.position.rotation || 0}deg)`,
+                    opacity: component.style?.effects?.opacity ?? 1,
+                    backgroundColor: component.style?.color?.backgroundColor || 'transparent',
+                    border: component.style?.border && component.style.border.width > 0
+                      ? `${component.style.border.width}px ${component.style.border.style || 'solid'} ${component.style.border.color || '#000000'}`
+                      : 'none',
+                    borderRadius: component.style?.border?.radius ? `${component.style.border.radius.topLeft}px` : undefined,
+                    color: component.style?.color?.color,
+                    fontFamily: component.style?.typography?.fontFamily,
+                    fontSize: component.style?.typography?.fontSize,
+                    fontWeight: component.style?.typography?.fontWeight,
+                    textAlign: component.style?.typography?.textAlign as any,
+                    boxSizing: 'border-box'
+                  };
+
+                  if (component.type.startsWith('image-')) {
+                    return (
+                      <div key={component.id} style={componentStyle}>
+                         <img 
+                            src={component.content.imageUrl} 
+                            alt={component.content.imageAlt} 
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                          />
+                      </div>
+                    )
+                  }
+                  
+                  return (
+                    <div key={component.id} style={componentStyle} className="flex items-center justify-center p-1">
+                      {dynamicContent}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { TemplateV3, DraggableComponentV3 } from '../../../../../../features/bui
 import { ProductoReal } from '../../../../../../types/product';
 import { getDynamicFieldValue, processDynamicTemplate } from '../../../../../../utils/productFieldsMap';
 import { InlineEditableText } from './InlineEditableText';
+import { useDynamicContent } from '../../../../../../utils/useDynamicContent';
 
 interface BuilderTemplateRendererProps {
   template: TemplateV3;
@@ -393,6 +394,29 @@ const renderComponent = (
   const { type, content, style } = component;
   const cssStyle = extractCSSStyles(style);
   
+  const isImageComponent = type.startsWith('image-');
+  const componentStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: `${component.position.x}px`,
+    top: `${component.position.y}px`,
+    width: `${component.size.width}px`,
+    height: `${component.size.height}px`,
+    transform: `rotate(${component.position.rotation || 0}deg) scale(${component.position.scaleX || 1}, ${component.position.scaleY || 1})`,
+    visibility: component.isVisible ? 'visible' : 'hidden',
+    opacity: component.style?.effects?.opacity ?? 1,
+    fontFamily: component.style?.typography?.fontFamily,
+    fontSize: `${(component.style?.typography?.fontSize || 16)}px`,
+    fontWeight: component.style?.typography?.fontWeight,
+    color: component.style?.color?.color,
+    textAlign: component.style?.typography?.textAlign as any,
+    backgroundColor: isImageComponent ? 'transparent' : (component.style?.color?.backgroundColor || 'transparent'),
+    borderRadius: component.style?.border?.radius ? `${component.style.border.radius.topLeft}px` : undefined,
+    border: component.style?.border && component.style.border.width > 0
+      ? `${component.style.border.width}px ${component.style.border.style || 'solid'} ${component.style.border.color || '#000000'}`
+      : 'none',
+    boxSizing: 'border-box'
+  };
+  
   switch (type) {
     case 'field-dynamic-text':
       const textValue = getDynamicValue(content, product, isPreview, productChanges);
@@ -469,36 +493,22 @@ const renderComponent = (
     case 'image-product':
     case 'image-brand-logo':
     case 'image-decorative':
-      const imageUrl = getDynamicImageUrl(content, product, isPreview);
-      
       return (
-        <img 
-          src={imageUrl} 
-          alt={content?.imageAlt || 'Imagen'} 
-          style={{
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover',
-            ...cssStyle
-          }}
-          onLoad={() => {
-            // Log exitoso para debugging
-            console.log('✅ Imagen cargada exitosamente:', imageUrl);
-          }}
-          onError={(e) => {
-            // Log de error para debugging
-            console.warn('⚠️ Error cargando imagen:', imageUrl);
-            
-            // Si falla la imagen, mostrar placeholder en lugar de ocultar
-            const target = e.target as HTMLImageElement;
-            if (target.src !== '/images/placeholder-product.jpg') {
-              console.log('🔄 Cambiando a placeholder...');
-              target.src = '/images/placeholder-product.jpg';
-            }
-          }}
-          // Forzar recarga de Supabase con key única
-          key={`img-${imageUrl}-${Date.now()}`}
-        />
+        <div
+          className="w-full h-full flex items-center justify-center"
+          style={{ backgroundColor: component.style?.color?.backgroundColor || 'transparent' }}
+        >
+          {component.content?.imageUrl ? (
+            <img
+              src={component.content.imageUrl}
+              alt={component.content?.imageAlt || 'Imagen'}
+              className="w-full h-full object-cover"
+              draggable={false}
+            />
+          ) : (
+            <div className="text-center">🖼️</div>
+          )}
+        </div>
       );
       
     case 'qr-dynamic':
@@ -688,6 +698,8 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
   onEditField,
   enableInlineEdit = false
 }) => {
+  const { processTemplateString } = useDynamicContent(product);
+
   // Filtrar componentes visibles y ordenarlos por z-index
   const visibleComponents = components
     .filter(c => c.isVisible !== false)
@@ -712,13 +724,24 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
       {visibleComponents.map(component => {
         const componentStyle: React.CSSProperties = {
           position: 'absolute',
-          left: `${component.position.x}px`,
-          top: `${component.position.y}px`,
-          width: `${component.size.width}px`,
-          height: `${component.size.height}px`,
+          left: `${component.position.x * scale}px`,
+          top: `${component.position.y * scale}px`,
+          width: `${component.size.width * scale}px`,
+          height: `${component.size.height * scale}px`,
           transform: `rotate(${component.position.rotation || 0}deg) scale(${component.position.scaleX || 1}, ${component.position.scaleY || 1})`,
-          zIndex: component.position.z || 0,
-          pointerEvents: isPreview ? 'none' : 'auto'
+          visibility: component.isVisible ? 'visible' : 'hidden',
+          opacity: component.style?.effects?.opacity ?? 1,
+          fontFamily: component.style?.typography?.fontFamily,
+          fontSize: `${(component.style?.typography?.fontSize || 16) * scale}px`,
+          fontWeight: component.style?.typography?.fontWeight,
+          color: component.style?.color?.color,
+          textAlign: component.style?.typography?.textAlign as any,
+          backgroundColor: component.style?.color?.backgroundColor || 'transparent',
+          borderRadius: component.style?.border?.radius ? `${component.style.border.radius.topLeft * scale}px` : undefined,
+          border: component.style?.border && component.style.border.width > 0
+            ? `${component.style.border.width * scale}px ${component.style.border.style || 'solid'} ${component.style.border.color || '#000000'}`
+            : 'none',
+          boxSizing: 'border-box'
         };
 
         return (

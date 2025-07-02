@@ -25,6 +25,7 @@
     "@types/react-select": "^5.0.0",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
+    "colorthief": "^2.6.0",
     "crewai": "^1.0.1",
     "date-fns": "^4.1.0",
     "dom-to-image-improved": "^2.8.0",
@@ -59,6 +60,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@types/colorthief": "^2.6.0",
     "@types/html2canvas": "^1.0.0",
     "@types/papaparse": "^5.3.15",
     "@types/react": "^18.3.14",

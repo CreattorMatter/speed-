@@ -2,7 +2,7 @@
 // SPEED BUILDER V3 - TOOLBAR
 // =====================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Save, 
   Eye, 
@@ -99,6 +99,29 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
 }) => {
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [localTitle, setLocalTitle] = useState(templateTitle);
+
+  useEffect(() => {
+    setLocalTitle(templateTitle);
+  }, [templateTitle]);
+
+  const handleTitleBlur = () => {
+    if (localTitle.trim() && localTitle !== templateTitle) {
+      onTitleChange(localTitle);
+    } else {
+      setLocalTitle(templateTitle); // Revert if empty or unchanged
+    }
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleTitleBlur();
+      e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      setLocalTitle(templateTitle);
+      e.currentTarget.blur();
+    }
+  };
 
   const handlePaperFormatChange = (format: string) => {
     if (format === 'CUSTOM') {
@@ -202,16 +225,13 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
             <div className="flex items-center mx-2 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs max-w-[120px] sm:max-w-[200px]">
               <input
                 type="text"
-                value={templateTitle}
-                onChange={(e) => {
-                  const newTitle = e.target.value;
-                  if (newTitle.length <= 100) {
-                    onTitleChange(newTitle);
-                  }
-                }}
+                value={localTitle}
+                onChange={(e) => setLocalTitle(e.target.value)}
+                onBlur={handleTitleBlur}
+                onKeyDown={handleTitleKeyDown}
                 placeholder="Título..."
                 className="bg-transparent text-xs font-medium text-gray-700 border-none focus:outline-none w-full truncate"
-                title={`${templateTitle} (${templateTitle?.length || 0}/100)`}
+                title={`${localTitle} (${localTitle.length}/100)`}
                 maxLength={100}
               />
               {hasUnsavedChanges && (
@@ -358,21 +378,13 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
               <span className="text-xs text-gray-500 font-medium flex-shrink-0">Título:</span>
               <input
                 type="text"
-                value={templateTitle}
-                onChange={(e) => {
-                  const newTitle = e.target.value;
-                  if (newTitle.length <= 100) {
-                    onTitleChange(newTitle);
-                  }
-                }}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.currentTarget.blur();
-                  }
-                }}
+                value={localTitle}
+                onChange={(e) => setLocalTitle(e.target.value)}
+                onBlur={handleTitleBlur}
+                onKeyDown={handleTitleKeyDown}
                 placeholder="Nombre de la plantilla..."
                 className="bg-transparent text-sm font-medium text-gray-700 border-none focus:outline-none focus:bg-white focus:px-2 focus:py-1 focus:rounded min-w-0 flex-1 transition-all"
-                title={`Nombre de la plantilla (${templateTitle?.length || 0}/100 caracteres)`}
+                title={`Nombre de la plantilla (${localTitle.length}/100 caracteres)`}
                 maxLength={100}
               />
               {hasUnsavedChanges && (

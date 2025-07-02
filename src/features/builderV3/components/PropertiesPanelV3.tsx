@@ -621,11 +621,16 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
                 onChange={(e) => {
                   if (!selectedComponent) return;
                   const newWidth = e.target.checked ? 1 : 0;
+                  const currentStyle = selectedComponent.style?.border?.style;
+                  
+                  // If enabling the border and the style is 'none', default it to 'solid' to make it visible.
+                  const newStyle = e.target.checked && (!currentStyle || currentStyle === 'none') ? 'solid' : currentStyle;
+
                   handleStyleChange('border', { 
                     ...selectedComponent?.style?.border, 
                     width: newWidth,
                     color: selectedComponent?.style?.border?.color || '#000000',
-                    style: selectedComponent?.style?.border?.style || 'solid'
+                    style: newStyle || 'solid'
                   });
                 }}
                 className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
@@ -784,6 +789,51 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
                   placeholder="Descripción de la imagen"
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+              </div>
+
+              {/* Color de Fondo con Cuentagotas */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Color de fondo del componente
+                </label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="color"
+                    value={
+                      selectedComponent?.style?.color?.backgroundColor && selectedComponent.style.color.backgroundColor !== 'transparent'
+                        ? selectedComponent.style.color.backgroundColor
+                        : '#ffffff'
+                    }
+                    onChange={(e) => handleStyleChange('color', { ...selectedComponent?.style?.color, backgroundColor: e.target.value })}
+                    className="w-10 h-10 rounded border border-gray-300 p-0.5"
+                  />
+                  <input
+                    type="text"
+                    value={selectedComponent?.style?.color?.backgroundColor || ''}
+                    onChange={(e) => handleStyleChange('color', { ...selectedComponent?.style?.color, backgroundColor: e.target.value })}
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md"
+                    placeholder="transparent o #ffffff"
+                  />
+                  {'EyeDropper' in window && (
+                    <button
+                      onClick={async () => {
+                        if (!selectedComponent) return;
+                        const eyeDropper = new (window as any).EyeDropper();
+                        try {
+                          const result = await eyeDropper.open();
+                          handleStyleChange('color', { ...selectedComponent.style?.color, backgroundColor: result.sRGBHex });
+                        } catch (e) {
+                          console.log('Cuentagotas cerrado por el usuario.');
+                        }
+                      }}
+                      className="p-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                      title="Usar cuentagotas para seleccionar color"
+                    >
+                      <Droplet className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Rellena el espacio sobrante si la imagen no tiene las mismas proporciones.</p>
               </div>
             </div>
           ) : (
