@@ -7,6 +7,7 @@ import { Product } from '../../types';
 import { ProductDetails } from './ProductDetails';
 import { HeaderProvider } from '../../components/shared/HeaderProvider';
 import { Header } from '../../components/shared/Header';
+import { useNavigate } from 'react-router-dom';
 
 interface ProductsProps {
   onBack: () => void;
@@ -45,6 +46,7 @@ const DisabledTooltip: React.FC<{ children: React.ReactNode }> = ({ children }) 
 };
 
 export default function Products({ onBack, onLogout, userEmail, userName }: ProductsProps) {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
@@ -247,7 +249,7 @@ export default function Products({ onBack, onLogout, userEmail, userName }: Prod
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
-        <Header onBack={onBack} onLogout={onLogout} userName={userName} onGoToAdmin={() => window.location.href = '/'} />
+        <Header onBack={onBack} onLogout={onLogout} userName={userName} onGoToAdmin={() => navigate('/administration')} />
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 py-8">
           {/* Toolbar */}

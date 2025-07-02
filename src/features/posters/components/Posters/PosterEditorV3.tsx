@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 // Importar hooks de Redux y el slice de poster
 import { useSelector, useDispatch } from 'react-redux';
@@ -60,6 +61,7 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
   userName,
 }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   
   // Estados de Redux
   const selectedProducts = useSelector(selectSelectedProductObjects);
@@ -263,7 +265,7 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900">
-        <Header onBack={onBack} onLogout={onLogout} userName={userName} onGoToAdmin={() => window.location.href = '/'} />
+        <Header onBack={onBack} onLogout={onLogout} userName={userName} onGoToAdmin={() => navigate('/administration')} />
         
         <div className="poster-editor-container min-h-screen w-full flex flex-col bg-white">
           <main className="pt-4 sm:pt-6 lg:pt-10 px-2 xs:px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 min-h-[calc(100vh-4rem)] sm:min-h-[800px] lg:min-h-[1000px]">

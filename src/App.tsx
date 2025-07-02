@@ -8,6 +8,7 @@ import { PrintView } from './features/posters/components/Posters/PrintView';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ConfigurationPortal } from './features/settings/components/ConfigurationPortal';
+import { Administration } from './features/settings/components/Administration';
 import { PosterPreviewPage } from './pages/PosterPreview';
 import { Analytics } from './features/analytics/components/Analytics';
 import { supabase, supabaseAdmin } from './lib/supabaseClient';
@@ -54,7 +55,7 @@ function AppContent() {
   //const [promotion, setPromotion] = useState<number | undefined>(undefined);
   const navigate = useNavigate();
   const location = useLocation();
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
+
   const [userRole, setUserRole] = useState<'admin' | 'limited' | 'sucursal'>('admin');
   //const [showAnalytics, setShowAnalytics] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -189,7 +190,6 @@ function AppContent() {
       setEmail('');
       setPassword('');
       setError('');
-      setIsConfigOpen(false);
       
       // Redirigir al login
       navigate('/');
@@ -223,7 +223,7 @@ function AppContent() {
   };
 
   const handleSettings = () => {
-    setIsConfigOpen(true);
+    navigate('/administration');
   };
 
   const handleAnalytics = () => {
@@ -482,6 +482,19 @@ function AppContent() {
         />
 
         <Route
+          path="/administration"
+          element={
+            <Administration
+              onBack={handleBack}
+              onLogout={handleLogout}
+              userEmail={user?.email || ''}
+              userName={user?.name || ''}
+              currentUser={user || { id: '0', email: '', name: '', role: '', status: 'active', lastLogin: '', created_at: '' }}
+            />
+          }
+        />
+
+        <Route
           path="/digital-carousel"
           element={
             <DigitalCarouselEditor
@@ -513,11 +526,7 @@ function AppContent() {
         <Route path="/test-builder" element={<div>Test Builder (ruta por definir)</div>} />
       </Routes>
 
-      <ConfigurationPortal 
-        isOpen={isConfigOpen}
-        onClose={() => setIsConfigOpen(false)}
-        currentUser={user || { id: '0', email: '', name: '', role: '', status: 'active', lastLogin: '', created_at: '' }}
-      />
+      {/* ConfigurationPortal removed - now using /administration route */}
 
       <MobileDetectionModal
         isOpen={showMobileModal}

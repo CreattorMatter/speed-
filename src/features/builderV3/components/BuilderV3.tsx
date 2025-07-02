@@ -33,6 +33,7 @@ import { CreateFamilyModal } from './CreateFamilyModal';
 import { builderV3Service } from '../../../services/builderV3Service';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AppDispatch, RootState } from '@/store';
+import { useNavigate } from 'react-router-dom';
 
 type BuilderView = 'builder' | 'admin';
 type BuilderStepV3 = 'family-selection' | 'template-library' | 'canvas-editor';
@@ -53,6 +54,7 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
   userRole = 'admin'
 }) => {
   const { state, operations, families, templates, componentsLibrary, isReady, refreshData } = useBuilderV3Integration();
+  const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<BuilderView>('builder');
   const [currentStep, setCurrentStep] = useState<BuilderStepV3>('family-selection');
   const [showPreview, setShowPreview] = useState(false);
@@ -414,25 +416,6 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
 
   if (!isReady) return <LoadingSpinner />;
 
-  if (currentView === 'admin') {
-    // Crear objeto de usuario con la información disponible
-    const userObject = {
-      id: userEmail,
-      email: userEmail,
-      name: userName,
-      role: userRole,
-      status: 'active' as const,
-      lastLogin: new Date().toISOString(),
-      created_at: new Date().toISOString()
-    };
-    
-    return <ConfigurationPortal 
-      isOpen={true} 
-      onClose={() => setCurrentView('builder')} 
-      currentUser={userObject} 
-    />;
-  }
-
   const renderContent = () => {
     switch (currentStep) {
       case 'family-selection':
@@ -542,7 +525,7 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
             onBack={handleIntelligentBack} 
             onLogout={onLogout} 
             userName={userName}
-            onGoToAdmin={() => setCurrentView('admin')}
+            onGoToAdmin={() => navigate('/administration')}
         />
         {renderBreadcrumbs()}
       <div className="flex-1 overflow-hidden">

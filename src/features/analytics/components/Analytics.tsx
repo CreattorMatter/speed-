@@ -25,6 +25,7 @@ import { generateRandomData } from "../../../utils/analyticsData";
 import { AnimatePresence } from 'framer-motion';
 import { ScatterChart, Scatter, ZAxis } from 'recharts';
 import { HeaderProvider } from "../../../components/shared/HeaderProvider";
+import { useNavigate } from 'react-router-dom';
 
 interface AnalyticsProps {
   onBack: () => void;
@@ -144,6 +145,7 @@ const GRADIENTS = {
 type CompanyName = keyof typeof GRADIENTS;
 
 export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout, userEmail, userName }) => {
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState(() => {
     const end = new Date();
     const start = new Date();
@@ -901,7 +903,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ onBack, onLogout, userEmai
   return (
     <HeaderProvider userEmail={userEmail} userName={userName}>
       <div className="min-h-screen bg-gray-100">
-        <Header onBack={onBack} onLogout={onLogout} userName={userName} onGoToAdmin={() => window.location.href = '/'} />
+        <Header onBack={onBack} onLogout={onLogout} userName={userName} onGoToAdmin={() => navigate('/administration')} />
         <main className="p-4 sm:p-6 lg:p-8">
           <AnimatePresence>
             {isLoading && <LoadingModal />}
