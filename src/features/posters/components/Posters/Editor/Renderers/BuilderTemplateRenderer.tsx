@@ -25,34 +25,44 @@ const getDynamicValue = (
   isPreview?: boolean,
   productChanges?: any // Cambios del usuario desde Redux
 ): string => {
-  // 🚀 NUEVO: Función para obtener valor considerando cambios del usuario
+  if (!content) return '';
+  
+  // Función auxiliar para obtener el valor de un campo del producto
   const getProductValue = (field: string, fallback: any = '') => {
-    // 🎯 PRIMERA PRIORIDAD: Cambios del usuario en Redux
-    if (productChanges && product && productChanges[product.id]) {
-      const changes = productChanges[product.id].changes;
+    if (!product) return fallback;
+    
+    // 🆕 CORREGIDO: Buscar en el array de cambios de Redux
+    if (productChanges && productChanges[product.id]) {
+      const changes = productChanges[product.id].changes || [];
       const change = changes.find((c: any) => c.field === field);
       if (change) {
-        console.log(`📋 Usando valor editado para ${field}: ${change.newValue}`);
+        console.log(`📝 Usando valor editado para ${field}: ${change.newValue}`);
+        // Si el nuevo valor es numérico y el campo es precio, formatear
+        if (field.includes('precio') || field.includes('price')) {
+          const numValue = typeof change.newValue === 'string' 
+            ? parseFloat(change.newValue.replace(/[^\d.,]/g, '').replace(',', '.'))
+            : change.newValue;
+          return !isNaN(numValue) ? `$ ${numValue.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : change.newValue;
+        }
         return change.newValue;
       }
     }
     
-    // 🚀 SEGUNDA PRIORIDAD: Mapeo automático calculado
-    // Si no hay cambios del usuario, calcular el valor mapeado automáticamente
-    if (product) {
-      const autoMappedValue = getAutoMappedProductValue(product, field);
-      if (autoMappedValue !== null && autoMappedValue !== undefined) {
-        console.log(`🗺️ Usando valor mapeado automáticamente para ${field}: ${autoMappedValue}`);
-        return autoMappedValue;
-      }
+    // Si no hay cambio, usar valor del producto original
+    if (product.hasOwnProperty(field)) {
+      return product[field as keyof ProductoReal];
     }
     
-    // 🔄 TERCERA PRIORIDAD: Fallback proporcionado
-    console.log(`📋 Usando valor fallback para ${field}: ${fallback}`);
+    // Intentar mapeo automático
+    const mappedValue = getAutoMappedProductValue(product, field);
+    if (mappedValue !== null) {
+      return mappedValue;
+    }
+    
     return fallback;
   };
 
-  // 🚀 NUEVA FUNCIÓN: Calcula valores mapeados automáticamente (igual que en PreviewAreaV3)
+  // Función para mapear automáticamente campos comunes
   const getAutoMappedProductValue = (product: ProductoReal, field: string): string | number | null => {
     if (!product) return null;
     
@@ -61,15 +71,21 @@ const getDynamicValue = (
     
     const fieldMapping: Record<string, any> = {
       // Mapeo directo desde el producto (usando ProductoReal)
-      nombre: product.descripcion || 'Sin nombre',
-      precioActual: product.precio || 0,
-      sap: product.sku || 'N/A',
+      descripcion: product.descripcion || 'Sin nombre',
+      precio: product.precio || 0,
+      sku: product.sku || 'N/A',
+      ean: product.ean || '',
+      marcaTexto: product.marcaTexto || '',
+      precioAnt: product.precioAnt || 0,
+      basePrice: product.basePrice || 0,
+      stockDisponible: product.stockDisponible || 0,
+      paisTexto: product.paisTexto || 'Argentina',
+      origen: product.origen || 'ARG',
       
       // Valores calculados o por defecto
       porcentaje: 20, // Descuento por defecto del 20%
       fechasDesde: now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
       fechasHasta: nextWeek.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-      origen: 'ARG',
       precioSinImpuestos: product.precio ? Math.round(product.precio * 0.83) : 0
     };
     
@@ -78,23 +94,24 @@ const getDynamicValue = (
   };
 
   // 🚀 SISTEMA UNIVERSAL DE CAMPOS DINÁMICOS
-  if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
-    const dynamicTemplate = content.dynamicTemplate;
-    let value: any;
+  if (content?.fieldType === 'dynamic' && content?.dynamicTemplate && product) {
+    console.log(`🎯 Procesando campo dinámico: ${content.dynamicTemplate}`);
     
-    console.log(`🔍 Procesando dynamicTemplate: ${dynamicTemplate}`);
-    
-    // 🎯 NUEVA LÓGICA: Usar sistema universal de procesamiento
-    if (product) {
-      // ✅ Usar processDynamicTemplate que maneja templates complejos
-      // Esto funciona tanto para "[product_name]" como para "Precio sin Impuesto: [price_without_tax]"
-      value = getProductValue('universal', processDynamicTemplate(dynamicTemplate, product));
-    } else {
-      value = content?.staticValue || dynamicTemplate;
+    // Primero verificar cambios del usuario para el template completo
+    const fieldType = getFieldType(content);
+    if (productChanges && productChanges[product.id]) {
+      const changes = productChanges[product.id].changes || [];
+      const change = changes.find((c: any) => c.field === fieldType);
+      if (change) {
+        console.log(`📝 Usando valor editado para campo dinámico ${fieldType}: ${change.newValue}`);
+        return String(change.newValue);
+      }
     }
     
-    console.log(`✅ Valor final para ${dynamicTemplate}: ${value}`);
-    return String(value);
+    // Si no hay cambios, procesar el template dinámico
+    const processedValue = processDynamicTemplate(content.dynamicTemplate, product);
+    console.log(`📊 Valor procesado del template: ${processedValue}`);
+    return processedValue;
   }
 
   // 🔧 COMPATIBILIDAD: Mantener soporte para textConfig (por si hay plantillas mixtas)
@@ -282,14 +299,14 @@ const getFieldType = (content: any): string => {
     const contentType = content.textConfig.contentType;
     
     switch (contentType) {
-      case 'product-name': return 'nombre';
-      case 'product-sku': return 'sap';
-      case 'product-brand': return 'origen';
+      case 'product-name': return 'descripcion';
+      case 'product-sku': return 'sku';
+      case 'product-brand': return 'marcaTexto';
       case 'price-original':
-      case 'price-final': return 'precioActual';
-      case 'price-discount': return 'precioConDescuento';
+      case 'price-final': return 'precio';
+      case 'price-discount': return 'precio';
       case 'discount-percentage': return 'porcentaje';
-      case 'price-without-taxes': return 'precioSinImpuestos';
+      case 'price-without-taxes': return 'basePrice';
       case 'promotion-start-date': return 'fechasDesde';
       case 'promotion-end-date': return 'fechasHasta';
       default: return 'texto';
@@ -300,24 +317,51 @@ const getFieldType = (content: any): string => {
   if (content?.staticValue || content?.text) {
     const value = (content.staticValue || content.text || '').toLowerCase();
     
-    if (value.includes('nombre') || value.includes('name')) return 'nombre';
-    if (value.includes('precio') || value.includes('price') || value.includes('$')) return 'precioActual';
-    if (value.includes('sku') || value.includes('sap')) return 'sap';
+    if (value.includes('nombre') || value.includes('name')) return 'descripcion';
+    if (value.includes('precio') || value.includes('price') || value.includes('$')) return 'precio';
+    if (value.includes('sku') || value.includes('sap')) return 'sku';
     if (value.includes('porcentaje') || value.includes('percentage') || value.includes('%')) return 'porcentaje';
     if (value.includes('fecha') || value.includes('date')) return 'fechas';
-    if (value.includes('origen') || value.includes('brand')) return 'origen';
-    if (value.includes('sin_impuesto') || value.includes('without_tax')) return 'precioSinImpuestos';
+    if (value.includes('origen') || value.includes('brand') || value.includes('marca')) return 'marcaTexto';
+    if (value.includes('sin_impuesto') || value.includes('without_tax')) return 'basePrice';
   }
   
   // Para campos SAP conectados
   if (content?.fieldType === 'sap-product' && content?.sapConnection?.fieldName) {
     const fieldName = content.sapConnection.fieldName.toLowerCase();
     
-    if (fieldName.includes('name') || fieldName.includes('nombre')) return 'nombre';
-    if (fieldName.includes('price') || fieldName.includes('precio')) return 'precioActual';
-    if (fieldName.includes('sku')) return 'sap';
+    if (fieldName.includes('name') || fieldName.includes('nombre')) return 'descripcion';
+    if (fieldName.includes('price') || fieldName.includes('precio')) return 'precio';
+    if (fieldName.includes('sku')) return 'sku';
     
     return 'universal';
+  }
+  
+  // Para campos dinámicos con dynamicTemplate
+  if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
+    const dynamicTemplate = content.dynamicTemplate;
+    
+    // Extraer el campo del template [field_name]
+    const match = dynamicTemplate.match(/\[([^\]]+)\]/);
+    if (match) {
+      const fieldId = match[1];
+      
+      // Mapear fieldId a fieldKey usando la información de productFieldsMap
+      switch (fieldId) {
+        case 'product_name': return 'descripcion';
+        case 'product_sku': return 'sku';
+        case 'product_ean': return 'ean';
+        case 'product_brand': return 'marcaTexto';
+        case 'product_price': return 'precio';
+        case 'price_previous': return 'precioAnt';
+        case 'price_base': return 'basePrice';
+        case 'price_without_tax': return 'precio'; // Se calcula sobre precio
+        case 'product_origin': return 'paisTexto';
+        case 'product_origin_code': return 'origen';
+        case 'stock_available': return 'stockDisponible';
+        default: return fieldId;
+      }
+    }
   }
   
   // Fallback para cualquier campo dinámico
@@ -384,7 +428,8 @@ const renderComponent = (
         justifyContent: textValidAlign === 'center' ? 'center' : 
                        textValidAlign === 'right' ? 'flex-end' : 'flex-start',
         ...cssStyle,
-        textAlign: textValidAlign // Aplicar textAlign válido después de spread
+        textAlign: textValidAlign,
+        whiteSpace: 'pre-wrap'
       };
       
       const textContent = textValue || (product ? 'Nuevo componente' : 'Campo dinámico');
@@ -509,7 +554,8 @@ const renderComponent = (
           justifyContent: dateValidAlign === 'center' ? 'center' : 
                          dateValidAlign === 'right' ? 'flex-end' : 'flex-start',
           ...cssStyle,
-          textAlign: dateValidAlign
+          textAlign: dateValidAlign,
+          whiteSpace: 'pre-wrap'
         }}>
           {dateValue}
         </div>
@@ -532,7 +578,8 @@ const renderComponent = (
         borderRadius: typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius,
         boxSizing: 'border-box', // Importante para que el borde no afecte el tamaño
         transition: 'all 0.2s ease', // Suave transición para cambios
-        ...cssStyle
+        ...cssStyle,
+        whiteSpace: 'pre-wrap'
       };
       
       if (shapeType === 'triangle') {
@@ -555,7 +602,8 @@ const renderComponent = (
           width: '100%',
           height: content?.lineConfig?.thickness || 2,
           backgroundColor: '#cccccc',
-          ...cssStyle
+          ...cssStyle,
+          whiteSpace: 'pre-wrap'
         }} />
       );
       
@@ -570,7 +618,8 @@ const renderComponent = (
           justifyContent: 'center',
           fontSize: Math.min(component.size.width, component.size.height) * 0.8,
           color: '#000000',
-          ...cssStyle
+          ...cssStyle,
+          whiteSpace: 'pre-wrap'
         }}>
           {iconName}
         </div>
@@ -590,7 +639,8 @@ const renderComponent = (
           flexDirection: content?.containerConfig?.flexDirection || 'column',
           gap: content?.containerConfig?.gap || 8,
           padding: '8px',
-          ...cssStyle
+          ...cssStyle,
+          whiteSpace: 'pre-wrap'
         }}>
           <span style={{ 
             color: '#999', 
@@ -615,7 +665,8 @@ const renderComponent = (
           color: '#d63031',
           fontSize: 12,
           textAlign: 'center',
-          padding: 4
+          padding: 4,
+          whiteSpace: 'pre-wrap'
         }}>
           Tipo no soportado:<br/>{type}
         </div>

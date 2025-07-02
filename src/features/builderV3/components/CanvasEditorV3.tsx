@@ -546,15 +546,26 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
     return 'bg-gray-600 text-white';
   };
 
+  const formatBoxShadow = (shadows?: DraggableComponentV3['style']['effects']['boxShadow']): string => {
+    if (!shadows || shadows.length === 0) {
+      return 'none';
+    }
+    return shadows.map(shadow => 
+      `${shadow.inset ? 'inset ' : ''}${shadow.offsetX}px ${shadow.offsetY}px ${shadow.blurRadius}px ${shadow.spreadRadius}px ${shadow.color}`
+    ).join(', ');
+  };
+
   const renderComponentContent = () => {
-    const baseStyle = {
+    const baseStyle: React.CSSProperties = {
       width: '100%',
       height: '100%',
       fontSize: `${component.style?.typography?.fontSize || 16}px`,
       fontFamily: component.style?.typography?.fontFamily || 'Inter',
       fontWeight: component.style?.typography?.fontWeight || 'normal',
       color: component.style?.color?.color || '#000000',
-      textAlign: component.style?.typography?.textAlign as any || 'left'
+      textAlign: component.style?.typography?.textAlign as any || 'left',
+      textDecoration: component.style?.typography?.textDecoration || 'none',
+      whiteSpace: 'pre-wrap',
     };
 
     switch (component.type) {
@@ -686,6 +697,8 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
         zIndex: component.position.z,
         transform: `rotate(${component.position.rotation || 0}deg) scale(${component.position.scaleX || 1}, ${component.position.scaleY || 1})`,
         visibility: component.isVisible ? 'visible' : 'hidden',
+        opacity: component.style?.effects?.opacity ?? 1,
+        boxShadow: formatBoxShadow(component.style?.effects?.boxShadow),
       }}
       onMouseDown={handleMouseDown}
       onMouseEnter={() => setIsHovered(true)}

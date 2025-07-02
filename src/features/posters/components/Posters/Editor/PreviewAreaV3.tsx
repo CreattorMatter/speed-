@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Trash2, Eye, EyeOff, Settings, X, ChevronLeft, ChevronRight, Grid, ArrowLeft, Package, AlertTriangle, Search, Edit3, Lock, Unlock } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useReactToPrint } from 'react-to-print';
 
 // Servicios y datos
 import { posterTemplateService, PosterFamilyData, PosterTemplateData } from '../../../../../services/posterTemplateService';
+import { EmailService } from '../../../../../services/emailService';
+import { type EditedProduct as ServiceEditedProduct } from '../../../../../hooks/useProductChanges';
 import { type Product } from '../../../../../data/products';
 
 // Redux
@@ -12,16 +15,20 @@ import {
   selectSelectedFinancing,
   selectFormatoSeleccionado,
   selectProductChanges,
+  selectHasAnyChanges,
   removeProduct,
   removeAllProducts,
-  trackProductChange
+  trackProductChange,
+  type EditedProduct as ReduxEditedProduct,
 } from '../../../../../store/features/poster/posterSlice';
 import { RootState, AppDispatch } from '../../../../../store';
 
 // Componentes
 import { EditableField } from './EditableField';
 import { DeleteProductModal } from './DeleteProductModal';
+import { ProductChangesModal } from './ProductChangesModal';
 import { BuilderTemplateRenderer } from './Renderers/BuilderTemplateRenderer';
+import { PrintContainer } from './PrintContainer';
 
 // Utilidades
 import { 
@@ -63,13 +70,22 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   const selectedFinancing = useSelector(selectSelectedFinancing);
   const formatoSeleccionado = useSelector(selectFormatoSeleccionado);
   const productChanges = useSelector(selectProductChanges);
+  const hasAnyChanges = useSelector(selectHasAnyChanges);
   
   // Estados locales
   const [expandedProductIndex, setExpandedProductIndex] = useState<number | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [isInlineEditEnabled, setIsInlineEditEnabled] = useState(false); // 🆕 NUEVO: Estado para controlar edición
+  const [isInlineEditEnabled, setIsInlineEditEnabled] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
+  // Ref para el contenedor de impresión
+  const printComponentRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    contentRef: printComponentRef,
+  });
 
   // Sincronizar estado local con props externas para expansión
   useEffect(() => {
@@ -208,21 +224,27 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     
     const fieldMapping: Record<string, any> = {
-      // Mapeo directo desde el producto
-      nombre: product.descripcion || 'Sin nombre',
-      precioActual: product.precio || 0,
-      sap: product.sku || 'N/A',
+      // Mapeo directo desde el producto usando fieldKey correctos
+      descripcion: product.descripcion || 'Sin nombre',
+      precio: product.precio || 0,
+      sku: product.sku || 'N/A',
+      ean: product.ean || '',
+      marcaTexto: product.marcaTexto || '',
+      precioAnt: product.precioAnt || 0,
+      basePrice: product.basePrice || 0,
+      stockDisponible: product.stockDisponible || 0,
+      paisTexto: product.paisTexto || 'Argentina',
+      origen: product.origen || 'ARG',
       
       // Valores calculados o por defecto
       porcentaje: 20, // Descuento por defecto del 20%
       fechasDesde: now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
       fechasHasta: nextWeek.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-      origen: 'ARG',
       precioSinImpuestos: product.precio ? Math.round(product.precio * 0.83) : 0
     };
     
     const mappedValue = fieldMapping[field];
-    console.log(`🗺️ Mapeo ${field} = ${mappedValue} (de ${product.name})`);
+    console.log(`🗺️ Mapeo ${field} = ${mappedValue} (de ${product.descripcion})`);
     return mappedValue !== undefined ? mappedValue : null;
   };
 
@@ -334,6 +356,82 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     // Límites de escala equilibrados para buen tamaño sin distorsión
     return Math.max(0.25, Math.min(scale, 1.0));
   };
+
+  // 🚀 LÓGICA DE IMPRESIÓN
+  const handlePrintClick = () => {
+    if (hasAnyChanges) {
+      // Si hay cambios, abrir el modal de reporte
+      setIsReportModalOpen(true);
+    } else {
+      // Si no hay cambios, proceder directamente a la lógica de impresión final
+      console.log('🖨️ No hay cambios detectados. Procediendo a imprimir directamente...');
+      executeFinalPrintLogic();
+    }
+  };
+
+  const handleConfirmPrint = async (justification: string) => {
+    console.log('✅ Reporte confirmado. Justificación:', justification);
+
+    if (!selectedFamily || !selectedTemplate) {
+      console.error('No se puede enviar el reporte: falta familia o plantilla seleccionada.');
+      alert('Error: No se ha seleccionado una familia o plantilla.');
+      return;
+    }
+
+    // 🚀 MAPEAR DATOS DE REDUX AL FORMATO DEL SERVICIO
+    const reduxEditedProducts: ReduxEditedProduct[] = Object.values(productChanges);
+    const serviceEditedProducts: ServiceEditedProduct[] = [];
+
+    for (const reduxProduct of reduxEditedProducts) {
+      const originalProduct = selectedProducts.find(p => p.sku?.toString() === reduxProduct.productId);
+      if (originalProduct) {
+        const productForService: ServiceEditedProduct = {
+          ...originalProduct,
+          changes: reduxProduct.changes,
+          isEdited: reduxProduct.isEdited,
+          name: reduxProduct.productName, // Sobrescribir con el nombre (posiblemente editado) de Redux
+        };
+        serviceEditedProducts.push(productForService);
+      }
+    }
+
+    // Preparar los datos para el reporte
+    const reportData = {
+      plantillaFamily: selectedFamily.displayName,
+      plantillaType: selectedTemplate.name,
+      editedProducts: serviceEditedProducts,
+      reason: justification,
+      // TODO: Obtener datos del usuario logueado
+      // userName: currentUser.name,
+      // userEmail: currentUser.email,
+      timestamp: new Date()
+    };
+    
+    console.log('📧 Enviando email de notificación...');
+    const emailSent = await EmailService.sendChangeReport(reportData);
+
+    if (emailSent) {
+      console.log('✅ Email enviado con éxito.');
+      // Opcional: mostrar un toast de éxito
+    } else {
+      console.error('❌ Falló el envío del email.');
+      alert('Hubo un error al enviar el reporte por email. La impresión se ha cancelado.');
+      setIsReportModalOpen(false);
+      return;
+    }
+
+    console.log('🖨️ Iniciando proceso de impresión final...');
+    executeFinalPrintLogic();
+    
+    setIsReportModalOpen(false);
+  };
+  
+  const executeFinalPrintLogic = () => {
+    console.log('📄 Preparando contenido para impresión...');
+    // Llamar a la función de impresión del hook
+    handlePrint();
+  };
+  // FIN LÓGICA DE IMPRESIÓN
 
   // Renderizado principal
   return (
@@ -748,20 +846,36 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                           <div className="relative mt-12 p-4 bg-gray-50">
                             <div className="relative bg-white rounded-lg shadow-inner border-2 border-gray-200 overflow-hidden">
                               <div className="w-full h-64 sm:h-72 lg:h-80 flex items-center justify-center bg-white">
-                                <div className="max-w-full max-h-full scale-50 sm:scale-60 lg:scale-70 transform">
-                                  <BuilderTemplateRenderer 
-                                    template={selectedTemplate.template}
-                                    components={selectedTemplate.template.defaultComponents}
-                                    product={product}
-                                    productChanges={productChanges}
-                                    onEditField={(fieldType: string, newValue: string) => {
-                                      console.log(`🖱️ Edición inline directa (grilla): ${fieldType} = ${newValue} para ${product.descripcion}`);
-                                      handleProductEdit(product.id, fieldType, newValue);
-                                    }}
-                                    enableInlineEdit={isInlineEditEnabled}
-                                    key={`${product.id}-${refreshKey}`}
-                                  />
-                                </div>
+                                {(() => {
+                                    const containerWidth = 300; // Ancho aproximado del contenedor de la tarjeta
+                                    const containerHeight = 288; // sm:h-72 -> 18rem -> 288px
+                                    const optimalScale = getOptimalScale(
+                                        selectedTemplate.template.canvas.width,
+                                        selectedTemplate.template.canvas.height,
+                                        containerWidth,
+                                        containerHeight
+                                    );
+            
+                                    return (
+                                        <div
+                                            className="max-w-full max-h-full transition-transform duration-300"
+                                            style={{ transform: `scale(${optimalScale})` }}
+                                        >
+                                            <BuilderTemplateRenderer 
+                                                template={selectedTemplate.template}
+                                                components={selectedTemplate.template.defaultComponents}
+                                                product={product}
+                                                productChanges={productChanges}
+                                                onEditField={(fieldType: string, newValue: string) => {
+                                                  console.log(`🖱️ Edición inline directa (grilla): ${fieldType} = ${newValue} para ${product.descripcion}`);
+                                                  handleProductEdit(product.id, fieldType, newValue);
+                                                }}
+                                                enableInlineEdit={isInlineEditEnabled}
+                                                key={`${product.id}-${refreshKey}`}
+                                              />
+                                        </div>
+                                    );
+                                })()}
                               </div>
                             </div>
                           </div>
@@ -792,6 +906,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       {/* Botón de impresión */}
       <div className="mt-4">
         <button
+          onClick={handlePrintClick}
           disabled={selectedProducts.length === 0 || !selectedTemplate}
           className={`w-full px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
             selectedProducts.length === 0 || !selectedTemplate
@@ -817,6 +932,25 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
         productNumber={productToDelete ? selectedProducts.findIndex(p => p.id === productToDelete.id) + 1 : undefined}
         totalProducts={selectedProducts.length}
       />
+
+      {/* 🚀 MODAL DE REPORTE DE CAMBIOS */}
+      <ProductChangesModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        onConfirmPrint={handleConfirmPrint}
+      />
+
+      {/* CONTENEDOR DE IMPRESIÓN (OCULTO) */}
+      {selectedTemplate && (
+        <PrintContainer
+          ref={printComponentRef}
+          templates={selectedProducts.map(product => ({
+            product: product,
+            template: selectedTemplate.template,
+          }))}
+          productChanges={productChanges}
+        />
+      )}
     </div>
   );
 }; 

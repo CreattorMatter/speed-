@@ -100,12 +100,12 @@ export interface SizeV3 {
 export interface TypographyStyleV3 {
   fontFamily: string;
   fontSize: number;
-  fontWeight: number | 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
+  fontWeight: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
   fontStyle: 'normal' | 'italic' | 'oblique';
   lineHeight: number;
   letterSpacing: number;
   textAlign: 'left' | 'center' | 'right' | 'justify';
-  textDecoration: 'none' | 'underline' | 'line-through' | 'overline';
+  textDecoration?: 'none' | 'underline' | 'line-through';
   textTransform: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
   textShadow?: {
     offsetX: number;
@@ -156,16 +156,19 @@ export interface SpacingStyleV3 {
   };
 }
 
+export type ShadowV3 = {
+  inset?: boolean;
+  offsetX: number;
+  offsetY: number;
+  blurRadius: number;
+  spreadRadius: number;
+  color: string;
+};
+
 export interface EffectsStyleV3 {
   opacity: number;
-  boxShadow?: Array<{
-    offsetX: number;
-    offsetY: number;
-    blurRadius: number;
-    spreadRadius: number;
-    color: string;
-    inset: boolean;
-  }>;
+  borderRadius?: number;
+  boxShadow?: ShadowV3[];
   filter?: {
     blur: number;
     brightness: number;
@@ -883,4 +886,4 @@ export interface PromotionSystemConfig {
     conditions: string;
     applicableProducts: string[];
   };
-} 
+}

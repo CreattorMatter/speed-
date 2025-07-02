@@ -50,7 +50,6 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showMigrationModal, setShowMigrationModal] = useState(false);
   const [migrationSource, setMigrationSource] = useState<FamilyV3 | null>(null);
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingFamily, setEditingFamily] = useState<FamilyV3 | null>(null);
 
@@ -276,49 +275,7 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
               </button>
             )}
           </div>
-
-          {/* Opciones avanzadas */}
-          {userRole === 'admin' && (
-            <button
-              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-              className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition-colors"
-            >
-              <Settings className="w-4 h-4" />
-              <span className="text-sm">Opciones avanzadas</span>
-              {showAdvancedOptions ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
-            </button>
-          )}
         </div>
-
-        {/* Opciones avanzadas expandibles */}
-        {showAdvancedOptions && userRole === 'admin' && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2">Migración de Familias</h4>
-                <p className="text-sm text-blue-700">
-                  Copia plantillas entre familias automáticamente
-                </p>
-              </div>
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h4 className="font-medium text-green-900 mb-2">Sincronización SAP</h4>
-                <p className="text-sm text-green-700">
-                  Conecta con SAP para datos de productos
-                </p>
-              </div>
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <h4 className="font-medium text-purple-900 mb-2">Gestión Avanzada</h4>
-                <p className="text-sm text-purple-700">
-                  Herramientas administrativas completas
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Resultados */}
