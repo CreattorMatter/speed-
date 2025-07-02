@@ -3,7 +3,6 @@ import { TemplateV3, DraggableComponentV3 } from '../../../../../../features/bui
 import { ProductoReal } from '../../../../../../types/product';
 import { getDynamicFieldValue, processDynamicTemplate } from '../../../../../../utils/productFieldsMap';
 import { InlineEditableText } from './InlineEditableText';
-import { useDynamicContent } from '../../../../../../utils/useDynamicContent';
 
 interface BuilderTemplateRendererProps {
   template: TemplateV3;
@@ -698,8 +697,6 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
   onEditField,
   enableInlineEdit = false
 }) => {
-  const { processTemplateString } = useDynamicContent(product);
-
   // Filtrar componentes visibles y ordenarlos por z-index
   const visibleComponents = components
     .filter(c => c.isVisible !== false)
