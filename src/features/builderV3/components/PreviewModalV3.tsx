@@ -42,10 +42,7 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
 }) => {
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
   const [dataMode, setDataMode] = useState<DataMode>('mock');
-  const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
-  const [showGrid, setShowGrid] = useState(false);
-  const [showRuler, setShowRuler] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // 🚀 OBTENER PRODUCTO MOCK (CORREGIDO)
@@ -96,31 +93,12 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
   // ACTIONS
   // =====================
 
-  const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev + 25, 300));
-  };
-
-  const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev - 25, 25));
-  };
-
   const handleRotate = () => {
     setRotation(prev => (prev + 90) % 360);
   };
 
-  const handleExport = async () => {
-    // Simular exportación
-    alert('Funcionalidad de exportación - En desarrollo');
-  };
-
-  const handleShare = async () => {
-    // Simular compartir
-    alert('Funcionalidad de compartir - En desarrollo');
-  };
-
   const refreshPreview = () => {
     // Forzar re-render
-    setZoom(100);
     setRotation(0);
   };
 
@@ -202,9 +180,6 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
             <span className="text-sm font-medium text-gray-700">Modo:</span>
             {[
               { mode: 'desktop', icon: Monitor, label: 'Desktop' },
-              { mode: 'mobile', icon: Smartphone, label: 'Mobile' },
-              { mode: 'print', icon: Printer, label: 'Impresión' },
-              { mode: 'fullscreen', icon: Maximize2, label: 'Pantalla completa' }
             ].map(({ mode, icon: Icon, label }) => (
               <button
                 key={mode}
@@ -226,8 +201,6 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
             <span className="text-sm font-medium text-gray-700">Datos:</span>
             {[
               { mode: 'mock', label: 'Mock' },
-              { mode: 'real', label: 'Reales' },
-              { mode: 'empty', label: 'Vacío' }
             ].map(({ mode, label }) => (
               <button
                 key={mode}
@@ -246,28 +219,6 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
           {/* Tools */}
           <div className="flex items-center space-x-2">
             <button
-              onClick={handleZoomOut}
-              className="p-2 hover:bg-gray-100 rounded"
-              title="Zoom Out"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            
-            <span className="text-sm text-gray-600 min-w-12 text-center">
-              {Math.round(zoom)}%
-            </span>
-            
-            <button
-              onClick={handleZoomIn}
-              className="p-2 hover:bg-gray-100 rounded"
-              title="Zoom In"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
-            
-            <div className="w-px h-6 bg-gray-300" />
-            
-            <button
               onClick={handleRotate}
               className="p-2 hover:bg-gray-100 rounded"
               title="Rotar"
@@ -282,24 +233,6 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
             >
               <RefreshCw className="w-4 h-4" />
             </button>
-            
-            <div className="w-px h-6 bg-gray-300" />
-            
-            <button
-              onClick={handleExport}
-              className="p-2 hover:bg-gray-100 rounded"
-              title="Exportar"
-            >
-              <Download className="w-4 h-4" />
-            </button>
-            
-            <button
-              onClick={handleShare}
-              className="p-2 hover:bg-gray-100 rounded"
-              title="Compartir"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
           </div>
         </div>
 
@@ -310,26 +243,12 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
               ref={canvasRef}
               className="bg-white shadow-lg relative"
               style={{
-                width: `${previewDimensions.width * (zoom / 100)}px`,
-                height: `${previewDimensions.height * (zoom / 100)}px`,
+                width: `${previewDimensions.width}px`,
+                height: `${previewDimensions.height}px`,
                 transform: `rotate(${rotation}deg)`,
                 transition: 'all 0.3s ease'
               }}
             >
-              {/* Grid overlay */}
-              {showGrid && (
-                <div 
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    backgroundImage: `
-                      linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
-                      linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)
-                    `,
-                    backgroundSize: '20px 20px'
-                  }}
-                />
-              )}
-
               {/* Canvas content */}
               <div 
                 className="relative w-full h-full overflow-hidden"
