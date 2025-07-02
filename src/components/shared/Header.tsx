@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, LogOut, User, ChevronDown, HelpCircle, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useHeader } from './HeaderProvider';
 import { GuideModal } from './GuideModal';
 
@@ -8,15 +9,25 @@ interface HeaderProps {
   onBack: () => void;
   onLogout: () => void;
   onGoToAdmin?: () => void;
+  onGoToDashboard?: () => void;
   userName: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, userName }) => {
+const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, onGoToDashboard, userName }) => {
   const { userEmail, userRole } = useHeader();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const navigate = useNavigate();
 
   const displayName = userName || 'Usuario';
+
+  const handleLogoClick = () => {
+    if (onGoToDashboard) {
+      onGoToDashboard();
+    } else {
+      navigate('/');
+    }
+  };
 
   return (
     <>
@@ -32,16 +43,22 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, userName
               <span className="hidden sm:inline text-sm font-medium transition-all duration-300">Volver</span>
             </button>
 
-            {/* Título centrado */}
+            {/* Título centrado - Clickeable para ir al dashboard */}
             <div className="flex items-center gap-1 xs:gap-2 absolute left-1/2 transform -translate-x-1/2">
-              <h1 className="text-lg xs:text-xl sm:text-2xl font-bold">
-                <span className="bg-gradient-to-r from-white via-white to-violet-200 bg-clip-text text-transparent">
-                  SPID
-                </span>
-                <span className="bg-gradient-to-r from-violet-200 to-violet-400 bg-clip-text text-transparent">
-                  {' '}Plus
-                </span>
-              </h1>
+              <button
+                onClick={handleLogoClick}
+                className="group transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-opacity-50 rounded-xl px-4 py-2 bg-gradient-to-r from-white/95 via-white/90 to-violet-100/80 backdrop-blur-sm shadow-lg hover:shadow-xl border border-white/20"
+                title="Ir al Dashboard"
+              >
+                <h1 className="text-lg xs:text-xl sm:text-2xl font-bold transition-all duration-300 group-hover:drop-shadow-lg">
+                  <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-violet-600 bg-clip-text text-transparent">
+                    SPID
+                  </span>
+                  <span className="bg-gradient-to-r from-violet-600 to-purple-700 bg-clip-text text-transparent">
+                    {' '}Plus
+                  </span>
+                </h1>
+              </button>
             </div>
 
             <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">

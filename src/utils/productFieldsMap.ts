@@ -22,20 +22,28 @@ export interface DynamicField {
   description: string;
   fieldKey: string; // Para mapear al producto
   example?: string;
-  formatter?: (value: any, product?: ProductoReal) => string;
+  formatter?: (value: any, product?: ProductoReal, outputFormat?: any) => string;
 }
 
 // =====================
 // FORMATEADORES AUXILIARES  
 // =====================
 
-const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('es-AR', {
+const formatPrice = (price: number, options?: { prefix?: string; precision?: number }): string => {
+  const formatOptions: Intl.NumberFormatOptions = {
     style: 'currency',
     currency: 'ARS',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(price);
+    minimumFractionDigits: options?.precision === 2 ? 2 : 0,
+    maximumFractionDigits: options?.precision === 2 ? 2 : 0,
+  };
+
+  let formattedPrice = new Intl.NumberFormat('es-AR', formatOptions).format(price);
+
+  if (options?.prefix === undefined || options.prefix === null || options.prefix.trim() === '') {
+    formattedPrice = formattedPrice.replace(/[$\s]/g, '');
+  }
+
+  return formattedPrice;
 };
 
 const formatPriceWithoutCurrency = (price: number): string => {
@@ -179,7 +187,7 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         description: 'Precio actual de venta',
         fieldKey: 'precio',
         example: '$ 699.999',
-        formatter: (price: number) => formatPrice(price)
+        formatter: (price: number, _: any, outputFormat: any) => formatPrice(price, outputFormat)
       },
       {
         id: 'price_previous',
@@ -187,7 +195,7 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         description: 'Precio anterior (para antes/ahora)',
         fieldKey: 'precioAnt',
         example: '$ 849.999',
-        formatter: (price: number) => price ? formatPrice(price) : 'No disponible'
+        formatter: (price: number, _: any, outputFormat: any) => price ? formatPrice(price, outputFormat) : 'No disponible'
       },
       {
         id: 'price_base',
@@ -195,7 +203,7 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         description: 'Precio sin impuestos nacionales',
         fieldKey: 'basePrice',
         example: '$ 578.511',
-        formatter: (price: number) => price ? formatPrice(price) : 'No disponible'
+        formatter: (price: number, _: any, outputFormat: any) => price ? formatPrice(price, outputFormat) : 'No disponible'
       },
       {
         id: 'price_without_tax',
@@ -203,7 +211,7 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         description: 'Precio sin IVA (21%)',
         fieldKey: 'precio',
         example: '$ 578.512',
-        formatter: (price: number) => price ? formatPrice(price / 1.21) : 'No disponible'
+        formatter: (price: number, _: any, outputFormat: any) => price ? formatPrice(price / 1.21, outputFormat) : 'No disponible'
       },
       {
         id: 'price_unit_alt',
@@ -211,9 +219,9 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         description: 'Precio por unidad secundaria',
         fieldKey: 'ppum',
         example: '$ 866/mL',
-        formatter: (price: number, product?: ProductoReal) => {
+        formatter: (price: number, product?: ProductoReal, outputFormat?: any) => {
           if (!price || !product?.unidadPpumExt) return 'No disponible';
-          return `${formatPrice(price)}/${product.unidadPpumExt}`;
+          return `${formatPrice(price, outputFormat)}/${product.unidadPpumExt}`;
         }
       },
       {
@@ -234,10 +242,10 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         description: 'Cantidad ahorrada en pesos',
         fieldKey: 'static',
         example: '$ 150.000',
-        formatter: (_, product?: ProductoReal) => {
+        formatter: (_, product?: ProductoReal, outputFormat?: any) => {
           if (!product?.precio || !product?.precioAnt) return 'Sin descuento';
           const ahorro = product.precioAnt - product.precio;
-          return ahorro > 0 ? formatPrice(ahorro) : 'Sin descuento';
+          return ahorro > 0 ? formatPrice(ahorro, outputFormat) : 'Sin descuento';
         }
       },
       {
@@ -246,7 +254,7 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         description: 'Precio mensual en cuotas',
         fieldKey: 'precio',
         example: '$ 58.333',
-        formatter: (price: number) => price ? formatPrice(price / 12) : 'No disponible'
+        formatter: (price: number, _: any, outputFormat?: any) => price ? formatPrice(price / 12, outputFormat) : 'No disponible'
       },
       {
         id: 'currency_symbol',
@@ -372,7 +380,7 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         description: 'Precio con formato destacado',
         fieldKey: 'precio',
         example: '$ 699.999',
-        formatter: (price: number) => price ? formatPrice(Math.floor(price)) : 'No disponible'
+        formatter: (price: number, _: any, outputFormat: any) => price ? formatPrice(Math.floor(price), outputFormat) : 'No disponible'
       },
       {
         id: 'price_small',
@@ -380,7 +388,7 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         description: 'Precio con formato reducido',
         fieldKey: 'precio',
         example: '699.999',
-        formatter: (price: number) => price ? formatPriceWithoutCurrency(Math.floor(price)) : 'No disponible'
+        formatter: (price: number, _: any, outputFormat: any) => price ? formatPriceWithoutCurrency(Math.floor(price)) : 'No disponible'
       },
       {
         id: 'product_name_upper',
@@ -422,7 +430,11 @@ export const ALL_DYNAMIC_FIELDS = DYNAMIC_FIELD_CATEGORIES.reduce((acc, category
 /**
  * Obtiene el valor de un campo dinámico para un producto específico
  */
-export const getDynamicFieldValue = (fieldId: string, product: ProductoReal): string => {
+export const getDynamicFieldValue = (
+  fieldId: string, 
+  product: ProductoReal,
+  outputFormat?: any
+): string => {
   const field = ALL_DYNAMIC_FIELDS[fieldId];
   if (!field) {
     console.warn(`⚠️ Campo dinámico no encontrado: ${fieldId}`);
@@ -441,7 +453,7 @@ export const getDynamicFieldValue = (fieldId: string, product: ProductoReal): st
 
     // Aplicar formateador si existe
     if (field.formatter) {
-      return field.formatter(baseValue, product);
+      return field.formatter(baseValue, product, outputFormat);
     }
 
     // Retornar valor base o fallback
@@ -471,7 +483,11 @@ export const extractDynamicFields = (dynamicTemplate: string): string[] => {
 /**
  * Procesa un template reemplazando todos los campos dinámicos
  */
-export const processDynamicTemplate = (dynamicTemplate: string, product: ProductoReal): string => {
+export const processDynamicTemplate = (
+  dynamicTemplate: string, 
+  product: ProductoReal,
+  outputFormat?: any
+): string => {
   if (!dynamicTemplate || !product) {
     return dynamicTemplate || '';
   }
@@ -480,7 +496,7 @@ export const processDynamicTemplate = (dynamicTemplate: string, product: Product
   const fields = extractDynamicFields(dynamicTemplate);
 
   fields.forEach(fieldId => {
-    const value = getDynamicFieldValue(fieldId, product);
+    const value = getDynamicFieldValue(fieldId, product, outputFormat);
     const regex = new RegExp(`\\[${fieldId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'g');
     processedTemplate = processedTemplate.replace(regex, value);
   });

@@ -2162,13 +2162,13 @@ export default function Dashboard({
             onClick={!isEasyPilarUser(userEmail) ? onSettings : undefined}
             className={`group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
               ${!isEasyPilarUser(userEmail)
-                ? 'bg-gradient-to-br from-white to-gray-100 border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg'
+                ? 'bg-gradient-to-r from-white/95 via-white/90 to-violet-100/80 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             disabled={isEasyPilarUser(userEmail)}
           >
             <div className={`mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl ${
               !isEasyPilarUser(userEmail)
-                ? 'bg-gradient-to-br from-yellow-500 to-yellow-600 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
+                ? 'bg-gradient-to-br from-blue-500 to-violet-600 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
                 : 'bg-gray-300'
             }`}>
               <Settings className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />

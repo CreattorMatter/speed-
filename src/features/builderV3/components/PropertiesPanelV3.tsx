@@ -34,9 +34,10 @@ import {
   Underline,
   Strikethrough
 } from 'lucide-react';
-import { BuilderStateV3, DraggableComponentV3, PositionV3, SizeV3 } from '../types';
+import { BuilderStateV3, DraggableComponentV3, PositionV3, SizeV3, DynamicContentV3 } from '../types';
 import { processDynamicContent, defaultMockData, getAvailableFields } from '../../../utils/dynamicContentProcessor';
 import { supabase } from '../../../lib/supabaseClient';
+import { UnitConverter } from '../utils/unitConverter';
 
 interface PropertiesPanelV3Props {
   state: BuilderStateV3;
@@ -168,8 +169,22 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
         [field]: value
       } as any
     });
+  };
 
+  const handleOutputFormatChange = (field: keyof NonNullable<DynamicContentV3['outputFormat']>, value: any) => {
+    if (!selectedComponent) return;
+    const currentContent = selectedComponent.content as any;
+    const currentOutputFormat = currentContent.outputFormat || {};
 
+    onComponentUpdate(selectedComponent.id, {
+        content: {
+            ...currentContent,
+            outputFormat: {
+                ...currentOutputFormat,
+                [field]: value
+            }
+        }
+    });
   };
 
 
@@ -186,47 +201,47 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
           <Move className="w-4 h-4 mr-2" />
           Dimensiones
         </h4>
-        <div className="grid grid-cols-4 gap-2 mb-2">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">X</label>
-            <input
-              type="number"
-              value={Math.round(selectedComponent?.position.x || 0)}
-              onChange={(e) => handlePositionChange('x', parseFloat(e.target.value) || 0)}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Y</label>
-            <input
-              type="number"
-              value={Math.round(selectedComponent?.position.y || 0)}
-              onChange={(e) => handlePositionChange('y', parseFloat(e.target.value) || 0)}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Ancho</label>
-            <input
-              type="number"
-              value={Math.round(selectedComponent?.size.width || 0)}
-              onChange={(e) => handleSizeChange('width', Number(e.target.value))}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Alto</label>
-            <input
-              type="number"
-              value={Math.round(selectedComponent?.size.height || 0)}
-              onChange={(e) => handleSizeChange('height', Number(e.target.value))}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+        <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">X (mm)</label>
+              <input
+                type="number"
+                value={Math.round(UnitConverter.pxToMm(selectedComponent?.position.x || 0))}
+                onChange={(e) => handlePositionChange('x', UnitConverter.mmToPx(Number(e.target.value)))}
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Y (mm)</label>
+              <input
+                type="number"
+                value={Math.round(UnitConverter.pxToMm(selectedComponent?.position.y || 0))}
+                onChange={(e) => handlePositionChange('y', UnitConverter.mmToPx(Number(e.target.value)))}
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Ancho (mm)</label>
+              <input
+                type="number"
+                value={Math.round(UnitConverter.pxToMm(selectedComponent?.size.width || 0))}
+                onChange={(e) => handleSizeChange('width', UnitConverter.mmToPx(Number(e.target.value)))}
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Alto (mm)</label>
+              <input
+                type="number"
+                value={Math.round(UnitConverter.pxToMm(selectedComponent?.size.height || 0))}
+                onChange={(e) => handleSizeChange('height', UnitConverter.mmToPx(Number(e.target.value)))}
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
         </div>
         
         {/* Checkbox proporcional */}
-        <div>
+        <div className="mt-2">
           <label className="flex items-center">
             <input
               type="checkbox"
@@ -918,6 +933,36 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
                 rows={3}
               />
             </div>
+
+            {((selectedComponent?.content as any)?.dynamicTemplate || '').includes('price') && (
+              <div className="mt-4 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                <h5 className="text-xs font-bold text-gray-700 mb-2">Opciones de Formato de Precio</h5>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={!!(selectedComponent?.content as any)?.outputFormat?.prefix}
+                      onChange={(e) => {
+                        handleOutputFormatChange('prefix', e.target.checked ? '$ ' : undefined);
+                      }}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Incluir símbolo de moneda ($)</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={(selectedComponent?.content as any)?.outputFormat?.precision === 2}
+                      onChange={(e) => {
+                        handleOutputFormatChange('precision', e.target.checked ? 2 : 0);
+                      }}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Incluir decimales</span>
+                  </label>
+                </div>
+              </div>
+            )}
 
             {/* Selector de campos dinámicos SOLO PRODUCTOS */}
             <div>

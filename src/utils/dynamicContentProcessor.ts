@@ -95,9 +95,13 @@ const formatDate = (date: Date): string => {
 // =====================
 
 /**
- * Procesa un template dinámico reemplazando campos con datos reales o ejemplos
+ * Procesa un template dinámico reemplazando todos los campos dinámicos
  */
-export const processTemplate = (template: string, mockData: MockDataV3 = defaultMockData): string => {
+export const processTemplate = (
+  template: string, 
+  mockData: MockDataV3 = defaultMockData,
+  outputFormat?: any
+): string => {
   if (!template) return '';
   
   let processedTemplate = template;
@@ -110,7 +114,7 @@ export const processTemplate = (template: string, mockData: MockDataV3 = default
     
     while ((match = fieldRegex.exec(template)) !== null) {
       const fieldId = match[1];
-      const fieldValue = getDynamicFieldValue(fieldId, mockData.producto);
+      const fieldValue = getDynamicFieldValue(fieldId, mockData.producto, outputFormat);
       processedTemplate = processedTemplate.replace(match[0], fieldValue);
     }
   } else {
@@ -230,7 +234,7 @@ export const processDynamicContent = (
   
   // 2. Plantilla dinámica (PRINCIPAL - MEJORADO)
   if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
-    return processTemplate(content.dynamicTemplate, mockData);
+    return processTemplate(content.dynamicTemplate, mockData, content.outputFormat);
   }
   
   // 3. Campo SAP directo (MEJORADO)
@@ -257,7 +261,7 @@ export const processDynamicContent = (
   if (content?.staticValue) {
     // Si es un template dinámico en staticValue, procesarlo
     if (content.staticValue.includes('[') && content.staticValue.includes(']')) {
-      return processTemplate(content.staticValue, mockData);
+      return processTemplate(content.staticValue, mockData, content.outputFormat);
     }
     return content.staticValue;
   }
@@ -265,7 +269,7 @@ export const processDynamicContent = (
   if (content?.text) {
     // Si es un template dinámico en text, procesarlo
     if (content.text.includes('[') && content.text.includes(']')) {
-      return processTemplate(content.text, mockData);
+      return processTemplate(content.text, mockData, content.outputFormat);
     }
     return content.text;
   }
