@@ -663,36 +663,39 @@ export const TemplateLibraryV3: React.FC<TemplateLibraryV3Props> = ({
           </h2>
         </div>
 
-        {filteredTemplates.length > 0 ? (
-          viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredTemplates.map(renderTemplateCard)}
-            </div>
+        {/* 🔄 MEJORA: Contenedor con scroll para la grilla de plantillas */}
+        <div className="max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 rounded-lg border border-gray-200 bg-white p-4">
+          {filteredTemplates.length > 0 ? (
+            viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredTemplates.map(renderTemplateCard)}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredTemplates.map(renderTemplateRow)}
+              </div>
+            )
           ) : (
-            <div className="space-y-2">
-              {filteredTemplates.map(renderTemplateRow)}
+            <div className="text-center py-12">
+              <div className="max-w-md mx-auto">
+                <Edit className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No se encontraron plantillas
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  Intenta con diferentes términos de búsqueda o crea una nueva plantilla.
+                </p>
+                <button
+                  onClick={onTemplateCreate}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2 mx-auto shadow-md"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Crear Nueva Plantilla</span>
+                </button>
+              </div>
             </div>
-          )
-        ) : (
-          <div className="text-center py-12">
-            <div className="max-w-md mx-auto">
-              <Edit className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No se encontraron plantillas
-              </h3>
-              <p className="text-gray-500 mb-6">
-                Intenta con diferentes términos de búsqueda o crea una nueva plantilla.
-              </p>
-              <button
-                onClick={onTemplateCreate}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2 mx-auto shadow-md"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Crear Nueva Plantilla</span>
-              </button>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Preview Modal */}

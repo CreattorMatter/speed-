@@ -469,7 +469,7 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
       case 'canvas-editor':
         if (!state.currentTemplate) return <LoadingSpinner />;
         return (
-          <div className="flex h-full bg-gray-200">
+          <div className="flex h-full bg-gray-200 overflow-hidden">
             <ComponentsPanelV3 componentsLibrary={componentsLibrary} onComponentDragStart={() => {}} />
             <div className="flex-1 flex flex-col h-full overflow-hidden">
               <ToolbarV3
@@ -510,7 +510,7 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
                 activeTool={state.canvas.activeTool as 'select' | 'pan' | 'zoom'}
               />
             </div>
-            <div className="w-80 bg-white border-l border-gray-300">
+            <div className="w-80 bg-white border-l border-gray-300 flex flex-col">
                 <PropertiesPanelV3
                     state={state}
                     activeTab={state.ui.activeRightTab}
@@ -548,12 +548,7 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
       <div className="flex-1 overflow-hidden">
         {renderContent()}
       </div>
-      <StatusBarV3
-        state={state}
-        zoomLevel={state.canvas.zoom * 100}
-        gridVisible={state.canvas.showGrid}
-        rulersVisible={state.canvas.showRulers}
-      />
+
       {showPreview && state.currentTemplate && (
         <PreviewModalV3
           isOpen={showPreview}

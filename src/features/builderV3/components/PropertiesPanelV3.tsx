@@ -569,69 +569,96 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
           Bordes
         </h4>
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Grosor</label>
+          {/* Checkbox para activar/desactivar borde */}
+          <div>
+            <label className="flex items-center">
               <input
-                type="number"
-                value={selectedComponent?.style?.border?.width || 0}
-                onChange={(e) => handleStyleChange('border', { 
-                  ...selectedComponent?.style?.border, 
-                  width: parseFloat(e.target.value) || 0 
-                })}
-                className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                min="0"
-                max="20"
+                type="checkbox"
+                checked={(selectedComponent?.style?.border?.width || 0) > 0}
+                onChange={(e) => {
+                  if (!selectedComponent) return;
+                  const newWidth = e.target.checked ? 1 : 0;
+                  handleStyleChange('border', { 
+                    ...selectedComponent?.style?.border, 
+                    width: newWidth,
+                    color: selectedComponent?.style?.border?.color || '#000000',
+                    style: selectedComponent?.style?.border?.style || 'solid'
+                  });
+                }}
+                className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Color</label>
-              <input
-                type="color"
-                value={selectedComponent?.style?.border?.color || '#000000'}
-                onChange={(e) => handleStyleChange('border', { 
-                  ...selectedComponent?.style?.border, 
-                  color: e.target.value 
-                })}
-                className="w-full h-10 rounded border border-gray-300"
-              />
-            </div>
+              <span className="ml-2 text-xs text-gray-700">Mostrar borde</span>
+            </label>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Radio de esquinas</label>
-            <input
-              type="number"
-              value={selectedComponent?.style?.border?.radius?.topLeft || 0}
-              onChange={(e) => {
-                const radius = parseFloat(e.target.value) || 0;
-                handleStyleChange('border', { 
-                  ...selectedComponent?.style?.border, 
-                  radius: { topLeft: radius, topRight: radius, bottomLeft: radius, bottomRight: radius }
-                });
-              }}
-              className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min="0"
-              max="50"
-            />
-          </div>
+          {/* Controles de borde (solo visibles cuando está activado) */}
+          {(selectedComponent?.style?.border?.width || 0) > 0 && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Grosor</label>
+                  <input
+                    type="number"
+                    value={selectedComponent?.style?.border?.width || 1}
+                    onChange={(e) => handleStyleChange('border', { 
+                      ...selectedComponent?.style?.border, 
+                      width: parseFloat(e.target.value) || 1 
+                    })}
+                    className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    min="1"
+                    max="20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Color</label>
+                  <input
+                    type="color"
+                    value={selectedComponent?.style?.border?.color || '#000000'}
+                    onChange={(e) => handleStyleChange('border', { 
+                      ...selectedComponent?.style?.border, 
+                      color: e.target.value 
+                    })}
+                    className="w-full h-10 rounded border border-gray-300"
+                  />
+                </div>
+              </div>
+                           
+               <div>
+                 <label className="block text-xs font-medium text-gray-700 mb-1">Radio de esquinas</label>
+                 <input
+                   type="number"
+                   value={selectedComponent?.style?.border?.radius?.topLeft || 0}
+                   onChange={(e) => {
+                     const radius = parseFloat(e.target.value) || 0;
+                     handleStyleChange('border', { 
+                       ...selectedComponent?.style?.border, 
+                       radius: { topLeft: radius, topRight: radius, bottomLeft: radius, bottomRight: radius }
+                     });
+                   }}
+                   className="w-full px-2 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   min="0"
+                   max="50"
+                 />
+               </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Estilo</label>
-            <select
-              value={selectedComponent?.style?.border?.style || 'solid'}
-              onChange={(e) => handleStyleChange('border', { 
-                ...selectedComponent?.style?.border, 
-                style: e.target.value 
-              })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="solid">Sólido</option>
-              <option value="dashed">Punteado</option>
-              <option value="dotted">Puntos</option>
-              <option value="double">Doble</option>
-            </select>
-          </div>
+               <div>
+                 <label className="block text-xs font-medium text-gray-700 mb-1">Estilo</label>
+                 <select
+                   value={selectedComponent?.style?.border?.style || 'solid'}
+                   onChange={(e) => handleStyleChange('border', { 
+                     ...selectedComponent?.style?.border, 
+                     style: e.target.value 
+                   })}
+                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                 >
+                   <option value="solid">Sólido</option>
+                   <option value="dashed">Punteado</option>
+                   <option value="dotted">Puntos</option>
+                   <option value="double">Doble</option>
+                 </select>
+               </div>
+             </>
+           )}
         </div>
       </div>
 
@@ -932,13 +959,25 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
         </div>
 
         {/* Empty state */}
-        <div className="flex-1 flex items-center justify-center p-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 130px)' }}>
-          <div className="text-center text-gray-500">
-            <Settings className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <p className="text-sm">Selecciona un componente para ver sus propiedades</p>
-            <p className="text-xs mt-2 text-gray-400">
-              Arrastra elementos desde el panel izquierdo o haz clic en componentes existentes
-            </p>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div 
+            className="flex-1 flex items-center justify-center p-3 properties-panel-scroll"
+            style={{ 
+              maxHeight: 'calc(100vh - 140px)',
+              height: '100%',
+              minHeight: '250px',
+              flexGrow: 1,
+              flexShrink: 1,
+              flexBasis: 0
+            }}
+          >
+            <div className="text-center text-gray-500">
+              <Settings className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-sm">Selecciona un componente para ver sus propiedades</p>
+              <p className="text-xs mt-2 text-gray-400">
+                Arrastra elementos desde el panel izquierdo o haz clic en componentes existentes
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -946,7 +985,7 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
   }
 
   return (
-    <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
+    <div className="w-80 bg-white border-l border-gray-200 flex flex-col h-full">
       {/* Tabs */}
       <div className="border-b border-gray-200">
         <nav className="flex">
@@ -992,25 +1031,12 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
         )}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-3 py-2" style={{ height: 'calc(100vh - 140px)' }}>
-        <div className="space-y-3">
-          {selectedComponent && (
-            <>
-              {activeTab === 'properties' && renderPropertiesTab()}
-              {activeTab === 'styles' && renderStylesTab()}
-              {activeTab === 'content' && renderContentTab()}
-            </>
-          )}
-
-          {multipleSelection && (
-            <div className="text-center text-gray-500">
-              <p className="text-sm">Edición múltiple disponible próximamente</p>
-              <p className="text-xs mt-2">
-                Podrás editar propiedades comunes de varios elementos a la vez
-              </p>
-            </div>
-          )}
+      {/* Content - SOLUCIÓN DE SCROLL DEFINITIVA CON FLEXBOX */}
+      <div className="flex-1 overflow-y-auto properties-panel-scroll min-h-0">
+        <div className="p-4 space-y-4">
+          {activeTab === 'properties' && renderPropertiesTab()}
+          {activeTab === 'styles' && renderStylesTab()}
+          {activeTab === 'content' && renderContentTab()}
         </div>
       </div>
     </div>

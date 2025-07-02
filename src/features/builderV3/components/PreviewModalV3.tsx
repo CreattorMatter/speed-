@@ -2,7 +2,7 @@
 // SPEED BUILDER V3 - PREVIEW MODAL
 // =====================================
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   X, 
   Eye, 
@@ -21,7 +21,8 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { BuilderStateV3, DraggableComponentV3, TemplateV3 } from '../types';
-import { processDynamicContent, MockDataV3 } from '../../../utils/dynamicContentProcessor';
+import { BuilderTemplateRenderer } from '../../posters/components/Posters/Editor/Renderers/BuilderTemplateRenderer';
+import { defaultMockData } from '@/utils/dynamicContentProcessor';
 
 interface PreviewModalV3Props {
   isOpen: boolean;
@@ -32,8 +33,6 @@ interface PreviewModalV3Props {
 
 type PreviewMode = 'desktop' | 'mobile' | 'print' | 'fullscreen';
 type DataMode = 'mock' | 'real' | 'empty';
-
-
 
 export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
   isOpen,
@@ -49,143 +48,8 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
   const [showRuler, setShowRuler] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // =====================
-  // MOCK DATA
-  // =====================
-  
-  const mockData: MockDataV3 = {
-    // Datos de producto
-    product_name: 'Taladro Percutor Profesional 20V',
-    product_price: 159990,
-    price_without_tax: 134447,
-    product_sku: 'TAL-20V-001',
-    product_brand: 'MAKITA',
-    product_category: 'Herramientas',
-    product_origin: 'Japón',
-    product_description: 'Taladro percutor inalámbrico con batería de litio de 20V y estuche incluido',
-    
-    // Datos de promoción
-    price_now: 119990,
-    discount_percentage: 25,
-    discount_amount: 40000,
-    date_from: '15/12/2024',
-    date_to: '31/12/2024',
-    promotion_name: 'Oferta Especial Navidad',
-    
-    // Datos calculados
-    final_price: 119990,
-    
-    // Datos de tienda
-    store_name: 'Tienda Central',
-    store_address: 'Av. Principal 123, Santiago'
-  };
-
-  // =====================
-  // UTILITY FUNCTIONS (Usando procesador unificado)
-  // =====================
-
-  const renderComponentContent = (component: DraggableComponentV3): React.ReactNode => {
-    const content = component.content as any;
-    
-    // =====================
-    // PROCESAMIENTO CON EL PROCESADOR UNIFICADO
-    // =====================
-    
-    // Verificar si es un campo de texto o dinámico
-    const componentType = component.type as string;
-    const isTextField = componentType === 'text' || componentType.startsWith('field-') || componentType === 'field-dynamic-text' || componentType === 'field-dynamic-date';
-    
-    if (isTextField) {
-      let textContent = '';
-      
-      if (dataMode === 'mock') {
-        // Usar el procesador dinámico unificado
-        textContent = processDynamicContent(component, mockData);
-      } else if (dataMode === 'real') {
-        // En modo real, mostrar datos reales (si están disponibles)
-        textContent = content?.staticValue || 'Datos reales no disponibles';
-      } else {
-        // En modo vacío, mostrar placeholder
-        textContent = content?.staticValue || `[${component.type}]`;
-      }
-      
-      return (
-        <div
-          className="preview-text"
-          style={{
-            // Tipografía desde component.style.typography
-            fontFamily: component.style?.typography?.fontFamily || 'Arial',
-            fontSize: `${component.style?.typography?.fontSize || 16}px`,
-            fontWeight: component.style?.typography?.fontWeight || 'normal',
-            fontStyle: component.style?.typography?.fontStyle || 'normal',
-            textAlign: component.style?.typography?.textAlign || 'left',
-            lineHeight: component.style?.typography?.lineHeight || 1.2,
-            
-            // Colores desde component.style.color
-            color: component.style?.color?.color || '#000000',
-            backgroundColor: component.style?.color?.backgroundColor || 'transparent',
-            
-            // Bordes desde component.style.border
-            borderRadius: component.style?.border?.radius?.topLeft ? 
-              `${component.style.border.radius.topLeft}px` : '0px',
-            border: component.style?.border ? 
-              `${component.style.border.width}px ${component.style.border.style || 'solid'} ${component.style.border.color}` : 
-              'none',
-            
-            // Efectos desde component.style.effects
-            opacity: component.style?.effects?.opacity ?? 1,
-            
-            // Transform desde component.position
-            transform: `rotate(${component.position.rotation || 0}deg) scale(${component.position.scaleX || 1}, ${component.position.scaleY || 1})`,
-            
-            // Fallbacks desde content (para compatibilidad)
-            ...(content?.padding && { padding: content.padding }),
-            ...(content?.textShadow && { textShadow: content.textShadow })
-          }}
-        >
-          {textContent || 'Texto'}
-        </div>
-      );
-    }
-    
-    // Resto de componentes (imágenes, QR, etc.)
-    switch (component.type) {
-      
-      case 'image-header':
-      case 'image-brand-logo':
-      case 'image-product':
-      case 'image-decorative':
-        return (
-          <img
-            src={content?.imageUrl || '/api/placeholder/400/300'}
-            alt={content?.imageAlt || 'Imagen'}
-            className="w-full h-full object-cover"
-            style={{
-              objectFit: content?.imageFit || 'cover',
-              borderRadius: content?.borderRadius || '0px',
-              border: content?.border || 'none',
-              opacity: content?.opacity || 1
-            }}
-          />
-        );
-      
-      case 'qr-dynamic':
-        return (
-          <div className="w-full h-full bg-white flex items-center justify-center border">
-            <div className="w-24 h-24 bg-black" style={{
-              backgroundImage: `url("data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="white"/><rect width="10" height="10" x="0" y="0" fill="black"/><rect width="10" height="10" x="20" y="0" fill="black"/><rect width="10" height="10" x="40" y="0" fill="black"/></svg>')}")`
-            }} />
-          </div>
-        );
-      
-      default:
-        return (
-          <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
-            {component.type}
-          </div>
-        );
-    }
-  };
+  // 🚀 OBTENER PRODUCTO MOCK (CORREGIDO)
+  const mockProduct = defaultMockData.producto;
 
   // =====================
   // PREVIEW MODES
@@ -473,27 +337,12 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
                   backgroundColor: template.canvas.backgroundColor || '#ffffff'
                 }}
               >
-                {/* Components */}
-                {state.components
-                  .filter(component => component.isVisible !== false)
-                  .map(component => (
-                    <div
-                      key={component.id}
-                      className="absolute"
-                      style={{
-                        left: `${component.position.x}px`,
-                        top: `${component.position.y}px`,
-                        width: `${component.size.width}px`,
-                        height: `${component.size.height}px`,
-                        transform: component.position.rotation ? `rotate(${component.position.rotation}deg)` : undefined,
-                        opacity: component.isLocked ? 0.7 : 1,
-                        zIndex: component.position.z || 1
-                      }}
-                    >
-                      {renderComponentContent(component)}
-                    </div>
-                  ))
-                }
+                <BuilderTemplateRenderer
+                  template={template}
+                  components={state.components}
+                  product={dataMode === 'mock' ? mockProduct : undefined}
+                  isPreview={true}
+                />
               </div>
             </div>
           </div>
@@ -520,26 +369,6 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
                 </ul>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Data preview (when using mock data) */}
-        {dataMode === 'mock' && (
-          <div className="p-4 border-t border-gray-200 bg-blue-50">
-            <details className="group">
-              <summary className="flex items-center space-x-2 cursor-pointer text-sm font-medium text-blue-800">
-                <span>Datos Mock utilizados</span>
-                <span className="group-open:rotate-90 transition-transform">▶</span>
-              </summary>
-              <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                {Object.entries(mockData).map(([key, value]) => (
-                  <div key={key} className="bg-white p-2 rounded border">
-                    <div className="font-medium text-gray-700">[{key}]</div>
-                    <div className="text-gray-600 truncate">{value.toString()}</div>
-                  </div>
-                ))}
-              </div>
-            </details>
           </div>
         )}
       </div>

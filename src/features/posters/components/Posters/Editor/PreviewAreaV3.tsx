@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Eye, EyeOff, Settings, X, ChevronLeft, ChevronRight, Grid, ArrowLeft, Package, AlertTriangle, Search } from 'lucide-react';
+import { Trash2, Eye, EyeOff, Settings, X, ChevronLeft, ChevronRight, Grid, ArrowLeft, Package, AlertTriangle, Search, Edit3, Lock, Unlock } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 
 // Servicios y datos
@@ -22,7 +22,6 @@ import { RootState, AppDispatch } from '../../../../../store';
 import { EditableField } from './EditableField';
 import { DeleteProductModal } from './DeleteProductModal';
 import { BuilderTemplateRenderer } from './Renderers/BuilderTemplateRenderer';
-import { EditModeIndicator } from './EditModeIndicator';
 
 // Utilidades
 import { 
@@ -67,11 +66,10 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   
   // Estados locales
   const [expandedProductIndex, setExpandedProductIndex] = useState<number | null>(null);
-  const [isEditPanelVisible, setIsEditPanelVisible] = useState(true);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [editPanelMode, setEditPanelMode] = useState<'sidebar' | 'floating' | 'hidden'>('floating');
+  const [isInlineEditEnabled, setIsInlineEditEnabled] = useState(false); // 🆕 NUEVO: Estado para controlar edición
 
   // Sincronizar estado local con props externas para expansión
   useEffect(() => {
@@ -88,6 +86,12 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   // Función helper para obtener producto editado
   const getEditedProduct = (productId: string) => {
     return productChanges[productId] || null;
+  };
+
+  // 🆕 NUEVA FUNCIÓN: Toggle para habilitar/deshabilitar edición
+  const toggleInlineEdit = () => {
+    setIsInlineEditEnabled(prev => !prev);
+    console.log(`🎯 Edición inline ${!isInlineEditEnabled ? 'HABILITADA' : 'DESHABILITADA'}`);
   };
 
   // Funciones para manejar expansión de productos
@@ -309,109 +313,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     }
   };
 
-  // 🎨 PANEL DE EDICIÓN FLOTANTE - Componente mejorado
-  const EditPanel = ({ product }: { product: Product }) => {
-    if (editPanelMode === 'hidden') return null;
-
-    const panelClasses = editPanelMode === 'floating' 
-      ? "fixed top-20 right-4 w-80 bg-white shadow-2xl rounded-lg z-50 max-h-[calc(100vh-100px)] overflow-y-auto border border-gray-200"
-      : "w-full lg:w-80 bg-gray-50 border-b lg:border-b-0 lg:border-r p-3 xs:p-4 overflow-y-auto order-2 lg:order-1";
-
-    return (
-      <div className={panelClasses}>
-        {/* Header del panel flotante */}
-        {editPanelMode === 'floating' && (
-          <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
-            <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <Settings className="w-4 h-4 text-green-500" />
-              ✏️ Modo Edición Activo
-            </h3>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                Edita en tiempo real
-              </span>
-              <button
-                onClick={() => setEditPanelMode('hidden')}
-                className="w-6 h-6 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded transition-colors flex items-center justify-center"
-                title="Cerrar panel de edición"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Contenido del panel */}
-        <div className={editPanelMode === 'floating' ? "p-4" : ""}>
-          {editPanelMode === 'sidebar' && (
-            <div className="mb-3 xs:mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
-              <h3 className="text-base xs:text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <Settings className="w-4 h-4 xs:w-5 xs:h-5 text-green-500" />
-                <span className="truncate">✏️ Modo Edición Activo</span>
-              </h3>
-              <p className="text-xs text-green-600 mt-1">Edita valores en tiempo real</p>
-            </div>
-          )}
-          
-          {/* Info del producto */}
-          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="text-sm font-medium text-blue-800 truncate" title={product.descripcion}>
-              {product.descripcion}
-            </div>
-            <div className="text-xs text-blue-600">SKU: {product.sku}</div>
-            <div className="text-xs text-green-600 font-bold">${product.precio?.toLocaleString()}</div>
-          </div>
-          
-          <div className="space-y-3 xs:space-y-4">
-            {finalAvailableFields.map((field: string) => {
-              const fieldType = getFieldType(field);
-              const fieldLabel = getFieldLabel(field);
-              const isRequired = field === 'nombre';
-              
-              return (
-                <div key={field}>
-                  <label className="block text-xs xs:text-sm font-medium text-gray-700 mb-1">
-                    {fieldLabel} {isRequired && <span className="text-red-500">*</span>}
-                  </label>
-                  <EditableField
-                    value={getCurrentProductValue(product, field)}
-                    fieldName={field}
-                    fieldType={fieldType}
-                    isRequired={isRequired}
-                    onSave={(newValue) => handleProductEdit(product.id, field, newValue)}
-                    className="w-full"
-                  />
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Tips de uso y estado */}
-          <div className="mt-4 space-y-3">
-            {/* Indicador de cambios automáticos */}
-            <div className="p-2 bg-green-50 rounded-lg border border-green-200">
-              <div className="text-xs text-green-700 font-medium">✅ Campos llenados automáticamente</div>
-              <div className="text-xs text-green-600">Los valores se actualizaron al seleccionar el producto</div>
-            </div>
-            
-            {/* Tips de edición */}
-            <div className="p-2 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="text-xs text-blue-700 font-medium">💡 Tips de edición rápida:</div>
-              <div className="text-xs text-blue-600 mt-1 space-y-1">
-                <div>• <strong>Hover</strong> en cualquier campo para ver el ícono de edición</div>
-                <div>• <strong>Click</strong> para empezar a editar</div>
-                <div>• <strong>Enter</strong> para guardar, <strong>Escape</strong> para cancelar</div>
-                <div>• Los cambios se aplican <strong>instantáneamente</strong> en el preview</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   // 🎯 FUNCIÓN PARA CALCULAR ESCALA ÓPTIMA DINÁMICAMENTE
   const getOptimalScale = (templateWidth: number, templateHeight: number, containerWidth: number, containerHeight: number): number => {
     // Factores de escala para cada dimensión (balance entre tamaño y proporciones)
@@ -437,13 +338,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   // Renderizado principal
   return (
     <div className="h-full flex flex-col">
-      {/* Indicador de modo de edición activo */}
-      <EditModeIndicator
-        isActive={selectedProducts.length > 0 && editPanelMode !== 'hidden'}
-        mode={editPanelMode}
-        onToggle={() => setEditPanelMode(editPanelMode === 'hidden' ? 'floating' : 'hidden')}
-      />
-      
       <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-3 xs:p-4 sm:p-6 border border-gray-200 flex flex-1 overflow-hidden max-h-full lg:max-h-[800px] w-full">
         
         <div className="w-full h-full overflow-y-auto scrollbar-hide">
@@ -509,64 +403,66 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
               
               {/* Grilla de plantillas filtradas */}
               {filteredTemplates.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {filteredTemplates.map((template) => {
-                    // Calcular escala óptima para esta plantilla específica
-                    const containerWidth = 500; // Equilibrio entre tamaño y proporciones
-                    const containerHeight = 320; // Proporciones más equilibradas
-                    const optimalScale = getOptimalScale(
-                      template.template.canvas.width, 
-                      template.template.canvas.height, 
-                      containerWidth, 
-                      containerHeight
-                    );
-                    
-                    return (
-                    <div
-                      key={template.id}
-                      className="group cursor-pointer border-2 border-gray-200 rounded-xl hover:border-indigo-400 hover:shadow-lg transition-all duration-300 bg-white hover:bg-gray-50 relative overflow-hidden"
-                      onClick={() => onTemplateSelect?.(template)}
-                      title={`${template.name} - Click para trabajar con esta plantilla`}
-                    >
-                      {/* Preview de la plantilla */}
-                      <div className="w-full h-[320px] xs:h-[340px] sm:h-[360px] flex items-center justify-center p-2 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
-                        <div 
-                          className="max-w-full max-h-full transition-transform duration-300 shadow-lg rounded-lg overflow-hidden"
-                          style={{
-                            transform: `scale(${optimalScale})`,
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = `scale(${optimalScale * 1.05})`;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = `scale(${optimalScale})`;
-                          }}
-                        >
-                          <BuilderTemplateRenderer 
-                            template={template.template}
-                            components={template.template.defaultComponents}
-                            isPreview={true}
-                          />
-                        </div>
-                      </div>
+                <div className="max-h-[calc(100vh-400px)] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-300 scrollbar-track-indigo-100 rounded-lg">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-2">
+                    {filteredTemplates.map((template) => {
+                      // Calcular escala óptima para esta plantilla específica
+                      const containerWidth = 500; // Equilibrio entre tamaño y proporciones
+                      const containerHeight = 320; // Proporciones más equilibradas
+                      const optimalScale = getOptimalScale(
+                        template.template.canvas.width, 
+                        template.template.canvas.height, 
+                        containerWidth, 
+                        containerHeight
+                      );
                       
-                      {/* Información de la plantilla */}
-                      <div className="p-4 border-t border-gray-100">
-                        <h4 className="font-bold text-gray-800 text-sm mb-2 truncate">{template.name}</h4>
-                        <p className="text-xs text-gray-500 mb-3 line-clamp-2">{template.description}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-blue-600 font-medium">{selectedFamily.displayName}</span>
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <ChevronRight className="w-4 h-4 text-indigo-500" />
+                      return (
+                      <div
+                        key={template.id}
+                        className="group cursor-pointer border-2 border-gray-200 rounded-xl hover:border-indigo-400 hover:shadow-lg transition-all duration-300 bg-white hover:bg-gray-50 relative overflow-hidden"
+                        onClick={() => onTemplateSelect?.(template)}
+                        title={`${template.name} - Click para trabajar con esta plantilla`}
+                      >
+                        {/* Preview de la plantilla */}
+                        <div className="w-full h-[320px] xs:h-[340px] sm:h-[360px] flex items-center justify-center p-2 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                          <div 
+                            className="max-w-full max-h-full transition-transform duration-300 shadow-lg rounded-lg overflow-hidden"
+                            style={{
+                              transform: `scale(${optimalScale})`,
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = `scale(${optimalScale * 1.05})`;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = `scale(${optimalScale})`;
+                            }}
+                          >
+                            <BuilderTemplateRenderer 
+                              template={template.template}
+                              components={template.template.defaultComponents}
+                              isPreview={true}
+                            />
                           </div>
                         </div>
+                        
+                        {/* Información de la plantilla */}
+                        <div className="p-4 border-t border-gray-100">
+                          <h4 className="font-bold text-gray-800 text-sm mb-2 truncate">{template.name}</h4>
+                          <p className="text-xs text-gray-500 mb-3 line-clamp-2">{template.description}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-blue-600 font-medium">{selectedFamily.displayName}</span>
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <ChevronRight className="w-4 h-4 text-indigo-500" />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Overlay de hover */}
+                        <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                       </div>
-                      
-                      {/* Overlay de hover */}
-                      <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                    </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               ) : (
                 /* Mensaje cuando no hay resultados */
@@ -608,57 +504,48 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  {/* BOTÓN PRINCIPAL DE MODO EDICIÓN - MUY VISIBLE */}
-                  {selectedProducts.length > 0 && (
-                    <div className="flex items-center gap-3">
-                      {/* Botón principal prominente */}
-                      <button
-                        onClick={() => setEditPanelMode(editPanelMode === 'hidden' ? 'floating' : 'hidden')}
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-md ${
-                          editPanelMode === 'hidden' 
-                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 shadow-blue-200' 
-                            : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-green-200'
-                        }`}
-                        title={editPanelMode === 'hidden' ? "Activar modo edición" : "Desactivar modo edición"}
-                      >
-                        <Settings className="w-4 h-4" />
-                        <span className="text-sm">
-                          {editPanelMode === 'hidden' ? '✏️ Editar Campos' : '✅ Editando'}
-                        </span>
-                      </button>
-                      
-                      {/* Selector de modo del panel (solo visible cuando está activo) */}
-                      {editPanelMode !== 'hidden' && (
-                        <select
-                          value={editPanelMode}
-                          onChange={(e) => setEditPanelMode(e.target.value as 'sidebar' | 'floating' | 'hidden')}
-                          className="text-xs px-2 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-                          title="Cambiar posición del panel"
-                        >
-                          <option value="floating">📋 Panel flotante</option>
-                          <option value="sidebar">📌 Panel lateral</option>
-                        </select>
-                      )}
-                    </div>
-                  )}
+                <div className="flex items-center gap-3">
+                  {/* 🆕 NUEVO: Botón para habilitar/deshabilitar edición */}
+                  <button
+                    onClick={toggleInlineEdit}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm ${
+                      isInlineEditEnabled
+                        ? 'bg-green-500 text-white hover:bg-green-600 ring-2 ring-green-200'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                    title={isInlineEditEnabled ? 'Deshabilitar edición inline' : 'Habilitar edición inline'}
+                  >
+                    {isInlineEditEnabled ? (
+                      <Unlock className="w-4 h-4" />
+                    ) : (
+                      <Lock className="w-4 h-4" />
+                    )}
+                    <span className="text-sm">
+                      {isInlineEditEnabled ? 'Edición Activa' : 'Edición Bloqueada'}
+                    </span>
+                  </button>
                   
                   {/* Indicador de productos */}
                   <div className="flex items-center gap-2">
                     <div className="text-xs text-gray-500 px-2 py-1 bg-white/60 rounded">
                       {selectedProducts.length} producto{selectedProducts.length !== 1 ? 's' : ''}
                     </div>
-                    
-                    {/* Indicador de modo edición activo */}
-                    {selectedProducts.length > 0 && editPanelMode !== 'hidden' && (
-                      <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span>Modo edición activo</span>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
+
+              {/* 🆕 NUEVO: Banner informativo cuando la edición está habilitada */}
+              {isInlineEditEnabled && selectedProducts.length > 0 && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-green-800">
+                    <Edit3 className="w-4 h-4" />
+                    <span className="text-sm font-medium">Modo edición activo</span>
+                  </div>
+                  <p className="text-xs text-green-700 mt-1">
+                    Haz <strong>hover</strong> sobre cualquier campo en la plantilla y <strong>click</strong> para editarlo en tiempo real
+                  </p>
+                </div>
+              )}
 
               {/* Contenido principal de la plantilla seleccionada */}
               {selectedProducts.length === 0 ? (
@@ -700,11 +587,15 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                           </div>
                           <div className="flex items-start gap-2">
                             <span className="text-blue-500 font-bold">2.</span>
-                            <span>Haz click en el botón <strong>"✏️ Editar Campos"</strong></span>
+                            <span>Haz click en <strong>"Edición Activa"</strong> para habilitar la edición</span>
                           </div>
                           <div className="flex items-start gap-2">
                             <span className="text-blue-500 font-bold">3.</span>
-                            <span>Edita valores y ve los cambios instantáneamente</span>
+                            <span>Haz <strong>hover</strong> sobre cualquier campo en el preview</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-blue-500 font-bold">4.</span>
+                            <span>Haz <strong>click</strong> para editar y ve los cambios instantáneamente</span>
                           </div>
                         </div>
                       </div>
@@ -714,28 +605,14 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
               ) : selectedProducts.length === 1 ? (
                 // Un producto: vista de edición con panel mejorado
                 <div className="flex-1 flex flex-col lg:flex-row bg-white relative">
-                  {/* Panel de edición - sidebar mode */}
-                  {editPanelMode === 'sidebar' && (
-                    <EditPanel product={selectedProducts[0]} />
-                  )}
-
                   {/* Vista previa de la plantilla */}
                   <div className={`flex-1 flex items-center justify-center bg-gray-50 p-3 xs:p-4 sm:p-6 min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] overflow-auto ${
-                    editPanelMode === 'sidebar' ? 'order-1 lg:order-2' : 'order-1'
+                    'order-1'
                   }`}>
                     <div className="w-full h-full flex items-center justify-center print-content overflow-visible relative" data-preview-content>
-                      {/* 🎯 INDICADOR VISUAL DE EDICIÓN ACTIVA */}
-                      {editPanelMode !== 'hidden' && (
-                        <div className="absolute top-2 left-2 z-50 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg border-2 border-white animate-pulse">
-                          ✏️ EDITABLE
-                        </div>
-                      )}
-                      
                       {/* Container de la plantilla con borde de edición */}
                       <div className={`transition-all duration-300 ${
-                        editPanelMode !== 'hidden' 
-                          ? 'ring-4 ring-green-400 ring-opacity-50 shadow-2xl rounded-lg overflow-hidden' 
-                          : ''
+                        isInlineEditEnabled ? 'ring-4 ring-green-400 ring-opacity-50 shadow-2xl rounded-lg overflow-hidden' : 'shadow-lg rounded-lg overflow-hidden'
                       }`}>
                         <BuilderTemplateRenderer 
                           template={selectedTemplate.template}
@@ -743,17 +620,12 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                           product={selectedProducts[0]}
                           productChanges={productChanges}
                           onEditField={handleInlineEdit}
-                          enableInlineEdit={editPanelMode !== 'hidden'}
+                          enableInlineEdit={isInlineEditEnabled}
                           key={`${selectedProducts[0]?.id || 'no-product'}-${refreshKey}`}
                         />
                       </div>
                     </div>
                   </div>
-
-                  {/* Panel de edición - floating mode */}
-                  {editPanelMode === 'floating' && (
-                    <EditPanel product={selectedProducts[0]} />
-                  )}
                 </div>
               ) : expandedProductIndex !== null ? (
                 // Vista expandida de producto individual con navegación
@@ -819,114 +691,95 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                   </div>
                   
                   {/* Vista expandida del producto */}
-                  <div className="flex-1 flex flex-col lg:flex-row bg-white relative">
-                    {/* Panel de edición - sidebar mode */}
-                    {editPanelMode === 'sidebar' && (
-                      <EditPanel product={selectedProducts[expandedProductIndex]} />
-                    )}
-
-                    {/* Vista previa expandida */}
-                    <div className={`flex-1 flex items-center justify-center bg-gray-50 p-6 min-h-[500px] overflow-auto ${
-                      editPanelMode === 'sidebar' ? 'order-1 lg:order-2' : 'order-1'
-                    }`}>
-                      <div className="w-full h-full flex items-center justify-center print-content overflow-visible relative" data-preview-content>
-                        {/* 🎯 INDICADOR VISUAL DE EDICIÓN ACTIVA */}
-                        {editPanelMode !== 'hidden' && (
-                          <div className="absolute top-2 left-2 z-50 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg border-2 border-white animate-pulse">
-                            ✏️ EDITABLE
-                          </div>
-                        )}
-                        
-                        {/* Container de la plantilla con borde de edición */}
-                        <div className={`transition-all duration-300 ${
-                          editPanelMode !== 'hidden' 
-                            ? 'ring-4 ring-green-400 ring-opacity-50 shadow-2xl rounded-lg overflow-hidden' 
-                            : ''
-                        }`}>
-                          <BuilderTemplateRenderer 
-                            template={selectedTemplate.template}
-                            components={selectedTemplate.template.defaultComponents}
-                            product={selectedProducts[expandedProductIndex]}
-                            productChanges={productChanges}
-                            onEditField={handleInlineEdit}
-                            enableInlineEdit={editPanelMode !== 'hidden'}
-                            key={`${selectedProducts[expandedProductIndex]?.sku || 'no-product'}-${refreshKey}`}
-                          />
-                        </div>
+                  <div className={`flex-1 flex items-center justify-center bg-gray-50 p-6 min-h-[500px] overflow-auto ${
+                    'order-1'
+                  }`}>
+                    <div className="w-full h-full flex items-center justify-center print-content overflow-visible relative" data-preview-content>
+                      {/* Container de la plantilla con borde de edición */}
+                      <div className={`transition-all duration-300 ${
+                        isInlineEditEnabled ? 'ring-4 ring-green-400 ring-opacity-50 shadow-2xl rounded-lg overflow-hidden' : 'shadow-lg rounded-lg overflow-hidden'
+                      }`}>
+                        <BuilderTemplateRenderer 
+                          template={selectedTemplate.template}
+                          components={selectedTemplate.template.defaultComponents}
+                          product={selectedProducts[expandedProductIndex]}
+                          productChanges={productChanges}
+                          onEditField={handleInlineEdit}
+                          enableInlineEdit={isInlineEditEnabled}
+                          key={`${selectedProducts[expandedProductIndex]?.sku || 'no-product'}-${refreshKey}`}
+                        />
                       </div>
                     </div>
-
-                    {/* Panel de edición - floating mode */}
-                    {editPanelMode === 'floating' && (
-                      <EditPanel product={selectedProducts[expandedProductIndex]} />
-                    )}
                   </div>
                 </div>
               ) : (
                 // Múltiples productos: vista de grilla de carteles
                 <div className="flex-1 overflow-auto">
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-4">
-                    {selectedProducts.map((product, productIndex) => (
-                      <div
-                        key={`${product.sku}-${productIndex}`}
-                        className="group relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-200 hover:border-indigo-300"
-                        onClick={() => handleExpandProduct(productIndex)}
-                      >
-                        <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-indigo-500 to-blue-600 text-white p-3 z-20">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">
-                                {productIndex + 1}
+                  {/* 🔄 MEJORA: Contenedor con scroll optimizado para múltiples productos */}
+                  <div className="max-h-[calc(100vh-300px)] overflow-y-auto scrollbar-thin scrollbar-thumb-green-300 scrollbar-track-green-100 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {selectedProducts.map((product, productIndex) => (
+                        <div
+                          key={`${product.sku}-${productIndex}`}
+                          className="group relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-200 hover:border-indigo-300"
+                          onClick={() => handleExpandProduct(productIndex)}
+                        >
+                          <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-indigo-500 to-blue-600 text-white p-3 z-20">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">
+                                  {productIndex + 1}
+                                </div>
+                                <span className="text-sm font-medium truncate">Cartel #{productIndex + 1}</span>
                               </div>
-                              <span className="text-sm font-medium truncate">Cartel #{productIndex + 1}</span>
+                              
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveProduct(product.id);
+                                }}
+                                className="w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
                             </div>
-                            
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveProduct(product.id);
-                              }}
-                              className="w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
                           </div>
-                        </div>
-                        
-                        <div className="relative mt-12 p-4 bg-gray-50">
-                          <div className="relative bg-white rounded-lg shadow-inner border-2 border-gray-200 overflow-hidden">
-                            <div className="w-full h-64 sm:h-72 lg:h-80 flex items-center justify-center bg-white">
-                              <div className="max-w-full max-h-full scale-50 sm:scale-60 lg:scale-70 transform">
-                                <BuilderTemplateRenderer 
-                                  template={selectedTemplate.template}
-                                  components={selectedTemplate.template.defaultComponents}
-                                  product={product}
-                                  productChanges={productChanges}
-                                  onEditField={(fieldType: string, newValue: string) => {
-                                    console.log(`🖱️ Edición inline directa (grilla): ${fieldType} = ${newValue} para ${product.descripcion}`);
-                                    handleProductEdit(product.id, fieldType, newValue);
-                                  }}
-                                  enableInlineEdit={editPanelMode !== 'hidden'}
-                                  key={`${product.id}-${refreshKey}`}
-                                />
+                          
+                          <div className="relative mt-12 p-4 bg-gray-50">
+                            <div className="relative bg-white rounded-lg shadow-inner border-2 border-gray-200 overflow-hidden">
+                              <div className="w-full h-64 sm:h-72 lg:h-80 flex items-center justify-center bg-white">
+                                <div className="max-w-full max-h-full scale-50 sm:scale-60 lg:scale-70 transform">
+                                  <BuilderTemplateRenderer 
+                                    template={selectedTemplate.template}
+                                    components={selectedTemplate.template.defaultComponents}
+                                    product={product}
+                                    productChanges={productChanges}
+                                    onEditField={(fieldType: string, newValue: string) => {
+                                      console.log(`🖱️ Edición inline directa (grilla): ${fieldType} = ${newValue} para ${product.descripcion}`);
+                                      handleProductEdit(product.id, fieldType, newValue);
+                                    }}
+                                    enableInlineEdit={isInlineEditEnabled}
+                                    key={`${product.id}-${refreshKey}`}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="p-4 bg-white border-t border-gray-100">
+                            <div className="text-center space-y-2">
+                              <h3 className="font-bold text-gray-900 text-sm truncate" title={product.descripcion}>
+                                {product.descripcion}
+                              </h3>
+                              <div className="flex justify-between items-center text-xs text-gray-600">
+                                <span>SKU: {product.sku || 'N/A'}</span>
+                                <span className="font-bold text-green-600">${product.precio?.toLocaleString()}</span>
                               </div>
                             </div>
                           </div>
                         </div>
-                        
-                        <div className="p-4 bg-white border-t border-gray-100">
-                          <div className="text-center space-y-2">
-                            <h3 className="font-bold text-gray-900 text-sm truncate" title={product.descripcion}>
-                              {product.descripcion}
-                            </h3>
-                            <div className="flex justify-between items-center text-xs text-gray-600">
-                              <span>SKU: {product.sku || 'N/A'}</span>
-                              <span className="font-bold text-green-600">${product.precio?.toLocaleString()}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}

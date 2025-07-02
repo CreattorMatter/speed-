@@ -241,9 +241,10 @@ const extractCSSStyles = (style: any): React.CSSProperties => {
   }
   
   if (style?.border) {
-    if (style.border.width && style.border.style && style.border.color) {
-      cssStyles.border = `${style.border.width}px ${style.border.style} ${style.border.color}`;
-    }
+    // ❌ ELIMINADO: Lógica de borde conflictiva. Se manejará directamente en el componente.
+    // if (style.border.width && style.border.style && style.border.color) {
+    //   cssStyles.border = `${style.border.width}px ${style.border.style} ${style.border.color}`;
+    // }
     if (style.border.radius) {
       const radius = style.border.radius;
       if (typeof radius === 'object') {
@@ -516,23 +517,32 @@ const renderComponent = (
       
     case 'shape-geometric':
       const shapeType = content?.shapeConfig?.type || 'rectangle';
+      const borderConfig = style?.border;
+      const hasBorder = borderConfig && borderConfig.width > 0;
+      const backgroundColor = style?.color?.backgroundColor || '#007bff';
+      const borderRadius = borderConfig?.radius?.topLeft || (shapeType === 'circle' ? '50%' : 0);
+      
       const baseShapeStyle: React.CSSProperties = {
         width: '100%',
         height: '100%',
-        backgroundColor: '#007bff',
+        backgroundColor,
+        border: hasBorder 
+          ? `${borderConfig.width}px ${borderConfig.style || 'solid'} ${borderConfig.color || '#000000'}`
+          : 'none',
+        borderRadius: typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius,
+        boxSizing: 'border-box', // Importante para que el borde no afecte el tamaño
+        transition: 'all 0.2s ease', // Suave transición para cambios
         ...cssStyle
       };
       
-      if (shapeType === 'circle') {
-        baseShapeStyle.borderRadius = '50%';
-      } else if (shapeType === 'triangle') {
+      if (shapeType === 'triangle') {
         return (
           <div style={{
             width: 0,
             height: 0,
             borderLeft: `${component.size.width/2}px solid transparent`,
             borderRight: `${component.size.width/2}px solid transparent`,
-            borderBottom: `${component.size.height}px solid ${cssStyle.backgroundColor || '#007bff'}`
+            borderBottom: `${component.size.height}px solid ${style?.color?.backgroundColor || '#007bff'}`
           }} />
         );
       }

@@ -613,12 +613,21 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
         );
 
       case 'shape-geometric':
+        const borderConfig = component.style?.border;
+        const hasBorder = borderConfig && borderConfig.width > 0;
+        const backgroundColor = component.style?.color?.backgroundColor || '#e5e7eb';
+        const borderRadius = borderConfig?.radius?.topLeft || 0;
+        
         return (
           <div 
-            className="w-full h-full select-none"
+            className="w-full h-full select-none transition-all duration-200"
             style={{
-              backgroundColor: component.style?.color?.backgroundColor || '#e5e7eb',
-              borderRadius: component.style?.border?.radius?.topLeft ? `${component.style.border.radius.topLeft}px` : '0px'
+              backgroundColor,
+              borderRadius: `${borderRadius}px`,
+              border: hasBorder 
+                ? `${borderConfig.width}px ${borderConfig.style || 'solid'} ${borderConfig.color || '#000000'}`
+                : 'none',
+              boxSizing: 'border-box' // Importante para que el borde no afecte el tamaño
             }}
           />
         );
@@ -675,6 +684,7 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
         width: `${component.size.width * zoom}px`,
         height: `${component.size.height * zoom}px`,
         zIndex: component.position.z,
+        transform: `rotate(${component.position.rotation || 0}deg) scale(${component.position.scaleX || 1}, ${component.position.scaleY || 1})`,
         visibility: component.isVisible ? 'visible' : 'hidden',
       }}
       onMouseDown={handleMouseDown}
