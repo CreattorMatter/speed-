@@ -96,12 +96,11 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
   };
 
   const handleClickOutside = () => {
-    if (isEditing && hasBeenManuallyEdited) {
-      console.log(`👆 Click fuera detectado para campo ${fieldType}, guardando cambios...`);
+    // 🎯 MEJORADO: Siempre intentar guardar al hacer clic fuera.
+    // La lógica de si hubo un cambio real ya está dentro de handleSave().
+    if (isEditing) {
+      console.log(`👆 Click fuera detectado para campo ${fieldType}, intentando guardar...`);
       handleSave();
-    } else if (isEditing) {
-      console.log(`👆 Click fuera detectado pero no hubo edición manual para ${fieldType}, cancelando...`);
-      handleCancel();
     }
   };
 
@@ -129,12 +128,19 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
         className={`${className} outline-none border-2 border-blue-500 bg-white rounded px-1 shadow-lg`}
         style={{
           ...style,
-          minWidth: '60px',
+          width: '100%',
+          height: '100%',
+          minWidth: 'auto',
+          minHeight: '24px',
+          boxSizing: 'border-box',
           fontSize: style.fontSize || 'inherit',
           fontFamily: style.fontFamily || 'inherit',
           fontWeight: style.fontWeight || 'inherit',
           color: style.color || 'inherit',
-          textAlign: style.textAlign || 'left'
+          textAlign: style.textAlign || 'left',
+          resize: 'none',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap'
         }}
         placeholder={`Editar ${fieldType}...`}
       />
