@@ -271,13 +271,13 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
         <Header onBack={onBack} onLogout={onLogout} userName={userName} onGoToAdmin={() => navigate('/administration')} />
         
         <div className="poster-editor-container min-h-screen w-full flex flex-col bg-white">
-          <main className="pt-4 sm:pt-6 lg:pt-10 px-2 xs:px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 min-h-[calc(100vh-4rem)] sm:min-h-[800px] lg:min-h-[1000px]">
+          <main className="pt-4 sm:pt-6 lg:pt-8 px-2 xs:px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6 max-w-none mx-auto space-y-4 sm:space-y-6 min-h-[calc(100vh-3rem)] sm:min-h-[900px] lg:min-h-[1100px]">
             
             {/* Header del editor */}
             <PosterEditorHeader onSearchPosters={handleSearchPosters} />
 
             {/* Layout principal */}
-            <div className="flex flex-col lg:grid lg:grid-cols-10 gap-4 sm:gap-6 h-full">
+            <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 sm:gap-6 h-full">
               
               {/* Panel lateral - Selector de familias y plantillas */}
               <div className="w-full lg:col-span-3 order-2 lg:order-1">
@@ -392,17 +392,16 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
               </div>
 
               {/* Área de preview principal */}
-              <div className="w-full lg:col-span-7 order-1 lg:order-2 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px]">
+              <div className="w-full lg:col-span-9 order-1 lg:order-2 min-h-[500px] sm:min-h-[600px] lg:min-h-[700px]">
                 <PreviewAreaV3
                   selectedFamily={selectedFamily}
                   selectedTemplate={selectedTemplate}
                   filteredTemplates={filteredTemplates}
-                  searchTerm={searchTerm}
-                  selectedCategory={selectedCategory}
                   onTemplateSelect={handleTemplateSelect}
                   onUpdateProduct={handleUpdateProduct}
                   expandedProductId={expandedProductId}
                   onExpandedProductChange={handleExpandedProductChange}
+                  isLoadingTemplates={isLoadingTemplates}
                 />
               </div>
             </div>

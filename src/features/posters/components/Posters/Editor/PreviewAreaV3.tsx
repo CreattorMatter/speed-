@@ -1,462 +1,486 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Trash2, Eye, EyeOff, Settings, X, ChevronLeft, ChevronRight, Grid, ArrowLeft, Package, AlertTriangle, Search, Edit3, Lock, Unlock } from 'lucide-react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
+import { LayoutDashboard, Grid, ChevronLeft, ChevronRight, Save, X, Printer } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useReactToPrint } from 'react-to-print';
-
-// Servicios y datos
-import { posterTemplateService, PosterFamilyData, PosterTemplateData } from '../../../../../services/posterTemplateService';
-import { EmailService } from '../../../../../services/emailService';
-import { type EditedProduct as ServiceEditedProduct } from '../../../../../hooks/useProductChanges';
-import { type Product } from '../../../../../data/products';
-
-// Redux
-import {
-  selectSelectedProductObjects,
-  selectSelectedFinancing,
-  selectFormatoSeleccionado,
-  selectProductChanges,
-  selectHasAnyChanges,
-  removeProduct,
-  removeAllProducts,
-  trackProductChange,
-  type EditedProduct as ReduxEditedProduct,
-} from '../../../../../store/features/poster/posterSlice';
-import { RootState, AppDispatch } from '../../../../../store';
-
-// Componentes
-import { EditableField } from './EditableField';
-import { DeleteProductModal } from './DeleteProductModal';
-import { ProductChangesModal } from './ProductChangesModal';
+import { selectSelectedProducts, selectProductChanges, trackProductChange, selectHasAnyChanges } from '../../../../../store/features/poster/posterSlice';
+import { PosterTemplateData, PosterFamilyData } from '../../../../../services/posterTemplateService';
+import { Product } from '../../../../../data/products';
+import { productos } from '../../../../../data/products';
+import { TemplateGrid } from './Selectors/TemplateGrid';
 import { BuilderTemplateRenderer } from './Renderers/BuilderTemplateRenderer';
+import { detectEditableFields, getEditableFieldsStats, EditableFieldInfo } from '../../../../../utils/templateFieldDetector';
+import { ProductChangesModal } from './ProductChangesModal';
 import { PrintContainer } from './PrintContainer';
-
-// Utilidades
-import { 
-  getTemplateFields, 
-  getAvailableFields, 
-  getFieldLabel, 
-  getFieldType,
-  detectTemplateFields,
-  getFallbackFieldsForFamily 
-} from '../../../../../utils/templateFieldDetector';
-
-// 🎯 FUNCIÓN PARA CALCULAR ESCALA ÓPTIMA DINÁMICAMENTE
-const getOptimalScale = (templateWidth: number, templateHeight: number, containerWidth: number, containerHeight: number): number => {
-  // Factores de escala para cada dimensión (balance entre tamaño y proporciones)
-  const scaleX = (containerWidth * 0.92) / templateWidth;
-  const scaleY = (containerHeight * 0.92) / templateHeight;
-  
-  // Usar el menor para asegurar que toda la plantilla quepa
-  let scale = Math.min(scaleX, scaleY);
-  
-  // Factor de ajuste especial para plantillas verticales en contenedores horizontales
-  const aspectRatioTemplate = templateWidth / templateHeight;
-  const aspectRatioContainer = containerWidth / containerHeight;
-  
-  if (aspectRatioTemplate < 1 && aspectRatioContainer > 1) {
-    // Plantilla vertical en contenedor horizontal - aumentar moderadamente la escala
-    scale = scale * 1.3;
-  }
-  
-  // Límites de escala equilibrados para buen tamaño sin distorsión
-  return Math.max(0.25, Math.min(scale, 1.0));
-};
+import { EmailService } from '../../../../../services/emailService';
 
 interface PreviewAreaV3Props {
   selectedFamily?: PosterFamilyData | null;
   selectedTemplate?: PosterTemplateData | null;
   filteredTemplates?: PosterTemplateData[];
-  searchTerm?: string;
-  selectedCategory?: string;
   onTemplateSelect?: (template: PosterTemplateData | null) => void;
   onUpdateProduct?: (productId: string, updates: Partial<Product>) => void;
-  expandedProductId?: string | null; // NUEVO: Para expandir producto desde el panel lateral
-  onExpandedProductChange?: (productId: string | null) => void; // NUEVO: Callback para cambios de expansión
+  expandedProductId?: string | null;
+  onExpandedProductChange?: (productId: string | null) => void;
+  isLoadingTemplates: boolean;
 }
 
 export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   selectedFamily,
   selectedTemplate,
   filteredTemplates = [],
-  searchTerm = '',
-  selectedCategory = 'all',
   onTemplateSelect,
-  onUpdateProduct,
-  expandedProductId,
-  onExpandedProductChange
+  isLoadingTemplates
 }) => {
-  const dispatch = useDispatch<AppDispatch>();
-  
-  // Estados de Redux
-  const selectedProducts = useSelector(selectSelectedProductObjects);
-  const selectedFinancing = useSelector(selectSelectedFinancing);
-  const formatoSeleccionado = useSelector(selectFormatoSeleccionado);
+  const selectedProducts = useSelector(selectSelectedProducts);
   const productChanges = useSelector(selectProductChanges);
   const hasAnyChanges = useSelector(selectHasAnyChanges);
-  
-  // Estados locales
-  const [expandedProductIndex, setExpandedProductIndex] = useState<number | null>(null);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [isInlineEditEnabled, setIsInlineEditEnabled] = useState(false);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-
-  // Ref para el contenedor de impresión
-  const printComponentRef = useRef<HTMLDivElement>(null);
-
-  // Ref y estado para el tamaño del contenedor de la vista previa
+  const dispatch = useDispatch();
   const previewContainerRef = useRef<HTMLDivElement>(null);
+  const printContainerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  
+  // Estado para navegación entre productos
+  const [currentProductIndex, setCurrentProductIndex] = useState(0);
+  
+  // Estados para edición inline estilo SPID viejo
+  const [isEditModeActive, setIsEditModeActive] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState<Record<string, any>>({});
+  
+  // Estados para sistema de impresión
+  const [showChangesModal, setShowChangesModal] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [printOrientation, setPrintOrientation] = useState<'portrait' | 'landscape'>('portrait');
 
-  const handlePrint = useReactToPrint({
-    contentRef: printComponentRef,
-  });
-
-  // Observer para el tamaño del contenedor del preview
+  // Observer para el tamaño del contenedor
   useEffect(() => {
-    const container = previewContainerRef.current;
-    if (!container) return;
-
-    const resizeObserver = new ResizeObserver(entries => {
-      if (entries[0]) {
-        const { width, height } = entries[0].contentRect;
+    const observer = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
         setContainerSize({ width, height });
       }
     });
-
-    resizeObserver.observe(container);
-
-    return () => resizeObserver.disconnect();
-  }, [selectedTemplate]); // Re-observar si la plantilla cambia
-  
-  // Sincronizar estado local con props externas para expansión
-  useEffect(() => {
-    if (expandedProductId) {
-      const productIndex = selectedProducts.findIndex(p => p.sku?.toString() === expandedProductId);
-      if (productIndex !== -1) {
-        setExpandedProductIndex(productIndex);
-      }
-    } else {
-      setExpandedProductIndex(null);
+    if (previewContainerRef.current) {
+      observer.observe(previewContainerRef.current);
     }
-  }, [expandedProductId, selectedProducts]);
-  
-  // Función helper para obtener producto editado
-  const getEditedProduct = (productId: string) => {
-    return productChanges[productId] || null;
-  };
-
-  // 🆕 NUEVA FUNCIÓN: Toggle para habilitar/deshabilitar edición
-  const toggleInlineEdit = () => {
-    setIsInlineEditEnabled(prev => !prev);
-    console.log(`🎯 Edición inline ${!isInlineEditEnabled ? 'HABILITADA' : 'DESHABILITADA'}`);
-  };
-
-  // Funciones para manejar expansión de productos
-  const handleExpandProduct = (productIndex: number) => {
-    setExpandedProductIndex(productIndex);
-    const product = selectedProducts[productIndex];
-    if (product && onExpandedProductChange) {
-      onExpandedProductChange(product.sku?.toString() || null);
-    }
-  };
-
-  const handleCollapseProduct = () => {
-    setExpandedProductIndex(null);
-    if (onExpandedProductChange) {
-      onExpandedProductChange(null);
-    }
-  };
-
-  const handleNavigateProduct = (direction: 'prev' | 'next') => {
-    if (expandedProductIndex === null) return;
-    
-    let newIndex: number;
-    if (direction === 'prev') {
-      newIndex = expandedProductIndex > 0 ? expandedProductIndex - 1 : selectedProducts.length - 1;
-    } else {
-      newIndex = expandedProductIndex < selectedProducts.length - 1 ? expandedProductIndex + 1 : 0;
-    }
-    
-    handleExpandProduct(newIndex);
-  };
-
-  // 🔍 DETECTAR CAMPOS DINÁMICAMENTE: Analizar la plantilla para encontrar campos editables
-  const availableFields = selectedTemplate 
-    ? detectTemplateFields(selectedTemplate.template.defaultComponents || [])
-    : [];
-  
-  // 🚀 FALLBACK: Si la plantilla no tiene componentes, usar campos por defecto según la familia
-  const fallbackFields = !availableFields.length && selectedFamily 
-    ? getFallbackFieldsForFamily(selectedFamily.name)
-    : [];
-  
-  const finalAvailableFields = availableFields.length > 0 ? availableFields : fallbackFields;
-  
-  const optimalScale = useMemo(() => {
-    if (!selectedTemplate || !containerSize.width || !containerSize.height) {
-      return 0.5; // Valor por defecto razonable
-    }
-    return getOptimalScale(
-      selectedTemplate.template.canvas.width,
-      selectedTemplate.template.canvas.height,
-      containerSize.width,
-      containerSize.height
-    );
-  }, [selectedTemplate, containerSize.width, containerSize.height]);
-  
-  // Log para debugging
-  useEffect(() => {
-    if (selectedTemplate) {
-      console.log('🔍 Analizando plantilla para campos dinámicos:', {
-        templateName: selectedTemplate.name,
-        components: selectedTemplate.template.defaultComponents?.length || 0,
-        detectedFields: availableFields,
-        fallbackFields: fallbackFields,
-        finalFields: finalAvailableFields
-      });
-    }
-  }, [selectedTemplate, availableFields.length, fallbackFields.length]);
-
-  // 🚀 MAPEO AUTOMÁTICO MEJORADO - Llenar campos automáticamente cuando se selecciona producto
-  useEffect(() => {
-    console.log('🔄 useEffect mapeo automático ejecutándose...', {
-      selectedProductsLength: selectedProducts.length,
-      hasTemplate: !!selectedTemplate,
-      availableFieldsLength: finalAvailableFields.length,
-      availableFields: finalAvailableFields
-    });
-
-    if (selectedProducts.length > 0 && selectedTemplate && finalAvailableFields.length > 0) {
-      console.log('✅ Mapeo automático disponible para renderización, pero NO se registra como cambios');
-      // Solo trigger refresh para re-renderizar con nuevos productos/plantilla
-      setRefreshKey(prev => prev + 1);
-    } else {
-      console.log('⚠️ Condiciones no cumplidas para mapeo automático:', {
-        hasProducts: selectedProducts.length > 0,
-        hasTemplate: !!selectedTemplate,
-        hasFields: finalAvailableFields.length > 0
-      });
-    }
-  }, [selectedProducts, selectedTemplate, finalAvailableFields.length]); // Solo cuando cambian productos o plantilla
-
-  // Función para mapear automáticamente valores del producto a campos de plantilla
-  const getAutoMappedValue = (product: Product, field: string): string | number | null => {
-    const now = new Date();
-    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    
-    const fieldMapping: Record<string, any> = {
-      // Mapeo directo desde el producto usando fieldKey correctos
-      descripcion: product.descripcion || 'Sin nombre',
-      precio: product.precio || 0,
-      sku: product.sku || 'N/A',
-      ean: product.ean || '',
-      marcaTexto: product.marcaTexto || '',
-      precioAnt: product.precioAnt || 0,
-      basePrice: product.basePrice || 0,
-      stockDisponible: product.stockDisponible || 0,
-      paisTexto: product.paisTexto || 'Argentina',
-      origen: product.origen || 'ARG',
-      
-      // Valores calculados o por defecto
-      porcentaje: 20, // Descuento por defecto del 20%
-      fechasDesde: now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-      fechasHasta: nextWeek.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-      precioSinImpuestos: product.precio ? Math.round(product.precio * 0.83) : 0
+    return () => {
+      observer.disconnect();
     };
+  }, []);
+
+  // Función para calcular escala óptima - MAXIMIZAR ESPACIO HORIZONTAL
+  const getOptimalScale = (templateWidth: number, templateHeight: number, containerWidth: number, containerHeight: number): number => {
+    // Usar 95% del ancho disponible y 85% de la altura
+    const availableWidth = containerWidth * 0.95;
+    const availableHeight = containerHeight * 0.85; // Un poco menos altura para dejar espacio al header
     
-    const mappedValue = fieldMapping[field];
-    console.log(`🗺️ Mapeo ${field} = ${mappedValue} (de ${product.descripcion})`);
-    return mappedValue !== undefined ? mappedValue : null;
+    const scaleX = availableWidth / templateWidth;
+    const scaleY = availableHeight / templateHeight;
+    
+    // Usar la escala menor pero permitir hasta 5x para plantillas muy pequeñas
+    const calculatedScale = Math.min(scaleX, scaleY);
+    
+    // Asegurar una escala mínima de 1.0 y máxima de 5.0 para mejor aprovechamiento
+    return Math.max(1.0, Math.min(calculatedScale, 5.0));
   };
 
-  // Handlers para edición y eliminación
-  const handleProductEdit = (productId: string, field: string, newValue: string | number) => {
-    const product = selectedProducts.find(p => p.id === productId);
-    if (!product) return;
+  const optimalScale = selectedTemplate && containerSize.width > 0 && containerSize.height > 0
+    ? getOptimalScale(
+        selectedTemplate.template.canvas.width,
+        selectedTemplate.template.canvas.height,
+        containerSize.width,
+        containerSize.height
+      )
+    : 1.0; // Escala inicial más grande
 
-    const originalValue = getCurrentProductValue(product, field);
+  // Resetear índice cuando cambian los productos seleccionados
+  useEffect(() => {
+    if (currentProductIndex >= selectedProducts.length) {
+      setCurrentProductIndex(0);
+    }
+  }, [selectedProducts.length, currentProductIndex]);
+
+  // Obtener el objeto del producto actual basado en el índice
+  const currentProduct = useMemo(() => {
+    if (selectedProducts.length === 0) return undefined;
+    const productId = selectedProducts[currentProductIndex] || selectedProducts[0];
+    return productos.find(p => p.id === productId);
+  }, [selectedProducts, currentProductIndex]);
+
+  // Calcular si hay cambios basándose en Redux + cambios pendientes
+  const hasUnsavedChanges = useMemo(() => {
+    const hasReduxChanges = currentProduct && productChanges[currentProduct.id]?.isEdited;
+    const hasPendingChanges = Object.keys(pendingChanges).length > 0;
+    return hasReduxChanges || hasPendingChanges;
+  }, [currentProduct, productChanges, pendingChanges]);
+
+  // Funciones de navegación
+  const goToPreviousProduct = () => {
+    setCurrentProductIndex(prev => 
+      prev > 0 ? prev - 1 : selectedProducts.length - 1
+    );
+  };
+
+  const goToNextProduct = () => {
+    setCurrentProductIndex(prev => 
+      prev < selectedProducts.length - 1 ? prev + 1 : 0
+    );
+  };
+
+  // Función helper para obtener valor original de un campo
+  const getOriginalFieldValue = (product: Product, fieldType: string): string | number => {
+    switch (fieldType) {
+      case 'descripcion':
+      case 'product_name':
+        return product.descripcion || '';
+      case 'precio':
+      case 'product_price':
+        return product.precio || 0;
+      case 'sku':
+      case 'product_sku':
+        return product.sku || '';
+      case 'marcaTexto':
+      case 'product_brand':
+        return product.marcaTexto || '';
+      case 'precioAnt':
+      case 'price_previous':
+        return product.precioAnt || 0;
+      case 'basePrice':
+      case 'price_base':
+        return product.basePrice || 0;
+      case 'origen':
+      case 'product_origin':
+        return product.origen || '';
+      case 'stockDisponible':
+      case 'stock_available':
+        return product.stockDisponible || 0;
+      // 🆕 CAMPOS ESTÁTICOS: No pertenecen al producto, usar valores por defecto
+      case 'fecha':
+        return new Date().toLocaleDateString('es-AR'); // Fecha actual como valor original
+      case 'icono':
+        return '★'; // Icono por defecto
+      case 'texto':
+      case 'texto_estatico':
+        return 'Texto estático'; // Texto por defecto para campos estáticos
+      default:
+        console.warn(`⚠️ Campo no mapeado: ${fieldType}`);
+        // Para campos desconocidos, intentar usar un valor genérico
+        return fieldType.includes('precio') || fieldType.includes('price') ? 0 : '';
+    }
+  };
+
+  // Funciones para edición inline estilo SPID viejo
+  const handleToggleEditMode = () => {
+    if (isEditModeActive && hasUnsavedChanges) {
+      // Si hay cambios pendientes, preguntar al usuario
+      const confirmDiscard = window.confirm(
+        '¿Descartar los cambios pendientes? Los cambios no guardados se perderán.'
+      );
+      if (!confirmDiscard) return;
+    }
     
+    setIsEditModeActive(prev => !prev);
+    setPendingChanges({});
+  };
+
+  const handlePendingChange = (fieldType: string, newValue: string | number) => {
+    console.log(`📝 Cambio pendiente: ${fieldType} = ${newValue}`);
+    setPendingChanges(prev => ({
+      ...prev,
+      [fieldType]: newValue
+    }));
+  };
+
+  const handleFieldEdit = (fieldType: string, newValue: string | number) => {
+    if (!currentProduct) return;
+    
+    console.log(`📝 Editando campo directamente: ${fieldType} = ${newValue}`);
+    
+    // 🆕 MANEJAR CAMPOS ESTÁTICOS CON ID ÚNICO
+    let originalValue: string | number;
+    let baseFieldType = fieldType;
+    
+    // Si es un campo estático con ID único, extraer el tipo base
+    if (fieldType.includes('_') && fieldType.match(/_[a-f0-9-]+$/)) {
+      baseFieldType = fieldType.split('_')[0];
+      console.log(`🔍 Campo estático detectado: ${fieldType} → tipo base: ${baseFieldType}`);
+    }
+    
+    // Obtener valor original usando el tipo base
+    originalValue = getOriginalFieldValue(currentProduct, baseFieldType);
+    
+    // Para campos estáticos, usar un valor por defecto si no se encuentra
+    if (baseFieldType === 'texto_estatico' || baseFieldType === 'icono' || baseFieldType === 'fecha') {
+      originalValue = baseFieldType === 'texto_estatico' ? 'Texto estático' :
+                     baseFieldType === 'icono' ? '★' :
+                     baseFieldType === 'fecha' ? new Date().toLocaleDateString('es-AR') : '';
+    }
+    
+    // Registrar el cambio en Redux usando el fieldType completo (con ID único)
     dispatch(trackProductChange({
-      productId,
-      productName: product.descripcion || '',
-      field,
-      originalValue: originalValue as string | number,
+      productId: currentProduct.id,
+      productName: currentProduct.descripcion,
+      field: fieldType, // Usar el fieldType completo con ID único
+      originalValue,
       newValue
     }));
+  };
+
+  const handleConfirmAllChanges = () => {
+    if (!currentProduct) return;
     
-    if (onUpdateProduct) {
-      onUpdateProduct(productId, { [field]: newValue });
-    }
+    console.log('💾 Confirmando todos los cambios:', pendingChanges);
     
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const handleRemoveProduct = (productId: string) => {
-    dispatch(removeProduct(productId));
-  };
-
-  const handleRemoveAllProducts = () => {
-    dispatch(removeAllProducts());
-  };
-
-  const handleDeleteClick = (product: Product) => {
-    setProductToDelete(product);
-    setDeleteModalOpen(true);
-  };
-
-  const handleDeleteConfirm = () => {
-    if (productToDelete) {
-      handleRemoveProduct(productToDelete.id);
+    // Aplicar cambios pendientes a Redux
+    Object.entries(pendingChanges).forEach(([fieldType, newValue]) => {
+      // 🆕 MANEJAR CAMPOS ESTÁTICOS CON ID ÚNICO
+      let baseFieldType = fieldType;
       
-      const productIndex = selectedProducts.findIndex(p => p.id === productToDelete.id);
-      if (expandedProductIndex === productIndex) {
-        setExpandedProductIndex(null);
+      // Si es un campo estático con ID único, extraer el tipo base
+      if (fieldType.includes('_') && fieldType.match(/_[a-f0-9-]+$/)) {
+        baseFieldType = fieldType.split('_')[0];
       }
       
-      if (expandedProductIndex !== null && productIndex < expandedProductIndex) {
-        setExpandedProductIndex(expandedProductIndex - 1);
+      let originalValue = getOriginalFieldValue(currentProduct, baseFieldType);
+      
+      // Para campos estáticos, usar un valor por defecto si no se encuentra
+      if (baseFieldType === 'texto_estatico' || baseFieldType === 'icono' || baseFieldType === 'fecha') {
+        originalValue = baseFieldType === 'texto_estatico' ? 'Texto estático' :
+                       baseFieldType === 'icono' ? '★' :
+                       baseFieldType === 'fecha' ? new Date().toLocaleDateString('es-AR') : '';
       }
-    }
+      
+      dispatch(trackProductChange({
+        productId: currentProduct.id,
+        productName: currentProduct.descripcion,
+        field: fieldType, // Usar el fieldType completo con ID único
+        originalValue,
+        newValue
+      }));
+    });
     
-    setDeleteModalOpen(false);
-    setProductToDelete(null);
+    setPendingChanges({});
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteModalOpen(false);
-    setProductToDelete(null);
+  const handleCancelAllChanges = () => {
+    console.log('❌ Cancelando todos los cambios');
+    setPendingChanges({});
   };
 
-  const getCurrentProductValue = (product: Product, field: string): any => {
-    const editedProduct = getEditedProduct(product.id);
-    
-    if (editedProduct && editedProduct.changes.length > 0) {
-      const change = editedProduct.changes.find(c => c.field === field);
-      if (change) {
-        return change.newValue;
-      }
-    }
-    
-    // Si no hay cambios, usar el valor mapeado automáticamente
-    return getAutoMappedValue(product, field);
-  };
-
-  // 🆕 CALLBACK PARA EDICIÓN INLINE DIRECTA
-  const handleInlineEdit = (fieldType: string, newValue: string) => {
-    if (selectedProducts.length === 1) {
-      // Para vista de un producto
-      const product = selectedProducts[0];
-      console.log(`🖱️ Edición inline directa: ${fieldType} = ${newValue} para ${product.descripcion}`);
-      handleProductEdit(product.id, fieldType, newValue);
-    } else if (expandedProductIndex !== null) {
-      // Para vista expandida de producto individual
-      const product = selectedProducts[expandedProductIndex];
-      console.log(`🖱️ Edición inline directa: ${fieldType} = ${newValue} para ${product.descripcion}`);
-      handleProductEdit(product.id, fieldType, newValue);
-    }
-  };
-
-  // 🚀 NUEVOS EFECTOS PARA INICIALIZAR NAVEGACIÓN DE PRODUCTOS
-  // Inicializar expandedProductIndex en 0 cuando hay productos y no hay índice expandido
-  useEffect(() => {
-    if (selectedProducts.length > 0 && expandedProductIndex === null) {
-      console.log('🎯 Inicializando navegación con primer producto');
-      setExpandedProductIndex(0);
-    } else if (selectedProducts.length === 0) {
-      setExpandedProductIndex(null);
-    }
-  }, [selectedProducts.length]);
-
-  // 🔧 DETERMINAR QUÉ PRODUCTO MOSTRAR
-  const currentProductIndex = expandedProductIndex ?? 0;
-  const currentProduct = selectedProducts.length > 0 ? selectedProducts[currentProductIndex] : undefined;
-
-  // 🚀 LÓGICA DE IMPRESIÓN
+  // Funciones para sistema de impresión
   const handlePrintClick = () => {
-    if (hasAnyChanges) {
-      // Si hay cambios, abrir el modal de reporte
-      setIsReportModalOpen(true);
-    } else {
-      // Si no hay cambios, proceder directamente a la lógica de impresión final
-      console.log('🖨️ No hay cambios detectados. Procediendo a imprimir directamente...');
-      executeFinalPrintLogic();
-    }
-  };
-
-  const handleConfirmPrint = async (justification: string) => {
-    console.log('✅ Reporte confirmado. Justificación:', justification);
-
-    if (!selectedFamily || !selectedTemplate) {
-      console.error('No se puede enviar el reporte: falta familia o plantilla seleccionada.');
-      alert('Error: No se ha seleccionado una familia o plantilla.');
+    // Verificar si hay productos seleccionados
+    if (selectedProducts.length === 0) {
+      alert('Debes seleccionar al menos un producto para imprimir.');
       return;
     }
 
-    // 🚀 MAPEAR DATOS DE REDUX AL FORMATO DEL SERVICIO
-    const reduxEditedProducts: ReduxEditedProduct[] = Object.values(productChanges);
-    const serviceEditedProducts: ServiceEditedProduct[] = [];
+    // Verificar si hay una plantilla seleccionada
+    if (!selectedTemplate) {
+      alert('Debes seleccionar una plantilla para imprimir.');
+      return;
+    }
 
-    for (const reduxProduct of reduxEditedProducts) {
-      const originalProduct = selectedProducts.find(p => p.sku?.toString() === reduxProduct.productId);
-      if (originalProduct) {
-        const productForService: ServiceEditedProduct = {
-          ...originalProduct,
-          changes: reduxProduct.changes,
-          isEdited: reduxProduct.isEdited,
-          name: reduxProduct.productName, // Sobrescribir con el nombre (posiblemente editado) de Redux
-        };
-        serviceEditedProducts.push(productForService);
+    // Determinar la orientación de la plantilla y actualizar el estado
+    const isLandscape = selectedTemplate.template.canvas.width > selectedTemplate.template.canvas.height;
+    setPrintOrientation(isLandscape ? 'landscape' : 'portrait');
+
+    // Si hay cambios pendientes, confirmarlos primero
+    if (Object.keys(pendingChanges).length > 0) {
+      const confirmChanges = window.confirm(
+        'Tienes cambios pendientes. ¿Deseas confirmarlos antes de imprimir?'
+      );
+      if (confirmChanges) {
+        handleConfirmAllChanges();
+      } else {
+        setPendingChanges({});
       }
     }
 
-    // Preparar los datos para el reporte
-    const reportData = {
-      plantillaFamily: selectedFamily.displayName,
-      plantillaType: selectedTemplate.name,
-      editedProducts: serviceEditedProducts,
-      reason: justification,
-      // TODO: Obtener datos del usuario logueado
-      // userName: currentUser.name,
-      // userEmail: currentUser.email,
-      timestamp: new Date()
-    };
-    
-    console.log('📧 Enviando email de notificación...');
-    const emailSent = await EmailService.sendChangeReport(reportData);
-
-    if (emailSent) {
-      console.log('✅ Email enviado con éxito.');
-      // Opcional: mostrar un toast de éxito
+    // Si hay cambios guardados, mostrar modal de confirmación
+    if (hasAnyChanges) {
+      setShowChangesModal(true);
     } else {
-      console.error('❌ Falló el envío del email.');
-      alert('Hubo un error al enviar el reporte por email. La impresión se ha cancelado.');
-      setIsReportModalOpen(false);
-      return;
+      // Imprimir directamente si no hay cambios
+      handleDirectPrint();
     }
+  };
 
-    console.log('🖨️ Iniciando proceso de impresión final...');
-    executeFinalPrintLogic();
+  const handleDirectPrint = () => {
+    console.log('🖨️ Imprimiendo sin cambios...');
+    setIsPrinting(true);
     
-    setIsReportModalOpen(false);
-  };
-  
-  const executeFinalPrintLogic = () => {
-    console.log('📄 Preparando contenido para impresión...');
-    // Llamar a la función de impresión del hook
-    handlePrint();
-  };
-  // FIN LÓGICA DE IMPRESIÓN
+    // Preparar datos para impresión
+    const printData = {
+      templates: selectedProducts.map(productId => {
+        const product = productos.find(p => p.id === productId);
+        return product && selectedTemplate ? {
+          product,
+          template: selectedTemplate.template
+        } : null;
+      }).filter(Boolean),
+      productChanges: {},
+      hasChanges: false
+    };
 
-  // Renderizado principal
-  return (
-    <div className="h-full flex flex-col bg-gray-50 rounded-lg shadow-inner">
-      <div className="flex-1 flex flex-col p-4 overflow-hidden">
+    console.log('📄 Datos de impresión preparados:', printData);
+    
+    // Usar setTimeout para asegurar que el DOM se actualice
+    setTimeout(() => {
+      window.print();
+      setIsPrinting(false);
+    }, 100);
+  };
+
+  const handleConfirmPrintWithChanges = async (justification: string) => {
+    console.log('🖨️ Imprimiendo con cambios y justificación:', justification);
+    
+    try {
+      setIsPrinting(true);
+      setShowChangesModal(false);
+
+      // Preparar datos para impresión con cambios
+      const printData = {
+        templates: selectedProducts.map(productId => {
+          const product = productos.find(p => p.id === productId);
+          return product && selectedTemplate ? {
+            product,
+            template: selectedTemplate.template
+          } : null;
+        }).filter(Boolean),
+        productChanges,
+        hasChanges: true,
+        justification,
+        timestamp: new Date().toISOString()
+      };
+
+      console.log('📄 Datos de impresión con cambios preparados:', printData);
+
+      // Enviar reporte por email si hay cambios
+      if (hasAnyChanges) {
+        console.log('📧 Enviando reporte de cambios por email...');
+        try {
+          // Convertir EditedProduct del posterSlice al formato esperado por EmailService
+          const editedProductsForEmail = Object.values(productChanges).map(editedProduct => {
+            const product = productos.find(p => p.id === editedProduct.productId);
+            return {
+              id: editedProduct.productId,
+              name: editedProduct.productName,
+              sku: Number(product?.sku) || 0,
+              price: product?.precio || 0,
+              changes: editedProduct.changes,
+              isEdited: editedProduct.isEdited,
+              // Campos adicionales requeridos por el tipo EmailService
+              ean: Number(product?.ean) || 0,
+              descripcion: editedProduct.productName,
+              tienda: '', // No disponible en este contexto
+              imageUrl: product?.imageUrl || '',
+              category: product?.category || '',
+              pricePerUnit: '',
+              points: '',
+              origin: product?.origen || '',
+              barcode: Number(product?.ean) || 0,
+              brand: product?.marcaTexto || '',
+              packUnit: ''
+            };
+          });
+
+          const emailSent = await EmailService.sendChangeReport({
+            plantillaFamily: selectedFamily?.displayName || 'N/A',
+            plantillaType: selectedTemplate?.name || 'N/A',
+            editedProducts: editedProductsForEmail,
+            reason: justification,
+            userEmail: 'usuario@ejemplo.com', // TODO: Obtener del contexto de usuario
+            userName: 'Usuario Sistema', // TODO: Obtener del contexto de usuario
+            timestamp: new Date()
+          });
+
+          if (emailSent) {
+            console.log('✅ Reporte de cambios enviado exitosamente por email');
+          } else {
+            console.warn('⚠️ No se pudo enviar el reporte por email, pero se procederá con la impresión');
+          }
+        } catch (emailError) {
+          console.error('❌ Error enviando reporte por email:', emailError);
+          // No bloquear la impresión por error de email
+        }
+      }
+
+      // Imprimir
+      setTimeout(() => {
+        window.print();
+        setIsPrinting(false);
+      }, 100);
+
+    } catch (error) {
+      console.error('❌ Error en impresión con cambios:', error);
+      setIsPrinting(false);
+      alert('Error al procesar la impresión. Inténtalo de nuevo.');
+    }
+  };
+
+  // Navegación con teclado y atajos para edición inline
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Navegación entre productos
+      if (selectedProducts.length > 1) {
+        if (event.key === 'ArrowLeft' && !event.ctrlKey && !event.metaKey) {
+          event.preventDefault();
+          goToPreviousProduct();
+        } else if (event.key === 'ArrowRight' && !event.ctrlKey && !event.metaKey) {
+          event.preventDefault();
+          goToNextProduct();
+        }
+      }
+      
+      // Atajos para edición inline estilo SPID viejo
+      if (selectedProducts.length > 0) {
+        // Ctrl/Cmd + E: Activar/desactivar modo edición
+        if ((event.ctrlKey || event.metaKey) && event.key === 'e') {
+          event.preventDefault();
+          handleToggleEditMode();
+        }
         
-        {/* Header de la vista previa */}
-        {selectedTemplate && (
-          <div className="flex-shrink-0 flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+        // Ctrl/Cmd + S: Confirmar cambios (solo si hay cambios pendientes)
+        if ((event.ctrlKey || event.metaKey) && event.key === 's' && hasUnsavedChanges) {
+          event.preventDefault();
+          handleConfirmAllChanges();
+        }
+        
+        // Escape: Cancelar cambios pendientes
+        if (event.key === 'Escape' && hasUnsavedChanges) {
+          event.preventDefault();
+          const confirmCancel = window.confirm('¿Cancelar todos los cambios pendientes?');
+          if (confirmCancel) {
+            handleCancelAllChanges();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedProducts.length, hasUnsavedChanges]);
+
+  // Detectar campos editables automáticamente
+  const editableFieldsStats = useMemo(() => {
+    if (!selectedTemplate?.template?.defaultComponents) return null;
+    const stats = getEditableFieldsStats(selectedTemplate.template.defaultComponents);
+    console.log('📊 Estadísticas de campos editables:', stats);
+    return stats;
+  }, [selectedTemplate]);
+
+  const editableFields = useMemo(() => {
+    if (!selectedTemplate?.template?.defaultComponents) return [];
+    const fields = detectEditableFields(selectedTemplate.template.defaultComponents);
+    console.log('🔍 Campos editables detectados:', fields);
+    return fields;
+  }, [selectedTemplate]);
+
+  const renderContent = () => {
+    // CASO 1: Plantilla seleccionada, renderizar editor básico
+    if (selectedTemplate) {
+      return (
+        <>
+          <div className="flex-shrink-0 flex items-center justify-between mb-2 pb-2 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => onTemplateSelect?.(null)}
@@ -470,24 +494,28 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                 <p className="text-sm text-gray-500">{selectedFamily?.displayName}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
-              {/* 🚀 NUEVO: Controles de navegación entre productos múltiples */}
+              {/* Controles de navegación de productos */}
               {selectedProducts.length > 1 && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm">
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handleNavigateProduct('prev')}
-                    className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                    onClick={goToPreviousProduct}
+                    className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm"
                     title="Producto anterior"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="text-sm font-medium text-gray-700 min-w-[80px] text-center">
-                    {currentProductIndex + 1} de {selectedProducts.length}
-                  </span>
+                  
+                  <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <span className="text-sm font-medium text-blue-800">
+                      {currentProductIndex + 1} de {selectedProducts.length}
+                    </span>
+                  </div>
+                  
                   <button
-                    onClick={() => handleNavigateProduct('next')}
-                    className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                    onClick={goToNextProduct}
+                    className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm"
                     title="Producto siguiente"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -495,100 +523,338 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                 </div>
               )}
 
-              {/* 🆕 Información del producto actual */}
-              {currentProduct && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                  <Package className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-800 max-w-[200px] truncate">
-                    {currentProduct.descripcion || currentProduct.name}
-                  </span>
+              {/* Estadísticas de campos editables */}
+              {editableFieldsStats && editableFieldsStats.total > 0 && (
+                <div className="bg-white rounded-lg px-3 py-2 shadow-md border">
+                  <div className="flex items-center space-x-2 text-sm">
+                    <span className="text-gray-600">📝</span>
+                    <span className="font-medium text-gray-800">
+                      {editableFieldsStats.total} campos editables
+                    </span>
+                    {editableFieldsStats.highPriority > 0 && (
+                      <span className="text-orange-600 font-medium">
+                        ({editableFieldsStats.highPriority} prioritarios)
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {editableFieldsStats.byCategory.product > 0 && `${editableFieldsStats.byCategory.product} producto • `}
+                    {editableFieldsStats.byCategory.price > 0 && `${editableFieldsStats.byCategory.price} precio • `}
+                    {editableFieldsStats.byCategory.date > 0 && `${editableFieldsStats.byCategory.date} fecha • `}
+                    {editableFieldsStats.byCategory.text > 0 && `${editableFieldsStats.byCategory.text} texto`}
+                  </div>
                 </div>
               )}
 
+              {/* Controles de edición inline estilo SPID viejo */}
               {selectedProducts.length > 0 && (
-                <button
-                  onClick={toggleInlineEdit}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm ${
-                    isInlineEditEnabled
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:shadow-lg ring-2 ring-green-300'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 border'
-                  }`}
-                  title={isInlineEditEnabled ? 'Deshabilitar edición inline' : 'Habilitar edición inline'}
-                >
-                  <Edit3 className={`w-4 h-4 transition-transform duration-300 ${isInlineEditEnabled ? 'rotate-12' : ''}`} />
-                  <span className="text-sm">
-                    {isInlineEditEnabled ? 'Modo Edición' : 'Editar Campos'}
-                  </span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleToggleEditMode}
+                    className={`px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                      isEditModeActive
+                        ? 'bg-yellow-500 text-white shadow-md'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                    title={isEditModeActive ? 'Desactivar edición inline' : 'Activar edición inline'}
+                  >
+                    ✏️ {isEditModeActive ? 'Editando' : 'Editar Inline'}
+                  </button>
+
+                  {/* Botones de confirmación/cancelación cuando hay cambios pendientes */}
+                  {hasUnsavedChanges && (
+                    <>
+                      <button
+                        onClick={handleConfirmAllChanges}
+                        className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm text-sm font-medium"
+                        title="Confirmar todos los cambios (Ctrl+S)"
+                      >
+                        <Save className="w-4 h-4 mr-1 inline" />
+                        Confirmar
+                      </button>
+                      
+                      <button
+                        onClick={handleCancelAllChanges}
+                        className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-sm text-sm font-medium"
+                        title="Cancelar todos los cambios (Escape)"
+                      >
+                        <X className="w-4 h-4 mr-1 inline" />
+                        Cancelar
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Indicador de atajos de teclado */}
+                  {isEditModeActive && (
+                    <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded border">
+                      <span className="font-mono">Ctrl+E</span>: Edición | 
+                      <span className="font-mono">Ctrl+S</span>: Guardar | 
+                      <span className="font-mono">Esc</span>: Cancelar
+                    </div>
+                  )}
+
+                  {/* Botón de imprimir */}
+                  <button
+                    onClick={handlePrintClick}
+                    disabled={selectedProducts.length === 0 || !selectedTemplate || isPrinting}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                      selectedProducts.length === 0 || !selectedTemplate || isPrinting
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : hasAnyChanges
+                          ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-md'
+                          : 'bg-purple-500 text-white hover:bg-purple-600 shadow-md'
+                    }`}
+                    title={
+                      selectedProducts.length === 0 
+                        ? 'Selecciona productos para imprimir'
+                        : !selectedTemplate
+                          ? 'Selecciona una plantilla para imprimir'
+                          : hasAnyChanges
+                            ? 'Imprimir con reporte de cambios'
+                            : 'Imprimir plantillas'
+                    }
+                  >
+                    <Printer className="w-4 h-4" />
+                    {isPrinting ? 'Imprimiendo...' : hasAnyChanges ? 'Imprimir con Cambios' : 'Imprimir'}
+                    {hasAnyChanges && (
+                      <span className="bg-orange-600 text-white text-xs px-2 py-1 rounded-full ml-1">
+                        {Object.keys(productChanges).length}
+                      </span>
+                    )}
+                  </button>
+                </div>
               )}
-              
-              <button
-                onClick={handlePrintClick}
-                disabled={selectedProducts.length === 0}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-all shadow-sm disabled:bg-gray-300"
-              >
-                Imprimir
-              </button>
             </div>
           </div>
-        )}
 
-        {/* Área de renderizado central */}
-        <div ref={previewContainerRef} className="flex-1 grid place-items-center relative overflow-hidden">
-          {!selectedTemplate ? (
-            <div className="text-center text-gray-500">
-              <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium">Selecciona una plantilla</h3>
-              <p className="text-sm">Elige una familia y luego una plantilla para comenzar.</p>
+                    {/* Información del producto actual */}
+          {selectedProducts.length > 0 && currentProduct && (
+            <div className="flex-shrink-0 mb-2">
+              <div className={`border rounded-lg p-3 ${
+                hasUnsavedChanges 
+                  ? 'bg-orange-50 border-orange-200' 
+                  : 'bg-blue-50 border-blue-200'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className={`font-semibold ${
+                      hasUnsavedChanges ? 'text-orange-800' : 'text-blue-800'
+                    }`}>
+                      {currentProduct.descripcion}
+                    </h4>
+                    <p className={`text-sm ${
+                      hasUnsavedChanges ? 'text-orange-600' : 'text-blue-600'
+                    }`}>
+                      SKU: {currentProduct.sku} | Precio: ${currentProduct.precio?.toLocaleString() || 'N/A'}
+                    </p>
+                    
+                    {/* Indicador de cambios pendientes y guardados */}
+                    {hasUnsavedChanges && (
+                      <div className="mt-2 space-y-1">
+                        {/* Cambios pendientes */}
+                        {Object.keys(pendingChanges).length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                            <span className="text-xs text-orange-700 font-medium">
+                              {Object.keys(pendingChanges).length} cambio{Object.keys(pendingChanges).length !== 1 ? 's' : ''} pendiente{Object.keys(pendingChanges).length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Cambios guardados en Redux */}
+                        {currentProduct && productChanges[currentProduct.id]?.changes?.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span className="text-xs text-green-700 font-medium">
+                              {productChanges[currentProduct.id].changes.length} cambio{productChanges[currentProduct.id].changes.length !== 1 ? 's' : ''} guardado{productChanges[currentProduct.id].changes.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Modo edición activo */}
+                    {isEditModeActive && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs text-yellow-700 font-medium">
+                          Modo edición activo - Haz clic en cualquier texto para editarlo
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col items-end gap-1">
+                    {selectedProducts.length > 1 && (
+                      <div className="text-xs text-blue-500 bg-blue-100 px-2 py-1 rounded">
+                        Producto {currentProductIndex + 1}/{selectedProducts.length}
+                      </div>
+                    )}
+                    
+                    {isEditModeActive && (
+                      <div className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
+                        ✏️ Edición Inline
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-          ) : (
+          )}
+
+                    <div ref={previewContainerRef} className="flex-1 flex items-center justify-center relative overflow-hidden p-1">
             <div 
-              className="shadow-lg rounded-lg overflow-hidden transition-transform duration-300 bg-white"
-              style={{ transform: `scale(${optimalScale})`, transformOrigin: 'center' }}
+              className="shadow-xl rounded-lg overflow-hidden transition-all duration-300 bg-white"
+              style={{ 
+                width: `${selectedTemplate?.template.canvas.width || 400}px`,
+                height: `${selectedTemplate?.template.canvas.height || 600}px`,
+                transform: `scale(${optimalScale})`, 
+                transformOrigin: 'center',
+                maxWidth: '100%',
+                maxHeight: '100%'
+              }}
             >
               <BuilderTemplateRenderer 
                 template={selectedTemplate.template}
-                components={selectedTemplate.template.defaultComponents}
+                components={selectedTemplate.template.defaultComponents || []}
                 product={currentProduct}
+                isPreview={!isEditModeActive}
+                scale={1}
                 productChanges={productChanges}
-                isPreview={selectedProducts.length === 0}
-                onEditField={handleInlineEdit}
-                enableInlineEdit={isInlineEditEnabled}
-                key={`${currentProduct?.id || 'no-product'}-${refreshKey}-${currentProductIndex}`}
+                enableInlineEdit={isEditModeActive}
+                onEditField={handleFieldEdit}
+                onPendingChange={handlePendingChange}
               />
             </div>
-          )}
-        </div>
+          </div>
+        </>
+      );
+    }
+
+    // CASO 2: Familia seleccionada, pero no plantilla -> Renderizar la grilla de plantillas
+    if (selectedFamily) {
+      return (
+        <TemplateGrid
+          templates={filteredTemplates}
+          selectedTemplate={selectedTemplate || null}
+          onTemplateSelect={(template) => onTemplateSelect?.(template)}
+          isLoading={isLoadingTemplates}
+        />
+      );
+    }
+    
+    // CASO 3: Estado inicial, nada seleccionado
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-center bg-gray-100 rounded-lg p-8">
+        <LayoutDashboard className="w-20 h-20 text-gray-300 mb-6" />
+        <h3 className="text-2xl font-bold text-gray-700 mb-2">Selecciona una familia</h3>
+        <p className="text-gray-500 max-w-sm">
+          Elige una familia de plantillas desde el panel izquierdo para ver todos los modelos disponibles y comenzar a crear tu cartel.
+        </p>
       </div>
-      
-      {/* Modales */}
-      <DeleteProductModal
-        isOpen={deleteModalOpen}
-        product={productToDelete}
-        onConfirm={handleDeleteConfirm}
-        onCancel={handleDeleteCancel}
-        productNumber={productToDelete ? selectedProducts.findIndex(p => p.id === productToDelete.id) + 1 : undefined}
-        totalProducts={selectedProducts.length}
-      />
+    );
+  };
 
-      {/* 🚀 MODAL DE REPORTE DE CAMBIOS */}
+  return (
+    <div className="h-full flex flex-col bg-gray-50 rounded-lg shadow-inner">
+      <div className="flex-1 flex flex-col p-1 overflow-hidden">
+        {renderContent()}
+      </div>
+
+      {/* Modal de confirmación de cambios */}
       <ProductChangesModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        onConfirmPrint={handleConfirmPrint}
+        isOpen={showChangesModal}
+        onClose={() => setShowChangesModal(false)}
+        onConfirmPrint={handleConfirmPrintWithChanges}
       />
 
-      {/* CONTENEDOR DE IMPRESIÓN (OCULTO) */}
-      {selectedTemplate && (
+      {/* Contenedor oculto para impresión */}
+      <div className="print-container-wrapper">
         <PrintContainer
-          ref={printComponentRef}
-          templates={selectedProducts.map(product => ({
-            product: product,
-            template: selectedTemplate.template,
-          }))}
+          ref={printContainerRef}
+          templates={selectedProducts.map(productId => {
+            const product = productos.find(p => p.id === productId);
+            return product && selectedTemplate ? {
+              product,
+              template: selectedTemplate.template
+            } : null;
+          }).filter(Boolean) as Array<{ product: Product; template: any }>}
           productChanges={productChanges}
         />
-      )}
+        
+        {/* Estilos adicionales para impresión */}
+        <style type="text/css">
+          {`
+            @media screen {
+              .print-container-wrapper {
+                display: none !important;
+              }
+            }
+            
+            @media print {
+              /* Ocultar todo excepto el contenido de impresión */
+              body * {
+                visibility: hidden;
+              }
+              
+              .print-only, .print-only * {
+                visibility: visible;
+              }
+              
+              .print-only {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+              }
+              
+              /* Configuración de página dinámica */
+              @page {
+                margin: 0;
+                size: A4 ${printOrientation};
+              }
+              
+              /* Saltos de página y centrado */
+              .page-break {
+                page-break-after: always;
+                page-break-inside: avoid;
+                width: 100vw;
+                height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-sizing: border-box;
+                padding: 1cm;
+              }
+              
+              .page-break:last-child {
+                page-break-after: avoid;
+              }
+
+              /* Contenedor del renderer con escalado */
+              .renderer-print-container {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+              
+              /* Asegurar que el contenido se vea bien */
+              .print-only img {
+                max-width: 100% !important;
+                height: auto !important;
+                object-fit: contain;
+              }
+              
+              .print-only text {
+                font-family: Arial, sans-serif !important;
+              }
+            }
+          `}
+        </style>
+      </div>
     </div>
   );
 }; 

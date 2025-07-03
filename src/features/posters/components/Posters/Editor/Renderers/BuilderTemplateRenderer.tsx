@@ -12,6 +12,7 @@ interface BuilderTemplateRendererProps {
   scale?: number; // Escala para la vista previa
   productChanges?: any; // Cambios del usuario desde Redux
   onEditField?: (fieldType: string, newValue: string) => void; // 🆕 Callback para edición inline
+  onPendingChange?: (fieldType: string, newValue: string | number) => void; // 🆕 Callback para cambios pendientes
   enableInlineEdit?: boolean; // 🆕 Habilitar edición inline directa
 }
 
@@ -23,7 +24,8 @@ const getDynamicValue = (
   content: any,
   product?: ProductoReal,
   isPreview?: boolean,
-  productChanges?: any // Cambios del usuario desde Redux
+  productChanges?: any, // Cambios del usuario desde Redux
+  componentId?: string // 🆕 ID del componente para campos estáticos únicos
 ): string => {
   if (!content) return '';
   
@@ -108,9 +110,10 @@ const getDynamicValue = (
       }
     }
     
-    // Si no hay cambios, procesar el template dinámico
-    const processedValue = processDynamicTemplate(content.dynamicTemplate, product, { prefix: true });
-    console.log(`📊 Valor procesado del template: ${processedValue}`);
+    // Si no hay cambios, procesar el template dinámico usando la configuración del componente
+    const outputFormat = content.outputFormat || {};
+    const processedValue = processDynamicTemplate(content.dynamicTemplate, product, outputFormat);
+    console.log(`📊 Valor procesado del template: ${processedValue}`, { outputFormat });
     return processedValue;
   }
 
@@ -191,8 +194,35 @@ const getDynamicValue = (
     return String(value);
   }
   
+  // 🆕 NUEVO: Para campos estáticos, verificar si hay cambios del usuario
+  if (content?.staticValue) {
+    const fieldType = getFieldType(content);
+    
+    // Verificar cambios del usuario para campos estáticos
+    if (productChanges && product && productChanges[product.id]) {
+      const changes = productChanges[product.id].changes || [];
+      
+      // 🆕 BUSCAR TANTO POR FIELD TYPE ORIGINAL COMO POR ID ÚNICO
+      // Primero buscar por ID único (para campos estáticos)
+      const uniqueFieldId = `${fieldType}_${componentId || 'unknown'}`;
+      let change = changes.find((c: any) => c.field === uniqueFieldId);
+      
+      // Si no se encuentra, buscar por fieldType original (compatibilidad)
+      if (!change) {
+        change = changes.find((c: any) => c.field === fieldType);
+      }
+      
+      if (change) {
+        console.log(`📝 Usando valor editado para campo estático ${change.field}: ${change.newValue}`);
+        return String(change.newValue);
+      }
+    }
+    
+    return content.staticValue;
+  }
+  
   // Fallback para otros tipos de contenido
-  return content?.staticValue || content?.fallbackText || '';
+  return content?.fallbackText || '';
 };
 
 /**
@@ -314,30 +344,6 @@ const getFieldType = (content: any): string => {
     }
   }
   
-  // Para campos con valor estático o texto
-  if (content?.staticValue || content?.text) {
-    const value = (content.staticValue || content.text || '').toLowerCase();
-    
-    if (value.includes('nombre') || value.includes('name')) return 'descripcion';
-    if (value.includes('precio') || value.includes('price') || value.includes('$')) return 'precio';
-    if (value.includes('sku') || value.includes('sap')) return 'sku';
-    if (value.includes('porcentaje') || value.includes('percentage') || value.includes('%')) return 'porcentaje';
-    if (value.includes('fecha') || value.includes('date')) return 'fechas';
-    if (value.includes('origen') || value.includes('brand') || value.includes('marca')) return 'marcaTexto';
-    if (value.includes('sin_impuesto') || value.includes('without_tax')) return 'basePrice';
-  }
-  
-  // Para campos SAP conectados
-  if (content?.fieldType === 'sap-product' && content?.sapConnection?.fieldName) {
-    const fieldName = content.sapConnection.fieldName.toLowerCase();
-    
-    if (fieldName.includes('name') || fieldName.includes('nombre')) return 'descripcion';
-    if (fieldName.includes('price') || fieldName.includes('precio')) return 'precio';
-    if (fieldName.includes('sku')) return 'sku';
-    
-    return 'universal';
-  }
-  
   // Para campos dinámicos con dynamicTemplate
   if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
     const dynamicTemplate = content.dynamicTemplate;
@@ -365,8 +371,96 @@ const getFieldType = (content: any): string => {
     }
   }
   
+  // Para campos SAP conectados
+  if (content?.fieldType === 'sap-product' && content?.sapConnection?.fieldName) {
+    const fieldName = content.sapConnection.fieldName.toLowerCase();
+    
+    if (fieldName.includes('name') || fieldName.includes('nombre')) return 'descripcion';
+    if (fieldName.includes('price') || fieldName.includes('precio')) return 'precio';
+    if (fieldName.includes('sku')) return 'sku';
+    
+    return 'universal';
+  }
+  
+  // 🆕 MEJORADO: Para campos con valor estático o texto (detectar mejor los tipos)
+  if (content?.staticValue || content?.text) {
+    const value = (content.staticValue || content.text || '').toLowerCase();
+    
+    // Detectar precios por formato numérico y símbolos
+    if (value.includes('$') || value.match(/\d+[.,]\d+/) || value.includes('precio') || value.includes('price')) {
+      return 'precio';
+    }
+    
+    // Detectar porcentajes
+    if (value.includes('%') || value.includes('descuento') || value.includes('discount') || value.includes('porcentaje')) {
+      return 'porcentaje';
+    }
+    
+    // Detectar fechas por formato
+    if (value.includes('fecha') || value.includes('date') || value.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
+      return 'fecha';
+    }
+    
+    // Detectar códigos/SKUs
+    if (value.includes('sku') || value.includes('sap') || value.includes('código') || value.includes('code')) {
+      return 'sku';
+    }
+    
+    // Detectar nombres de productos
+    if (value.includes('nombre') || value.includes('name') || value.includes('producto') || value.includes('product')) {
+      return 'descripcion';
+    }
+    
+    // Detectar origen/marca
+    if (value.includes('origen') || value.includes('brand') || value.includes('marca')) {
+      return 'marcaTexto';
+    }
+    
+    // Detectar precios sin impuestos
+    if (value.includes('sin_impuesto') || value.includes('without_tax') || value.includes('sin impuesto')) {
+      return 'basePrice';
+    }
+    
+    // 🆕 NUEVO: Detectar texto estático puro (sin palabras clave específicas)
+    // Si no coincide con ningún patrón específico, es texto estático editable
+    return 'texto_estatico';
+  }
+  
   // Fallback para cualquier campo dinámico
   return 'texto';
+};
+
+/**
+ * 🆕 NUEVA FUNCIÓN: Detecta si un campo es complejo (tiene texto + campos dinámicos)
+ */
+const isComplexTemplate = (content: any): boolean => {
+  if (content?.fieldType !== 'dynamic' || !content?.dynamicTemplate) {
+    return false;
+  }
+  
+  const template = content.dynamicTemplate;
+  
+  // Contar campos dinámicos [field_name] en el template
+  const fieldMatches = template.match(/\[([^\]]+)\]/g) || [];
+  
+  // Si hay texto además de los campos dinámicos, es complejo
+  let templateWithoutFields = template;
+  fieldMatches.forEach((match: string) => {
+    templateWithoutFields = templateWithoutFields.replace(match, '');
+  });
+  
+  // Si después de remover los campos dinámicos queda texto significativo, es complejo
+  const remainingText = templateWithoutFields.trim();
+  const isComplex = remainingText.length > 0;
+  
+  console.log(`🔍 Análisis template:`, {
+    template,
+    fieldMatches,
+    remainingText,
+    isComplex
+  });
+  
+  return isComplex;
 };
 
 /**
@@ -389,6 +483,7 @@ const renderComponent = (
   isPreview?: boolean, 
   productChanges?: any,
   onEditField?: (fieldType: string, newValue: string) => void,
+  onPendingChange?: (fieldType: string, newValue: string | number) => void,
   enableInlineEdit?: boolean
 ) => {
   const { type, content, style } = component;
@@ -419,22 +514,24 @@ const renderComponent = (
   
   switch (type) {
     case 'field-dynamic-text':
-      const textValue = getDynamicValue(content, product, isPreview, productChanges);
+      const textValue = getDynamicValue(content, product, isPreview, productChanges, component.id);
       const fieldType = getFieldType(content);
       
+              // 🆕 DETECTAR SI ES CAMPO ESTÁTICO O DINÁMICO
+        const isStaticField = !content?.fieldType || content?.fieldType === 'static' || (!(content as any)?.dynamicTemplate && !content?.textConfig?.contentType && content?.staticValue);
+      
       // Debug: Log del valor dinámico
-      if (product) {
-        console.log(`🎨 Renderizando campo dinámico:`, {
-          contentType: content?.textConfig?.contentType,
-          staticValue: content?.staticValue,
-          text: content?.text,
-          fieldType,
-          textValue,
-          productName: product.name,
-          hasChanges: !!(productChanges && productChanges[product.id]),
-          enableInlineEdit
-        });
-      }
+      console.log(`🎨 Renderizando campo de texto:`, {
+        contentType: content?.textConfig?.contentType,
+        fieldType: content?.fieldType,
+        staticValue: content?.staticValue,
+        text: content?.text,
+        detectedFieldType: fieldType,
+        textValue,
+        isStaticField,
+        hasProduct: !!product,
+        enableInlineEdit
+      });
       
       const textValidAlign = getValidTextAlign(cssStyle.textAlign);
 
@@ -453,23 +550,83 @@ const renderComponent = (
         whiteSpace: 'pre-wrap'
       };
       
-      const textContent = textValue || (product ? 'Nuevo componente' : 'Campo dinámico');
+      const textContent = textValue || (isStaticField ? 'Texto estático' : (product ? 'Nuevo componente' : 'Campo dinámico'));
       
-      // 🎯 EDICIÓN INLINE: Si está habilitada, envolver con InlineEditableText
-      if (enableInlineEdit && onEditField && product && !isPreview) {
-        console.log(`🖱️ Habilitando edición inline para campo: ${fieldType}`);
+      // 🎯 EDICIÓN INLINE: Habilitar para campos dinámicos Y estáticos
+      if (enableInlineEdit && onEditField && !isPreview && (product || isStaticField)) {
+        console.log(`🖱️ Habilitando edición inline para campo: ${fieldType} (${isStaticField ? 'estático' : 'dinámico'})`);
+        
+        // 🆕 DETECTAR SI ES TEMPLATE COMPLEJO (solo para campos dinámicos)
+        const isComplex = !isStaticField && isComplexTemplate(content);
+        
+        console.log(`🔍 Análisis campo para edición:`, {
+          fieldType,
+          isComplex,
+          isStaticField,
+          textValue,
+          content
+        });
+        
+        // Determinar el tipo de input según el campo
+        const getInputType = (fieldType: string, isComplex: boolean, isStatic: boolean): 'text' | 'number' => {
+          // Para campos complejos o estáticos, siempre usar texto
+          if (isComplex || isStatic) return 'text';
+          
+          if (fieldType.includes('precio') || fieldType.includes('price') || fieldType.includes('porcentaje')) {
+            return 'number';
+          }
+          return 'text';
+        };
+
+        // Generar placeholder contextual
+        const getPlaceholder = (fieldType: string, isComplex: boolean, isStatic: boolean): string => {
+          if (isStatic) {
+            if (fieldType === 'texto_estatico') {
+              return 'Editar texto (ej: "SUPERPRECIO", "14% DESCUENTO")';
+            } else if (fieldType.includes('precio')) {
+              return 'Editar precio (ej: "$ 99.999")';
+            } else if (fieldType.includes('porcentaje')) {
+              return 'Editar porcentaje (ej: "15%")';
+            } else if (fieldType.includes('fecha')) {
+              return 'Editar fecha (ej: "26/05/2025")';
+            }
+            return `Editar ${fieldType}`;
+          }
+          
+          if (isComplex) {
+            return 'Editar texto completo (ej: "14% DE DESCUENTO")';
+          }
+          
+          if (fieldType.includes('precio') || fieldType.includes('price')) {
+            return 'Ej: 99999';
+          } else if (fieldType.includes('porcentaje')) {
+            return 'Ej: 15';
+          } else if (fieldType.includes('descripcion') || fieldType.includes('nombre')) {
+            return 'Nombre del producto';
+          }
+          return `Editar ${fieldType}`;
+        };
+
+        // 🆕 CREAR IDENTIFICADOR ÚNICO PARA CAMPOS ESTÁTICOS
+        const uniqueFieldId = isStaticField ? `${fieldType}_${component.id}` : fieldType;
         
         return (
           <InlineEditableText
             value={textValue}
             onSave={(newValue) => {
-              console.log(`📝 Guardando edición inline: ${fieldType} = ${newValue}`);
-              onEditField(fieldType, String(newValue));
+              console.log(`📝 Guardando edición inline: ${uniqueFieldId} = ${newValue}`, { isComplex, isStaticField, componentId: component.id });
+              onEditField(uniqueFieldId, String(newValue));
             }}
-            fieldType={fieldType}
+            onPendingChange={onPendingChange ? (fieldType, newValue) => onPendingChange(uniqueFieldId, newValue) : undefined}
+            fieldType={uniqueFieldId}
             style={baseStyle}
+            inputType={getInputType(fieldType, !!isComplex, !!isStaticField)}
+            placeholder={getPlaceholder(fieldType, !!isComplex, !!isStaticField)}
+            maxLength={fieldType.includes('descripcion') ? 100 : (isComplex || isStaticField) ? 200 : undefined}
+            isComplexTemplate={!!(isComplex || isStaticField)}
+            originalTemplate={textValue}
           >
-            <div title={`${fieldType}: ${textValue}`}>
+            <div title={`${fieldType}: ${textValue}${isComplex ? ' (Editar texto completo)' : isStaticField ? ' (Campo estático editable)' : ''} [ID: ${component.id}]`}>
               {textContent}
             </div>
           </InlineEditableText>
@@ -550,20 +707,53 @@ const renderComponent = (
       }
       
       const dateValidAlign = getValidTextAlign(cssStyle.textAlign);
+      const dateFieldType = 'fecha'; // Tipo de campo para edición
 
+      const dateBaseStyle: React.CSSProperties = {
+        fontSize: 14,
+        fontFamily: 'inherit',
+        color: '#666666',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: dateValidAlign === 'center' ? 'center' : 
+                       dateValidAlign === 'right' ? 'flex-end' : 'flex-start',
+        ...cssStyle,
+        textAlign: dateValidAlign,
+        whiteSpace: 'pre-wrap',
+        height: '100%',
+        width: '100%'
+      };
+
+      // 🎯 EDICIÓN INLINE PARA FECHAS: Si está habilitada, envolver con InlineEditableText
+      if (enableInlineEdit && onEditField && !isPreview) {
+        console.log(`📅 Habilitando edición inline para fecha: ${dateValue}`);
+        
+        return (
+          <InlineEditableText
+            value={dateValue}
+            onSave={(newValue) => {
+              console.log(`📝 Guardando fecha editada: ${newValue}`);
+              onEditField(dateFieldType, String(newValue));
+            }}
+            onPendingChange={onPendingChange}
+            fieldType={dateFieldType}
+            style={dateBaseStyle}
+            inputType="text"
+            placeholder="Ej: 26/05/2025"
+            maxLength={15}
+            isComplexTemplate={false}
+            originalTemplate={dateValue}
+          >
+            <div title={`Fecha: ${dateValue}`}>
+              {dateValue}
+            </div>
+          </InlineEditableText>
+        );
+      }
+
+      // 📋 RENDERIZADO NORMAL: Sin edición inline
       return (
-        <div style={{
-          fontSize: 14,
-          fontFamily: 'inherit',
-          color: '#666666',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: dateValidAlign === 'center' ? 'center' : 
-                         dateValidAlign === 'right' ? 'flex-end' : 'flex-start',
-          ...cssStyle,
-          textAlign: dateValidAlign,
-          whiteSpace: 'pre-wrap'
-        }}>
+        <div style={dateBaseStyle}>
           {dateValue}
         </div>
       );
@@ -615,19 +805,51 @@ const renderComponent = (
       );
       
     case 'decorative-icon':
-      const iconName = content?.iconConfig?.iconName || '★';
+      const iconName = content?.iconConfig?.iconName || content?.staticValue || '★';
+      const iconFieldType = 'icono'; // Tipo de campo para edición
+
+      const iconBaseStyle: React.CSSProperties = {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: Math.min(component.size.width, component.size.height) * 0.8,
+        color: '#000000',
+        ...cssStyle,
+        whiteSpace: 'pre-wrap'
+      };
+
+      // 🎯 EDICIÓN INLINE PARA ICONOS: Si está habilitada, envolver con InlineEditableText
+      if (enableInlineEdit && onEditField && !isPreview) {
+        console.log(`🎨 Habilitando edición inline para icono: ${iconName}`);
+        
+        return (
+          <InlineEditableText
+            value={iconName}
+            onSave={(newValue) => {
+              console.log(`📝 Guardando icono editado: ${newValue}`);
+              onEditField(iconFieldType, String(newValue));
+            }}
+            onPendingChange={onPendingChange}
+            fieldType={iconFieldType}
+            style={iconBaseStyle}
+            inputType="text"
+            placeholder="Ej: ⭐ 🔥 💯"
+            maxLength={10}
+            isComplexTemplate={false}
+            originalTemplate={iconName}
+          >
+            <div title={`Icono: ${iconName}`}>
+              {iconName}
+            </div>
+          </InlineEditableText>
+        );
+      }
+
+      // 📋 RENDERIZADO NORMAL: Sin edición inline
       return (
-        <div style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: Math.min(component.size.width, component.size.height) * 0.8,
-          color: '#000000',
-          ...cssStyle,
-          whiteSpace: 'pre-wrap'
-        }}>
+        <div style={iconBaseStyle}>
           {iconName}
         </div>
       );
@@ -693,6 +915,7 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
   scale = 1,
   productChanges,
   onEditField,
+  onPendingChange,
   enableInlineEdit = false
 }) => {
   // Filtrar componentes visibles y ordenarlos por z-index
@@ -739,7 +962,7 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
 
         return (
           <div key={component.id} style={componentStyle}>
-            {renderComponent(component, product, isPreview, productChanges, onEditField, enableInlineEdit)}
+            {renderComponent(component, product, isPreview, productChanges, onEditField, onPendingChange, enableInlineEdit)}
           </div>
         );
       })}

@@ -1,6 +1,7 @@
 // Detecta qué campos utiliza cada plantilla específica
 
 import { extractDynamicFields } from './productFieldsMap';
+import { DraggableComponentV3 } from '../features/builderV3/types';
 
 export interface TemplateFieldConfig {
   nombre: boolean;
@@ -288,4 +289,353 @@ export const getFallbackFieldsForFamily = (familyName: string): string[] => {
   const fallbackFields = familyFieldMap[familyName] || ['nombre', 'precioActual', 'sap'];
   console.log(`🎯 Usando campos fallback para familia "${familyName}":`, fallbackFields);
   return fallbackFields;
+};
+
+// =====================================
+// DETECTOR AUTOMÁTICO DE CAMPOS EDITABLES
+// PARA FUNCIONALIDAD INLINE ESTILO SPID VIEJO
+// =====================================
+
+export interface EditableFieldInfo {
+  componentId: string;
+  fieldType: string;
+  fieldKey: string;
+  inputType: 'text' | 'number' | 'email' | 'tel';
+  placeholder: string;
+  maxLength?: number;
+  isEditable: boolean;
+  category: 'product' | 'price' | 'date' | 'text' | 'code';
+  priority: number; // Para ordenar por importancia
+}
+
+/**
+ * Detecta automáticamente todos los campos editables en una plantilla
+ */
+export const detectEditableFields = (components: DraggableComponentV3[]): EditableFieldInfo[] => {
+  const editableFields: EditableFieldInfo[] = [];
+
+  components.forEach(component => {
+    const fieldInfo = analyzeComponentForEditing(component);
+    if (fieldInfo.isEditable) {
+      editableFields.push(fieldInfo);
+    }
+  });
+
+  // Ordenar por prioridad (campos más importantes primero)
+  return editableFields.sort((a, b) => b.priority - a.priority);
+};
+
+/**
+ * Analiza un componente individual para determinar si es editable
+ */
+export const analyzeComponentForEditing = (component: DraggableComponentV3): EditableFieldInfo => {
+  const { type, content } = component;
+  
+  // Información base del campo
+  const baseInfo: Partial<EditableFieldInfo> = {
+    componentId: component.id,
+    isEditable: false,
+    priority: 0
+  };
+
+  // Analizar según tipo de componente
+  switch (type) {
+    case 'field-dynamic-text':
+      return analyzeDynamicTextField(component, baseInfo);
+    
+    case 'field-dynamic-date':
+      return analyzeDateField(component, baseInfo);
+    
+    default:
+      return {
+        ...baseInfo,
+        fieldType: 'unknown',
+        fieldKey: 'unknown',
+        inputType: 'text',
+        placeholder: 'Campo no editable',
+        category: 'text',
+        priority: 0,
+        isEditable: false
+      } as EditableFieldInfo;
+  }
+};
+
+/**
+ * Analiza campos de texto dinámico
+ */
+const analyzeDynamicTextField = (component: DraggableComponentV3, baseInfo: Partial<EditableFieldInfo>): EditableFieldInfo => {
+  const { content } = component;
+  
+  // Detectar tipo de campo desde staticValue (que puede contener plantillas dinámicas)
+  if (content?.staticValue) {
+    const dynamicFields = extractDynamicFields(content.staticValue);
+    
+    if (dynamicFields.length > 0) {
+      const primaryField = dynamicFields[0]; // Usar el primer campo como principal
+      return createFieldInfo(primaryField, component, baseInfo);
+    }
+    
+    // Si no hay campos dinámicos, analizar el valor estático
+    const fieldType = detectFieldTypeFromStaticValue(content.staticValue);
+    return createFieldInfo(fieldType, component, baseInfo);
+  }
+  
+  // Detectar desde textConfig (sistema legacy)
+  if (content?.textConfig?.contentType) {
+    const fieldType = mapTextConfigToFieldType(content.textConfig.contentType);
+    return createFieldInfo(fieldType, component, baseInfo);
+  }
+  
+  // Detectar desde text (propiedad alternativa)
+  if (content?.text) {
+    const dynamicFields = extractDynamicFields(content.text);
+    
+    if (dynamicFields.length > 0) {
+      const primaryField = dynamicFields[0];
+      return createFieldInfo(primaryField, component, baseInfo);
+    }
+    
+    const fieldType = detectFieldTypeFromStaticValue(content.text);
+    return createFieldInfo(fieldType, component, baseInfo);
+  }
+  
+  // Campo de texto genérico
+  return {
+    ...baseInfo,
+    fieldType: 'texto',
+    fieldKey: 'staticValue',
+    inputType: 'text',
+    placeholder: 'Editar texto',
+    category: 'text',
+    priority: 3,
+    isEditable: true
+  } as EditableFieldInfo;
+};
+
+/**
+ * Analiza campos de fecha
+ */
+const analyzeDateField = (component: DraggableComponentV3, baseInfo: Partial<EditableFieldInfo>): EditableFieldInfo => {
+  return {
+    ...baseInfo,
+    fieldType: 'fecha',
+    fieldKey: 'dateValue',
+    inputType: 'text',
+    placeholder: 'DD/MM/AAAA',
+    category: 'date',
+    priority: 4,
+    isEditable: true,
+    maxLength: 10
+  } as EditableFieldInfo;
+};
+
+/**
+ * Crea información completa del campo basándose en el tipo detectado
+ */
+const createFieldInfo = (fieldType: string, component: DraggableComponentV3, baseInfo: Partial<EditableFieldInfo>): EditableFieldInfo => {
+  const fieldConfig = getFieldConfiguration(fieldType);
+  
+  return {
+    ...baseInfo,
+    fieldType,
+    fieldKey: fieldConfig.fieldKey,
+    inputType: fieldConfig.inputType,
+    placeholder: fieldConfig.placeholder,
+    category: fieldConfig.category,
+    priority: fieldConfig.priority,
+    isEditable: fieldConfig.isEditable,
+    maxLength: fieldConfig.maxLength
+  } as EditableFieldInfo;
+};
+
+/**
+ * Configuración de diferentes tipos de campos
+ */
+const getFieldConfiguration = (fieldType: string) => {
+  const configurations: Record<string, any> = {
+    // Campos de producto
+    'product_name': {
+      fieldKey: 'descripcion',
+      inputType: 'text',
+      placeholder: 'Nombre del producto',
+      category: 'product',
+      priority: 10,
+      isEditable: true,
+      maxLength: 100
+    },
+    'product_sku': {
+      fieldKey: 'sku',
+      inputType: 'text',
+      placeholder: 'Código SKU',
+      category: 'code',
+      priority: 6,
+      isEditable: true,
+      maxLength: 20
+    },
+    'product_brand': {
+      fieldKey: 'marcaTexto',
+      inputType: 'text',
+      placeholder: 'Marca del producto',
+      category: 'product',
+      priority: 7,
+      isEditable: true,
+      maxLength: 50
+    },
+    
+    // Campos de precios
+    'product_price': {
+      fieldKey: 'precio',
+      inputType: 'number',
+      placeholder: 'Ej: 99999',
+      category: 'price',
+      priority: 9,
+      isEditable: true
+    },
+    'price_previous': {
+      fieldKey: 'precioAnt',
+      inputType: 'number',
+      placeholder: 'Precio anterior',
+      category: 'price',
+      priority: 8,
+      isEditable: true
+    },
+    'discount_percentage': {
+      fieldKey: 'porcentaje',
+      inputType: 'number',
+      placeholder: 'Ej: 15',
+      category: 'price',
+      priority: 8,
+      isEditable: true
+    },
+    
+    // Campos de fechas
+    'current_date': {
+      fieldKey: 'fecha',
+      inputType: 'text',
+      placeholder: 'DD/MM/AAAA',
+      category: 'date',
+      priority: 4,
+      isEditable: true,
+      maxLength: 10
+    },
+    'promotion_end_date': {
+      fieldKey: 'fechaFin',
+      inputType: 'text',
+      placeholder: 'DD/MM/AAAA',
+      category: 'date',
+      priority: 5,
+      isEditable: true,
+      maxLength: 10
+    },
+    
+    // Campos de origen
+    'product_origin': {
+      fieldKey: 'paisTexto',
+      inputType: 'text',
+      placeholder: 'País de origen',
+      category: 'product',
+      priority: 3,
+      isEditable: true,
+      maxLength: 30
+    }
+  };
+  
+  // Configuración por defecto para campos no reconocidos
+  return configurations[fieldType] || {
+    fieldKey: 'staticValue',
+    inputType: 'text',
+    placeholder: `Editar ${fieldType}`,
+    category: 'text',
+    priority: 2,
+    isEditable: true
+  };
+};
+
+/**
+ * Mapea tipos de textConfig legacy a tipos de campo modernos
+ */
+const mapTextConfigToFieldType = (contentType: string): string => {
+  const mapping: Record<string, string> = {
+    'product-name': 'product_name',
+    'product-sku': 'product_sku',
+    'product-brand': 'product_brand',
+    'price-original': 'product_price',
+    'price-final': 'product_price',
+    'price-discount': 'product_price',
+    'discount-percentage': 'discount_percentage',
+    'promotion-start-date': 'current_date',
+    'promotion-end-date': 'promotion_end_date'
+  };
+  
+  return mapping[contentType] || 'texto';
+};
+
+/**
+ * Detecta el tipo de campo desde un valor estático
+ */
+const detectFieldTypeFromStaticValue = (staticValue: string): string => {
+  const value = staticValue.toLowerCase();
+  
+  if (value.includes('$') || value.includes('precio') || value.includes('price')) {
+    return 'product_price';
+  }
+  if (value.includes('%') || value.includes('descuento') || value.includes('discount')) {
+    return 'discount_percentage';
+  }
+  if (value.includes('fecha') || value.includes('date') || /\d{2}\/\d{2}\/\d{4}/.test(value)) {
+    return 'current_date';
+  }
+  if (value.includes('sku') || value.includes('código') || value.includes('code')) {
+    return 'product_sku';
+  }
+  if (value.includes('nombre') || value.includes('producto') || value.includes('product')) {
+    return 'product_name';
+  }
+  
+  return 'texto';
+};
+
+/**
+ * Obtiene una lista de campos editables categorizados
+ */
+export const getEditableFieldsByCategory = (components: DraggableComponentV3[]) => {
+  const editableFields = detectEditableFields(components);
+  
+  const categorized = {
+    product: editableFields.filter(f => f.category === 'product'),
+    price: editableFields.filter(f => f.category === 'price'),
+    date: editableFields.filter(f => f.category === 'date'),
+    code: editableFields.filter(f => f.category === 'code'),
+    text: editableFields.filter(f => f.category === 'text')
+  };
+  
+  return categorized;
+};
+
+/**
+ * Verifica si una plantilla tiene campos editables
+ */
+export const hasEditableFields = (components: DraggableComponentV3[]): boolean => {
+  return detectEditableFields(components).length > 0;
+};
+
+/**
+ * Obtiene estadísticas de campos editables
+ */
+export const getEditableFieldsStats = (components: DraggableComponentV3[]) => {
+  const editableFields = detectEditableFields(components);
+  const categorized = getEditableFieldsByCategory(components);
+  
+  return {
+    total: editableFields.length,
+    byCategory: {
+      product: categorized.product.length,
+      price: categorized.price.length,
+      date: categorized.date.length,
+      code: categorized.code.length,
+      text: categorized.text.length
+    },
+    highPriority: editableFields.filter(f => f.priority >= 8).length,
+    mostImportant: editableFields.slice(0, 3) // Top 3 campos más importantes
+  };
 }; 
