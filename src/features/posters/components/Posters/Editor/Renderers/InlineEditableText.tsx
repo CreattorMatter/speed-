@@ -120,7 +120,7 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       return;
     }
     
-    console.log(`💾 Guardando valor inline: ${fieldType} = ${editValue} (anterior: ${originalValue})`);
+    console.log(`💾 🚀 INICIO handleSave InlineEditableText:`, { fieldType, editValue, originalValue });
     
     let processedValue: string | number = editValue;
     
@@ -128,16 +128,22 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       if (fieldType.includes('precio') || fieldType.includes('price')) {
         const numericValue = parseFloat(editValue.replace(/[^\d.,]/g, '').replace(',', '.'));
         processedValue = isNaN(numericValue) ? 0 : numericValue;
+        console.log(`💰 Procesando precio: "${editValue}" → ${processedValue}`);
       } else if (fieldType.includes('porcentaje') || fieldType.includes('percentage')) {
         const numericValue = parseFloat(editValue.replace('%', ''));
         processedValue = isNaN(numericValue) ? 0 : numericValue;
+        console.log(`📊 Procesando porcentaje: "${editValue}" → ${processedValue}`);
       }
     }
+    
+    console.log(`💾 📤 ENVIANDO A onSave:`, { fieldType, processedValue });
     
     onSave(processedValue);
     setIsEditing(false);
     setHasBeenManuallyEdited(false);
     setHasPendingChange(false);
+    
+    console.log(`💾 ✅ handleSave COMPLETADO`);
   };
 
   const validateField = (fieldType: string, value: string): { isValid: boolean; message?: string } => {
@@ -210,6 +216,12 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
     }
   };
 
+  // 🚫 PREVENIR SCROLL DEL MOUSE EN CAMPOS NUMÉRICOS
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   const handleClickOutside = () => {
     if (isEditing && hasBeenManuallyEdited) {
       if (originalValue !== editValue) {
@@ -260,6 +272,7 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       value: editValue,
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setEditValue(e.target.value),
       onKeyDown: handleKeyDown,
+      onWheel: handleWheel,
       className: `${className} outline-none border-2 border-blue-500 bg-white rounded px-2 py-1 shadow-lg`,
       style: {
         ...style,
@@ -279,7 +292,9 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       },
       placeholder: placeholder || `Editar ${fieldType}...`,
       maxLength,
-      disabled
+      disabled,
+      autoComplete: 'off',
+      spellCheck: false
     };
 
     if (multiline) {

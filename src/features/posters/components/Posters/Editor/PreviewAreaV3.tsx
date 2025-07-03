@@ -192,16 +192,20 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   const handleFieldEdit = (fieldType: string, newValue: string | number) => {
     if (!currentProduct) return;
     
-    console.log(`📝 Editando campo directamente: ${fieldType} = ${newValue}`);
+    console.log(`📝 🚀 INICIO handleFieldEdit:`, { fieldType, newValue, productId: currentProduct.id });
     
-    // 🆕 MANEJAR CAMPOS ESTÁTICOS CON ID ÚNICO
+    // 🆕 EXTRAER TIPO BASE DEL CAMPO (remover ID del componente)
     let originalValue: string | number;
     let baseFieldType = fieldType;
     
-    // Si es un campo estático con ID único, extraer el tipo base
-    if (fieldType.includes('_') && fieldType.match(/_[a-f0-9-]+$/)) {
-      baseFieldType = fieldType.split('_')[0];
-      console.log(`🔍 Campo estático detectado: ${fieldType} → tipo base: ${baseFieldType}`);
+    // Si tiene formato "tipo_componentId", extraer solo el tipo
+    if (fieldType.includes('_')) {
+      const parts = fieldType.split('_');
+      // Si la última parte parece un ID de componente (UUID o similar), removerla
+      if (parts.length >= 2 && parts[parts.length - 1].match(/^[a-f0-9-]{8,}$/)) {
+        baseFieldType = parts.slice(0, -1).join('_');
+        console.log(`🔍 Campo con ID único detectado: ${fieldType} → tipo base: ${baseFieldType}`);
+      }
     }
     
     // Obtener valor original usando el tipo base
@@ -214,6 +218,15 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                      baseFieldType === 'fecha' ? new Date().toLocaleDateString('es-AR') : '';
     }
     
+    console.log(`📝 💾 GUARDANDO EN REDUX:`, {
+      productId: currentProduct.id,
+      productName: currentProduct.descripcion,
+      field: fieldType, // Usar el fieldType completo con ID único
+      originalValue,
+      newValue,
+      baseFieldType
+    });
+    
     // Registrar el cambio en Redux usando el fieldType completo (con ID único)
     dispatch(trackProductChange({
       productId: currentProduct.id,
@@ -222,6 +235,8 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       originalValue,
       newValue
     }));
+    
+    console.log(`📝 ✅ CAMBIO REGISTRADO EN REDUX`);
   };
 
   const handleConfirmAllChanges = () => {
@@ -231,12 +246,16 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     
     // Aplicar cambios pendientes a Redux
     Object.entries(pendingChanges).forEach(([fieldType, newValue]) => {
-      // 🆕 MANEJAR CAMPOS ESTÁTICOS CON ID ÚNICO
+      // 🆕 EXTRAER TIPO BASE DEL CAMPO (remover ID del componente)
       let baseFieldType = fieldType;
       
-      // Si es un campo estático con ID único, extraer el tipo base
-      if (fieldType.includes('_') && fieldType.match(/_[a-f0-9-]+$/)) {
-        baseFieldType = fieldType.split('_')[0];
+      // Si tiene formato "tipo_componentId", extraer solo el tipo
+      if (fieldType.includes('_')) {
+        const parts = fieldType.split('_');
+        // Si la última parte parece un ID de componente (UUID o similar), removerla
+        if (parts.length >= 2 && parts[parts.length - 1].match(/^[a-f0-9-]{8,}$/)) {
+          baseFieldType = parts.slice(0, -1).join('_');
+        }
       }
       
       let originalValue = getOriginalFieldValue(currentProduct, baseFieldType);

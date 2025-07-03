@@ -36,18 +36,39 @@ const getDynamicValue = (
     // 🆕 CORREGIDO: Buscar en el array de cambios de Redux
     if (productChanges && productChanges[product.id]) {
       const changes = productChanges[product.id].changes || [];
-      const change = changes.find((c: any) => c.field === field);
+      
+      // 🔧 DEBUGGING: Log para entender qué está pasando
+      console.log(`🔍 Buscando cambios para campo "${field}" (componentId: ${componentId}):`, {
+        productId: product.id,
+        totalChanges: changes.length,
+        changes: changes.map((c: any) => ({ field: c.field, newValue: c.newValue }))
+      });
+      
+      // 🔧 BUSCAR CAMBIO CON ID ÚNICO PRIMERO (field_componentId)
+      let change = changes.find((c: any) => c.field === `${field}_${componentId}`);
+      
+      // Si no se encuentra con ID único, buscar con el field original (para compatibilidad)
+      if (!change) {
+        change = changes.find((c: any) => c.field === field);
+      }
+      
       if (change) {
-        console.log(`📝 Usando valor editado para ${field}: ${change.newValue}`);
+        console.log(`📝 ✅ CAMBIO ENCONTRADO para ${field}: ${change.newValue} (ID: ${componentId})`);
         // Si el nuevo valor es numérico y el campo es precio, formatear
         if (field.includes('precio') || field.includes('price')) {
           const numValue = typeof change.newValue === 'string' 
             ? parseFloat(change.newValue.replace(/[^\d.,]/g, '').replace(',', '.'))
             : change.newValue;
-          return !isNaN(numValue) ? `$ ${numValue.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : change.newValue;
+          const formattedValue = !isNaN(numValue) ? `$ ${numValue.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : change.newValue;
+          console.log(`💰 Precio formateado: ${change.newValue} → ${formattedValue}`);
+          return formattedValue;
         }
         return change.newValue;
+      } else {
+        console.log(`📝 ❌ NO se encontró cambio para campo "${field}" (componentId: ${componentId})`);
       }
+    } else {
+      console.log(`📝 ⚠️ No hay productChanges para producto ${product?.id || 'undefined'}`);
     }
     
     // Si no hay cambio, usar valor del producto original
@@ -103,10 +124,32 @@ const getDynamicValue = (
     const fieldType = getFieldType(content);
     if (productChanges && productChanges[product.id]) {
       const changes = productChanges[product.id].changes || [];
-      const change = changes.find((c: any) => c.field === fieldType);
+      
+      // 🔧 BUSCAR CAMBIO CON ID ÚNICO PRIMERO (fieldType_componentId)
+      const uniqueFieldId = `${fieldType}_${componentId}`;
+      let change = changes.find((c: any) => c.field === uniqueFieldId);
+      
+      // Si no se encuentra con ID único, buscar con el fieldType original (para compatibilidad)
+      if (!change) {
+        change = changes.find((c: any) => c.field === fieldType);
+      }
+      
       if (change) {
-        console.log(`📝 Usando valor editado para campo dinámico ${fieldType}: ${change.newValue}`);
+        console.log(`📝 ✅ CAMBIO ENCONTRADO para campo dinámico ${fieldType}: ${change.newValue} (ID único: ${uniqueFieldId})`);
+        
+        // 🔧 APLICAR FORMATEO DE PRECIO SI ES NECESARIO
+        if (fieldType.includes('precio') || fieldType.includes('price')) {
+          const numValue = typeof change.newValue === 'string' 
+            ? parseFloat(change.newValue.replace(/[^\d.,]/g, '').replace(',', '.'))
+            : change.newValue;
+          const formattedValue = !isNaN(numValue) ? `$ ${numValue.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : change.newValue;
+          console.log(`💰 Precio dinámico formateado: ${change.newValue} → ${formattedValue}`);
+          return formattedValue;
+        }
+        
         return String(change.newValue);
+      } else {
+        console.log(`📝 ❌ NO se encontró cambio para campo dinámico "${fieldType}" (ID único: ${uniqueFieldId})`);
       }
     }
     
@@ -202,19 +245,31 @@ const getDynamicValue = (
     if (productChanges && product && productChanges[product.id]) {
       const changes = productChanges[product.id].changes || [];
       
-      // 🆕 BUSCAR TANTO POR FIELD TYPE ORIGINAL COMO POR ID ÚNICO
-      // Primero buscar por ID único (para campos estáticos)
-      const uniqueFieldId = `${fieldType}_${componentId || 'unknown'}`;
+      // 🔧 BUSCAR CAMBIO CON ID ÚNICO PRIMERO (fieldType_componentId)
+      const uniqueFieldId = `${fieldType}_${componentId}`;
       let change = changes.find((c: any) => c.field === uniqueFieldId);
       
-      // Si no se encuentra, buscar por fieldType original (compatibilidad)
+      // Si no se encuentra con ID único, buscar con el fieldType original (para compatibilidad)
       if (!change) {
         change = changes.find((c: any) => c.field === fieldType);
       }
       
       if (change) {
-        console.log(`📝 Usando valor editado para campo estático ${change.field}: ${change.newValue}`);
+        console.log(`📝 ✅ CAMBIO ENCONTRADO para campo estático ${fieldType}: ${change.newValue} (ID único: ${uniqueFieldId})`);
+        
+        // 🔧 APLICAR FORMATEO DE PRECIO SI ES NECESARIO
+        if (fieldType.includes('precio') || fieldType.includes('price')) {
+          const numValue = typeof change.newValue === 'string' 
+            ? parseFloat(change.newValue.replace(/[^\d.,]/g, '').replace(',', '.'))
+            : change.newValue;
+          const formattedValue = !isNaN(numValue) ? `$ ${numValue.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : change.newValue;
+          console.log(`💰 Precio estático formateado: ${change.newValue} → ${formattedValue}`);
+          return formattedValue;
+        }
+        
         return String(change.newValue);
+      } else {
+        console.log(`📝 ❌ NO se encontró cambio para campo estático "${fieldType}" (ID único: ${uniqueFieldId})`);
       }
     }
     
@@ -569,12 +624,12 @@ const renderComponent = (
         
         // Determinar el tipo de input según el campo
         const getInputType = (fieldType: string, isComplex: boolean, isStatic: boolean): 'text' | 'number' => {
+          // 🚫 SIEMPRE USAR 'text' PARA EVITAR FLECHAS DE INCREMENTO Y SCROLL DEL MOUSE
           // Para campos complejos o estáticos, siempre usar texto
           if (isComplex || isStatic) return 'text';
           
-          if (fieldType.includes('precio') || fieldType.includes('price') || fieldType.includes('porcentaje')) {
-            return 'number';
-          }
+          // 🔧 CAMBIO: Usar 'text' para todos los campos numéricos también
+          // Esto evita las flechas de incremento/decremento y el scroll del mouse
           return 'text';
         };
 
@@ -607,8 +662,9 @@ const renderComponent = (
           return `Editar ${fieldType}`;
         };
 
-        // 🆕 CREAR IDENTIFICADOR ÚNICO PARA CAMPOS ESTÁTICOS
-        const uniqueFieldId = isStaticField ? `${fieldType}_${component.id}` : fieldType;
+        // 🆕 CREAR IDENTIFICADOR ÚNICO PARA TODOS LOS CAMPOS (ESTÁTICOS Y DINÁMICOS)
+        // Esto evita que al cambiar un campo se cambien otros campos del mismo tipo
+        const uniqueFieldId = `${fieldType}_${component.id}`;
         
         return (
           <InlineEditableText
