@@ -21,6 +21,7 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value.toString());
   const [isHovered, setIsHovered] = useState(false);
+  const [hasBeenManuallyEdited, setHasBeenManuallyEdited] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Actualizar editValue cuando cambia el value externo
@@ -43,10 +44,22 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
     console.log(`🖱️ Iniciando edición inline para campo: ${fieldType}`);
     setIsEditing(true);
     setEditValue(value.toString());
+    setHasBeenManuallyEdited(true);
   };
 
   const handleSave = () => {
-    console.log(`💾 Guardando valor inline: ${fieldType} = ${editValue}`);
+    // 🔧 CORREGIDO: Solo guardar si realmente hubo un cambio
+    const currentValueStr = value.toString();
+    const editValueStr = editValue.toString();
+    
+    if (currentValueStr === editValueStr) {
+      console.log(`⏭️ Sin cambios en campo ${fieldType}: valor igual (${currentValueStr})`);
+      setIsEditing(false);
+      setHasBeenManuallyEdited(false);
+      return;
+    }
+    
+    console.log(`💾 Guardando valor inline: ${fieldType} = ${editValue} (anterior: ${value})`);
     
     let processedValue: string | number = editValue;
     
@@ -62,12 +75,14 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
     
     onSave(processedValue);
     setIsEditing(false);
+    setHasBeenManuallyEdited(false);
   };
 
   const handleCancel = () => {
     console.log(`❌ Cancelando edición inline para: ${fieldType}`);
     setEditValue(value.toString());
     setIsEditing(false);
+    setHasBeenManuallyEdited(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -81,8 +96,12 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
   };
 
   const handleClickOutside = () => {
-    if (isEditing) {
+    if (isEditing && hasBeenManuallyEdited) {
+      console.log(`👆 Click fuera detectado para campo ${fieldType}, guardando cambios...`);
       handleSave();
+    } else if (isEditing) {
+      console.log(`👆 Click fuera detectado pero no hubo edición manual para ${fieldType}, cancelando...`);
+      handleCancel();
     }
   };
 
