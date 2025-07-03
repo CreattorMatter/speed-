@@ -1,35 +1,32 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ChevronDown, Check, LayoutTemplate } from 'lucide-react';
-import { PosterTemplateData } from '../../../../../../services/posterTemplateService';
+import { Search, ChevronDown, Check } from 'lucide-react';
+import { PosterFamilyData } from '../../../../../../services/posterTemplateService';
 
-interface TemplateSelectProps {
-  templates: PosterTemplateData[];
-  selectedTemplate: PosterTemplateData | null;
-  onTemplateSelect: (template: PosterTemplateData) => void;
+interface FamilySelectProps {
+  families: PosterFamilyData[];
+  selectedFamily: PosterFamilyData | null;
+  onFamilySelect: (family: PosterFamilyData) => void;
   isLoading: boolean;
-  disabled?: boolean;
 }
 
-export const TemplateSelect: React.FC<TemplateSelectProps> = ({
-  templates,
-  selectedTemplate,
-  onTemplateSelect,
-  isLoading,
-  disabled = false
+export const FamilySelect: React.FC<FamilySelectProps> = ({
+  families,
+  selectedFamily,
+  onFamilySelect,
+  isLoading
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const filteredTemplates = useMemo(() => {
-    if (!searchTerm) return templates;
-    return templates.filter(template =>
-      template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      template.description.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredFamilies = useMemo(() => {
+    if (!searchTerm) return families;
+    return families.filter(family =>
+      family.displayName.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [templates, searchTerm]);
+  }, [families, searchTerm]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -46,8 +43,8 @@ export const TemplateSelect: React.FC<TemplateSelectProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSelect = (template: PosterTemplateData) => {
-    onTemplateSelect(template);
+  const handleSelect = (family: PosterFamilyData) => {
+    onFamilySelect(family);
     setIsOpen(false);
     setSearchTerm('');
   };
@@ -57,20 +54,21 @@ export const TemplateSelect: React.FC<TemplateSelectProps> = ({
       <button
         ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
-        disabled={isLoading || disabled || templates.length === 0}
-        className="flex items-center justify-between w-full p-3 bg-white border-2 border-gray-200 rounded-lg shadow-sm hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+        disabled={isLoading}
+        className="flex items-center justify-between w-full p-3 bg-white border-2 border-gray-200 rounded-lg shadow-sm hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all"
       >
         {isLoading ? (
-          <span className="text-gray-500">Cargando plantillas...</span>
-        ) : selectedTemplate ? (
+          <span className="text-gray-500">Cargando familias...</span>
+        ) : selectedFamily ? (
           <div className="flex items-center gap-3">
-            <LayoutTemplate className="w-5 h-5 text-indigo-500" />
+            <span className="text-2xl">{selectedFamily.icon}</span>
             <div className="text-left">
-              <span className="font-semibold text-gray-800">{selectedTemplate.name}</span>
+              <span className="font-semibold text-gray-800">{selectedFamily.displayName}</span>
+              <span className="text-sm text-gray-500 ml-2">{selectedFamily.templates.length} plantillas</span>
             </div>
           </div>
         ) : (
-          <span className="text-gray-500">Selecciona una plantilla</span>
+          <span className="text-gray-500">Selecciona una familia</span>
         )}
         <ChevronDown
           className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
@@ -80,7 +78,7 @@ export const TemplateSelect: React.FC<TemplateSelectProps> = ({
       </button>
 
       <AnimatePresence>
-        {isOpen && !disabled && templates.length > 0 && (
+        {isOpen && (
           <motion.div
             ref={dropdownRef}
             initial={{ opacity: 0, y: -10 }}
@@ -93,7 +91,7 @@ export const TemplateSelect: React.FC<TemplateSelectProps> = ({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Buscar plantilla..."
+                  placeholder="Buscar familia..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -102,28 +100,29 @@ export const TemplateSelect: React.FC<TemplateSelectProps> = ({
               </div>
             </div>
             <ul className="py-1 max-h-60 overflow-auto">
-              {filteredTemplates.length > 0 ? (
-                filteredTemplates.map(template => (
-                  <li key={template.id}>
+              {filteredFamilies.length > 0 ? (
+                filteredFamilies.map(family => (
+                  <li key={family.id}>
                     <button
                       type="button"
-                      onClick={() => handleSelect(template)}
+                      onClick={() => handleSelect(family)}
                       className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center justify-between"
                     >
                       <div className="flex items-center gap-3">
-                        <LayoutTemplate className="w-4 h-4 text-gray-400" />
+                        <span className="text-2xl">{family.icon}</span>
                         <div>
-                          <span className="font-medium text-gray-800">{template.name}</span>
+                          <span className="font-medium text-gray-800">{family.displayName}</span>
+                          <span className="text-sm text-gray-500 ml-2">{family.templates.length} plantillas</span>
                         </div>
                       </div>
-                      {selectedTemplate?.id === template.id && (
+                      {selectedFamily?.id === family.id && (
                         <Check className="w-5 h-5 text-indigo-600" />
                       )}
                     </button>
                   </li>
                 ))
               ) : (
-                <li className="px-3 py-2 text-sm text-gray-500 text-center">No se encontraron plantillas.</li>
+                <li className="px-3 py-2 text-sm text-gray-500 text-center">No se encontraron familias.</li>
               )}
             </ul>
           </motion.div>

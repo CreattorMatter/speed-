@@ -573,10 +573,19 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
         const dynamicText = processDynamicContent(component, defaultMockData);
         return (
           <div 
-            style={baseStyle}
-            className="flex items-center justify-center p-2 select-none"
+            style={{
+              ...baseStyle,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              padding: '8px',
+              boxSizing: 'border-box'
+            }}
+            className="w-full h-full select-none"
           >
-            {dynamicText}
+            <div style={{ textAlign: component.style?.typography?.textAlign as any || 'left' }}>
+              {dynamicText}
+            </div>
           </div>
         );
 
@@ -619,10 +628,19 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
         const dynamicDate = processDynamicContent(component, defaultMockData);
         return (
           <div 
-            style={baseStyle}
-            className="flex items-center justify-center p-2 select-none"
+            style={{
+              ...baseStyle,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              padding: '8px',
+              boxSizing: 'border-box'
+            }}
+            className="w-full h-full select-none"
           >
-            {dynamicDate}
+            <div style={{ textAlign: component.style?.typography?.textAlign as any || 'left' }}>
+              {dynamicDate}
+            </div>
           </div>
         );
 
@@ -702,6 +720,7 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
         visibility: component.isVisible ? 'visible' : 'hidden',
         opacity: component.style?.effects?.opacity ?? 1,
         boxShadow: formatBoxShadow(component.style?.effects?.boxShadow),
+        overflow: 'visible', // Importante: permite que los handles se muestren fuera del componente
       }}
       onMouseDown={handleMouseDown}
       onMouseEnter={() => setIsHovered(true)}
@@ -818,13 +837,17 @@ const EnhancedResizeHandles: React.FC<EnhancedResizeHandlesProps> = ({
 
   const createResizeHandler = useCallback((corner: string) => {
     return (e: React.MouseEvent) => {
+      console.log(`🔧 Handle ${corner} clicked for component:`, component.id, component.type);
       e.stopPropagation();
+      e.preventDefault(); // 🆕 Prevenir comportamientos por defecto
       setActiveHandle(corner);
       
       const startX = e.clientX;
       const startY = e.clientY;
       const startSize = { ...component.size };
       const startPosition = { ...component.position };
+
+      console.log(`📏 Starting resize from ${corner}:`, { startSize, startPosition });
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
         const deltaX = (moveEvent.clientX - startX) / zoom;
@@ -880,6 +903,7 @@ const EnhancedResizeHandles: React.FC<EnhancedResizeHandlesProps> = ({
           }
         }
 
+        console.log(`🔄 Resizing ${corner}:`, { newSize, newPosition });
         operations.resizeComponent(component.id, newSize);
         if (newPosition.x !== startPosition.x || newPosition.y !== startPosition.y) {
           operations.moveComponent(component.id, newPosition);
@@ -887,6 +911,7 @@ const EnhancedResizeHandles: React.FC<EnhancedResizeHandlesProps> = ({
       };
 
       const handleMouseUp = () => {
+        console.log(`✅ Resize ${corner} completed for component:`, component.id);
         setActiveHandle(null);
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
@@ -898,13 +923,13 @@ const EnhancedResizeHandles: React.FC<EnhancedResizeHandlesProps> = ({
   }, [component, zoom, operations]);
 
   const handleStyle = (corner: string): React.CSSProperties => {
-    const baseSize = 8;
+    const baseSize = 12; // 🆕 Aumentar tamaño de 8 a 12 para mejor clickabilidad
     const size = Math.max(baseSize, baseSize / zoom);
     const offset = -size / 2;
     
     const isActive = activeHandle === corner;
     
-    return {
+    const baseStyle: React.CSSProperties = {
       position: 'absolute',
       width: `${size}px`,
       height: `${size}px`,
@@ -912,18 +937,34 @@ const EnhancedResizeHandles: React.FC<EnhancedResizeHandlesProps> = ({
       border: '2px solid white',
       borderRadius: '50%',
       cursor: getCursor(corner),
-      transform: 'scale(1)',
       transition: 'all 0.1s ease',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-      ...(corner.includes('n') && { top: `${offset}px` }),
-      ...(corner.includes('s') && { bottom: `${offset}px` }),
-      ...(corner.includes('w') && { left: `${offset}px` }),
-      ...(corner.includes('e') && { right: `${offset}px` }),
-      ...(corner === 'n' && { left: '50%', marginLeft: `${offset}px` }),
-      ...(corner === 's' && { left: '50%', marginLeft: `${offset}px` }),
-      ...(corner === 'w' && { top: '50%', marginTop: `${offset}px` }),
-      ...(corner === 'e' && { top: '50%', marginTop: `${offset}px` }),
+      boxShadow: '0 2px 8px rgba(0,0,0,0.3)', // 🆕 Sombra más fuerte
+      zIndex: 9999, // 🆕 Z-index aún más alto
+      pointerEvents: 'auto',
+      userSelect: 'none', // 🆕 Prevenir selección de texto
     };
+
+    // Posicionamiento específico para cada handle
+    switch (corner) {
+      case 'nw':
+        return { ...baseStyle, top: `${offset}px`, left: `${offset}px` };
+      case 'n':
+        return { ...baseStyle, top: `${offset}px`, left: '50%', transform: 'translateX(-50%)' };
+      case 'ne':
+        return { ...baseStyle, top: `${offset}px`, right: `${offset}px` };
+      case 'w':
+        return { ...baseStyle, top: '50%', left: `${offset}px`, transform: 'translateY(-50%)' };
+      case 'e':
+        return { ...baseStyle, top: '50%', right: `${offset}px`, transform: 'translateY(-50%)' };
+      case 'sw':
+        return { ...baseStyle, bottom: `${offset}px`, left: `${offset}px` };
+      case 's':
+        return { ...baseStyle, bottom: `${offset}px`, left: '50%', transform: 'translateX(-50%)' };
+      case 'se':
+        return { ...baseStyle, bottom: `${offset}px`, right: `${offset}px` };
+      default:
+        return baseStyle;
+    }
   };
 
   const getCursor = (corner: string): string => {
@@ -947,17 +988,32 @@ const EnhancedResizeHandles: React.FC<EnhancedResizeHandlesProps> = ({
 
   const handles = ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'];
 
+  console.log(`🎯 Rendering handles for component:`, {
+    id: component.id,
+    type: component.type,
+    isSelected: true,
+    isResizable: component.isResizable,
+    isLocked: component.isLocked,
+    activeHandle
+  });
+
   return (
-    <>
+    <div 
+      className="absolute inset-0 pointer-events-none"
+      style={{ zIndex: 9998 }}
+    >
       {handles.map(handle => (
         <div
           key={handle}
           style={handleStyle(handle)}
           onMouseDown={createResizeHandler(handle)}
           className="hover:scale-125 transition-transform"
+          data-handle={handle}
+          data-component-id={component.id}
+          title={`Redimensionar desde ${handle} (Component: ${component.type})`}
         />
       ))}
-    </>
+    </div>
   );
 };
 

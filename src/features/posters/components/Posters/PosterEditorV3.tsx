@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { LayoutTemplate, BoxSelect } from 'lucide-react';
 
 // Importar hooks de Redux y el slice de poster
 import { useSelector, useDispatch } from 'react-redux';
@@ -32,6 +33,8 @@ import { Header } from "../../../../components/shared/Header";
 import { HeaderProvider } from "../../../../components/shared/HeaderProvider";
 import { LoadingModal } from "../../../../components/ui/LoadingModal";
 import { ProductSelectionModal } from "./Editor/ProductSelectionModal";
+import { FamilySelect } from "./Editor/Selectors/FamilySelect";
+import { TemplateSelect } from "./Editor/Selectors/TemplateSelect";
 
 // Datos
 import { COMPANIES } from "../../../../data/companies";
@@ -283,104 +286,31 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
                   {/* Selector de familias */}
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                      <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                      </svg>
+                      <BoxSelect className="w-5 h-5 text-blue-500" />
                       Familias ({families.length})
                     </h3>
-                    
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {families.map((family) => (
-                        <button
-                          key={family.id}
-                          onClick={() => handleFamilySelect(family)}
-                          className={`w-full text-left p-3 rounded-lg border-2 transition-all duration-200 ${
-                            selectedFamily?.id === family.id
-                              ? 'border-blue-500 bg-blue-50 text-blue-700'
-                              : 'border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{family.icon}</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{family.displayName}</div>
-                              <div className="text-sm text-gray-500 truncate">{family.templates.length} plantilla{family.templates.length !== 1 ? 's' : ''}</div>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                    <FamilySelect
+                      families={families}
+                      selectedFamily={selectedFamily}
+                      onFamilySelect={handleFamilySelect}
+                      isLoading={isLoading}
+                    />
                   </div>
 
-                  {/* Información de la familia seleccionada */}
+                  {/* Selector de Plantillas (aparece cuando se selecciona una familia) */}
                   {selectedFamily && (
-                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-blue-800">{selectedFamily.displayName}</h4>
-                        <button
-                          onClick={() => setShowSearchFilters(!showSearchFilters)}
-                          className="text-blue-600 hover:text-blue-800 transition-colors"
-                          title="Mostrar/ocultar filtros"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
-                          </svg>
-                        </button>
-                      </div>
-                      <p className="text-sm text-blue-600 mb-3">{selectedFamily.description}</p>
-                      <div className="text-xs text-blue-500">
-                        {filteredTemplates.length} de {selectedFamily.templates.length} plantilla{selectedFamily.templates.length !== 1 ? 's' : ''} 
-                        {searchTerm || selectedCategory !== 'all' ? ' (filtradas)' : ''}
-                      </div>
-                      
-                      {/* Filtros expandibles */}
-                      {showSearchFilters && (
-                        <div className="mt-4 pt-3 border-t border-blue-200 space-y-3">
-                          {/* Buscador */}
-                          <div>
-                            <label className="block text-xs font-medium text-blue-700 mb-1">Buscar plantillas</label>
-                            <input
-                              type="text"
-                              value={searchTerm}
-                              onChange={(e) => setSearchTerm(e.target.value)}
-                              placeholder="Buscar por nombre, descripción..."
-                              className="w-full px-3 py-2 text-sm border border-blue-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                          </div>
-                          
-                          {/* Filtro por categoría */}
-                          {availableCategories.length > 0 && (
-                            <div>
-                              <label className="block text-xs font-medium text-blue-700 mb-1">Categoría</label>
-                              <select
-                                value={selectedCategory}
-                                onChange={(e) => setSelectedCategory(e.target.value)}
-                                className="w-full px-3 py-2 text-sm border border-blue-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              >
-                                <option value="all">Todas las categorías</option>
-                                {availableCategories.map(category => (
-                                  <option key={category} value={category}>
-                                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
-                          
-                          {/* Botón limpiar filtros */}
-                          {(searchTerm || selectedCategory !== 'all') && (
-                            <button
-                              onClick={() => {
-                                setSearchTerm('');
-                                setSelectedCategory('all');
-                              }}
-                              className="w-full px-3 py-2 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                            >
-                              Limpiar filtros
-                            </button>
-                          )}
-                        </div>
-                      )}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <LayoutTemplate className="w-5 h-5 text-indigo-500" />
+                        Plantillas ({filteredTemplates.length})
+                      </h3>
+                      <TemplateSelect
+                        templates={filteredTemplates}
+                        selectedTemplate={selectedTemplate}
+                        onTemplateSelect={handleTemplateSelect}
+                        isLoading={isLoadingTemplates}
+                        disabled={!selectedFamily}
+                      />
                     </div>
                   )}
 

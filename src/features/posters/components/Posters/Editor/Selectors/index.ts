@@ -2,6 +2,8 @@
 export { CategorySelect } from './CategorySelect';
 export { ComboSelect } from './ComboSelect';
 export { CompanySelect } from './CompanySelect';
+export { FamilyAndTemplateSelect } from './FamilyAndTemplateSelect';
+export { FamilySelect } from './FamilySelect';
 export { LocationSelect } from './LocationSelect';
 export { PaperFormatSelect } from './PaperFormatSelect';
 export { PlantillaSelect } from './PlantillaSelect';

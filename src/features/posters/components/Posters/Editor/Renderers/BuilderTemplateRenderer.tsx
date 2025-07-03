@@ -109,7 +109,7 @@ const getDynamicValue = (
     }
     
     // Si no hay cambios, procesar el template dinámico
-    const processedValue = processDynamicTemplate(content.dynamicTemplate, product);
+    const processedValue = processDynamicTemplate(content.dynamicTemplate, product, { prefix: true });
     console.log(`📊 Valor procesado del template: ${processedValue}`);
     return processedValue;
   }
@@ -250,6 +250,7 @@ const extractCSSStyles = (style: any): React.CSSProperties => {
     if (style.typography.textAlign) cssStyles.textAlign = style.typography.textAlign;
     if (style.typography.lineHeight) cssStyles.lineHeight = style.typography.lineHeight;
     if (style.typography.letterSpacing) cssStyles.letterSpacing = style.typography.letterSpacing;
+    if (style.typography.textDecoration) cssStyles.textDecoration = style.typography.textDecoration;
   }
   
   if (style?.color) {
@@ -446,10 +447,7 @@ const renderComponent = (
         lineHeight: 1.2,
         overflow: 'hidden',
         wordWrap: 'break-word',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: textValidAlign === 'center' ? 'center' : 
-                       textValidAlign === 'right' ? 'flex-end' : 'flex-start',
+        height: '100%',
         ...cssStyle,
         textAlign: textValidAlign,
         whiteSpace: 'pre-wrap'
@@ -712,8 +710,6 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
     overflow: 'hidden',
-    transform: scale !== 1 ? `scale(${scale})` : undefined,
-    transformOrigin: 'top left'
   };
 
   return (
@@ -721,22 +717,22 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
       {visibleComponents.map(component => {
         const componentStyle: React.CSSProperties = {
           position: 'absolute',
-          left: `${component.position.x * scale}px`,
-          top: `${component.position.y * scale}px`,
-          width: `${component.size.width * scale}px`,
-          height: `${component.size.height * scale}px`,
+          left: `${component.position.x}px`,
+          top: `${component.position.y}px`,
+          width: `${component.size.width}px`,
+          height: `${component.size.height}px`,
           transform: `rotate(${component.position.rotation || 0}deg) scale(${component.position.scaleX || 1}, ${component.position.scaleY || 1})`,
           visibility: component.isVisible ? 'visible' : 'hidden',
           opacity: component.style?.effects?.opacity ?? 1,
           fontFamily: component.style?.typography?.fontFamily,
-          fontSize: `${(component.style?.typography?.fontSize || 16) * scale}px`,
+          fontSize: `${(component.style?.typography?.fontSize || 16)}px`,
           fontWeight: component.style?.typography?.fontWeight,
           color: component.style?.color?.color,
           textAlign: component.style?.typography?.textAlign as any,
           backgroundColor: component.style?.color?.backgroundColor || 'transparent',
-          borderRadius: component.style?.border?.radius ? `${component.style.border.radius.topLeft * scale}px` : undefined,
+          borderRadius: component.style?.border?.radius ? `${component.style.border.radius.topLeft}px` : undefined,
           border: component.style?.border && component.style.border.width > 0
-            ? `${component.style.border.width * scale}px ${component.style.border.style || 'solid'} ${component.style.border.color || '#000000'}`
+            ? `${component.style.border.width}px ${component.style.border.style || 'solid'} ${component.style.border.color || '#000000'}`
             : 'none',
           boxSizing: 'border-box'
         };

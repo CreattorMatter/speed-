@@ -212,13 +212,17 @@ export const detectTemplateFields = (components: any[]): string[] => {
         const fieldMapping: Record<string, string> = {
           'product_name': 'nombre',
           'product_price': 'precioActual',
+          'price_previous': 'precioAnt',
           'product_sku': 'sap',
-          'product_brand': 'origen',
+          'product_ean': 'ean',
+          'product_brand': 'marcaTexto',
+          'product_origin': 'origen',
+          'stock_available': 'stock',
           'price_original': 'precioActual',
           'price_final': 'precioActual',
           'price_discount': 'precioActual',
           'discount_percentage': 'porcentaje',
-          'price_without_tax': 'precioSinImpuestos', // ✅ CORREGIDO: era 'price_without_taxes'
+          'price_without_tax': 'precioSinImpuestos',
           'price_without_taxes': 'precioSinImpuestos',
           'promotion_start_date': 'fechasDesde',
           'promotion_end_date': 'fechasHasta'

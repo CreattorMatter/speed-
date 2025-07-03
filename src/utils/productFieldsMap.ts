@@ -29,7 +29,7 @@ export interface DynamicField {
 // FORMATEADORES AUXILIARES  
 // =====================
 
-const formatPrice = (price: number, options?: { prefix?: string; precision?: number }): string => {
+const formatPrice = (price: number, options?: { prefix?: string | boolean; precision?: number }): string => {
   const formatOptions: Intl.NumberFormatOptions = {
     style: 'currency',
     currency: 'ARS',
@@ -39,7 +39,7 @@ const formatPrice = (price: number, options?: { prefix?: string; precision?: num
 
   let formattedPrice = new Intl.NumberFormat('es-AR', formatOptions).format(price);
 
-  if (options?.prefix === undefined || options.prefix === null || options.prefix.trim() === '') {
+  if (options?.prefix === false) {
     formattedPrice = formattedPrice.replace(/[$\s]/g, '');
   }
 
