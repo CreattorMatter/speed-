@@ -390,6 +390,21 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     }
   };
 
+  // 🚀 NUEVOS EFECTOS PARA INICIALIZAR NAVEGACIÓN DE PRODUCTOS
+  // Inicializar expandedProductIndex en 0 cuando hay productos y no hay índice expandido
+  useEffect(() => {
+    if (selectedProducts.length > 0 && expandedProductIndex === null) {
+      console.log('🎯 Inicializando navegación con primer producto');
+      setExpandedProductIndex(0);
+    } else if (selectedProducts.length === 0) {
+      setExpandedProductIndex(null);
+    }
+  }, [selectedProducts.length]);
+
+  // 🔧 DETERMINAR QUÉ PRODUCTO MOSTRAR
+  const currentProductIndex = expandedProductIndex ?? 0;
+  const currentProduct = selectedProducts.length > 0 ? selectedProducts[currentProductIndex] : undefined;
+
   // 🚀 LÓGICA DE IMPRESIÓN
   const handlePrintClick = () => {
     if (hasAnyChanges) {
@@ -489,6 +504,39 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
             </div>
             
             <div className="flex items-center gap-3">
+              {/* 🚀 NUEVO: Controles de navegación entre productos múltiples */}
+              {selectedProducts.length > 1 && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm">
+                  <button
+                    onClick={() => handleNavigateProduct('prev')}
+                    className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                    title="Producto anterior"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="text-sm font-medium text-gray-700 min-w-[80px] text-center">
+                    {currentProductIndex + 1} de {selectedProducts.length}
+                  </span>
+                  <button
+                    onClick={() => handleNavigateProduct('next')}
+                    className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                    title="Producto siguiente"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* 🆕 Información del producto actual */}
+              {currentProduct && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                  <Package className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800 max-w-[200px] truncate">
+                    {currentProduct.descripcion || currentProduct.name}
+                  </span>
+                </div>
+              )}
+
               {selectedProducts.length > 0 && (
                 <button
                   onClick={toggleInlineEdit}
@@ -533,12 +581,12 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
               <BuilderTemplateRenderer 
                 template={selectedTemplate.template}
                 components={selectedTemplate.template.defaultComponents}
-                product={selectedProducts.length > 0 ? selectedProducts[0] : undefined}
+                product={currentProduct}
                 productChanges={productChanges}
                 isPreview={selectedProducts.length === 0}
                 onEditField={handleInlineEdit}
                 enableInlineEdit={isInlineEditEnabled}
-                key={`${selectedProducts[0]?.id || 'no-product'}-${refreshKey}`}
+                key={`${currentProduct?.id || 'no-product'}-${refreshKey}-${currentProductIndex}`}
               />
             </div>
           )}
