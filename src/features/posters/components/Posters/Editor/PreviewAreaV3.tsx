@@ -229,41 +229,9 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     });
 
     if (selectedProducts.length > 0 && selectedTemplate && finalAvailableFields.length > 0) {
-      let changesMade = false;
-
-      selectedProducts.forEach(product => {
-        // Solo mapear si no hay cambios previos para este producto
-        const existingChanges = getEditedProduct(product.id);
-        if (!existingChanges) {
-          console.log(`🎯 Mapeando automáticamente campos para: ${product.name}`);
-          
-          // Mapear cada campo disponible en la plantilla
-          finalAvailableFields.forEach((field: string) => {
-            const productValue = getAutoMappedValue(product, field);
-            if (productValue !== null && productValue !== undefined) {
-              console.log(`📝 Mapeando ${field}: ${productValue}`);
-              
-              dispatch(trackProductChange({
-                productId: product.sku?.toString() || '',
-                productName: product.descripcion || '',
-                field,
-                originalValue: '',
-                newValue: productValue
-              }));
-              
-              changesMade = true;
-            }
-          });
-        } else {
-          console.log(`ℹ️ Producto ${product.name} ya tiene cambios, saltando mapeo automático`);
-        }
-      });
-      
-      // Trigger refresh SOLO si se hicieron cambios
-      if (changesMade) {
-        console.log('🔄 Refrescando vista con mapeo automático...');
-        setRefreshKey(prev => prev + 1);
-      }
+      console.log('✅ Mapeo automático disponible para renderización, pero NO se registra como cambios');
+      // Solo trigger refresh para re-renderizar con nuevos productos/plantilla
+      setRefreshKey(prev => prev + 1);
     } else {
       console.log('⚠️ Condiciones no cumplidas para mapeo automático:', {
         hasProducts: selectedProducts.length > 0,
