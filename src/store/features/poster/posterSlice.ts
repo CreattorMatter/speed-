@@ -500,17 +500,17 @@ export const posterSlice = createSlice({
               financing: state.selectedFinancing,
               product: {
                 id: product.id,
-                sku: product.sku,
-                name: product.name,
-                description: product.description,
-                price: product.price,
-                imageUrl: product.imageUrl,
-                category: product.category,
+                sku: product.sku.toString(),
+                name: product.name || product.descripcion,
+                description: product.descripcion,
+                price: product.precio || 0,
+                imageUrl: product.imageUrl || '',
+                category: product.category || product.seccion || '',
                 pricePerUnit: '',
                 points: '',
                 origin: '',
                 barcode: '',
-                brand: product.brand || '',
+                brand: product.brand || product.marcaTexto || '',
                 packUnit: ''
               },
               empresa: state.company ? COMPANIES.find(c => c.id === state.company) : undefined,
@@ -529,7 +529,13 @@ export const posterSlice = createSlice({
           }
         });
       }
-    }
+    },
+    // ✅ NUEVA ACCIÓN: Limpia todos los cambios de productos y resetea el estado
+    clearAllChanges: (state) => {
+      state.productChanges = {};
+      state.hasAnyChanges = false;
+      console.log('🔄 Redux: Se han limpiado todos los cambios de productos.');
+    },
   },
 });
 
@@ -597,7 +603,8 @@ export const {
   actualizarPreviewSettings,
   actualizarPrintSettings,
   togglePreviewAreaExpanded,
-  convertirProductosSeleccionadosParaImprimir
+  convertirProductosSeleccionadosParaImprimir,
+  clearAllChanges,
 } = posterSlice.actions;
 
 // Selectores

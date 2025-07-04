@@ -17,6 +17,7 @@ import {
   initializeWithProducts,
   selectIsProductSelectorOpen,
   setIsProductSelectorOpen,
+  clearAllChanges,
 } from '../../../../store/features/poster/posterSlice';
 import { AppDispatch } from '../../../../store';
 
@@ -248,6 +249,7 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
 
   const handleRemoveAllProducts = () => {
     dispatch(removeAllProducts());
+    dispatch(clearAllChanges());
   };
 
   // Handler para expansión de productos

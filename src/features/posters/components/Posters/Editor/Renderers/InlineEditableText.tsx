@@ -126,7 +126,7 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
     
     if (!isComplexTemplate) {
       if (fieldType.includes('precio') || fieldType.includes('price')) {
-        const numericValue = parseFloat(editValue.replace(/[^\d.,]/g, '').replace(',', '.'));
+        const numericValue = parseFloat(editValue.replace(/\./g, '').replace(',', '.'));
         processedValue = isNaN(numericValue) ? 0 : numericValue;
         console.log(`💰 Procesando precio: "${editValue}" → ${processedValue}`);
       } else if (fieldType.includes('porcentaje') || fieldType.includes('percentage')) {
@@ -233,7 +233,7 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
           
           if (!isComplexTemplate) {
             if (fieldType.includes('precio') || fieldType.includes('price')) {
-              const numericValue = parseFloat(editValue.replace(/[^\d.,]/g, '').replace(',', '.'));
+              const numericValue = parseFloat(editValue.replace(/\./g, '').replace(',', '.'));
               processedValue = isNaN(numericValue) ? 0 : numericValue;
             } else if (fieldType.includes('porcentaje') || fieldType.includes('percentage')) {
               const numericValue = parseFloat(editValue.replace('%', ''));
@@ -346,8 +346,7 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
             ? `${fieldType} - Cambio pendiente (Enter para confirmar)`
             : isComplexTemplate
               ? `Click para editar texto completo: "${value}"`
-              : `Click para editar ${fieldType}`
-      }
+              : `Click para editar ${fieldType}`      }
     >
       {children}
       

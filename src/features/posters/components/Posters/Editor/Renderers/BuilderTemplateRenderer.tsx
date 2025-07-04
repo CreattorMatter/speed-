@@ -54,15 +54,7 @@ const getDynamicValue = (
       
       if (change) {
         console.log(`📝 ✅ CAMBIO ENCONTRADO para ${field}: ${change.newValue} (ID: ${componentId})`);
-        // Si el nuevo valor es numérico y el campo es precio, formatear
-        if (field.includes('precio') || field.includes('price')) {
-          const numValue = typeof change.newValue === 'string' 
-            ? parseFloat(change.newValue.replace(/[^\d.,]/g, '').replace(',', '.'))
-            : change.newValue;
-          const formattedValue = !isNaN(numValue) ? `$ ${numValue.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : change.newValue;
-          console.log(`💰 Precio formateado: ${change.newValue} → ${formattedValue}`);
-          return formattedValue;
-        }
+        // Devolver el valor tal cual lo guardó el usuario.
         return change.newValue;
       } else {
         console.log(`📝 ❌ NO se encontró cambio para campo "${field}" (componentId: ${componentId})`);
@@ -136,17 +128,7 @@ const getDynamicValue = (
       
       if (change) {
         console.log(`📝 ✅ CAMBIO ENCONTRADO para campo dinámico ${fieldType}: ${change.newValue} (ID único: ${uniqueFieldId})`);
-        
-        // 🔧 APLICAR FORMATEO DE PRECIO SI ES NECESARIO
-        if (fieldType.includes('precio') || fieldType.includes('price')) {
-          const numValue = typeof change.newValue === 'string' 
-            ? parseFloat(change.newValue.replace(/[^\d.,]/g, '').replace(',', '.'))
-            : change.newValue;
-          const formattedValue = !isNaN(numValue) ? `$ ${numValue.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : change.newValue;
-          console.log(`💰 Precio dinámico formateado: ${change.newValue} → ${formattedValue}`);
-          return formattedValue;
-        }
-        
+        // El input del usuario es la fuente de verdad. No reformatear.
         return String(change.newValue);
       } else {
         console.log(`📝 ❌ NO se encontró cambio para campo dinámico "${fieldType}" (ID único: ${uniqueFieldId})`);
@@ -155,6 +137,10 @@ const getDynamicValue = (
     
     // Si no hay cambios, procesar el template dinámico usando la configuración del componente
     const outputFormat = content.outputFormat || {};
+    // 💡 Asegurar que el prefijo se base en el contenido del template
+    if (content.dynamicTemplate) {
+        outputFormat.prefix = content.dynamicTemplate.includes('$');
+    }
     const processedValue = processDynamicTemplate(content.dynamicTemplate, product, outputFormat);
     console.log(`📊 Valor procesado del template: ${processedValue}`, { outputFormat });
     return processedValue;
@@ -256,17 +242,7 @@ const getDynamicValue = (
       
       if (change) {
         console.log(`📝 ✅ CAMBIO ENCONTRADO para campo estático ${fieldType}: ${change.newValue} (ID único: ${uniqueFieldId})`);
-        
-        // 🔧 APLICAR FORMATEO DE PRECIO SI ES NECESARIO
-        if (fieldType.includes('precio') || fieldType.includes('price')) {
-          const numValue = typeof change.newValue === 'string' 
-            ? parseFloat(change.newValue.replace(/[^\d.,]/g, '').replace(',', '.'))
-            : change.newValue;
-          const formattedValue = !isNaN(numValue) ? `$ ${numValue.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : change.newValue;
-          console.log(`💰 Precio estático formateado: ${change.newValue} → ${formattedValue}`);
-          return formattedValue;
-        }
-        
+        // El input del usuario es la fuente de verdad. No reformatear.
         return String(change.newValue);
       } else {
         console.log(`📝 ❌ NO se encontró cambio para campo estático "${fieldType}" (ID único: ${uniqueFieldId})`);
@@ -679,7 +655,7 @@ const renderComponent = (
             inputType={getInputType(fieldType, !!isComplex, !!isStaticField)}
             placeholder={getPlaceholder(fieldType, !!isComplex, !!isStaticField)}
             maxLength={fieldType.includes('descripcion') ? 100 : (isComplex || isStaticField) ? 200 : undefined}
-            isComplexTemplate={!!(isComplex || isStaticField)}
+            isComplexTemplate={true} // FORZAR MODO TEXTO SIEMPRE
             originalTemplate={textValue}
           >
             <div title={`${fieldType}: ${textValue}${isComplex ? ' (Editar texto completo)' : isStaticField ? ' (Campo estático editable)' : ''} [ID: ${component.id}]`}>
