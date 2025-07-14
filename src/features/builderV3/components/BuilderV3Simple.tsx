@@ -6,7 +6,7 @@ import React from 'react';
 import { ComponentsPanelV3 } from './ComponentsPanelV3';
 import { ComponentsLibraryV3, ComponentTypeV3, PositionV3 } from '../types';
 
-// Mock components library for testing
+// Mock components library for testing - ACTUALIZADA CON NUEVAS CATEGORÍAS
 const mockComponentsLibrary: ComponentsLibraryV3 = {
   'Texto y Datos': [
     {
@@ -25,17 +25,90 @@ const mockComponentsLibrary: ComponentsLibraryV3 = {
       tags: ['text', 'dynamic', 'universal']
     }
   ],
-  'Imágenes y Media': [
+  'Imagen de Header': [
     {
       type: 'image-header',
-      name: 'Imagen de Header',
-      description: 'Imagen promocional principal',
-      icon: '🖼️',
-      category: 'Imágenes y Media',
+      name: 'Header Promocional',
+      description: 'Imagen principal de encabezado para promociones',
+      icon: '🏷️',
+      category: 'Imagen de Header',
       defaultSize: { width: 400, height: 120, isProportional: true },
       defaultStyle: {},
-      defaultContent: { fieldType: 'static', imageUrl: '', imageAlt: 'Header' },
-      tags: ['image', 'header']
+      defaultContent: { 
+        fieldType: 'static', 
+        imageUrl: '', 
+        imageAlt: 'Header promocional' 
+      },
+      tags: ['image', 'header', 'promotion', 'migration-header']
+    }
+  ],
+  'Imagen de Footer': [
+    {
+      type: 'image-footer',
+      name: 'Footer Promocional',
+      description: 'Imagen de pie de página con información adicional',
+      icon: '📋',
+      category: 'Imagen de Footer',
+      defaultSize: { width: 400, height: 80, isProportional: true },
+      defaultStyle: {},
+      defaultContent: { 
+        fieldType: 'static', 
+        imageUrl: '', 
+        imageAlt: 'Footer promocional' 
+      },
+      tags: ['image', 'footer', 'information', 'migration-footer']
+    }
+  ],
+  'Imagen de Fondo': [
+    {
+      type: 'image-background',
+      name: 'Fondo del Cartel',
+      description: 'Imagen de fondo que cubre toda la plantilla',
+      icon: '🖼️',
+      category: 'Imagen de Fondo',
+      defaultSize: { width: 600, height: 800, isProportional: true },
+      defaultStyle: {},
+      defaultContent: { 
+        fieldType: 'static', 
+        imageUrl: '', 
+        imageAlt: 'Fondo del cartel' 
+      },
+      tags: ['image', 'background', 'template', 'migration-background']
+    }
+  ],
+  'Imágenes y Media': [
+    {
+      type: 'image-product',
+      name: 'Imagen de Producto',
+      description: 'Imagen específica del producto',
+      icon: '🖼️',
+      category: 'Imágenes y Media',
+      defaultSize: { width: 200, height: 200, isProportional: true },
+      defaultStyle: {},
+      defaultContent: { fieldType: 'static', imageUrl: '', imageAlt: 'Producto' },
+      tags: ['image', 'product']
+    },
+    {
+      type: 'image-brand-logo',
+      name: 'Logo de Marca',
+      description: 'Logo o marca del producto',
+      icon: '🏪',
+      category: 'Imágenes y Media',
+      defaultSize: { width: 100, height: 50, isProportional: true },
+      defaultStyle: {},
+      defaultContent: { fieldType: 'static', imageUrl: '', imageAlt: 'Logo' },
+      tags: ['image', 'brand', 'logo']
+    },
+    {
+      type: 'image-decorative',
+      name: 'Imagen Decorativa',
+      description: 'Imagen decorativa o ilustrativa',
+      icon: '🎨',
+      category: 'Imágenes y Media',
+      defaultSize: { width: 150, height: 150, isProportional: true },
+      defaultStyle: {},
+      defaultContent: { fieldType: 'static', imageUrl: '', imageAlt: 'Decorativa' },
+      tags: ['image', 'decorative', 'illustration']
     }
   ],
   'QR y Enlaces': [
@@ -51,9 +124,78 @@ const mockComponentsLibrary: ComponentsLibraryV3 = {
       tags: ['qr', 'dynamic']
     }
   ],
-  'Fechas y Períodos': [],
-  'Elementos Decorativos': [],
-  'Contenedores y Layout': []
+  'Fechas y Períodos': [
+    {
+      type: 'field-dynamic-date',
+      name: 'Fecha Dinámica',
+      description: 'Campo de fecha configurable',
+      icon: '📅',
+      category: 'Fechas y Períodos',
+      defaultSize: { width: 200, height: 30, isProportional: false },
+      defaultStyle: {},
+      defaultContent: { fieldType: 'static', staticValue: new Date().toLocaleDateString() },
+      tags: ['date', 'dynamic']
+    }
+  ],
+  'Elementos Decorativos': [
+    {
+      type: 'shape-geometric',
+      name: 'Forma Geométrica',
+      description: 'Formas básicas como rectángulos, círculos',
+      icon: '⬜',
+      category: 'Elementos Decorativos',
+      defaultSize: { width: 100, height: 100, isProportional: false },
+      defaultStyle: {},
+      defaultContent: { fieldType: 'static', shapeConfig: { type: 'rectangle' } },
+      tags: ['shape', 'geometric']
+    },
+    {
+      type: 'decorative-line',
+      name: 'Línea Decorativa',
+      description: 'Líneas para separar secciones',
+      icon: '➖',
+      category: 'Elementos Decorativos',
+      defaultSize: { width: 200, height: 2, isProportional: false },
+      defaultStyle: {},
+      defaultContent: { fieldType: 'static', lineConfig: { type: 'solid' } },
+      tags: ['line', 'separator']
+    },
+    {
+      type: 'decorative-icon',
+      name: 'Ícono Decorativo',
+      description: 'Íconos y símbolos decorativos',
+      icon: '⭐',
+      category: 'Elementos Decorativos',
+      defaultSize: { width: 50, height: 50, isProportional: true },
+      defaultStyle: {},
+      defaultContent: { fieldType: 'static', iconConfig: { type: 'star' } },
+      tags: ['icon', 'decorative']
+    }
+  ],
+  'Contenedores y Layout': [
+    {
+      type: 'container-flexible',
+      name: 'Contenedor Flexible',
+      description: 'Contenedor con layout flexible',
+      icon: '📦',
+      category: 'Contenedores y Layout',
+      defaultSize: { width: 300, height: 200, isProportional: false },
+      defaultStyle: {},
+      defaultContent: { fieldType: 'static', containerConfig: { type: 'flexible' } },
+      tags: ['container', 'layout', 'flexible']
+    },
+    {
+      type: 'container-grid',
+      name: 'Contenedor Grid',
+      description: 'Contenedor con layout de grilla',
+      icon: '🔲',
+      category: 'Contenedores y Layout',
+      defaultSize: { width: 300, height: 200, isProportional: false },
+      defaultStyle: {},
+      defaultContent: { fieldType: 'static', containerConfig: { type: 'grid' } },
+      tags: ['container', 'layout', 'grid']
+    }
+  ]
 };
 
 export const BuilderV3Simple: React.FC = () => {

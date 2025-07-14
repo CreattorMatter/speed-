@@ -7,6 +7,124 @@ import { TemplateV3, DraggableComponentV3, CanvasStateV3, ComponentTypeV3, Posit
 import { ImageUploadComponent } from './ImageUploadComponent';
 import { processDynamicContent, defaultMockData } from '../../../utils/dynamicContentProcessor';
 import { EnhancedRulers } from './EnhancedRulers';
+import { calcularDescuentoPorcentaje } from '../../../data/products';
+
+// Mock data para preview (similar al BuilderTemplateRenderer)
+const mockProduct = {
+  id: 'example-1',
+  tienda: 'E000',
+  sku: 12345,
+  ean: 7890123456789,
+  descripcion: 'Producto de Ejemplo',
+  precio: 99999,
+  precioAnt: 119999,
+  stockDisponible: 50,
+  basePrice: 85000,
+  marcaTexto: 'Marca Ejemplo',
+  seccion: 'Electrónicos',
+  imageUrl: '/images/example-product.jpg'
+};
+
+/**
+ * 🆕 FUNCIÓN PARA MOSTRAR NOMBRES TÉCNICOS DURANTE EDICIÓN
+ * Extrae los nombres técnicos de los campos en lugar de procesarlos con datos mock
+ */
+const getFieldTechnicalNames = (component: any): string => {
+  const content = component.content as any;
+  
+  if (!content) {
+    return 'Sin contenido';
+  }
+  
+  // 1. Contenido estático - mostrar tal como está
+  if (content?.fieldType === 'static') {
+    return content?.staticValue || content?.text || 'Texto estático';
+  }
+  
+  // 2. Campo calculado - mostrar la expresión técnica sin procesar en el canvas
+  if (content?.fieldType === 'calculated' && content?.calculatedField?.expression) {
+    console.log(`📝 [Canvas] Mostrando expresión técnica del campo calculado: "${content.calculatedField.expression}"`);
+    return content.calculatedField.expression;
+  }
+  
+  // 3. Plantilla dinámica - mostrar campos técnicos sin procesar
+  if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
+    // Mantener los nombres técnicos tal como están: [product_name], [product_price], etc.
+    return content.dynamicTemplate;
+  }
+  
+  // 4. Campo SAP directo - mostrar nombre técnico
+  if (content?.fieldType === 'sap-product' && content?.sapField) {
+    return `[${content.sapField}]`;
+  }
+  
+  // 5. Campo promoción directo - mostrar nombre técnico  
+  if (content?.fieldType === 'promotion-data' && content?.promotionField) {
+    return `[${content.promotionField}]`;
+  }
+  
+  // 6. QR Code
+  if (content?.fieldType === 'qr-code') {
+    return 'QR Code';
+  }
+  
+  // 7. Imagen
+  if (content?.fieldType === 'image') {
+    return 'Imagen';
+  }
+  
+  // 8. Fallback para textConfig (campos con configuración específica)
+  if (content?.textConfig?.contentType) {
+    const contentTypeMap: Record<string, string> = {
+      'product-name': '[product_name]',
+      'product-description': '[product_description]', 
+      'product-sku': '[product_sku]',
+      'product-brand': '[product_brand]',
+      'price-original': '[product_price]',
+      'price-final': '[product_price]',
+      'price-discount': '[price_discount]',
+      'discount-percentage': '[discount_percentage]',
+      'price-without-taxes': '[price_without_tax]',
+      'promotion-start-date': '[promotion_start_date]',
+      'promotion-end-date': '[promotion_end_date]',
+      'financing-text': '[financing_text]',
+      'promotion-title': '[promotion_title]'
+    };
+    
+    return contentTypeMap[content.textConfig.contentType] || `[${content.textConfig.contentType}]`;
+  }
+  
+  // 9. Campos de fecha específicos
+  if (content?.dateConfig?.type) {
+    const dateTypeMap: Record<string, string> = {
+      'current-date': '[current_date]',
+      'promotion-start': '[promotion_start_date]',
+      'promotion-end': '[promotion_end_date]'
+    };
+    
+    return dateTypeMap[content.dateConfig.type] || `[${content.dateConfig.type}]`;
+  }
+  
+  // 10. Fallback para valores directos que pueden contener campos dinámicos
+  if (content?.staticValue) {
+    // Si contiene campos dinámicos, mostrarlos sin procesar
+    if (content.staticValue.includes('[') && content.staticValue.includes(']')) {
+      return content.staticValue;
+    }
+    return content.staticValue;
+  }
+  
+  if (content?.text) {
+    // Si contiene campos dinámicos, mostrarlos sin procesar
+    if (content.text.includes('[') && content.text.includes(']')) {
+      return content.text;
+    }
+    return content.text;
+  }
+  
+  // 11. Fallback final
+  return '[campo_dinámico]';
+};
 
 interface CanvasEditorV3Props {
   template: TemplateV3 | undefined;
@@ -570,7 +688,8 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
 
     switch (component.type) {
       case 'field-dynamic-text':
-        const dynamicText = processDynamicContent(component, defaultMockData);
+        // 🆕 CAMBIO: Mostrar nombres técnicos durante edición en lugar de datos mock
+        const dynamicText = getFieldTechnicalNames(component);
         return (
           <div 
             style={{
@@ -582,6 +701,7 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
               boxSizing: 'border-box'
             }}
             className="w-full h-full select-none"
+            title={`Campo dinámico: ${dynamicText}`}
           >
             <div style={{ textAlign: component.style?.typography?.textAlign as any || 'left' }}>
               {dynamicText}
@@ -625,7 +745,8 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
         );
 
       case 'field-dynamic-date':
-        const dynamicDate = processDynamicContent(component, defaultMockData);
+        // 🆕 CAMBIO: Mostrar nombres técnicos durante edición en lugar de datos mock
+        const dynamicDate = getFieldTechnicalNames(component);
         return (
           <div 
             style={{
@@ -637,6 +758,7 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
               boxSizing: 'border-box'
             }}
             className="w-full h-full select-none"
+            title={`Campo de fecha: ${dynamicDate}`}
           >
             <div style={{ textAlign: component.style?.typography?.textAlign as any || 'left' }}>
               {dynamicDate}
@@ -778,18 +900,6 @@ const EnhancedComponentRenderer: React.FC<EnhancedComponentRendererProps> = ({
             }}
           >
             ↖
-          </div>
-          
-          {/* Indicador inferior derecho con dimensiones */}
-          <div 
-            className="absolute -bottom-6 -right-2 bg-gray-800 text-white px-2 py-1 rounded text-xs font-mono"
-            style={{
-              fontSize: `${Math.max(8, 10 / zoom)}px`,
-              transform: zoom < 0.5 ? `scale(${1 / zoom})` : 'none',
-              transformOrigin: 'right bottom'
-            }}
-          >
-            {Math.round(component.size.width)}×{Math.round(component.size.height)}
           </div>
         </>
       )}

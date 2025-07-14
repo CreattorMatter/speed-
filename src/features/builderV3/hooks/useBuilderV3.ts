@@ -414,39 +414,201 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
   const operations: BuilderOperationsV3 = {
     // ===== GESTIÓN DE FAMILIAS =====
     loadFamily: useCallback(async (familyId: string) => {
-      dispatch({ type: 'SET_LOADING', payload: true });
       try {
-        const family = families.find(f => f.id === familyId);
-        if (!family) throw new Error('Familia no encontrada');
-        
+      dispatch({ type: 'SET_LOADING', payload: true });
+        const family = await familiesV3Service.getById(familyId);
+        if (!family) {
+          throw new Error('Familia no encontrada');
+        }
         dispatch({ type: 'SET_FAMILY', payload: family });
         return family;
+      } catch (error) {
+        console.error('Error loading family:', error);
+        toast.error('Error al cargar familia');
+        throw error;
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
-    }, [families]),
-
-    createFamily: useCallback(async (family) => {
-      // Implementar creación de familia
-      throw new Error('No implementado');
     }, []),
 
-    updateFamily: useCallback(async (familyId, updates) => {
-      // Implementar actualización de familia
-      throw new Error('No implementado');
-    }, []),
-
-    deleteFamily: useCallback(async (familyId) => {
-      // Implementar eliminación de familia
-      throw new Error('No implementado');
-    }, []),
-
-    migrateFamily: useCallback(async (fromFamilyId, toFamilyId, options) => {
-      dispatch({ type: 'SET_LOADING', payload: true });
+    createFamily: useCallback(async (family: Omit<FamilyV3, 'id' | 'createdAt' | 'updatedAt'>) => {
       try {
-        // Simular migración
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        toast.success('Migración completada');
+        dispatch({ type: 'SET_SAVING', payload: true });
+        const newFamily = await familiesV3Service.createFamily(family);
+        toast.success('Familia creada exitosamente');
+        return newFamily;
+      } catch (error) {
+        console.error('Error creating family:', error);
+        toast.error('Error al crear familia');
+        throw error;
+      } finally {
+        dispatch({ type: 'SET_SAVING', payload: false });
+      }
+    }, []),
+
+    updateFamily: useCallback(async (familyId: string, updates: Partial<FamilyV3>) => {
+      try {
+        dispatch({ type: 'SET_SAVING', payload: true });
+        const updatedFamily = await familiesV3Service.updateFamily(familyId, updates);
+        dispatch({ type: 'SET_FAMILY', payload: updatedFamily });
+        toast.success('Familia actualizada exitosamente');
+        return updatedFamily;
+      } catch (error) {
+        console.error('Error updating family:', error);
+        toast.error('Error al actualizar familia');
+        throw error;
+      } finally {
+        dispatch({ type: 'SET_SAVING', payload: false });
+      }
+    }, []),
+
+    deleteFamily: useCallback(async (familyId: string) => {
+      try {
+        dispatch({ type: 'SET_SAVING', payload: true });
+        await familiesV3Service.deleteFamily(familyId);
+        toast.success('Familia eliminada exitosamente');
+      } catch (error) {
+        console.error('Error deleting family:', error);
+        toast.error('Error al eliminar familia');
+        throw error;
+      } finally {
+        dispatch({ type: 'SET_SAVING', payload: false });
+      }
+    }, []),
+
+    migrateFamily: useCallback(async (fromFamilyId: string, toFamilyId: string, options: {
+      migrateAllTemplates: boolean;
+      replaceHeaders: boolean;
+      replaceColors: boolean;
+      templateIds?: string[];
+    }) => {
+      try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+        
+        // 1. Obtener familias origen y destino
+        const fromFamily = await familiesV3Service.getById(fromFamilyId);
+        const toFamily = await familiesV3Service.getById(toFamilyId);
+        
+        if (!fromFamily) {
+          throw new Error('Familia origen no encontrada');
+        }
+        if (!toFamily) {
+          throw new Error('Familia destino no encontrada');
+        }
+        
+        // 2. Obtener plantillas a migrar
+        const templatesToMigrate = options.migrateAllTemplates 
+          ? fromFamily.templates 
+          : fromFamily.templates.filter(t => options.templateIds?.includes(t.id));
+        
+        // 3. Crear plantillas migradas con tags automáticos
+        const migratedTemplates = await Promise.all(
+          templatesToMigrate.map(async (template) => {
+            const migratedComponents = template.defaultComponents.map(component => {
+              let migratedComponent = { ...component };
+              
+              // 🎯 MIGRACIÓN AUTOMÁTICA POR TAGS
+              if (component.migrationTags?.autoReplace) {
+                switch (component.migrationTags.migrationTag) {
+                  case 'header':
+                    if (options.replaceHeaders && toFamily.defaultStyle.visualEffects.headerStyle) {
+                      migratedComponent.style = {
+                        ...migratedComponent.style,
+                        ...toFamily.defaultStyle.visualEffects.headerStyle
+                      };
+                      
+                      // Reemplazar imagen de header si está disponible
+                      if (toFamily.headerImage && component.type === 'image-header') {
+                        migratedComponent.content = {
+                          ...migratedComponent.content,
+                          imageUrl: toFamily.headerImage
+                        };
+                      }
+                    }
+                    break;
+                    
+                  case 'footer':
+                    if (toFamily.defaultStyle.visualEffects.footerStyle) {
+                      migratedComponent.style = {
+                        ...migratedComponent.style,
+                        ...toFamily.defaultStyle.visualEffects.footerStyle
+                      };
+                    }
+                    break;
+                    
+                  case 'background':
+                    // Aplicar estilo de fondo de la nueva familia
+                    if (toFamily.templates[0]?.canvas.backgroundImage) {
+                      migratedComponent.content = {
+                        ...migratedComponent.content,
+                        imageUrl: toFamily.templates[0].canvas.backgroundImage
+                      };
+                    }
+                    break;
+                }
+              }
+              
+              // 🎨 MIGRACIÓN DE COLORES GLOBALES
+              if (options.replaceColors && toFamily.migrationConfig?.headerReplacement?.replaceColors) {
+                const newColors = toFamily.migrationConfig.headerReplacement.newColors;
+                if (newColors) {
+                  migratedComponent.style = {
+                    ...migratedComponent.style,
+                    color: {
+                      ...migratedComponent.style?.color,
+                      color: newColors.text || migratedComponent.style?.color?.color,
+                      backgroundColor: newColors.background || migratedComponent.style?.color?.backgroundColor
+                    }
+                  };
+                }
+              }
+              
+              return migratedComponent;
+            });
+            
+            // Crear nueva plantilla migrada
+            const migratedTemplate: Omit<TemplateV3, 'id' | 'createdAt' | 'updatedAt'> = {
+              name: `${template.name} (Migrado a ${toFamily.displayName})`,
+              familyType: toFamily.name,
+              description: `${template.description} - Migrado desde ${fromFamily.displayName}`,
+              thumbnail: template.thumbnail,
+              tags: [...template.tags, 'migrated', `from-${fromFamily.name}`],
+              category: template.category,
+              canvas: {
+                ...template.canvas,
+                backgroundColor: toFamily.templates[0]?.canvas.backgroundColor || template.canvas.backgroundColor,
+                backgroundImage: toFamily.templates[0]?.canvas.backgroundImage || template.canvas.backgroundImage
+              },
+              defaultComponents: migratedComponents,
+              familyConfig: {
+                ...template.familyConfig,
+                headerImage: toFamily.headerImage || template.familyConfig.headerImage,
+                typography: toFamily.defaultStyle.typography || template.familyConfig.typography
+              },
+              validationRules: template.validationRules,
+              exportSettings: template.exportSettings,
+              isPublic: template.isPublic,
+              isActive: template.isActive,
+              version: 1,
+              createdBy: template.createdBy,
+              lastUsed: undefined
+            };
+            
+            return await templatesV3Service.create(migratedTemplate);
+          })
+        );
+        
+        // 4. Actualizar familia destino con nuevas plantillas
+        await familiesV3Service.updateFamily(toFamilyId, {
+          templates: [...toFamily.templates, ...migratedTemplates]
+        });
+        
+        toast.success(`${migratedTemplates.length} plantillas migradas exitosamente a ${toFamily.displayName}`);
+        
+      } catch (error) {
+        console.error('Error migrating family:', error);
+        toast.error('Error en la migración de familias');
+        throw error;
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }

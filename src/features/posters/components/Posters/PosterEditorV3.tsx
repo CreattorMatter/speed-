@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { LayoutTemplate, BoxSelect } from 'lucide-react';
+import { LayoutTemplate, BoxSelect, FileSpreadsheet, Download, Upload } from 'lucide-react';
 
 // Importar hooks de Redux y el slice de poster
 import { useSelector, useDispatch } from 'react-redux';
@@ -26,6 +26,7 @@ import { useMemo } from 'react';
 
 // Servicios
 import { posterTemplateService, PosterFamilyData, PosterTemplateData } from '../../../../services/posterTemplateService';
+import { downloadSKUTemplate, importProductsFromExcel, exportSelectedProductsToExcel, validateExcelFile, ExcelImportResult } from '../../../../services/excelTemplateService';
 
 // Componentes
 import { PosterEditorHeader } from "./Editor/PosterEditorHeader";
@@ -40,6 +41,7 @@ import { TemplateSelect } from "./Editor/Selectors/TemplateSelect";
 // Datos
 import { COMPANIES } from "../../../../data/companies";
 import { productos as products, type Product } from "../../../../data/products";
+import { type ProductoReal } from "../../../../types/product";
 
 // Tipos específicos para las props del componente
 interface InitialPromotion {
@@ -88,6 +90,11 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
   
   // Estado para producto expandido
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
+
+  // 🆕 Estados para funcionalidad Excel
+  const [isImportingExcel, setIsImportingExcel] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importResult, setImportResult] = useState<ExcelImportResult | null>(null);
 
   // Filtrar plantillas de la familia seleccionada
   const filteredTemplates = useMemo(() => {
@@ -257,6 +264,84 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
     setExpandedProductId(productId);
   };
 
+  // 🆕 Handlers para funcionalidad Excel
+  const handleDownloadTemplate = () => {
+    try {
+      downloadSKUTemplate();
+      toast.success('Template Excel descargado exitosamente');
+    } catch (error) {
+      console.error('Error descargando template:', error);
+      toast.error('Error al descargar el template Excel');
+    }
+  };
+
+  const handleImportFromExcel = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls,.csv';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      // Validar archivo
+      if (!validateExcelFile(file)) {
+        toast.error('Formato de archivo no válido. Use .xlsx, .xls o .csv');
+        return;
+      }
+
+      try {
+        setIsImportingExcel(true);
+        const result = await importProductsFromExcel(file);
+        setImportResult(result);
+        
+        if (result.success) {
+          if (result.matchedProducts.length > 0) {
+            // Los productos ya son ProductoReal, que es compatible con Product
+            const compatibleProducts: Product[] = result.matchedProducts;
+
+            // Actualizar productos seleccionados usando SKU como ID
+            dispatch(setSelectedProducts(compatibleProducts.map(p => String(p.sku || p.id))));
+            
+            if (compatibleProducts.length > 0) {
+              dispatch(setSelectedProduct(compatibleProducts[0]));
+            }
+
+            setShowImportModal(true);
+            toast.success(`${result.matchedProducts.length} productos importados exitosamente`);
+          } else {
+            toast('No se encontraron productos con los SKUs del archivo');
+          }
+        } else {
+          toast.error(result.errorMessage || 'Error al procesar el archivo Excel');
+        }
+      } catch (error) {
+        console.error('Error importando Excel:', error);
+        toast.error('Error al importar productos desde Excel');
+      } finally {
+        setIsImportingExcel(false);
+      }
+    };
+    input.click();
+  };
+
+  const handleExportToExcel = () => {
+    try {
+      if (selectedProducts.length === 0) {
+        toast('No hay productos seleccionados para exportar');
+        return;
+      }
+
+      // Los productos seleccionados ya son ProductoReal, solo filtrar los existentes
+      const productsToExport = selectedProducts.filter(product => product != null) as ProductoReal[];
+
+      exportSelectedProductsToExcel(productsToExport);
+      toast.success('Productos exportados exitosamente');
+    } catch (error) {
+      console.error('Error exportando productos:', error);
+      toast.error('Error al exportar productos a Excel');
+    }
+  };
+
   // Handlers para búsqueda (simplificado por ahora)
   const handleSearchPosters = () => {
     console.log('🔍 Búsqueda de carteles (por implementar)');
@@ -378,6 +463,40 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
                               Limpiar todo
                             </button>
                           </div>
+                          
+                          {/* 🆕 BOTONES EXCEL */}
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={handleDownloadTemplate}
+                              className="flex-1 px-3 py-2 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                              title="Descargar template Excel con formato para SKUs"
+                            >
+                              <Download className="w-3 h-3" />
+                              Template Excel
+                            </button>
+                            <button
+                              onClick={handleImportFromExcel}
+                              disabled={isImportingExcel}
+                              className="flex-1 px-3 py-2 bg-orange-500 text-white text-xs rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                              title="Importar productos desde Excel usando SKUs"
+                            >
+                              <Upload className="w-3 h-3" />
+                              {isImportingExcel ? 'Importando...' : 'Importar Excel'}
+                            </button>
+                          </div>
+                          
+                          {selectedProducts.length > 0 && (
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={handleExportToExcel}
+                                className="w-full px-3 py-2 bg-purple-500 text-white text-xs rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
+                                title="Exportar productos seleccionados a Excel"
+                              >
+                                <FileSpreadsheet className="w-3 h-3" />
+                                Exportar a Excel
+                              </button>
+                            </div>
+                          )}
                           
                           {/* Información adicional */}
                           <div className="mt-3 pt-3 border-t border-green-200">

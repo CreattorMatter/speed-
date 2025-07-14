@@ -3,6 +3,7 @@ import { TemplateV3, DraggableComponentV3 } from '../../../../../../features/bui
 import { ProductoReal } from '../../../../../../types/product';
 import { getDynamicFieldValue, processDynamicTemplate } from '../../../../../../utils/productFieldsMap';
 import { InlineEditableText } from './InlineEditableText';
+import { calcularDescuentoPorcentaje } from '../../../../../../data/products';
 
 interface BuilderTemplateRendererProps {
   template: TemplateV3;
@@ -144,6 +145,125 @@ const getDynamicValue = (
     const processedValue = processDynamicTemplate(content.dynamicTemplate, product, outputFormat);
     console.log(`📊 Valor procesado del template: ${processedValue}`, { outputFormat });
     return processedValue;
+  }
+
+  // 🆕 NUEVO: SISTEMA DE CAMPOS CALCULADOS
+  if (content?.fieldType === 'calculated' && content?.calculatedField?.expression) {
+    if (!product) {
+      console.log(`🧮 Campo calculado sin producto: mostrando placeholder`);
+      return 'Selecciona un producto';
+    }
+    console.log(`🧮 Procesando campo calculado:`, {
+      expression: content.calculatedField.expression,
+      product: {
+        precio: product.precio,
+        precioAnt: product.precioAnt,
+        basePrice: product.basePrice,
+        stockDisponible: product.stockDisponible
+      },
+      outputFormat: content.outputFormat
+    });
+    
+    // Primero verificar cambios del usuario para el campo calculado
+    const fieldType = 'calculated';
+    if (productChanges && productChanges[product.id]) {
+      const changes = productChanges[product.id].changes || [];
+      
+      // 🔧 BUSCAR CAMBIO CON ID ÚNICO PRIMERO (fieldType_componentId)
+      const uniqueFieldId = `${fieldType}_${componentId}`;
+      let change = changes.find((c: any) => c.field === uniqueFieldId);
+      
+      // Si no se encuentra con ID único, buscar con el fieldType original (para compatibilidad)
+      if (!change) {
+        change = changes.find((c: any) => c.field === fieldType);
+      }
+      
+      if (change) {
+        console.log(`📝 ✅ CAMBIO ENCONTRADO para campo calculado ${fieldType}: ${change.newValue} (ID único: ${uniqueFieldId})`);
+        // El input del usuario es la fuente de verdad. No reformatear.
+        return String(change.newValue);
+      } else {
+        console.log(`📝 ❌ NO se encontró cambio para campo calculado "${fieldType}" (ID único: ${uniqueFieldId})`);
+      }
+    }
+    
+    // Si no hay cambios, procesar la expresión calculada
+    try {
+      let expression = content.calculatedField.expression;
+      console.log(`🔢 Expresión original: "${expression}"`);
+      
+      // Obtener el porcentaje de descuento de manera segura
+      let discountPercentage = 0;
+      try {
+        discountPercentage = calcularDescuentoPorcentaje(product);
+      } catch (error) {
+        console.warn('⚠️ Error calculando descuento:', error);
+        discountPercentage = 0;
+      }
+      
+      // Reemplazar campos con valores reales del producto
+      const replacements = {
+        '[product_price]': String(product.precio || 0),
+        '[discount_percentage]': String(discountPercentage),
+        '[price_previous]': String(product.precioAnt || 0),
+        '[stock_available]': String(product.stockDisponible || 0),
+        '[price_base]': String(product.basePrice || 0),
+        '[price_without_tax]': String(product.basePrice || product.precio || 0)
+      };
+      
+      console.log(`🔄 Reemplazos a realizar:`, replacements);
+      
+      // Aplicar reemplazos
+      for (const [placeholder, value] of Object.entries(replacements)) {
+        expression = expression.replace(new RegExp(placeholder.replace(/[[\]]/g, '\\$&'), 'g'), value);
+      }
+      
+      console.log(`🔢 Expresión después de reemplazos: "${expression}"`);
+      
+      // Validar que solo contenga números, operadores y espacios
+      if (expression && /^[0-9+\-*/().\s]+$/.test(expression)) {
+        console.log(`✅ Expresión válida, evaluando...`);
+        
+        const result = Function(`"use strict"; return (${expression})`)();
+        console.log(`🧮 Resultado crudo: ${result} (tipo: ${typeof result})`);
+        
+        if (!isNaN(result) && isFinite(result)) {
+          // Aplicar formato de salida si está configurado
+          const outputFormat = content.outputFormat || {};
+          let formattedResult = result.toString();
+          
+          console.log(`🎨 Aplicando formato:`, outputFormat);
+          
+          // Formatear decimales
+          if (outputFormat.precision && outputFormat.precision !== '0') {
+            const precision = outputFormat.precision === '2-small' ? 2 : parseInt(String(outputFormat.precision));
+            if (!isNaN(precision)) {
+              formattedResult = Number(result).toFixed(precision);
+            }
+          } else {
+            formattedResult = Math.round(result).toString();
+          }
+          
+          // Agregar prefijo ($) si está configurado
+          if (outputFormat.prefix) {
+            formattedResult = `$ ${formattedResult}`;
+          }
+          
+          console.log(`🧮 ✅ Resultado final calculado: "${formattedResult}"`);
+          return formattedResult;
+        } else {
+          console.log(`❌ Resultado inválido: ${result}`);
+          return 'Error: resultado inválido';
+        }
+      } else {
+        console.log(`❌ Expresión inválida después de reemplazos: "${expression}"`);
+        return 'Error: expresión inválida';
+      }
+      
+    } catch (error) {
+      console.error('❌ Error procesando campo calculado:', error);
+      return 'Error en cálculo';
+    }
   }
 
   // 🔧 COMPATIBILIDAD: Mantener soporte para textConfig (por si hay plantillas mixtas)
@@ -401,6 +521,11 @@ const getFieldType = (content: any): string => {
       }
     }
   }
+
+  // 🆕 Para campos calculados
+  if (content?.fieldType === 'calculated' && content?.calculatedField?.expression) {
+    return 'calculated';
+  }
   
   // Para campos SAP conectados
   if (content?.fieldType === 'sap-product' && content?.sapConnection?.fieldName) {
@@ -505,8 +630,52 @@ const getValidTextAlign = (textAlign: any): 'left' | 'center' | 'right' | 'justi
 };
 
 /**
+ * 🆕 FUNCIÓN HELPER: Crear estilos base consistentes con CanvasEditorV3
+ */
+const getBaseComponentStyles = (component: DraggableComponentV3): React.CSSProperties => {
+  const { style } = component;
+  
+  // 🎯 APLICAR SOLO ESTILOS DE CONTENIDO, NO DE POSICIONAMIENTO
+  const baseStyles: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    fontFamily: style?.typography?.fontFamily || 'inherit',
+    fontSize: style?.typography?.fontSize ? `${style.typography.fontSize}px` : '16px',
+    fontWeight: style?.typography?.fontWeight || 'normal',
+    color: style?.color?.color || '#000000',
+    textAlign: (style?.typography?.textAlign as any) || 'left',
+    lineHeight: style?.typography?.lineHeight || 1.2,
+    letterSpacing: style?.typography?.letterSpacing || 'normal',
+    textDecoration: style?.typography?.textDecoration || 'none',
+    opacity: style?.effects?.opacity ?? 1,
+    boxSizing: 'border-box' as const,
+    overflow: 'hidden',
+    wordWrap: 'break-word' as const,
+    // 🔧 Solo aplicar backgroundColor para componentes no-imagen
+    backgroundColor: component.type.startsWith('image-') ? 'transparent' : (style?.color?.backgroundColor || 'transparent'),
+  };
+
+  // 🎯 APLICAR BORDES SOLO SI ESTÁN DEFINIDOS
+  if (style?.border && style.border.width > 0) {
+    baseStyles.border = `${style.border.width}px ${style.border.style || 'solid'} ${style.border.color || '#000000'}`;
+  }
+
+  // 🎯 APLICAR BORDER RADIUS SOLO SI ESTÁ DEFINIDO  
+  if (style?.border?.radius?.topLeft) {
+    const radius = style.border.radius;
+    if (typeof radius === 'object') {
+      baseStyles.borderRadius = `${radius.topLeft || 0}px ${radius.topRight || 0}px ${radius.bottomRight || 0}px ${radius.bottomLeft || 0}px`;
+    } else {
+      baseStyles.borderRadius = `${radius}px`;
+    }
+  }
+
+  return baseStyles;
+};
+
+/**
  * Mapa de componentes con renderización inteligente
- * 🎯 MEJORA: Ahora considera cambios del usuario + edición inline
+ * 🎯 CORREGIDO: Sistema unificado sin duplicación de estilos
  */
 const renderComponent = (
   component: DraggableComponentV3, 
@@ -518,30 +687,7 @@ const renderComponent = (
   enableInlineEdit?: boolean
 ) => {
   const { type, content, style } = component;
-  const cssStyle = extractCSSStyles(style);
-  
-  const isImageComponent = type.startsWith('image-');
-  const componentStyle: React.CSSProperties = {
-    position: 'absolute',
-    left: `${component.position.x}px`,
-    top: `${component.position.y}px`,
-    width: `${component.size.width}px`,
-    height: `${component.size.height}px`,
-    transform: `rotate(${component.position.rotation || 0}deg) scale(${component.position.scaleX || 1}, ${component.position.scaleY || 1})`,
-    visibility: component.isVisible ? 'visible' : 'hidden',
-    opacity: component.style?.effects?.opacity ?? 1,
-    fontFamily: component.style?.typography?.fontFamily,
-    fontSize: `${(component.style?.typography?.fontSize || 16)}px`,
-    fontWeight: component.style?.typography?.fontWeight,
-    color: component.style?.color?.color,
-    textAlign: component.style?.typography?.textAlign as any,
-    backgroundColor: isImageComponent ? 'transparent' : (component.style?.color?.backgroundColor || 'transparent'),
-    borderRadius: component.style?.border?.radius ? `${component.style.border.radius.topLeft}px` : undefined,
-    border: component.style?.border && component.style.border.width > 0
-      ? `${component.style.border.width}px ${component.style.border.style || 'solid'} ${component.style.border.color || '#000000'}`
-      : 'none',
-    boxSizing: 'border-box'
-  };
+  const baseStyles = getBaseComponentStyles(component);
   
   switch (type) {
     case 'field-dynamic-text':
@@ -549,7 +695,10 @@ const renderComponent = (
       const fieldType = getFieldType(content);
       
               // 🆕 DETECTAR SI ES CAMPO ESTÁTICO O DINÁMICO
-        const isStaticField = !content?.fieldType || content?.fieldType === 'static' || (!(content as any)?.dynamicTemplate && !content?.textConfig?.contentType && content?.staticValue);
+        const isCalculatedField = (content as any)?.fieldType === 'calculated';
+        const isStaticField = (!content?.fieldType || content?.fieldType === 'static') && 
+                              !isCalculatedField && 
+                              (!(content as any)?.dynamicTemplate && !content?.textConfig?.contentType && content?.staticValue);
       
       // Debug: Log del valor dinámico
       console.log(`🎨 Renderizando campo de texto:`, {
@@ -560,28 +709,24 @@ const renderComponent = (
         detectedFieldType: fieldType,
         textValue,
         isStaticField,
+        isCalculatedField,
         hasProduct: !!product,
-        enableInlineEdit
+        enableInlineEdit,
+        calculatedExpression: isCalculatedField ? (content as any)?.calculatedField?.expression : null
       });
       
-      const textValidAlign = getValidTextAlign(cssStyle.textAlign);
+      const textValidAlign = getValidTextAlign(baseStyles.textAlign);
 
       const baseStyle: React.CSSProperties = {
-        fontSize: 16,
-        fontFamily: 'inherit',
-        fontWeight: 'normal',
-        color: '#000000',
-        backgroundColor: 'transparent',
-        lineHeight: 1.2,
-        overflow: 'hidden',
-        wordWrap: 'break-word',
-        height: '100%',
-        ...cssStyle,
+        ...baseStyles,
         textAlign: textValidAlign,
         whiteSpace: 'pre-wrap'
       };
       
-      const textContent = textValue || (isStaticField ? 'Texto estático' : (product ? 'Nuevo componente' : 'Campo dinámico'));
+      const textContent = textValue || 
+                        (isCalculatedField ? 'Campo calculado' : 
+                         (isStaticField ? 'Texto estático' : 
+                          (product ? 'Nuevo componente' : 'Campo dinámico')));
       
       // 🎯 EDICIÓN INLINE: Habilitar para campos dinámicos Y estáticos
       if (enableInlineEdit && onEditField && !isPreview && (product || isStaticField)) {
@@ -692,7 +837,12 @@ const renderComponent = (
               draggable={false}
             />
           ) : (
-            <div className="text-center">🖼️</div>
+            <div className="text-center">
+              {component.type === 'image-header' && '🏷️'}
+              {component.type === 'image-product' && '📦'}
+              {component.type === 'image-brand-logo' && '🏪'}
+              {component.type === 'image-decorative' && '🎨'}
+            </div>
           )}
         </div>
       );
@@ -708,7 +858,7 @@ const renderComponent = (
           alignItems: 'center',
           justifyContent: 'center',
           border: '1px solid #ccc',
-          ...cssStyle
+          ...baseStyles
         }}>
           <div style={{
             width: qrSize * 0.8,
@@ -738,22 +888,19 @@ const renderComponent = (
         dateValue = content?.staticValue || new Date().toLocaleDateString('es-AR');
       }
       
-      const dateValidAlign = getValidTextAlign(cssStyle.textAlign);
+      const dateValidAlign = getValidTextAlign(baseStyles.textAlign);
       const dateFieldType = 'fecha'; // Tipo de campo para edición
 
       const dateBaseStyle: React.CSSProperties = {
-        fontSize: 14,
-        fontFamily: 'inherit',
+        ...baseStyles,
+        fontSize: '14px',
         color: '#666666',
         display: 'flex',
         alignItems: 'center',
         justifyContent: dateValidAlign === 'center' ? 'center' : 
                        dateValidAlign === 'right' ? 'flex-end' : 'flex-start',
-        ...cssStyle,
         textAlign: dateValidAlign,
-        whiteSpace: 'pre-wrap',
-        height: '100%',
-        width: '100%'
+        whiteSpace: 'pre-wrap'
       };
 
       // 🎯 EDICIÓN INLINE PARA FECHAS: Si está habilitada, envolver con InlineEditableText
@@ -807,7 +954,7 @@ const renderComponent = (
         borderRadius: typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius,
         boxSizing: 'border-box', // Importante para que el borde no afecte el tamaño
         transition: 'all 0.2s ease', // Suave transición para cambios
-        ...cssStyle,
+        ...baseStyles,
         whiteSpace: 'pre-wrap'
       };
       
@@ -831,7 +978,7 @@ const renderComponent = (
           width: '100%',
           height: content?.lineConfig?.thickness || 2,
           backgroundColor: '#cccccc',
-          ...cssStyle,
+          ...baseStyles,
           whiteSpace: 'pre-wrap'
         }} />
       );
@@ -848,7 +995,7 @@ const renderComponent = (
         justifyContent: 'center',
         fontSize: Math.min(component.size.width, component.size.height) * 0.8,
         color: '#000000',
-        ...cssStyle,
+        ...baseStyles,
         whiteSpace: 'pre-wrap'
       };
 
@@ -900,7 +1047,7 @@ const renderComponent = (
           flexDirection: content?.containerConfig?.flexDirection || 'column',
           gap: content?.containerConfig?.gap || 8,
           padding: '8px',
-          ...cssStyle,
+          ...baseStyles,
           whiteSpace: 'pre-wrap'
         }}>
           <span style={{ 
@@ -970,7 +1117,8 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
   return (
     <div style={containerStyle}>
       {visibleComponents.map(component => {
-        const componentStyle: React.CSSProperties = {
+        // 🎯 SOLO POSICIONAMIENTO: Como en CanvasEditorV3, solo aplicar transform y posición
+        const componentPositionStyle: React.CSSProperties = {
           position: 'absolute',
           left: `${component.position.x}px`,
           top: `${component.position.y}px`,
@@ -978,22 +1126,11 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
           height: `${component.size.height}px`,
           transform: `rotate(${component.position.rotation || 0}deg) scale(${component.position.scaleX || 1}, ${component.position.scaleY || 1})`,
           visibility: component.isVisible ? 'visible' : 'hidden',
-          opacity: component.style?.effects?.opacity ?? 1,
-          fontFamily: component.style?.typography?.fontFamily,
-          fontSize: `${(component.style?.typography?.fontSize || 16)}px`,
-          fontWeight: component.style?.typography?.fontWeight,
-          color: component.style?.color?.color,
-          textAlign: component.style?.typography?.textAlign as any,
-          backgroundColor: component.style?.color?.backgroundColor || 'transparent',
-          borderRadius: component.style?.border?.radius ? `${component.style.border.radius.topLeft}px` : undefined,
-          border: component.style?.border && component.style.border.width > 0
-            ? `${component.style.border.width}px ${component.style.border.style || 'solid'} ${component.style.border.color || '#000000'}`
-            : 'none',
-          boxSizing: 'border-box'
+          zIndex: component.position.z,
         };
 
         return (
-          <div key={component.id} style={componentStyle}>
+          <div key={component.id} style={componentPositionStyle}>
             {renderComponent(component, product, isPreview, productChanges, onEditField, onPendingChange, enableInlineEdit)}
           </div>
         );

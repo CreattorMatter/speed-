@@ -55,7 +55,7 @@ export const ComponentsPanelV3: React.FC<ComponentsPanelV3Props> = ({
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [expandedCategories, setExpandedCategories] = useState<Set<ComponentCategoryV3>>(
-    new Set(['Texto y Datos', 'Imágenes y Media', 'Elementos Decorativos'])
+    new Set(['Texto y Datos', 'Imagen de Header', 'Imagen de Footer', 'Imagen de Fondo', 'Imágenes y Media'])
   );
   const [hoveredComponent, setHoveredComponent] = useState<ComponentTypeV3| null>(null);
 
@@ -96,7 +96,7 @@ export const ComponentsPanelV3: React.FC<ComponentsPanelV3Props> = ({
   }, [onToggleFavorite]);
 
   // =====================
-  // CATEGORY CONFIGURATION
+  // CATEGORY CONFIGURATION ACTUALIZADA
   // =====================
 
   const categoryConfig = {
@@ -105,6 +105,21 @@ export const ComponentsPanelV3: React.FC<ComponentsPanelV3Props> = ({
       color: 'bg-blue-100 text-blue-800',
       borderColor: 'border-blue-200'
     },
+    'Imagen de Header': {
+      icon: Image,
+      color: 'bg-purple-100 text-purple-800',
+      borderColor: 'border-purple-200'
+    },
+    'Imagen de Footer': {
+      icon: Image,
+      color: 'bg-indigo-100 text-indigo-800',
+      borderColor: 'border-indigo-200'
+    },
+    'Imagen de Fondo': {
+      icon: Image,
+      color: 'bg-violet-100 text-violet-800',
+      borderColor: 'border-violet-200'
+    },
     'Imágenes y Media': {
       icon: Image,
       color: 'bg-pink-100 text-pink-800',
@@ -112,8 +127,8 @@ export const ComponentsPanelV3: React.FC<ComponentsPanelV3Props> = ({
     },
     'QR y Enlaces': {
       icon: QrCode,
-      color: 'bg-indigo-100 text-indigo-800',
-      borderColor: 'border-indigo-200'
+      color: 'bg-cyan-100 text-cyan-800',
+      borderColor: 'border-cyan-200'
     },
     'Fechas y Períodos': {
       icon: Calendar,
@@ -227,12 +242,15 @@ export const ComponentsPanelV3: React.FC<ComponentsPanelV3Props> = ({
   }, [handleToggleFavorite]);
 
   // =====================
-  // COMPONENT ICONS
+  // COMPONENT ICONS ACTUALIZADOS
   // =====================
 
   const getComponentIcon = (componentType: ComponentTypeV3): string => {
     if (componentType.includes('text') || componentType.includes('field-product')) return '📝';
     if (componentType.includes('price') || componentType.includes('discount')) return '💰';
+    if (componentType === 'image-header') return '🏷️';
+    if (componentType === 'image-footer') return '📋';
+    if (componentType === 'image-background') return '🖼️';
     if (componentType.includes('image')) return '🖼️';
     if (componentType.includes('qr')) return '📱';
     if (componentType.includes('date')) return '📅';

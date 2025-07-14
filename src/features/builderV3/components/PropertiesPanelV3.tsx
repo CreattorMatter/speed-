@@ -187,6 +187,45 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
     });
   };
 
+  // 🆕 Función auxiliar para manejar cambios en campo calculado con preview
+  const handleCalculatedFieldChange = (expression: string) => {
+    if (!selectedComponent) return;
+    
+    // Intentar calcular preview
+    let previewResult = '';
+    let errorMessage = '';
+    
+    try {
+      // Reemplazar campos con valores de ejemplo para preview
+      let previewExpression = expression
+        .replace(/\[product_price\]/g, '99999')
+        .replace(/\[discount_percentage\]/g, '15')
+        .replace(/\[price_previous\]/g, '119999')
+        .replace(/\[stock_available\]/g, '25')
+        .replace(/\[price_base\]/g, '85000')
+        .replace(/\[price_without_tax\]/g, '85000');
+      
+      // Validar que solo contenga números, operadores y espacios
+      if (previewExpression && /^[0-9+\-*/().\s]+$/.test(previewExpression)) {
+        const result = Function(`"use strict"; return (${previewExpression})`)();
+        previewResult = isNaN(result) ? 'Error' : result.toString();
+      } else if (previewExpression) {
+        previewResult = 'Esperando campos...';
+      }
+    } catch (error) {
+      errorMessage = 'Expresión inválida';
+      previewResult = 'Error';
+    }
+    
+    handleContentChange('calculatedField', {
+      expression,
+      availableFields: productFieldOptions.map((opt: any) => opt.value),
+      operators: ['+', '-', '*', '/', '(', ')'],
+      previewResult,
+      errorMessage
+    });
+  };
+
 
 
   // =====================
@@ -741,8 +780,8 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
 
   const renderContentTab = () => (
     <div className="space-y-3">
-      {/* Sección específica para componentes de imagen */}
-      {selectedComponent && ['image-header', 'image-brand-logo', 'image-promotional', 'image-product'].includes(selectedComponent.type) && (
+      {/* Sección específica para componentes de imagen - ACTUALIZADA */}
+      {selectedComponent && ['image-header', 'image-footer', 'image-background', 'image-brand-logo', 'image-promotional', 'image-product', 'image-decorative'].includes(selectedComponent.type) && (
         <div>
           <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
             <FileImage className="w-4 h-4 mr-2" />
@@ -929,8 +968,8 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
         </div>
       )}
 
-      {/* Tipo de contenido para componentes no-imagen */}
-      {selectedComponent && !['image-header', 'image-brand-logo', 'image-promotional', 'image-product'].includes(selectedComponent.type) && (
+      {/* Tipo de contenido para componentes no-imagen - SIMPLIFICADO */}
+      {selectedComponent && !['image-header', 'image-footer', 'image-background', 'image-brand-logo', 'image-promotional', 'image-product', 'image-decorative'].includes(selectedComponent.type) && (
         <div>
           <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
             <Type className="w-4 h-4 mr-2" />
@@ -938,15 +977,26 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
           </h4>
           <select
             value={(selectedComponent?.content as any)?.fieldType || 'static'}
-            onChange={(e) => handleContentChange('fieldType', e.target.value)}
+            onChange={(e) => {
+              const newFieldType = e.target.value;
+              handleContentChange('fieldType', newFieldType);
+              
+              // 🆕 Si se selecciona campo calculado, inicializar calculatedField
+              if (newFieldType === 'calculated' && !(selectedComponent?.content as any)?.calculatedField) {
+                handleContentChange('calculatedField', {
+                  expression: '',
+                  availableFields: productFieldOptions.map((opt: any) => opt.value),
+                  operators: ['+', '-', '*', '/', '(', ')'],
+                  previewResult: '',
+                  errorMessage: ''
+                });
+              }
+            }}
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="static">Texto Estático</option>
-            <option value="dynamic">Texto Dinámico</option>
-            <option value="sap-product">SAP - Producto</option>
-            <option value="promotion-data">Datos de Promoción</option>
-            <option value="qr-code">Código QR</option>
-            <option value="image">Imagen</option>
+            <option value="static">Campo Estático</option>
+            <option value="dynamic">Campo Dinámico</option>
+            <option value="calculated">Campo Calculado</option>
           </select>
         </div>
       )}
@@ -999,17 +1049,27 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
                     />
                     <span className="ml-2 text-sm text-gray-700">Incluir símbolo de moneda ($)</span>
                   </label>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={(selectedComponent?.content as any)?.outputFormat?.precision === 2}
+                  
+                  {/* 🆕 MEJORADO: Selector de decimales avanzado */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Formato de decimales</label>
+                    <select
+                      value={(selectedComponent?.content as any)?.outputFormat?.precision || '0'}
                       onChange={(e) => {
-                        handleOutputFormatChange('precision', e.target.checked ? 2 : 0);
+                        const value = e.target.value;
+                                              if (value === '2-small') {
+                        handleOutputFormatChange('precision', '2-small');
+                      } else {
+                        handleOutputFormatChange('precision', parseInt(value));
+                      }
                       }}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">Incluir decimales</span>
-                  </label>
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                    >
+                      <option value="0">Sin decimales</option>
+                      <option value="2">Decimales normales</option>
+                      <option value="2-small">Decimales pequeños</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             )}
@@ -1039,6 +1099,154 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
               <p className="text-xs text-gray-500 mt-2">
                 💡 <strong>Solo campos de productos</strong> - Al usar la plantilla en cartelera, estos campos se llenan automáticamente con el producto seleccionado
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🆕 NUEVO: Campo Calculado con operaciones matemáticas */}
+      {(selectedComponent?.content as any)?.fieldType === 'calculated' && (
+        <div>
+          <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+            <Hash className="w-4 h-4 mr-2" />
+            Campo Calculado
+          </h4>
+          
+          <div className="space-y-3">
+            {/* Editor de expresión matemática */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Expresión Matemática
+                <span className="text-blue-600 ml-1">(Usa [campo] + operadores: + - * / ( ))</span>
+              </label>
+              <textarea
+                value={(selectedComponent?.content as any)?.calculatedField?.expression || ''}
+                onChange={(e) => handleCalculatedFieldChange(e.target.value)}
+                placeholder="Ej: [product_price] * (1 - [discount_percentage] / 100)"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                rows={2}
+              />
+            </div>
+
+            {/* Preview del resultado */}
+            {(selectedComponent?.content as any)?.calculatedField?.expression && (
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-700">Preview del cálculo:</span>
+                  <span className={`text-sm font-mono px-2 py-1 rounded ${
+                    (selectedComponent?.content as any)?.calculatedField?.errorMessage 
+                      ? 'bg-red-100 text-red-700' 
+                      : 'bg-green-100 text-green-700'
+                  }`}>
+                    {(selectedComponent?.content as any)?.calculatedField?.errorMessage || 
+                     (selectedComponent?.content as any)?.calculatedField?.previewResult || 
+                     'Ingresa una expresión'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Usando valores de ejemplo: precio=99999, descuento=15%, precio_anterior=119999, stock=25, precio_base=85000
+                </p>
+              </div>
+            )}
+
+            {/* Selector de campos disponibles */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                Campos Disponibles para Cálculo
+              </label>
+              <div className="grid grid-cols-2 gap-1 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-2">
+                {productFieldOptions
+                  .filter((option: any) => option.value.includes('price') || option.value.includes('discount') || option.value.includes('stock'))
+                  .map((option: any) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      const currentExpression = (selectedComponent?.content as any)?.calculatedField?.expression || '';
+                      const newExpression = currentExpression + `[${option.value}]`;
+                      
+                      // Usar la función auxiliar para ejecutar el cálculo del preview
+                      handleCalculatedFieldChange(newExpression);
+                    }}
+                    className="text-left px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded flex items-center space-x-1"
+                  >
+                    <option.icon className="w-3 h-3" />
+                    <span className="truncate">[{option.value}]</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Operadores matemáticos */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                Operadores Matemáticos
+              </label>
+              <div className="flex gap-1">
+                {['+', '-', '*', '/', '(', ')'].map((operator) => (
+                  <button
+                    key={operator}
+                    onClick={() => {
+                      const currentExpression = (selectedComponent?.content as any)?.calculatedField?.expression || '';
+                      const newExpression = currentExpression + operator;
+                      
+                      // Usar la función auxiliar para ejecutar el cálculo del preview
+                      handleCalculatedFieldChange(newExpression);
+                    }}
+                    className="px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 font-mono font-bold"
+                  >
+                    {operator}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Opciones de formato para resultado calculado */}
+            <div className="p-3 border border-gray-200 rounded-lg bg-gray-50">
+              <h5 className="text-xs font-bold text-gray-700 mb-2">Formato del Resultado</h5>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={!!(selectedComponent?.content as any)?.outputFormat?.prefix}
+                    onChange={(e) => {
+                      handleOutputFormatChange('prefix', e.target.checked ? '$ ' : undefined);
+                    }}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Incluir símbolo de moneda ($)</span>
+                </label>
+                
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Formato de decimales</label>
+                  <select
+                    value={(selectedComponent?.content as any)?.outputFormat?.precision || '0'}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '2-small') {
+                        handleOutputFormatChange('precision', '2-small');
+                      } else {
+                        handleOutputFormatChange('precision', parseInt(value));
+                      }
+                    }}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                  >
+                    <option value="0">Sin decimales</option>
+                    <option value="2">Decimales normales</option>
+                    <option value="2-small">Decimales pequeños</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            {/* Ayuda y ejemplos */}
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <h5 className="text-xs font-bold text-blue-700 mb-1">💡 Ejemplos de uso:</h5>
+              <ul className="text-xs text-blue-600 space-y-1">
+                <li>• Precio con descuento: <code>[product_price] * (1 - [discount_percentage] / 100)</code></li>
+                <li>• Ahorro total: <code>[price_previous] - [product_price]</code></li>
+                <li>• Precio por unidad: <code>[product_price] / [stock_available]</code></li>
+                <li>• Valor con impuestos: <code>[product_price] * 1.21</code></li>
+              </ul>
             </div>
           </div>
         </div>
