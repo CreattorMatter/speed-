@@ -39,8 +39,8 @@ const formatPrice = (price: number, options?: { prefix?: string | boolean; preci
 
   let formattedPrice = new Intl.NumberFormat('es-AR', formatOptions).format(price);
 
-  // Si prefix es explícitamente false o undefined, remover el símbolo
-  if (options?.prefix === false || options?.prefix === undefined) {
+  // Solo remover el símbolo $ cuando prefix es explícitamente false
+  if (options?.prefix === false) {
     formattedPrice = formattedPrice.replace(/[$\s]/g, '');
   }
 

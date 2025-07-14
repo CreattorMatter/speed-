@@ -201,6 +201,8 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
             <span className="text-sm font-medium text-gray-700">Datos:</span>
             {[
               { mode: 'mock', label: 'Mock' },
+              { mode: 'real', label: 'Reales' },
+              { mode: 'empty', label: 'Vacío' },
             ].map(({ mode, label }) => (
               <button
                 key={mode}
@@ -260,7 +262,7 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
                 <BuilderTemplateRenderer
                   template={template}
                   components={state.components}
-                  product={defaultMockData.producto}
+                  product={dataMode === 'mock' ? defaultMockData.producto : undefined}
                   isPreview={true}
                   scale={1}
                 />

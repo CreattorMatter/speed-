@@ -1043,7 +1043,7 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
                       type="checkbox"
                       checked={!!(selectedComponent?.content as any)?.outputFormat?.prefix}
                       onChange={(e) => {
-                        handleOutputFormatChange('prefix', e.target.checked ? '$ ' : undefined);
+                        handleOutputFormatChange('prefix', e.target.checked);
                       }}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
@@ -1209,7 +1209,7 @@ export const PropertiesPanelV3: React.FC<PropertiesPanelV3Props> = ({
                     type="checkbox"
                     checked={!!(selectedComponent?.content as any)?.outputFormat?.prefix}
                     onChange={(e) => {
-                      handleOutputFormatChange('prefix', e.target.checked ? '$ ' : undefined);
+                      handleOutputFormatChange('prefix', e.target.checked);
                     }}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />

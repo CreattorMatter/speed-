@@ -138,9 +138,9 @@ const getDynamicValue = (
     
     // Si no hay cambios, procesar el template dinámico usando la configuración del componente
     const outputFormat = content.outputFormat || {};
-    // 💡 Asegurar que el prefijo se base en el contenido del template
-    if (content.dynamicTemplate) {
-        outputFormat.prefix = content.dynamicTemplate.includes('$');
+    // 💡 Mantener el símbolo $ por defecto para campos de precio (solo remover si outputFormat.prefix es explícitamente false)
+    if (content.dynamicTemplate && !outputFormat.hasOwnProperty('prefix')) {
+        outputFormat.prefix = true; // Mostrar $ por defecto
     }
     const processedValue = processDynamicTemplate(content.dynamicTemplate, product, outputFormat);
     console.log(`📊 Valor procesado del template: ${processedValue}`, { outputFormat });
