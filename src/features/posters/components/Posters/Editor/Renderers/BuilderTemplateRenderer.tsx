@@ -630,6 +630,40 @@ const getValidTextAlign = (textAlign: any): 'left' | 'center' | 'right' | 'justi
 };
 
 /**
+ * 🆕 FUNCIÓN HELPER: Obtener font-family con fallbacks apropiados
+ */
+const getFontFamilyWithFallbacks = (fontFamily?: string): string => {
+  if (!fontFamily || fontFamily === 'inherit') {
+    return 'inherit';
+  }
+  
+  // Mapear fuentes específicas con sus fallbacks
+  const fontMappings: Record<string, string> = {
+    'Calibri': "'Calibri', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Inter': "'Inter', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Roboto': "'Roboto', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Open Sans': "'Open Sans', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Poppins': "'Poppins', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Arial': "Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Helvetica': "'Helvetica Neue', Helvetica, Arial, sans-serif"
+  };
+  
+  // Si la fuente ya incluye fallbacks (contiene comas), devolverla tal como está
+  if (fontFamily.includes(',')) {
+    return fontFamily;
+  }
+  
+  // Buscar mapeo específico
+  const mappedFont = fontMappings[fontFamily];
+  if (mappedFont) {
+    return mappedFont;
+  }
+  
+  // Para fuentes no mapeadas, agregar fallbacks genéricos
+  return `'${fontFamily}', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+};
+
+/**
  * 🆕 FUNCIÓN HELPER: Crear estilos base consistentes con CanvasEditorV3
  */
 const getBaseComponentStyles = (component: DraggableComponentV3): React.CSSProperties => {
@@ -639,7 +673,7 @@ const getBaseComponentStyles = (component: DraggableComponentV3): React.CSSPrope
   const baseStyles: React.CSSProperties = {
     width: '100%',
     height: '100%',
-    fontFamily: style?.typography?.fontFamily || 'inherit',
+    fontFamily: getFontFamilyWithFallbacks(style?.typography?.fontFamily),
     fontSize: style?.typography?.fontSize ? `${style.typography.fontSize}px` : '16px',
     fontWeight: style?.typography?.fontWeight || 'normal',
     color: style?.color?.color || '#000000',
@@ -701,6 +735,7 @@ const renderComponent = (
                               (!(content as any)?.dynamicTemplate && !content?.textConfig?.contentType && content?.staticValue);
       
       // Debug: Log del valor dinámico
+      /*
       console.log(`🎨 Renderizando campo de texto:`, {
         contentType: content?.textConfig?.contentType,
         fieldType: content?.fieldType,
@@ -714,6 +749,7 @@ const renderComponent = (
         enableInlineEdit,
         calculatedExpression: isCalculatedField ? (content as any)?.calculatedField?.expression : null
       });
+      */
       
       const textValidAlign = getValidTextAlign(baseStyles.textAlign);
 

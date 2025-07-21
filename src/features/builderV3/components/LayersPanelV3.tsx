@@ -82,10 +82,14 @@ export const LayersPanelV3: React.FC<LayersPanelV3Props> = ({
         return 'Texto';
       
       case 'image-header':
+      case 'image-footer':
+      case 'image-background':
       case 'image-brand-logo':
       case 'image-decorative':
       case 'image-product':
         return component.type === 'image-header' ? 'Header' :
+               component.type === 'image-footer' ? 'Footer' :
+               component.type === 'image-background' ? 'Fondo' :
                component.type === 'image-brand-logo' ? 'Logo' :
                component.type === 'image-decorative' ? 'Imagen decorativa' :
                component.type === 'image-product' ? 'Imagen producto' : 'Imagen';

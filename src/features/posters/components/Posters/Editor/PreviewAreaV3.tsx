@@ -127,31 +127,37 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
 
   // Función helper para obtener valor original de un campo
   const getOriginalFieldValue = (product: Product, fieldType: string): string | number => {
+    // 🔧 FIX: Buscar el producto original en la base de datos para asegurar valores correctos
+    const originalProduct = productos.find((p: Product) => p.id === product.id) || product;
+    
     switch (fieldType) {
       case 'descripcion':
       case 'product_name':
-        return product.descripcion || '';
+        return originalProduct.descripcion || '';
       case 'precio':
       case 'product_price':
-        return product.precio || 0;
+        // 🔧 FIX: Usar el producto original y asegurar que no sea 0 si existe un precio válido
+        return originalProduct.precio !== undefined && originalProduct.precio !== null ? originalProduct.precio : 0;
       case 'sku':
       case 'product_sku':
-        return product.sku || '';
+        return originalProduct.sku || '';
       case 'marcaTexto':
       case 'product_brand':
-        return product.marcaTexto || '';
+        return originalProduct.marcaTexto || '';
       case 'precioAnt':
       case 'price_previous':
-        return product.precioAnt || 0;
+        // 🔧 FIX: Usar el producto original y asegurar que no sea 0 si existe un precio válido
+        return originalProduct.precioAnt !== undefined && originalProduct.precioAnt !== null ? originalProduct.precioAnt : 0;
       case 'basePrice':
       case 'price_base':
-        return product.basePrice || 0;
+        // 🔧 FIX: Usar el producto original y asegurar que no sea 0 si existe un precio válido
+        return originalProduct.basePrice !== undefined && originalProduct.basePrice !== null ? originalProduct.basePrice : 0;
       case 'origen':
       case 'product_origin':
-        return product.origen || '';
+        return originalProduct.origen || '';
       case 'stockDisponible':
       case 'stock_available':
-        return product.stockDisponible || 0;
+        return originalProduct.stockDisponible !== undefined && originalProduct.stockDisponible !== null ? originalProduct.stockDisponible : 0;
       // 🆕 CAMPOS ESTÁTICOS: No pertenecen al producto, usar valores por defecto
       case 'fecha':
         return new Date().toLocaleDateString('es-AR'); // Fecha actual como valor original

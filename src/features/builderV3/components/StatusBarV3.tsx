@@ -4,15 +4,14 @@
 
 import React from 'react';
 import { 
-  Layers, 
-  Clock, 
-  AlertCircle, 
-  CheckCircle, 
+  Activity, 
+  WifiOff, 
   Wifi, 
-  WifiOff,
-  MousePointer,
-  Grid,
-  Ruler
+  Mouse, 
+  Clock,
+  AlertTriangle,
+  Grid3X3,
+  Rulers
 } from 'lucide-react';
 import { BuilderStateV3 } from '../types';
 
@@ -87,7 +86,7 @@ export const StatusBarV3: React.FC<StatusBarV3Props> = ({
           {/* Canvas info */}
           {state?.currentTemplate?.canvas && (
             <StatusItem
-              icon={<Grid className="w-3 h-3" />}
+              icon={<Grid3X3 className="w-3 h-3" />}
               label="Canvas"
               value={`${state.currentTemplate.canvas.width} x ${state.currentTemplate.canvas.height}px`}
             />
@@ -97,7 +96,7 @@ export const StatusBarV3: React.FC<StatusBarV3Props> = ({
 
           {/* Components count */}
           <StatusItem
-            icon={<Layers className="w-3 h-3" />}
+            icon={<Activity className="w-3 h-3" />}
             label="Componentes"
             value={state?.components?.length || 0}
           />
@@ -108,7 +107,7 @@ export const StatusBarV3: React.FC<StatusBarV3Props> = ({
           {state?.canvas?.selectedComponentIds && state.canvas.selectedComponentIds.length > 0 && (
             <>
               <StatusItem
-                icon={<MousePointer className="w-3 h-3" />}
+                icon={<Mouse className="w-3 h-3" />}
                 label="Seleccionados"
                 value={state.canvas.selectedComponentIds.length}
                 color="success"
@@ -141,14 +140,14 @@ export const StatusBarV3: React.FC<StatusBarV3Props> = ({
           <div className="flex items-center space-x-2">
             {gridVisible && (
               <StatusItem
-                icon={<Grid className="w-3 h-3" />}
+                icon={<Grid3X3 className="w-3 h-3" />}
                 label="Grilla"
                 color="success"
               />
             )}
             {rulersVisible && (
               <StatusItem
-                icon={<Ruler className="w-3 h-3" />}
+                icon={<Rulers className="w-3 h-3" />}
                 label="Reglas"
                 color="success"
               />
@@ -159,7 +158,7 @@ export const StatusBarV3: React.FC<StatusBarV3Props> = ({
 
           {/* Save status */}
           <StatusItem
-            icon={state?.hasUnsavedChanges ? <AlertCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+            icon={state?.hasUnsavedChanges ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
             label={formatLastSaved(lastSaved)}
             color={state?.hasUnsavedChanges ? 'warning' : 'default'}
           />
@@ -190,7 +189,7 @@ export const StatusBarV3: React.FC<StatusBarV3Props> = ({
         <div className="mt-1 flex items-center space-x-4 text-xs">
           {state?.hasUnsavedChanges && (
             <div className="flex items-center space-x-1 text-yellow-600">
-              <AlertCircle className="w-3 h-3" />
+              <AlertTriangle className="w-3 h-3" />
               <span>Cambios sin guardar</span>
             </div>
           )}

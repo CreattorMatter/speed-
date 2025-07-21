@@ -224,17 +224,27 @@ export const processDynamicContent = (
   const content = component.content as any;
   
   if (!content) {
-    return 'Sin contenido';
+    console.log(`⚠️ No hay content, usando fallback por tipo de componente: ${component.type}`);
+    // Fallback específico por tipo de componente cuando no hay content
+    switch (component.type) {
+      case 'field-dynamic-text':
+        return mockData.producto?.descripcion || 'Heladera Whirlpool No Frost 375L';
+      case 'field-dynamic-date':
+        return mockData.fecha_actual;
+      default:
+        return 'Contenido por defecto';
+    }
   }
   
-  // 1. Contenido estático
+  // 1. Contenido estático directo
   if (content?.fieldType === 'static') {
     return content?.staticValue || content?.text || 'Texto estático';
   }
   
   // 2. Plantilla dinámica (PRINCIPAL - MEJORADO)
   if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
-    return processTemplate(content.dynamicTemplate, mockData, content.outputFormat);
+    const result = processTemplate(content.dynamicTemplate, mockData, content.outputFormat);
+    return result;
   }
   
   // 3. Campo SAP directo (MEJORADO)
@@ -257,7 +267,58 @@ export const processDynamicContent = (
     return 'Imagen';
   }
   
-  // 7. Fallback para valores directos (MEJORADO)
+  // 7. NUEVO: Manejo de textConfig para componentes de texto dinámico
+  if (content?.textConfig?.contentType) {
+    const contentType = content.textConfig.contentType;
+    const producto = mockData.producto;
+    
+    if (producto) {
+      switch (contentType) {
+        case 'product-name':
+          return producto.descripcion || 'Heladera Whirlpool No Frost 375L';
+        case 'product-description': 
+          return `${producto.marcaTexto} ${producto.descripcion}` || 'Producto de calidad premium';
+        case 'product-sku':
+          return producto.sku?.toString() || '123001';
+        case 'product-brand':
+          return producto.marcaTexto || 'WHIRLPOOL';
+        case 'price-original':
+          return formatPrice(producto.precioAnt || 849999);
+        case 'price-discount':
+        case 'price-final':
+          return formatPrice(producto.precio || 699999);
+        case 'discount-percentage':
+          const precioAnt = producto.precioAnt || 849999;
+          const precio = producto.precio || 699999;
+          return `${Math.round(((precioAnt - precio) / precioAnt) * 100)}%`;
+        case 'financing-text':
+          return 'Financiación disponible';
+        case 'promotion-title':
+          return 'SUPER OFERTA';
+        default:
+          return content.textConfig.fallbackText || 'Contenido dinámico';
+      }
+    }
+  }
+  
+  // 8. NUEVO: Manejo de dateConfig para componentes de fecha
+  if (content?.dateConfig?.type) {
+    const dateType = content.dateConfig.type;
+    switch (dateType) {
+      case 'current-date':
+        return mockData.fecha_actual;
+      case 'promotion-start':
+        return mockData.fecha_actual;
+      case 'promotion-end':
+        return mockData.fecha_promocion_fin;
+      case 'promotion-period':
+        return `${mockData.fecha_actual} - ${mockData.fecha_promocion_fin}`;
+      default:
+        return mockData.fecha_actual;
+    }
+  }
+  
+  // 9. Fallback para valores directos (MEJORADO)
   if (content?.staticValue) {
     // Si es un template dinámico en staticValue, procesarlo
     if (content.staticValue.includes('[') && content.staticValue.includes(']')) {
@@ -274,7 +335,21 @@ export const processDynamicContent = (
     return content.text;
   }
   
-  // 8. Fallback final con dato realista
+  // 10. Fallback basado en el tipo de componente
+  if (component?.type) {
+    switch (component.type) {
+      case 'field-dynamic-text':
+        return mockData.producto?.descripcion || 'Heladera Whirlpool No Frost 375L';
+      case 'field-dynamic-date':
+        return mockData.fecha_actual;
+      case 'qr-dynamic':
+        return 'QR Code';
+      default:
+        return 'Contenido dinámico';
+    }
+  }
+  
+  // 11. Fallback final con dato realista
   return 'Heladera Whirlpool No Frost 375L';
 };
 

@@ -7,19 +7,15 @@ import {
   Save, 
   Eye, 
   Download, 
-  Settings,
-  Grid,
-  Ruler,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
+  Grid3X3, 
+  Ruler, 
+  ZoomIn, 
+  ZoomOut, 
+  RotateCw, 
   Trash2,
-  AlignJustify,
-  FileText,
-  Info,
-  ChevronDown,
   Menu,
-  RotateCw
+  FileText,
+  Info
 } from 'lucide-react';
 import { CustomPaperFormatModal } from './CustomPaperFormatModal';
 
@@ -33,7 +29,6 @@ interface ToolbarV3Props {
   onZoomOut: () => void;
   onZoomReset: () => void;
   onDelete: () => void;
-  onAlignJustify: () => void;
   onPaperFormatChange: (format: string) => void;
   onCustomPaperFormat?: (width: number, height: number) => void;
   onToggleCanvasInfo?: () => void;
@@ -71,7 +66,6 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   onZoomOut,
   onZoomReset,
   onDelete,
-  onAlignJustify,
   onPaperFormatChange,
   onCustomPaperFormat,
   onToggleCanvasInfo,
@@ -332,7 +326,7 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
                 <span className="text-xs text-gray-600 font-medium">Vista:</span>
                 <ToolbarButton
                   onClick={onToggleGrid}
-                  icon={<Grid className="w-3 h-3" />}
+                  icon={<Grid3X3 className="w-3 h-3" />}
                   title="Grilla"
                   active={gridVisible}
                   className="p-1"
@@ -485,7 +479,7 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
             {/* View controls */}
             <ToolbarButton
               onClick={onToggleGrid}
-              icon={<Grid className="w-4 h-4" />}
+              icon={<Grid3X3 className="w-4 h-4" />}
               title={gridVisible ? "Ocultar grilla" : "Mostrar grilla"}
               active={gridVisible}
             />

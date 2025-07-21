@@ -12,65 +12,56 @@ import { UnitConverter } from '../features/builderV3/utils/unitConverter';
 
 export const componentsV3Service = {
   /**
-   * Obtiene la librería completa de componentes desde la base de datos.
+   * Obtiene la librería completa de componentes desde el código.
+   * ✅ SIMPLE Y EFICIENTE: Sin llamadas HTTP, sin dependencias externas
    */
   async getLibrary(): Promise<ComponentsLibraryV3> {
-    if (!isSupabaseConfigured) {
-      console.warn('Supabase no configurado, no se pueden cargar componentes.');
-      return {};
-    }
-
-    try {
-      console.log('🔑 Usando cliente admin para leer builder_components');
-      const { data, error } = await supabaseAdmin
-        .from('builder_components')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
-
-      if (error) {
-        console.error('❌ Error obteniendo componentes del builder:', error);
-        throw error;
-      }
-
-      console.log(`✅ ${data.length} componentes cargados desde Supabase.`);
-      return this.mapDataToLibrary(data);
-
-    } catch (error) {
-      console.error('Error fatal al cargar la librería de componentes, devolviendo vacío:', error);
-      return {};
-    }
+    console.log('📦 Cargando componentes desde código (modularizado)');
+    
+    // Importar dinámicamente para evitar circular dependencies
+    const { componentsLibrary } = await import('../features/builderV3/data/componentsLibrary');
+    
+    // Obtener estadísticas
+    const totalComponents = Object.values(componentsLibrary)
+      .reduce((total, category) => total + (category?.length || 0), 0);
+    const categoriesCount = Object.keys(componentsLibrary).length;
+    
+    console.log(`📊 Librería cargada: ${totalComponents} componentes en ${categoriesCount} categorías`);
+    
+    return componentsLibrary;
   },
 
   /**
-   * Transforma los datos planos de la DB a un objeto agrupado por categoría.
+   * Obtener componente por tipo (función helper adicional)
    */
-  mapDataToLibrary(data: any[]): ComponentsLibraryV3 {
-    if (!data) return {};
-
-    const library: ComponentsLibraryV3 = {};
-
-    for (const item of data) {
-      const componentDef: ComponentDefinitionV3 = {
-        type: item.type,
-        name: item.name,
-        description: item.description,
-        icon: item.icon,
-        category: item.category,
-        tags: item.tags || [],
-        defaultSize: item.default_size_json,
-        defaultStyle: item.default_style_json,
-        defaultContent: item.default_content_json,
-      };
-
-      const category = item.category as ComponentCategoryV3;
-      if (!library[category]) {
-        library[category] = [];
-      }
-      library[category].push(componentDef);
+  async getComponentByType(type: string) {
+    const library = await this.getLibrary();
+    for (const category of Object.values(library)) {
+      const component = category?.find(comp => comp.type === type);
+      if (component) return component;
     }
+    return undefined;
+  },
 
-    return library;
+  /**
+   * Obtener estadísticas de la librería
+   */
+  async getLibraryStats() {
+    const library = await this.getLibrary();
+    const totalComponents = Object.values(library)
+      .reduce((total, category) => total + (category?.length || 0), 0);
+    
+    const categoriesCount = Object.keys(library).length;
+    
+    return {
+      totalComponents,
+      categoriesCount,
+      componentsByCategory: Object.entries(library)
+        .map(([category, components]) => ({
+          category,
+          count: components?.length || 0
+        }))
+    };
   }
 };
 
@@ -734,7 +725,7 @@ export const promotionConnectionV3Service = {
 // ===============================================
 
 export const imageUploadService = {
-  async uploadImage(file: File, bucket: string = 'template-images', folder: string = 'headers'): Promise<string> {
+  async uploadImage(file: File, bucket: string = 'assets', folder: string = 'headers'): Promise<string> {
     if (!isSupabaseConfigured) {
       console.log('📷 Mock: Imagen subida (Supabase no configurado)');
       return URL.createObjectURL(file);
@@ -771,7 +762,7 @@ export const imageUploadService = {
     }
   },
 
-  async deleteImage(url: string, bucket: string = 'template-images'): Promise<void> {
+  async deleteImage(url: string, bucket: string = 'assets'): Promise<void> {
     if (!isSupabaseConfigured || !url.includes('supabase')) {
       console.log('📷 Mock: Imagen eliminada');
       return;

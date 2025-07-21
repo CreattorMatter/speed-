@@ -69,6 +69,16 @@ export default {
         '80': '80',
         '90': '90',
         '100': '100',
+      },
+      fontFamily: {
+        'calibri': ["'Calibri'", 'Arial', '-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'sans-serif'],
+        'inter': ["'Inter'", 'Arial', '-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'sans-serif'],
+        'roboto': ["'Roboto'", 'Arial', '-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'sans-serif'],
+        'poppins': ["'Poppins'", 'Arial', '-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'sans-serif'],
+        'open-sans': ["'Open Sans'", 'Arial', '-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'sans-serif'],
+        'arial': ['Arial', '-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'sans-serif'],
+        'helvetica': ["'Helvetica Neue'", 'Helvetica', 'Arial', 'sans-serif'],
+        'sans': ["'Inter'", 'Arial', '-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'Roboto', "'Helvetica Neue'", 'sans-serif'],
       }
     },
   },

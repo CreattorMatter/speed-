@@ -2,23 +2,23 @@
 // SPEED BUILDER V3 - MAIN HOOK
 // =====================================
 
-import { useState, useEffect, useCallback, useReducer } from 'react';
-import { 
-  BuilderStateV3, 
-  BuilderOperationsV3, 
-  UseBuilderV3Return,
+import { useReducer, useCallback, useState } from 'react';
+import { toast } from 'react-hot-toast';
+import {
+  BuilderStateV3,
+  BuilderOperationsV3,
+  DraggableComponentV3,
   FamilyV3,
   TemplateV3,
-  ComponentsLibraryV3,
-  DraggableComponentV3,
   ComponentTypeV3,
   PositionV3,
   SizeV3,
+  ComponentsLibraryV3,
   HistoryActionV3,
-  FamilyTypeV3
+  CanvasStateV3,
+  UseBuilderV3Return
 } from '../types';
 import { generateId } from '../../../utils/generateId';
-import { toast } from 'react-hot-toast';
 import { templatesV3Service, familiesV3Service } from '../../../services/builderV3Service';
 
 // =====================
@@ -210,13 +210,38 @@ const builderReducer = (state: BuilderStateV3, action: BuilderAction): BuilderSt
       };
     
     case 'UPDATE_COMPONENT':
+      console.log(`🔄 UPDATE_COMPONENT reducer:`, {
+        componentId: action.payload.id,
+        updates: action.payload.updates,
+        hasShowMockDataUpdate: 'showMockData' in action.payload.updates
+      });
+      
+      const updatedComponents = state.components.map(component =>
+        component.id === action.payload.id
+          ? {
+              ...component,
+              ...action.payload.updates,
+              // Merge profundo para el objeto content
+              content: action.payload.updates.content
+                ? {
+                    ...component.content,
+                    ...action.payload.updates.content
+                  }
+                : component.content,
+              updatedAt: new Date()
+            }
+          : component
+      );
+      
+      const updatedComponent = updatedComponents.find(c => c.id === action.payload.id);
+      console.log(`✅ Componente actualizado:`, {
+        id: action.payload.id,
+        showMockData: updatedComponent?.showMockData
+      });
+      
       return {
         ...state,
-        components: state.components.map(component =>
-          component.id === action.payload.id
-            ? { ...component, ...action.payload.updates, updatedAt: new Date() }
-            : component
-        ),
+        components: updatedComponents,
         hasUnsavedChanges: true
       };
     
@@ -375,7 +400,6 @@ const builderReducer = (state: BuilderStateV3, action: BuilderAction): BuilderSt
     case 'SET_UI_TAB':
       const { panel: tabPanel, tab } = action.payload;
       const tabKey = `active${tabPanel.charAt(0).toUpperCase() + tabPanel.slice(1)}Tab` as keyof typeof state.ui;
-      console.log('🔄 SET_UI_TAB reducer:', { tabPanel, tab, tabKey, currentValue: state.ui[tabKey] });
       
       const newState = {
         ...state,
@@ -384,7 +408,6 @@ const builderReducer = (state: BuilderStateV3, action: BuilderAction): BuilderSt
           [tabKey]: tab
         }
       };
-      console.log('🔄 New UI state after SET_UI_TAB:', newState.ui);
       return newState;
     
     case 'SET_COMPONENTS_LIBRARY':
@@ -505,9 +528,10 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
         const migratedTemplates = await Promise.all(
           templatesToMigrate.map(async (template) => {
             const migratedComponents = template.defaultComponents.map(component => {
-              let migratedComponent = { ...component };
+              const migratedComponent = { ...component };
               
-              // 🎯 MIGRACIÓN AUTOMÁTICA POR TAGS
+              // TODO: 🎯 MIGRACIÓN AUTOMÁTICA POR TAGS - necesita migrationTags en tipo DraggableComponentV3
+              /*
               if (component.migrationTags?.autoReplace) {
                 switch (component.migrationTags.migrationTag) {
                   case 'header':
@@ -518,35 +542,14 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
                       };
                       
                       // Reemplazar imagen de header si está disponible
-                      if (toFamily.headerImage && component.type === 'image-header') {
-                        migratedComponent.content = {
-                          ...migratedComponent.content,
-                          imageUrl: toFamily.headerImage
-                        };
+                      if (toFamily.headerImage && migratedComponent.content.imageUrl) {
+                        migratedComponent.content.imageUrl = toFamily.headerImage;
                       }
-                    }
-                    break;
-                    
-                  case 'footer':
-                    if (toFamily.defaultStyle.visualEffects.footerStyle) {
-                      migratedComponent.style = {
-                        ...migratedComponent.style,
-                        ...toFamily.defaultStyle.visualEffects.footerStyle
-                      };
-                    }
-                    break;
-                    
-                  case 'background':
-                    // Aplicar estilo de fondo de la nueva familia
-                    if (toFamily.templates[0]?.canvas.backgroundImage) {
-                      migratedComponent.content = {
-                        ...migratedComponent.content,
-                        imageUrl: toFamily.templates[0].canvas.backgroundImage
-                      };
                     }
                     break;
                 }
               }
+              */
               
               // 🎨 MIGRACIÓN DE COLORES GLOBALES
               if (options.replaceColors && toFamily.migrationConfig?.headerReplacement?.replaceColors) {

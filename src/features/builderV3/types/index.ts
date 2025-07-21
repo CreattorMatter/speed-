@@ -36,8 +36,10 @@ export type ComponentTypeV3 =
   // 📝 Campo de texto dinámico (CONSOLIDADO - reemplaza 25+ componentes de texto)
   | 'field-dynamic-text'
   
-  // 🖼️ Imágenes especializadas (4 tipos únicos)
+  // 🖼️ Imágenes especializadas (6 tipos únicos)
   | 'image-header'           // Header promocional
+  | 'image-footer'           // Footer promocional
+  | 'image-background'       // Imagen de fondo del cartel
   | 'image-product'          // Imagen de producto
   | 'image-brand-logo'       // Logo de marca
   | 'image-decorative'       // Imagen decorativa
@@ -63,7 +65,10 @@ export type ComponentTypeV3 =
 
 export type ComponentCategoryV3 = 
   | 'Texto y Datos'           // Consolidado: incluye texto dinámico, productos, precios, financiero
-  | 'Imágenes y Media'        // Mantiene: imágenes especializadas
+  | 'Imagen de Header'        // Headers promocionales
+  | 'Imagen de Footer'        // Footers promocionales  
+  | 'Imagen de Fondo'         // Fondos del cartel
+  | 'Imágenes y Media'        // Otras imágenes especializadas
   | 'QR y Enlaces'           // Consolidado: QR dinámico
   | 'Fechas y Períodos'      // Consolidado: fechas dinámicas
   | 'Elementos Decorativos'  // Mantiene: formas, líneas, íconos
@@ -254,7 +259,7 @@ export interface DynamicContentV3 {
     fallbackText?: string;
     formatters?: Array<{
       type: 'currency' | 'percentage' | 'uppercase' | 'lowercase' | 'capitalize';
-      options?: any;
+      options?: Record<string, unknown>;
     }>;
   };
   
@@ -333,6 +338,9 @@ export interface DraggableComponentV3 {
   
   // Contenido dinámico
   content: DynamicContentV3;
+  
+  // Toggle para mostrar Mock Data en lugar de nombres técnicos
+  showMockData?: boolean;
   
   // Estado y comportamiento
   isVisible: boolean;
@@ -414,7 +422,7 @@ export interface TemplateV3 {
     id: string;
     type: 'required-component' | 'max-components' | 'position-constraint' | 'size-constraint' | 'custom';
     componentType?: ComponentTypeV3;
-    constraint?: any;
+    constraint?: unknown;
     message: string;
   }>;
   

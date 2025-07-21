@@ -9,22 +9,18 @@ import {
   Search,
   Filter,
   Star,
-  Copy,
+  Copy, 
   ArrowRight,
   Tag,
-  Calendar,
   Zap,
-  Settings,
-  ChevronDown,
-  ChevronUp,
   Plus,
-  Trash2,
+  Trash2, 
   Edit3
 } from 'lucide-react';
 
 interface FamilySelectorV3Props {
   families: FamilyV3[];
-  onFamilySelect: (familyType: FamilyTypeV3) => void;
+  onFamilySelect: (family: FamilyV3) => void;
   onFamilyMigration: (fromFamilyId: string, toFamilyId: string, options: {
     migrateAllTemplates: boolean;
     replaceHeaders: boolean;
@@ -73,7 +69,7 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
   ];
 
   const handleFamilyClick = useCallback((family: FamilyV3) => {
-    onFamilySelect(family.name);
+    onFamilySelect(family);
   }, [onFamilySelect]);
 
   const handleMigrationStart = useCallback((sourceFamily: FamilyV3) => {

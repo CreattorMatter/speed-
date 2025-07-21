@@ -2,27 +2,19 @@
 // SPEED BUILDER V3 - PREVIEW MODAL
 // =====================================
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   X, 
-  Eye, 
-  Smartphone, 
-  Monitor, 
-  Printer, 
-  Download, 
-  Share2,
-  ZoomIn,
-  ZoomOut,
-  RotateCw,
-  Maximize2,
-  RefreshCw,
-  Settings,
-  CheckCircle,
-  AlertTriangle
+  RotateCw, 
+  RefreshCw, 
+  CheckCircle, 
+  AlertTriangle,
+  Monitor,
+  Eye
 } from 'lucide-react';
-import { BuilderStateV3, DraggableComponentV3, TemplateV3 } from '../types';
-import { BuilderTemplateRenderer } from '../../posters/components/Posters/Editor/Renderers/BuilderTemplateRenderer';
-import { defaultMockData, processDynamicContent } from '@/utils/dynamicContentProcessor';
+import { BuilderStateV3, TemplateV3 } from '../types';
+import { processDynamicContent, defaultMockData } from '../../../utils/dynamicContentProcessor';
+import { ComponentRenderer } from './Canvas/ComponentRenderer';
 
 interface PreviewModalV3Props {
   isOpen: boolean;
@@ -31,8 +23,8 @@ interface PreviewModalV3Props {
   template: TemplateV3;
 }
 
-type PreviewMode = 'desktop' | 'mobile' | 'print' | 'fullscreen';
-type DataMode = 'mock' | 'real' | 'empty';
+type PreviewMode = 'desktop';
+type DataMode = 'mock';
 
 export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
   isOpen,
@@ -43,51 +35,79 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
   const [dataMode, setDataMode] = useState<DataMode>('mock');
   const [rotation, setRotation] = useState(0);
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useCallback((node: HTMLDivElement) => {
+    if (node !== null) {
+      // This is where you would typically render your canvas content
+      // For now, we'll just set the dimensions and rotation
+      const templateWidth = template.canvas.width;
+      const templateHeight = template.canvas.height;
+      node.style.width = `${templateWidth}px`;
+      node.style.height = `${templateHeight}px`;
+      node.style.transform = `rotate(${rotation}deg)`;
+    }
+  }, [template.canvas.width, template.canvas.height, rotation]);
 
-  // 🚀 OBTENER PRODUCTO MOCK (CORREGIDO)
-  const mockProduct = defaultMockData.producto;
-
-  // =====================
-  // PREVIEW MODES
-  // =====================
+  // 🚀 OBTENER PRODUCTO MOCK (COMENTADO TEMPORALMENTE - NO SE USA)
+  // const mockProduct = {
+  //   id: '1',
+  //   name: 'Taladro Inalámbrico Makita 18V',
+  //   price: 89990,
+  //   originalPrice: 129990,
+  //   discount: 31,
+  //   description: 'Taladro inalámbrico profesional con batería de litio de 18V',
+  //   brand: 'Makita',
+  //   sku: 'MAK-TD-18V-001',
+  //   category: 'Herramientas',
+  //   imageUrl: '/images/products/taladro-makita-18v.jpg',
+  //   stock: 25
+  // };
 
   const getPreviewDimensions = () => {
     const templateWidth = template.canvas.width;
     const templateHeight = template.canvas.height;
     
-    switch (previewMode) {
-      case 'mobile':
-        return {
-          width: Math.min(360, templateWidth * 0.8),
-          height: templateHeight * 0.8,
-          scale: 0.8
-        };
-      case 'print':
-        // Simular 300 DPI
-        const dpiScale = 300 / 96; // De DPI de pantalla a DPI de impresión
-        return {
-          width: templateWidth,
-          height: templateHeight,
-          scale: 1,
-          className: 'print-preview'
-        };
-      case 'fullscreen':
-        return {
-          width: templateWidth * 1.5,
-          height: templateHeight * 1.5,
-          scale: 1.5
-        };
-      default: // desktop
-        return {
-          width: templateWidth,
-          height: templateHeight,
-          scale: 1
-        };
-    }
+    // Usar las dimensiones reales del viewport disponible
+    const availableWidth = window.innerWidth * 0.8; // 80% del ancho de pantalla
+    const availableHeight = window.innerHeight * 0.75; // 75% del alto de pantalla
+    const maxWidth = Math.min(availableWidth, 1400); // Máximo 1400px de ancho
+    const maxHeight = Math.min(availableHeight, 900); // Máximo 900px de alto
+    
+    // Calcular escala para usar el máximo espacio disponible
+    const scaleByWidth = maxWidth / templateWidth;
+    const scaleByHeight = maxHeight / templateHeight;
+    const scale = Math.min(scaleByWidth, scaleByHeight, 2.0); // Permitir hasta 200% si es necesario
+    
+    return {
+      width: templateWidth * scale,
+      height: templateHeight * scale,
+      scale
+    };
   };
 
   const previewDimensions = getPreviewDimensions();
+
+  // =====================
+  // PROCESAR COMPONENTES CON DATOS MOCK
+  // =====================
+  
+  const processedComponents = React.useMemo(() => {
+    const processed = state.components.map(component => {
+      // Procesar contenido dinámico con datos mock
+      const processedContent = processDynamicContent(component, defaultMockData);
+      
+      return {
+        ...component,
+        showMockData: false, // Evitar doble procesamiento
+        content: {
+          ...component.content,
+          staticValue: processedContent, // Usar como valor estático
+          processedValue: processedContent
+        }
+      };
+    });
+    
+    return processed;
+  }, [state.components]);
 
   // =====================
   // ACTIONS
@@ -125,9 +145,7 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
     // Verificar campos dinámicos
     state.components.forEach(component => {
       const content = component.content as any;
-      if (content?.dynamicTemplate && dataMode === 'empty') {
-        issues.push(`Componente "${component.name || component.type}" contiene campos dinámicos sin datos`);
-      }
+      // Nota: Solo usamos modo mock, así que no hay validaciones de datos vacíos
     });
 
     return issues;
@@ -138,12 +156,14 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-2xl max-w-6xl max-h-[90vh] w-full mx-4 flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
+      <div className="bg-white rounded-lg shadow-xl w-full h-full max-w-[96vw] max-h-[96vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
           <div className="flex items-center space-x-3">
-            <Eye className="w-6 h-6 text-blue-600" />
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Eye className="w-5 h-5 text-blue-600" />
+            </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Vista Previa</h2>
               <p className="text-sm text-gray-500">{template.name}</p>
@@ -179,7 +199,7 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium text-gray-700">Modo:</span>
             {[
-              { mode: 'desktop', icon: Monitor, label: 'Desktop' },
+              { mode: 'desktop', icon: Monitor, label: 'Desktop' }
             ].map(({ mode, icon: Icon, label }) => (
               <button
                 key={mode}
@@ -199,27 +219,13 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
           {/* Data Mode */}
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium text-gray-700">Datos:</span>
-            {[
-              { mode: 'mock', label: 'Mock' },
-              { mode: 'real', label: 'Reales' },
-              { mode: 'empty', label: 'Vacío' },
-            ].map(({ mode, label }) => (
-              <button
-                key={mode}
-                onClick={() => setDataMode(mode as DataMode)}
-                className={`px-3 py-1 text-sm rounded ${
-                  dataMode === mode 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'hover:bg-gray-100'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            <div className="bg-green-100 text-green-800 px-3 py-1 rounded text-sm font-medium">
+              Mock
+            </div>
           </div>
 
-          {/* Tools */}
-          <div className="flex items-center space-x-2">
+          {/* Actions */}
+          <div className="flex items-center space-x-1">
             <button
               onClick={handleRotate}
               className="p-2 hover:bg-gray-100 rounded"
@@ -238,62 +244,61 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
           </div>
         </div>
 
-        {/* Preview Area */}
-        <div className="flex-1 overflow-auto bg-gray-100 p-8">
-          <div className="flex items-center justify-center min-h-full">
-            <div
-              ref={canvasRef}
-              className="bg-white shadow-lg relative"
+        {/* Content Area - MEJORADO PARA USAR MÁS ESPACIO */}
+        <div className="flex-1 overflow-auto bg-gray-100">
+          <div className="w-full h-full flex items-center justify-center p-4 min-h-[600px]">
+            <div 
+              className="bg-white shadow-2xl border border-gray-200 flex items-center justify-center"
               style={{
                 width: `${previewDimensions.width}px`,
                 height: `${previewDimensions.height}px`,
                 transform: `rotate(${rotation}deg)`,
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                maxWidth: '100%',
+                maxHeight: '100%'
               }}
             >
-              {/* Canvas content usando BuilderTemplateRenderer para consistencia */}
+              {/* Canvas content usando ComponentRenderer para consistencia con BuilderV3 */}
               <div 
                 className="relative w-full h-full overflow-hidden"
-                style={{ 
-                  transform: `scale(${previewDimensions.scale})`,
-                  transformOrigin: 'top left'
-                }}
+                style={{ backgroundColor: template.canvas.backgroundColor }}
               >
-                <BuilderTemplateRenderer
-                  template={template}
-                  components={state.components}
-                  product={dataMode === 'mock' ? defaultMockData.producto : undefined}
-                  isPreview={true}
-                  scale={1}
-                />
+                {processedComponents.map((component) => (
+                  <ComponentRenderer
+                    key={component.id}
+                    component={component}
+                    isSelected={false}
+                    isMultiSelected={false}
+                    zoom={previewDimensions.scale}
+                    snapToGrid={false}
+                    gridSize={20}
+                    snapTolerance={5}
+                    allComponents={processedComponents}
+                    onClick={() => {}} // No interaction in preview
+                    operations={{} as any} // No operations in preview
+                  />
+                ))}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Footer with validation issues */}
-        {validationIssues.length > 0 && (
-          <div className="p-4 border-t border-gray-200 bg-orange-50">
-            <div className="flex items-start space-x-2">
-              <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <h4 className="text-sm font-medium text-orange-800 mb-1">
-                  Problemas detectados:
-                </h4>
-                <ul className="text-sm text-orange-700 space-y-1">
-                  {validationIssues.slice(0, 3).map((issue, index) => (
-                    <li key={index}>• {issue}</li>
-                  ))}
-                  {validationIssues.length > 3 && (
-                    <li className="text-orange-600">
-                      ... y {validationIssues.length - 3} problema(s) más
-                    </li>
-                  )}
-                </ul>
-              </div>
+        {/* Footer info */}
+        <div className="p-3 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <div className="flex items-center space-x-4">
+              <span>Canvas: {template.canvas.width} × {template.canvas.height}px</span>
+              <span>Escala: {Math.round(previewDimensions.scale * 100)}%</span>
+              <span>Componentes: {state.components.length}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span>Vista: Desktop</span>
+              {validationIssues.length > 0 && (
+                <span className="text-orange-600">⚠️ {validationIssues.length} problema(s)</span>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
