@@ -24,7 +24,7 @@ interface PreviewModalV3Props {
 }
 
 type PreviewMode = 'desktop';
-type DataMode = 'mock';
+type DataMode = 'mock' | 'technical';
 
 export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
   isOpen,
@@ -87,27 +87,27 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
   const previewDimensions = getPreviewDimensions();
 
   // =====================
-  // PROCESAR COMPONENTES CON DATOS MOCK
+  // 🔧 PROCESAR COMPONENTES CORREGIDO PARA MOCK DATA
   // =====================
   
   const processedComponents = React.useMemo(() => {
-    const processed = state.components.map(component => {
-      // Procesar contenido dinámico con datos mock
-      const processedContent = processDynamicContent(component, defaultMockData);
-      
-      return {
-        ...component,
-        showMockData: false, // Evitar doble procesamiento
-        content: {
-          ...component.content,
-          staticValue: processedContent, // Usar como valor estático
-          processedValue: processedContent
-        }
-      };
+    return state.components.map(component => {
+      // 🎯 LÓGICA CORREGIDA: Respetar el dataMode
+      if (dataMode === 'mock') {
+        // Modo Mock: Asegurar que showMockData esté en true
+        return {
+          ...component,
+          showMockData: true // ✅ Esto activará el sistema de mock data en ComponentRenderer
+        };
+      } else {
+        // Modo técnico: Mostrar nombres de campo
+        return {
+          ...component,
+          showMockData: false // ✅ Esto mostrará los nombres técnicos como [product_name]
+        };
+      }
     });
-    
-    return processed;
-  }, [state.components]);
+  }, [state.components, dataMode]);
 
   // =====================
   // ACTIONS
@@ -216,11 +216,30 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
             ))}
           </div>
 
-          {/* Data Mode */}
+          {/* Data Mode - Toggle Interactivo */}
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium text-gray-700">Datos:</span>
-            <div className="bg-green-100 text-green-800 px-3 py-1 rounded text-sm font-medium">
-              Mock
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={() => setDataMode('mock')}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  dataMode === 'mock' 
+                    ? 'bg-green-100 text-green-800 shadow-sm' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                🎭 Mock
+              </button>
+              <button
+                onClick={() => setDataMode('technical' as DataMode)}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  dataMode !== 'mock' 
+                    ? 'bg-orange-100 text-orange-800 shadow-sm' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                🏷️ Técnico
+              </button>
             </div>
           </div>
 

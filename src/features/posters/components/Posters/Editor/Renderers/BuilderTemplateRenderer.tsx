@@ -26,9 +26,25 @@ const getDynamicValue = (
   product?: ProductoReal,
   isPreview?: boolean,
   productChanges?: any, // Cambios del usuario desde Redux
-  componentId?: string // 🆕 ID del componente para campos estáticos únicos
+  componentId?: string, // 🆕 ID del componente para campos estáticos únicos
+  showMockData: boolean = true // 🆕 Flag para mostrar datos mock o nombres de campo
 ): string => {
   if (!content) return '';
+  
+  // 🆕 Si showMockData es false, devolver el nombre técnico del campo
+  if (showMockData === false) {
+    // Obtener el nombre técnico basado en el tipo de campo
+    if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
+      return content.dynamicTemplate;
+    } else if (content?.fieldType === 'calculated' && content?.calculatedField?.expression) {
+      return content.calculatedField.expression;
+    } else if (content?.textConfig?.contentType) {
+      return `[${content.textConfig.contentType}]`;
+    } else if (content?.staticValue) {
+      return content.staticValue;
+    }
+    return 'Campo';
+  }
   
   // Función auxiliar para obtener el valor de un campo del producto
   const getProductValue = (field: string, fallback: any = '') => {
@@ -725,7 +741,7 @@ const renderComponent = (
   
   switch (type) {
     case 'field-dynamic-text':
-      const textValue = getDynamicValue(content, product, isPreview, productChanges, component.id);
+      const textValue = getDynamicValue(content, product, isPreview, productChanges, component.id, component.showMockData !== false);
       const fieldType = getFieldType(content);
       
               // 🆕 DETECTAR SI ES CAMPO ESTÁTICO O DINÁMICO

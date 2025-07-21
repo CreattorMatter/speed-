@@ -39,38 +39,42 @@ export const BuilderV3ContentRenderer: React.FC<ContentRendererProps> = ({
   switch (currentStep) {
     case 'family-selection':
       return (
-        <FamilySelectorV3 
-          families={families} 
-          onFamilySelect={templateActions.handleFamilySelect}
-          onFamilyMigration={operations.migrateFamily}
-          userRole={userRole === 'admin' ? 'admin' : 'limited'}
-          onCreateFamily={templateActions.handleCreateFamily}
-          onFamilyDelete={operations.deleteFamily}
-          onFamilyUpdate={operations.updateFamily}
-        />
+        <div className="h-full overflow-y-auto">
+          <FamilySelectorV3 
+            families={families} 
+            onFamilySelect={templateActions.handleFamilySelect}
+            onFamilyMigration={operations.migrateFamily}
+            userRole={userRole === 'admin' ? 'admin' : 'limited'}
+            onCreateFamily={templateActions.handleCreateFamily}
+            onFamilyDelete={operations.deleteFamily}
+            onFamilyUpdate={operations.updateFamily}
+          />
+        </div>
       );
       
     case 'template-library':
       if (!state.currentFamily) return <LoadingSpinner />;
       return (
-        <TemplateLibraryV3
-          family={state.currentFamily}
-          templates={templates}
-          onTemplateSelect={templateActions.handleTemplateSelect}
-          onTemplateCreate={templateActions.handleCreateNewTemplate}
-          onTemplateDelete={async (templateId: string) => {
-            try {
-              await operations.deleteTemplate(templateId);
-              await refreshData(); // Refrescar datos después de eliminar
-              toast.success('Plantilla eliminada exitosamente');
-            } catch (error) {
-              console.error('Error eliminando plantilla desde BuilderV3:', error);
-              toast.error('Error al eliminar la plantilla');
-            }
-          }}
-          userRole={userRole === 'admin' ? 'admin' : 'limited'}
-          onRefresh={refreshData}
-        />
+        <div className="h-full overflow-y-auto">
+          <TemplateLibraryV3
+            family={state.currentFamily}
+            templates={templates}
+            onTemplateSelect={templateActions.handleTemplateSelect}
+            onTemplateCreate={templateActions.handleCreateNewTemplate}
+            onTemplateDelete={async (templateId: string) => {
+              try {
+                await operations.deleteTemplate(templateId);
+                await refreshData(); // Refrescar datos después de eliminar
+                toast.success('Plantilla eliminada exitosamente');
+              } catch (error) {
+                console.error('Error eliminando plantilla desde BuilderV3:', error);
+                toast.error('Error al eliminar la plantilla');
+              }
+            }}
+            userRole={userRole === 'admin' ? 'admin' : 'limited'}
+            onRefresh={refreshData}
+          />
+        </div>
       );
       
     case 'canvas-editor':

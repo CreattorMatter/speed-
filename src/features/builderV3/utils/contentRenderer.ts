@@ -22,9 +22,12 @@ export const getFieldTechnicalNames = (component: DraggableComponentV3): string 
     }
   }
   
-  // 1. Contenido estático - mostrar tal como está
+  // 1. Contenido estático - para el modo técnico, mostrar el tipo de campo
   if (content?.fieldType === 'static') {
-    return content?.staticValue || content?.text || 'Texto estático';
+    // En modo técnico (showMockData = false), mostrar nombre técnico
+    // En modo mock (showMockData = true), mostrar el valor estático
+    // Nota: Esta función se llama solo cuando showMockData es false
+    return '[static_text]';
   }
   
   // 2. Campo calculado - mostrar la expresión técnica sin procesar en el canvas
@@ -103,7 +106,9 @@ export const getFieldTechnicalNames = (component: DraggableComponentV3): string 
     if (content.staticValue.includes('[') && content.staticValue.includes(']')) {
       return content.staticValue;
     }
-    return content.staticValue;
+    // Para contenido estático sin fieldType, mostrar nombre técnico en modo técnico
+    // Nota: Esta función se llama solo cuando showMockData es false
+    return '[static_text]';
   }
   
   if (content?.text) {
@@ -112,7 +117,9 @@ export const getFieldTechnicalNames = (component: DraggableComponentV3): string 
     if (content.text.includes('[') && content.text.includes(']')) {
       return content.text;
     }
-    return content.text;
+    // Para contenido estático sin fieldType, mostrar nombre técnico en modo técnico
+    // Nota: Esta función se llama solo cuando showMockData es false
+    return '[static_text]';
   }
   
   // 11. Fallback final inteligente basado en el tipo de componente

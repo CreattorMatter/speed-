@@ -214,19 +214,33 @@ export const getPromotionFieldValue = (fieldName: string, data: MockDataV3): str
 };
 
 // =====================
-// PROCESADOR PRINCIPAL DE COMPONENTES (MEJORADO)
+// PROCESADOR PRINCIPAL DE COMPONENTES (CORREGIDO)
 // =====================
 
 export const processDynamicContent = (
-  component: any, 
+  contentOrComponent: any, 
   mockData: MockDataV3 = defaultMockData
 ): string => {
-  const content = component.content as any;
+  // 🔧 CORRECCIÓN: Detectar si se pasó el content directamente o el componente completo
+  let content: any;
+  let componentType: string | undefined;
+  
+  if (contentOrComponent?.content) {
+    // Se pasó el componente completo
+    content = contentOrComponent.content;
+    componentType = contentOrComponent.type;
+    console.log(`📦 Se pasó componente completo:`, { type: componentType, content });
+  } else {
+    // Se pasó solo el content
+    content = contentOrComponent;
+    componentType = undefined;
+    console.log(`📄 Se pasó content directamente:`, { content });
+  }
   
   if (!content) {
-    console.log(`⚠️ No hay content, usando fallback por tipo de componente: ${component.type}`);
+    console.log(`⚠️ No hay content, usando fallback por tipo de componente: ${componentType}`);
     // Fallback específico por tipo de componente cuando no hay content
-    switch (component.type) {
+    switch (componentType) {
       case 'field-dynamic-text':
         return mockData.producto?.descripcion || 'Heladera Whirlpool No Frost 375L';
       case 'field-dynamic-date':
@@ -236,19 +250,46 @@ export const processDynamicContent = (
     }
   }
   
-  // 1. Contenido estático directo
+  console.log(`🔍 Procesando content:`, {
+    fieldType: content.fieldType,
+    dynamicTemplate: content.dynamicTemplate,
+    staticValue: content.staticValue,
+    textConfig: content.textConfig
+  });
+  
+  // 1. Contenido estático directo - generar datos mock apropiados
   if (content?.fieldType === 'static') {
-    return content?.staticValue || content?.text || 'Texto estático';
+    console.log(`📝 Procesando contenido estático: "${content.staticValue}"`);
+    // Para campos estáticos, generar datos mock basados en el contexto
+    const staticValue = content?.staticValue || content?.text || 'Texto estático';
+    
+    // Si parece ser un precio, mostrar precio mock
+    if (staticValue.toLowerCase().includes('precio') || staticValue.includes('$')) {
+      return '$ 99.999';
+    }
+    // Si parece ser un porcentaje, mostrar porcentaje mock
+    if (staticValue.toLowerCase().includes('descuento') || staticValue.toLowerCase().includes('off') || staticValue.includes('%')) {
+      return '25% OFF';
+    }
+    // Si parece ser texto promocional, mostrar texto mock
+    if (staticValue.toLowerCase().includes('super') || staticValue.toLowerCase().includes('mega') || staticValue.toLowerCase().includes('oferta')) {
+      return 'SUPER OFERTA';
+    }
+    // Para otros campos estáticos, generar texto mock genérico
+    return 'Texto Ejemplo';
   }
   
   // 2. Plantilla dinámica (PRINCIPAL - MEJORADO)
   if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
+    console.log(`🎭 Procesando plantilla dinámica: "${content.dynamicTemplate}"`);
     const result = processTemplate(content.dynamicTemplate, mockData, content.outputFormat);
+    console.log(`🎭 Resultado de plantilla: "${result}"`);
     return result;
   }
   
   // 3. Campo SAP directo (MEJORADO)
   if (content?.fieldType === 'sap-product' && content?.sapField) {
+    console.log(`🔗 Procesando campo SAP: "${content.sapField}"`);
     return getSAPFieldValue(content.sapField, mockData);
   }
   
@@ -318,13 +359,30 @@ export const processDynamicContent = (
     }
   }
   
-  // 9. Fallback para valores directos (MEJORADO)
+  // 9. Fallback para valores directos (MEJORADO) - generar datos mock
   if (content?.staticValue) {
     // Si es un template dinámico en staticValue, procesarlo
     if (content.staticValue.includes('[') && content.staticValue.includes(']')) {
       return processTemplate(content.staticValue, mockData, content.outputFormat);
     }
-    return content.staticValue;
+    
+    // Para campos estáticos sin fieldType, generar datos mock basados en el contexto
+    const staticValue = content.staticValue;
+    
+    // Si parece ser un precio, mostrar precio mock
+    if (staticValue.toLowerCase().includes('precio') || staticValue.includes('$')) {
+      return '$ 99.999';
+    }
+    // Si parece ser un porcentaje, mostrar porcentaje mock
+    if (staticValue.toLowerCase().includes('descuento') || staticValue.toLowerCase().includes('off') || staticValue.includes('%')) {
+      return '25% OFF';
+    }
+    // Si parece ser texto promocional, mostrar texto mock
+    if (staticValue.toLowerCase().includes('super') || staticValue.toLowerCase().includes('mega') || staticValue.toLowerCase().includes('oferta')) {
+      return 'SUPER OFERTA';
+    }
+    // Para "Nuevo componente" y otros campos estáticos genéricos, mostrar texto mock
+    return 'Texto Ejemplo';
   }
   
   if (content?.text) {
@@ -332,12 +390,29 @@ export const processDynamicContent = (
     if (content.text.includes('[') && content.text.includes(']')) {
       return processTemplate(content.text, mockData, content.outputFormat);
     }
-    return content.text;
+    
+    // Para campos estáticos sin fieldType, generar datos mock basados en el contexto
+    const textValue = content.text;
+    
+    // Si parece ser un precio, mostrar precio mock
+    if (textValue.toLowerCase().includes('precio') || textValue.includes('$')) {
+      return '$ 99.999';
+    }
+    // Si parece ser un porcentaje, mostrar porcentaje mock
+    if (textValue.toLowerCase().includes('descuento') || textValue.toLowerCase().includes('off') || textValue.includes('%')) {
+      return '25% OFF';
+    }
+    // Si parece ser texto promocional, mostrar texto mock
+    if (textValue.toLowerCase().includes('super') || textValue.toLowerCase().includes('mega') || textValue.toLowerCase().includes('oferta')) {
+      return 'SUPER OFERTA';
+    }
+    // Para otros campos estáticos genéricos, mostrar texto mock
+    return 'Texto Ejemplo';
   }
   
   // 10. Fallback basado en el tipo de componente
-  if (component?.type) {
-    switch (component.type) {
+  if (componentType) {
+    switch (componentType) {
       case 'field-dynamic-text':
         return mockData.producto?.descripcion || 'Heladera Whirlpool No Frost 375L';
       case 'field-dynamic-date':

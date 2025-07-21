@@ -333,28 +333,51 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                 </div>
               )}
 
-              {/* Toggle para mostrar datos mock vs nombres de campo - PARA TODOS LOS TIPOS */}
+              {/* Toggle para mostrar datos mock vs nombres de campo - VERSIÓN LIMPIA */}
               {(['field-dynamic-text', 'field-dynamic-date'].includes(selectedComponent.type)) && (
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-blue-900">Vista en canvas</label>
-                    <p className="text-xs text-blue-600">Cambia lo que se muestra en el editor</p>
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex-1">
+                      <label className="text-sm font-semibold text-blue-900">Vista en Canvas</label>
+                      <p className="text-xs text-blue-600 mt-1">Alterna entre datos de ejemplo y nombres técnicos</p>
+                    </div>
+                    
+                    {/* Estado actual visual */}
+                    <div className="text-right">
+                      <div className={`text-xs font-medium px-2 py-1 rounded ${
+                        selectedComponent.showMockData !== false 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-orange-100 text-orange-800'
+                      }`}>
+                        {selectedComponent.showMockData !== false ? 'Datos Mock' : 'Nombres Técnicos'}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-600">🏷️ Técnico</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedComponent.showMockData !== false}
-                        onChange={(e) => {
-                          console.log('🔄 Toggle cambiado:', e.target.checked);
-                          handlers.handleContentChange('showMockData', e.target.checked);
-                        }}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                    <span className="text-xs text-gray-600">🎭 Mock</span>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <span className={`text-sm ${selectedComponent.showMockData === false ? 'font-semibold text-orange-700' : 'text-gray-500'}`}>
+                        🏷️ [product_name]
+                      </span>
+                      
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedComponent.showMockData !== false}
+                          onChange={(e) => {
+                            const newValue = e.target.checked;
+                            // Forzar actualización del componente
+                            handlers.handleContentChange('showMockData', newValue);
+                          }}
+                          className="sr-only peer"
+                        />
+                        <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                      
+                      <span className={`text-sm ${selectedComponent.showMockData !== false ? 'font-semibold text-green-700' : 'text-gray-500'}`}>
+                        🎭 Heladera Whirlpool
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
