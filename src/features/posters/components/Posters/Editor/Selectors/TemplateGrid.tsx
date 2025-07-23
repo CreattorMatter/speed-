@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { PosterTemplateData } from '../../../../../../services/posterTemplateService';
 import { CheckCircle } from 'lucide-react';
+import { ImageWithFallback } from '../../../../../builderV3/components/TemplateLibrary/ImageWithFallback';
 
 interface TemplateGridProps {
   templates: PosterTemplateData[];
@@ -72,11 +73,16 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
             }`}
           >
             <div className="relative aspect-w-4 aspect-h-3 overflow-hidden">
-              <img
-                src={template.thumbnail || 'https://placehold.co/400x300?text=Sin+Vista+Previa'}
-                alt={template.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
+              {/* 🖼️ THUMBNAIL MEJORADO - Reutilizando componente de BuilderV3 */}
+              <div className="group-hover:scale-105 transition-transform duration-300">
+                <ImageWithFallback
+                  template={template.template}
+                  aspectRatio="card"
+                  size="medium"
+                  className="w-full h-full rounded-none"
+                  lazy={true}
+                />
+              </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               {selectedTemplate?.id === template.id && (
                 <div className="absolute inset-0 bg-blue-500 bg-opacity-30 flex items-center justify-center backdrop-blur-sm">
