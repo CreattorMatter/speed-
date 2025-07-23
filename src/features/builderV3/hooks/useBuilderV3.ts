@@ -2,7 +2,7 @@
 // SPEED BUILDER V3 - MAIN HOOK
 // =====================================
 
-import { useReducer, useCallback, useState } from 'react';
+import { useReducer, useCallback, useState, useRef } from 'react';
 import { toast } from 'react-hot-toast';
 import {
   BuilderStateV3,
@@ -426,9 +426,20 @@ const builderReducer = (state: BuilderStateV3, action: BuilderAction): BuilderSt
 // =====================
 
 export const useBuilderV3 = (): UseBuilderV3Return => {
+  // =====================
+  // STATE MANAGEMENT
+  // =====================
+  
   const [state, dispatch] = useReducer(builderReducer, createInitialState());
   const [families] = useState<FamilyV3[]>([]);
   const [templates] = useState<TemplateV3[]>([]);
+
+  // =====================
+  // VARIABLES DE CONTROL PARA EVITAR BUCLES (PERSISTENTES)
+  // =====================
+
+  const isSavingTemplate = useRef(false);
+  const thumbnailGenerationInProgress = useRef(false);
 
   // =====================
   // OPERACIONES
@@ -676,16 +687,236 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
       throw new Error('No implementado');
     }, []),
 
-    saveTemplate: useCallback(async () => {
+    // ===== SAVE TEMPLATE WITH THUMBNAIL WAIT
+    saveTemplateAndWaitForThumbnail: useCallback(async (): Promise<void> => {
+      // ⚠️ PROTECCIÓN CONTRA MÚLTIPLES LLAMADAS
+      if (isSavingTemplate.current) {
+        console.log('⚠️ Guardado ya en progreso, ignorando llamada adicional');
+        return;
+      }
+
+      if (!state.currentTemplate) {
+        throw new Error('No hay plantilla para guardar');
+      }
+
+      isSavingTemplate.current = true;
       dispatch({ type: 'SET_SAVING', payload: true });
+
       try {
-        // Simular guardado
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('💾 Guardando plantilla con espera completa de thumbnail...');
+
+        // =====================
+        // PASO 1: GUARDAR PLANTILLA EN BD
+        // =====================
+        
+        const templateToSave: Partial<TemplateV3> = {
+          ...state.currentTemplate,
+          defaultComponents: state.components,
+          updatedAt: new Date()
+        };
+
+        const updatedTemplate = await templatesV3Service.update(state.currentTemplate.id, templateToSave);
+        
+        dispatch({ type: 'SET_TEMPLATE_DIRECT', payload: updatedTemplate });
         dispatch({ type: 'SET_HAS_UNSAVED_CHANGES', payload: false });
+        
+        console.log('✅ Plantilla guardada en BD, iniciando generación SINCRONIZADA de thumbnail...');
+
+        // =====================
+        // PASO 2: GENERAR THUMBNAIL SINCRONAMENTE
+        // =====================
+        
+        // Esperar un momento para que el canvas se renderice
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        if (thumbnailGenerationInProgress.current) {
+          console.log('⚠️ Generación de thumbnail ya en progreso');
+          return;
+        }
+
+        thumbnailGenerationInProgress.current = true;
+
+        try {
+          const canvasElement = document.querySelector('[data-canvas="builderv3"]') as HTMLElement;
+          
+          if (canvasElement) {
+            console.log('🖼️ Generando thumbnail desde canvas...');
+            
+            const { generateThumbnailFromCanvas, deletePreviousThumbnail } = await import('../utils/thumbnailGenerator');
+            
+            if (updatedTemplate.thumbnail) {
+              console.log('🗑️ Eliminando thumbnail anterior:', updatedTemplate.thumbnail);
+              await deletePreviousThumbnail(updatedTemplate.thumbnail);
+            }
+
+            const thumbnailResult = await generateThumbnailFromCanvas(
+              canvasElement,
+              updatedTemplate.id,
+              {
+                width: 800,
+                height: 500,
+                quality: 0.8,
+                backgroundColor: updatedTemplate.canvas.backgroundColor
+              }
+            );
+
+            console.log('✅ Thumbnail generado:', thumbnailResult.url);
+
+            const finalTemplate = await templatesV3Service.update(updatedTemplate.id, {
+              thumbnail: thumbnailResult.url
+            });
+
+            dispatch({ type: 'SET_TEMPLATE_DIRECT', payload: finalTemplate });
+            
+            console.log('🎉 Plantilla guardada completamente con thumbnail - LISTA PARA NAVEGAR');
+            
+          } else {
+            console.log('⚠️ Canvas no encontrado para generar thumbnail');
+          }
+          
+        } catch (thumbnailError) {
+          console.error('❌ Error generando thumbnail:', thumbnailError);
+        } finally {
+          thumbnailGenerationInProgress.current = false;
+        }
+
+      } catch (error) {
+        console.error('❌ Error guardando plantilla con thumbnail completo:', error);
+        dispatch({ type: 'SET_SAVING', payload: false });
+        throw error;
       } finally {
+        isSavingTemplate.current = false;
         dispatch({ type: 'SET_SAVING', payload: false });
       }
-    }, []),
+    }, [state.currentTemplate, state.components]),
+
+    // ===== SAVE TEMPLATE - VERSIÓN FINAL CON THUMBNAILS COMPLETOS
+    saveTemplate: useCallback(async (): Promise<void> => {
+      // ⚠️ PROTECCIÓN CONTRA MÚLTIPLES LLAMADAS
+      if (isSavingTemplate.current) {
+        console.log('⚠️ Guardado ya en progreso, ignorando llamada adicional');
+        return;
+      }
+
+      if (!state.currentTemplate) {
+        throw new Error('No hay plantilla para guardar');
+      }
+
+      isSavingTemplate.current = true; // ⚠️ ACTIVAR PROTECCIÓN
+      dispatch({ type: 'SET_SAVING', payload: true });
+
+      try {
+        console.log('💾 Guardando plantilla con sistema de thumbnails completo...');
+
+        // =====================
+        // PASO 1: GUARDAR PLANTILLA EN BD (SIN THUMBNAIL AÚN)
+        // =====================
+        
+        const templateToSave: Partial<TemplateV3> = {
+          ...state.currentTemplate,
+          defaultComponents: state.components,
+          updatedAt: new Date()
+          // thumbnail se actualizará después
+        };
+
+        const updatedTemplate = await templatesV3Service.update(state.currentTemplate.id, templateToSave);
+        
+        // Actualizar estado inmediatamente
+        dispatch({ type: 'SET_TEMPLATE_DIRECT', payload: updatedTemplate });
+        dispatch({ type: 'SET_HAS_UNSAVED_CHANGES', payload: false });
+        
+        console.log('✅ Plantilla guardada en BD, iniciando generación de thumbnail...');
+
+        // =====================
+        // PASO 2: GENERAR THUMBNAIL EN BACKGROUND CON PROMISE
+        // =====================
+        
+        // 🎯 CREAR PROMISE PARA PODER ESPERAR EL THUMBNAIL
+        const thumbnailPromise = new Promise<void>((resolve) => {
+          setTimeout(async () => {
+            if (thumbnailGenerationInProgress.current) {
+              console.log('⚠️ Generación de thumbnail ya en progreso');
+              resolve();
+              return;
+            }
+
+            thumbnailGenerationInProgress.current = true;
+
+            try {
+              const canvasElement = document.querySelector('[data-canvas="builderv3"]') as HTMLElement;
+              
+              if (canvasElement) {
+                console.log('🖼️ Generando thumbnail desde canvas...');
+                
+                // =====================
+                // IMPORTAR FUNCIONES DE THUMBNAIL
+                // =====================
+                const { generateThumbnailFromCanvas, deletePreviousThumbnail } = await import('../utils/thumbnailGenerator');
+                
+                // =====================
+                // ELIMINAR THUMBNAIL ANTERIOR PRIMERO
+                // =====================
+                if (updatedTemplate.thumbnail) {
+                  console.log('🗑️ Eliminando thumbnail anterior:', updatedTemplate.thumbnail);
+                  await deletePreviousThumbnail(updatedTemplate.thumbnail);
+                }
+
+                // =====================
+                // GENERAR NUEVO THUMBNAIL
+                // =====================
+                const thumbnailResult = await generateThumbnailFromCanvas(
+                  canvasElement,
+                  updatedTemplate.id,
+                  {
+                    width: 800,
+                    height: 500,
+                    quality: 0.8,
+                    backgroundColor: updatedTemplate.canvas.backgroundColor
+                  }
+                );
+
+                console.log('✅ Thumbnail generado:', thumbnailResult.url);
+
+                // =====================
+                // ACTUALIZAR BD CON THUMBNAIL URL
+                // =====================
+                const finalTemplate = await templatesV3Service.update(updatedTemplate.id, {
+                  thumbnail: thumbnailResult.url
+                });
+
+                // =====================
+                // ACTUALIZAR ESTADO CON THUMBNAIL
+                // =====================
+                dispatch({ type: 'SET_TEMPLATE_DIRECT', payload: finalTemplate });
+                
+                console.log('🎉 Plantilla guardada completamente con thumbnail');
+                
+              } else {
+                console.log('⚠️ Canvas no encontrado para generar thumbnail');
+              }
+              
+            } catch (thumbnailError) {
+              console.error('❌ Error generando thumbnail:', thumbnailError);
+              // No fallar el guardado por error de thumbnail
+            } finally {
+              thumbnailGenerationInProgress.current = false;
+              resolve(); // ✅ RESOLVER PROMISE SIEMPRE
+            }
+          }, 1000); // Delay para asegurar que el canvas esté renderizado
+        });
+
+        // 🎯 GUARDAR PROMISE PARA QUE OTROS PUEDAN ESPERARLA
+        (updatedTemplate as any)._thumbnailPromise = thumbnailPromise;
+
+      } catch (error) {
+        console.error('❌ Error guardando plantilla:', error);
+        dispatch({ type: 'SET_SAVING', payload: false });
+        throw error;
+      } finally {
+        isSavingTemplate.current = false;
+        dispatch({ type: 'SET_SAVING', payload: false });
+      }
+    }, [state.currentTemplate, state.components]),
 
     // ===== GESTIÓN DE COMPONENTES =====
     createComponent: useCallback((type: ComponentTypeV3, position: PositionV3) => {

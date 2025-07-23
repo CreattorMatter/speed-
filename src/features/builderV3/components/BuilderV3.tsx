@@ -19,6 +19,11 @@ import {
   BuilderV3ContentRenderer
 } from './BuilderV3/index';
 
+// Importar debug helper en desarrollo
+if (import.meta.env.DEV) {
+  import('../utils/debugThumbnails');
+}
+
 export const BuilderV3: React.FC<BuilderV3Props> = ({
   onBack,
   onLogout,
@@ -73,7 +78,8 @@ export const BuilderV3: React.FC<BuilderV3Props> = ({
     stateUpdaters: allStateUpdaters,
     showConfirmExitModal: builderState.showConfirmExitModal,
     showPreview: builderState.showPreview,
-    isCreateFamilyModalOpen: builderState.isCreateFamilyModalOpen
+    isCreateFamilyModalOpen: builderState.isCreateFamilyModalOpen,
+    refreshData // 🔄 Pasar refreshData para actualizar thumbnails
   });
 
   // =====================

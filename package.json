@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup:thumbnails": "node src/scripts/runThumbnailSetup.cjs",
+    "test:thumbnails": "node src/scripts/testThumbnails.js",
+    "clean:test-thumbnails": "node src/scripts/cleanTestThumbnails.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -93,6 +93,10 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
           ref={worldRef}
           onMouseDown={handleSelectionMouseDown}
           className="relative mx-auto my-8 shadow-2xl border border-gray-300"
+          data-canvas="builderv3"
+          data-testid="canvas-container"
+          data-template-width={template.canvas.width}
+          data-template-height={template.canvas.height}
           style={{
             width: `${template.canvas.width * canvasState.zoom}px`,
             height: `${template.canvas.height * canvasState.zoom}px`,

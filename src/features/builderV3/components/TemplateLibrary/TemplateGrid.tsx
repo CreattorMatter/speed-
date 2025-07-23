@@ -45,7 +45,7 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {templates.map(template => (
         <TemplateCard
-          key={template.id}
+          key={`${template.id}-${template.updatedAt?.getTime() || 0}-${template.thumbnail || 'no-thumb'}`}
           template={template}
           family={family}
           onTemplateClick={onTemplateClick}

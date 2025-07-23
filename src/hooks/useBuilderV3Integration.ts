@@ -26,111 +26,18 @@ export const useBuilderV3Integration = () => {
   const { setComponentsLibrary } = builderCore.operations;
 
   // =====================
-  // GENERACIÓN DE THUMBNAILS
+  // GENERACIÓN DE THUMBNAILS (DESHABILITADO - USAR SISTEMA NUEVO)
   // =====================
-
+  // NOTA: La generación de thumbnails ahora se maneja automáticamente 
+  // en useBuilderV3.ts usando thumbnailGenerator.ts y el bucket 'assets'
+  
+  /* 
   const generateThumbnailForTemplate = useCallback(async (templateId: string): Promise<string | null> => {
-    try {
-      // Buscar el elemento canvas del BuilderV3
-      const canvasElement = document.querySelector('[data-canvas="builderv3"]') as HTMLElement;
-      if (!canvasElement) {
-        console.warn('⚠️ No se encontró el canvas para generar thumbnail');
-        return null;
-      }
-
-      console.log('🖼️ Generando thumbnail para plantilla:', templateId);
-      
-      // Capturar el canvas como imagen
-      const canvas = await html2canvas(canvasElement, {
-        backgroundColor: '#ffffff',
-        scale: 0.5, // Escala menor para thumbnail
-        logging: false,
-        useCORS: true,
-        allowTaint: false
-      });
-
-      // Redimensionar para thumbnail (300x375)
-      const thumbnailCanvas = document.createElement('canvas');
-      thumbnailCanvas.width = 300;
-      thumbnailCanvas.height = 375;
-      
-      const ctx = thumbnailCanvas.getContext('2d');
-      if (!ctx) return null;
-
-      // Rellenar con fondo blanco
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 300, 375);
-
-      // Calcular dimensiones manteniendo aspect ratio
-      const sourceRatio = canvas.width / canvas.height;
-      const targetRatio = 300 / 375;
-      
-      let drawWidth = 300;
-      let drawHeight = 375;
-      let drawX = 0;
-      let drawY = 0;
-
-      if (sourceRatio > targetRatio) {
-        drawHeight = 375;
-        drawWidth = 375 * sourceRatio;
-        drawX = (300 - drawWidth) / 2;
-      } else {
-        drawWidth = 300;
-        drawHeight = 300 / sourceRatio;
-        drawY = (375 - drawHeight) / 2;
-      }
-
-      // Dibujar la imagen redimensionada
-      ctx.drawImage(canvas, drawX, drawY, drawWidth, drawHeight);
-
-      // Convertir a blob y subir a Supabase Storage
-      return new Promise((resolve) => {
-        thumbnailCanvas.toBlob(
-          async (blob) => {
-            if (!blob) {
-              console.warn('⚠️ No se pudo generar blob para thumbnail');
-              resolve(null);
-              return;
-            }
-
-            try {
-              const fileName = `thumbnails/${templateId}.jpg`;
-              
-              const { data, error } = await supabase.storage
-                .from('template-thumbnails')
-                .upload(fileName, blob, {
-                  cacheControl: '3600',
-                  upsert: true,
-                  contentType: 'image/jpeg'
-                });
-
-              if (error) {
-                console.warn('⚠️ Error subiendo thumbnail:', error);
-                resolve(null);
-                return;
-              }
-
-              // Obtener URL pública
-              const { data: { publicUrl } } = supabase.storage
-                .from('template-thumbnails')
-                .getPublicUrl(fileName);
-
-              console.log('✅ Thumbnail generado:', publicUrl);
-              resolve(publicUrl);
-            } catch (error) {
-              console.warn('⚠️ Error procesando thumbnail:', error);
-              resolve(null);
-            }
-          },
-          'image/jpeg',
-          0.8
-        );
-      });
-    } catch (error) {
-      console.warn('⚠️ Error generando thumbnail:', error);
-      return null;
-    }
+    // FUNCIÓN DESHABILITADA - Causaba conflictos con el sistema nuevo
+    // El thumbnail se genera automáticamente al guardar en useBuilderV3.ts
+    return null;
   }, []);
+  */
 
   // =====================
   // INICIALIZACIÓN Y CONEXIÓN
@@ -270,9 +177,8 @@ export const useBuilderV3Integration = () => {
       console.log('📦 Componentes actuales a guardar:', builderCore.state.components.length);
       
       try {
-        // 🖼️ Generar thumbnail antes de guardar
-        console.log('📸 Generando thumbnail automático...');
-        const thumbnailUrl = await generateThumbnailForTemplate(builderCore.state.currentTemplate.id);
+        // 🖼️ El thumbnail se genera automáticamente en useBuilderV3.ts
+        console.log('📸 Thumbnail se generará automáticamente por el sistema integrado...');
         
         // Preparar datos actualizados para guardar
         const updatedTemplate: Partial<TemplateV3> = {
@@ -283,16 +189,13 @@ export const useBuilderV3Integration = () => {
           familyConfig: builderCore.state.currentTemplate.familyConfig,
           validationRules: builderCore.state.currentTemplate.validationRules,
           exportSettings: builderCore.state.currentTemplate.exportSettings,
-          thumbnail: thumbnailUrl || builderCore.state.currentTemplate.thumbnail, // Actualizar thumbnail si se generó
+          thumbnail: builderCore.state.currentTemplate.thumbnail, // Thumbnail se actualiza automáticamente
           isPublic: builderCore.state.currentTemplate.isPublic,
           isActive: builderCore.state.currentTemplate.isActive,
           version: (builderCore.state.currentTemplate.version || 1) + 1 // Incrementar versión
         };
 
         console.log('📄 Guardando plantilla con componentes:', updatedTemplate.defaultComponents?.length);
-        if (thumbnailUrl) {
-          console.log('🖼️ Thumbnail actualizado:', thumbnailUrl);
-        }
         
         // Guardar en Supabase usando el servicio real
         const savedTemplate = await templatesV3Service.update(

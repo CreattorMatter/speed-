@@ -45,7 +45,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
     <div className="space-y-2">
       {templates.map(template => (
         <TemplateRow
-          key={template.id}
+          key={`${template.id}-${template.updatedAt?.getTime() || 0}-${template.thumbnail || 'no-thumb'}`}
           template={template}
           family={family}
           onTemplateClick={onTemplateClick}

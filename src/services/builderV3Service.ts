@@ -479,6 +479,7 @@ export const templatesV3Service = {
       
       if (updates.name) updateData.name = updates.name;
       if (updates.description) updateData.description = updates.description;
+      if (updates.thumbnail) updateData.thumbnail = updates.thumbnail; // 🖼️ THUMBNAIL URL
       if (updates.canvas) updateData.canvas_config = updates.canvas;
       if (updates.defaultComponents) updateData.default_components = updates.defaultComponents; // ¡COMPONENTES!
       if (updates.familyConfig) updateData.family_config = updates.familyConfig;

@@ -678,6 +678,7 @@ export interface BuilderOperationsV3 {
   deleteTemplate: (templateId: string) => Promise<void>;
   duplicateTemplate: (templateId: string, newName?: string) => Promise<TemplateV3>;
   saveTemplate: () => Promise<void>;
+  saveTemplateAndWaitForThumbnail: () => Promise<void>;
   setTemplateDirect: (template: TemplateV3) => void; // Función especial para actualizar estado desde Supabase
   setComponentsLibrary: (library: ComponentsLibraryV3) => void;
   

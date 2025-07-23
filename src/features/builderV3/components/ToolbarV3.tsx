@@ -362,7 +362,7 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
             <ToolbarButton
               onClick={onSave}
               icon={<Save className="w-4 h-4" />}
-              title={isSaving ? "Guardando..." : "Guardar plantilla"}
+              title={isSaving ? "Guardando plantilla y generando preview..." : "Guardar plantilla"}
               disabled={isSaving}
               variant="success"
             />

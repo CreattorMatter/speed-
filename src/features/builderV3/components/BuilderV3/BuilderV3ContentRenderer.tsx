@@ -33,6 +33,26 @@ export const BuilderV3ContentRenderer: React.FC<ContentRendererProps> = ({
 }) => {
   
   // =====================
+  // HANDLERS WITH REFRESH
+  // =====================
+  
+  const handleSaveWithRefresh = async () => {
+    try {
+      // 🎯 USAR LA NUEVA FUNCIÓN QUE ESPERA EL THUMBNAIL COMPLETO
+      await operations.saveTemplateAndWaitForThumbnail();
+      
+      // 🔄 Refrescar datos después de que el thumbnail esté listo
+      if (refreshData) {
+        await refreshData();
+        console.log('🔄 Datos refrescados con thumbnail completo desde toolbar');
+      }
+    } catch (error) {
+      console.error('Error en handleSaveWithRefresh:', error);
+      throw error;
+    }
+  };
+  
+  // =====================
   // RENDER BY STEP
   // =====================
   
@@ -91,7 +111,7 @@ export const BuilderV3ContentRenderer: React.FC<ContentRendererProps> = ({
           <div className="flex-1 flex flex-col h-full overflow-hidden">
             {/* Toolbar */}
             <ToolbarV3
-              onSave={operations.saveTemplate}
+              onSave={handleSaveWithRefresh}
               onPreview={() => setShowPreview(true)}
               onExport={() => operations.exportCanvas(state.exportConfig)}
               onToggleGrid={operations.toggleGrid}

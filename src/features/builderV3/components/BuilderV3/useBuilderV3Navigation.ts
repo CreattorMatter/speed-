@@ -17,6 +17,7 @@ interface UseBuilderV3NavigationProps {
   showConfirmExitModal: boolean;
   showPreview: boolean;
   isCreateFamilyModalOpen: boolean;
+  refreshData?: () => Promise<void>;
 }
 
 export const useBuilderV3Navigation = ({
@@ -29,7 +30,8 @@ export const useBuilderV3Navigation = ({
   stateUpdaters,
   showConfirmExitModal,
   showPreview,
-  isCreateFamilyModalOpen
+  isCreateFamilyModalOpen,
+  refreshData
 }: UseBuilderV3NavigationProps): BuilderV3Navigation => {
   
   // =====================
@@ -98,8 +100,22 @@ export const useBuilderV3Navigation = ({
   
   const handleSaveAndExit = useCallback(async () => {
     try {
-      await operations.saveTemplate();
-      toast.success('Plantilla guardada exitosamente');
+      // Mostrar toast de progreso
+      const loadingToast = toast.loading('Guardando plantilla y generando thumbnail completo...');
+      
+      // 🎯 USAR LA NUEVA FUNCIÓN QUE ESPERA EL THUMBNAIL
+      await operations.saveTemplateAndWaitForThumbnail();
+      
+      // 🔄 REFRESCAR DATOS DESPUÉS DE QUE EL THUMBNAIL ESTÉ LISTO
+      if (refreshData) {
+        await refreshData();
+        console.log('🔄 Datos refrescados con thumbnail completo');
+      }
+      
+      // Dismiss loading toast y mostrar éxito
+      toast.dismiss(loadingToast);
+      toast.success('Plantilla guardada con thumbnail generado');
+      
       stateUpdaters.setShowConfirmExitModal(false);
       
       // Get the pending navigation function
@@ -115,7 +131,7 @@ export const useBuilderV3Navigation = ({
       toast.error('Error al guardar plantilla');
       console.error('Error guardando:', error);
     }
-  }, [operations, stateUpdaters, executeNavigation, currentStep]);
+  }, [operations, stateUpdaters, executeNavigation, currentStep, refreshData]);
 
   const handleExitWithoutSaving = useCallback(() => {
     stateUpdaters.setShowConfirmExitModal(false);

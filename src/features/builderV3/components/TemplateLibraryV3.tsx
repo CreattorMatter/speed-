@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { PreviewModalV3 } from './PreviewModalV3';
+import { useTemplateImageCache } from './TemplateLibrary/useImageCache';
 import { 
   TemplateFilters,
   TemplateGrid,
@@ -44,6 +45,13 @@ export const TemplateLibraryV3: React.FC<TemplateLibraryProps> = ({
     family,
     templates
   });
+
+  // =====================
+  // IMAGE CACHE OPTIMIZATION
+  // =====================
+  
+  // Precargar thumbnails automáticamente
+  useTemplateImageCache(templates);
 
   // =====================
   // TEMPLATE ACTIONS
