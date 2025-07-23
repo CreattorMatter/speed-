@@ -307,31 +307,7 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                 </div>
               )}
 
-              {/* Botón de emergencia para limpiar staticValue en componentes existentes */}
-              {(['field-dynamic-text', 'field-dynamic-date'].includes(selectedComponent.type)) && 
-               selectedComponent.content && 
-               (selectedComponent.content as any)?.staticValue === 'Nuevo componente' && (
-                <div className="p-3 bg-red-50 rounded-lg border border-red-200">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="text-red-600">🚨</span>
-                    <span className="text-sm font-medium text-red-800">StaticValue bloqueando toggle</span>
-                  </div>
-                  <p className="text-xs text-red-700 mb-3">
-                    Este componente tiene un staticValue que impide que funcione el toggle.
-                  </p>
-                  <button
-                    onClick={() => {
-                      // Eliminar solo el staticValue manteniendo el resto del content
-                      const { staticValue, ...cleanContent } = selectedComponent.content as any;
-                      console.log('🧹 Eliminando staticValue de:', selectedComponent.id);
-                      handlers.handleContentChange('content', cleanContent);
-                    }}
-                    className="w-full text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded transition-colors"
-                  >
-                    Limpiar staticValue bloqueante
-                  </button>
-                </div>
-              )}
+
 
               {/* Toggle para mostrar datos mock vs nombres de campo - VERSIÓN LIMPIA */}
               {(['field-dynamic-text', 'field-dynamic-date'].includes(selectedComponent.type)) && (
@@ -389,17 +365,19 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                   value={(selectedComponent.content as any)?.fieldType || 'static'}
                   onChange={(e) => {
                     const fieldType = e.target.value;
-                    let defaultContent: any = { fieldType };
+                    
+                    // 🔧 REEMPLAZO COMPLETO DEL CONTENT - Evita conflictos con staticValue residual
+                    let newContent: any = { fieldType };
                     
                     switch (fieldType) {
                       case 'static':
-                        defaultContent.staticValue = 'Texto estático';
+                        newContent.staticValue = 'Texto estático';
                         break;
                       case 'dynamic':
-                        defaultContent.dynamicTemplate = '[product_name]';
+                        newContent.dynamicTemplate = '[product_name]';
                         break;
                       case 'calculated':
-                        defaultContent.calculatedField = { 
+                        newContent.calculatedField = { 
                           expression: '[product_price] * 0.9',
                           previewResult: 'Calculando...',
                           errorMessage: '' 
@@ -407,12 +385,9 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                         break;
                     }
                     
-                    handlers.handleContentChange('fieldType', fieldType);
-                    Object.keys(defaultContent).forEach(key => {
-                      if (key !== 'fieldType') {
-                        handlers.handleContentChange(key, defaultContent[key]);
-                      }
-                    });
+                    // 🎯 HACER UN REEMPLAZO COMPLETO EN LUGAR DE UPDATES INCREMENTALES
+                    console.log('🔄 Cambiando tipo de contenido a:', fieldType, newContent);
+                    handlers.handleContentChange('content', newContent);
                   }}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
@@ -478,13 +453,18 @@ export const ContentTab: React.FC<ContentTabProps> = ({
 
               {(selectedComponent.content as any)?.fieldType === 'calculated' && (
                 <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-gray-900">🧮 Campo Calculado</h4>
+
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Expresión matemática
                     </label>
                     <textarea
                       value={(selectedComponent.content as any)?.calculatedField?.expression || ''}
-                      onChange={(e) => handlers.handleCalculatedFieldChange(e.target.value)}
+                      onChange={(e) => {
+                        console.log('🧮 Cambiando expresión calculada:', e.target.value);
+                        handlers.handleCalculatedFieldChange(e.target.value);
+                      }}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       rows={2}
                       placeholder="[product_price] * (1 - [discount_percentage] / 100)"
@@ -494,99 +474,176 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                     </p>
                   </div>
 
-                  {/* Preview del resultado */}
-                  <div className="p-3 bg-gray-50 rounded-md">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-gray-700">Vista previa:</span>
-                      <DollarSign className="w-4 h-4 text-green-600" />
+                  {/* Selector de campos numéricos */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Campos numéricos disponibles</label>
+                    <div className="max-h-24 overflow-y-auto border border-gray-200 rounded-md">
+                      {/* Campos de precios */}
+                      <button
+                        onClick={() => {
+                          const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
+                          const newExpression = currentExpression + '[product_price]';
+                          handlers.handleCalculatedFieldChange(newExpression);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2 border-b border-gray-100"
+                      >
+                        <DollarSign className="w-3 h-3 text-green-600" />
+                        <span><strong>[product_price]</strong> - Precio Actual</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
+                          const newExpression = currentExpression + '[price_previous]';
+                          handlers.handleCalculatedFieldChange(newExpression);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2 border-b border-gray-100"
+                      >
+                        <DollarSign className="w-3 h-3 text-orange-600" />
+                        <span><strong>[price_previous]</strong> - Precio Anterior</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
+                          const newExpression = currentExpression + '[price_without_tax]';
+                          handlers.handleCalculatedFieldChange(newExpression);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2 border-b border-gray-100"
+                      >
+                        <DollarSign className="w-3 h-3 text-blue-600" />
+                        <span><strong>[price_without_tax]</strong> - Precio sin IVA</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
+                          const newExpression = currentExpression + '[discount_percentage]';
+                          handlers.handleCalculatedFieldChange(newExpression);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2 border-b border-gray-100"
+                      >
+                        <Minus className="w-3 h-3 text-red-600" />
+                        <span><strong>[discount_percentage]</strong> - % Descuento</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
+                          const newExpression = currentExpression + '[stock_available]';
+                          handlers.handleCalculatedFieldChange(newExpression);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2 border-b border-gray-100"
+                      >
+                        <Plus className="w-3 h-3 text-purple-600" />
+                        <span><strong>[stock_available]</strong> - Stock Disponible</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
+                          const newExpression = currentExpression + '[price_base]';
+                          handlers.handleCalculatedFieldChange(newExpression);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2"
+                      >
+                        <DollarSign className="w-3 h-3 text-gray-600" />
+                        <span><strong>[price_base]</strong> - Precio Base</span>
+                      </button>
                     </div>
-                    <div className="text-sm font-mono">
-                      {(selectedComponent.content as any)?.calculatedField?.previewResult || 'Sin expresión'}
-                    </div>
-                    {(selectedComponent.content as any)?.calculatedField?.errorMessage && (
-                      <div className="text-xs text-red-600 mt-1">
-                        {(selectedComponent.content as any).calculatedField.errorMessage}
+                  </div>
+
+                  {/* OPCIONES DE FORMATO - CRÍTICAS PARA LA CARTELERA */}
+                  <div className="border-t border-gray-200 pt-4 mt-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+                      <span className="text-green-600">⚙️</span>
+                      <span>Opciones de formato</span>
+                    </h4>
+                    
+                    {/* Mostrar signo $ */}
+                    <div className="flex items-center justify-between mb-3 p-2 bg-gray-50 rounded">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          💰 Mostrar signo pesos ($)
+                        </label>
+                        <p className="text-xs text-gray-500">Agregar $ al inicio del resultado</p>
                       </div>
-                    )}
+                      <input
+                        type="checkbox"
+                        checked={(selectedComponent.content as any)?.outputFormat?.prefix !== false}
+                        onChange={(e) => {
+                          const currentContent = selectedComponent.content as any;
+                          const outputFormat = currentContent?.outputFormat || {};
+                          
+                          const updatedContent = {
+                            ...currentContent,
+                            outputFormat: {
+                              ...outputFormat,
+                              prefix: e.target.checked
+                            }
+                          };
+                          
+                          handlers.handleContentChange('content', updatedContent);
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </div>
+
+                    {/* Mostrar decimales */}
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center space-x-1">
+                        <span>🔢</span>
+                        <span>Formato de decimales</span>
+                      </label>
+                      <select
+                        value={(selectedComponent.content as any)?.outputFormat?.precision || '0'}
+                        onChange={(e) => {
+                          const currentContent = selectedComponent.content as any;
+                          const outputFormat = currentContent?.outputFormat || {};
+                          
+                          const updatedContent = {
+                            ...currentContent,
+                            outputFormat: {
+                              ...outputFormat,
+                              precision: e.target.value
+                            }
+                          };
+                          
+                          handlers.handleContentChange('content', updatedContent);
+                        }}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="0">Sin decimales → 1234</option>
+                        <option value="2">2 decimales → 1234.56</option>
+                        <option value="2-small">2 decimales pequeños → 1234.⁵⁶</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        ⚠️ <strong>Importante:</strong> La cartelera usa estas opciones para el formato final
+                      </p>
+                    </div>
+
+                    {/* Preview del formato */}
+                    <div className="p-2 bg-blue-50 rounded border border-blue-200">
+                      <p className="text-xs text-blue-700 font-medium mb-1">👁️ Preview del formato:</p>
+                      <div className="text-sm font-mono bg-white px-2 py-1 rounded border">
+                        {(() => {
+                          const outputFormat = (selectedComponent.content as any)?.outputFormat || {};
+                          const prefix = outputFormat.prefix !== false ? '$ ' : '';
+                          const precision = outputFormat.precision || '0';
+                          
+                          let example = '1234';
+                          if (precision === '2') example = '1234.56';
+                          if (precision === '2-small') example = '1234.⁵⁶';
+                          
+                          return `${prefix}${example}`;
+                        })()}
+                      </div>
+                    </div>
                   </div>
+
+
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* Sección de Formato de Salida */}
-        <div className="border border-gray-200 rounded-lg">
-          <button
-            onClick={() => toggleSection('format')}
-            className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50"
-          >
-            <h4 className="text-sm font-medium text-gray-900">Formato de salida</h4>
-            {expandedSections.has('format') ? 
-              <ChevronDown className="w-4 h-4" /> : 
-              <ChevronRight className="w-4 h-4" />
-            }
-          </button>
-          
-          {expandedSections.has('format') && (
-            <div className="p-3 border-t border-gray-200 space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Tipo de formato</label>
-                <select
-                  value={(selectedComponent.content as any)?.outputFormat?.type || 'text'}
-                  onChange={(e) => handlers.handleOutputFormatChange('type', e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="text">Texto</option>
-                  <option value="currency">Moneda</option>
-                  <option value="percentage">Porcentaje</option>
-                  <option value="number">Número</option>
-                  <option value="date">Fecha</option>
-                </select>
-              </div>
 
-              {/* Opciones específicas por tipo */}
-              {(selectedComponent.content as any)?.outputFormat?.type === 'currency' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Prefijo</label>
-                    <input
-                      type="text"
-                      value={(selectedComponent.content as any)?.outputFormat?.prefix || '$'}
-                      onChange={(e) => handlers.handleOutputFormatChange('prefix', e.target.value)}
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                      placeholder="$"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Decimales</label>
-                    <input
-                      type="number"
-                      value={(selectedComponent.content as any)?.outputFormat?.precision || 0}
-                      onChange={(e) => handlers.handleOutputFormatChange('precision', Number(e.target.value))}
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                      min="0"
-                      max="4"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {(selectedComponent.content as any)?.outputFormat?.type === 'percentage' && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Sufijo</label>
-                  <input
-                    type="text"
-                    value={(selectedComponent.content as any)?.outputFormat?.suffix || '%'}
-                    onChange={(e) => handlers.handleOutputFormatChange('suffix', e.target.value)}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                    placeholder="%"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       </div>
     );
   };

@@ -44,20 +44,8 @@ export type ComponentTypeV3 =
   | 'image-brand-logo'       // Logo de marca
   | 'image-decorative'       // Imagen decorativa
   
-  // 📱 QR Code dinámico (CONSOLIDADO - reemplaza 4 componentes)
-  | 'qr-dynamic'
-  
-  // 📅 Fechas dinámicas (CONSOLIDADO - reemplaza 4 componentes)
-  | 'field-dynamic-date'
-  
-  // 🎨 Elementos decorativos únicos (3 tipos)
-  | 'shape-geometric'        // Formas geométricas
-  | 'decorative-line'        // Líneas y separadores
-  | 'decorative-icon'        // Íconos decorativos
-  
-  // 📦 Contenedores únicos (2 tipos)
-  | 'container-flexible'     // Contenedor flexible
-  | 'container-grid';        // Contenedor con grilla
+  // 🎨 Elementos decorativos únicos (1 tipo)
+  | 'shape-geometric';       // Formas geométricas únicamente
 
 // =====================
 // CATEGORÍAS DE COMPONENTES
@@ -69,10 +57,7 @@ export type ComponentCategoryV3 =
   | 'Imagen de Footer'        // Footers promocionales  
   | 'Imagen de Fondo'         // Fondos del cartel
   | 'Imágenes y Media'        // Otras imágenes especializadas
-  | 'QR y Enlaces'           // Consolidado: QR dinámico
-  | 'Fechas y Períodos'      // Consolidado: fechas dinámicas
-  | 'Elementos Decorativos'  // Mantiene: formas, líneas, íconos
-  | 'Contenedores y Layout'; // Consolidado: contenedores flexibles
+  | 'Elementos Decorativos'; // Solo formas geométricas
 
 // =====================
 // POSICIÓN Y TRANSFORMACIONES AVANZADAS

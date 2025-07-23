@@ -6,7 +6,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Save, 
   Eye, 
-  Download, 
   Grid3X3, 
   Ruler, 
   ZoomIn, 
@@ -22,7 +21,6 @@ import { CustomPaperFormatModal } from './CustomPaperFormatModal';
 interface ToolbarV3Props {
   onSave: () => void;
   onPreview: () => void;
-  onExport: () => void;
   onToggleGrid: () => void;
   onToggleRulers: () => void;
   onZoomIn: () => void;
@@ -59,7 +57,6 @@ interface ToolbarV3Props {
 export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   onSave,
   onPreview,
-  onExport,
   onToggleGrid,
   onToggleRulers,
   onZoomIn,
@@ -85,8 +82,9 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   hasUnsavedChanges = false,
   orientation = 'portrait',
   availablePaperFormats = [
-    { id: 'A4', name: 'A4', width: 210, height: 297, description: '210 x 297 mm' },
+    { id: 'A2', name: 'A2', width: 420, height: 594, description: '420 x 594 mm' },
     { id: 'A3', name: 'A3', width: 297, height: 420, description: '297 x 420 mm' },
+    { id: 'A4', name: 'A4', width: 210, height: 297, description: '210 x 297 mm' },
     { id: 'LETTER', name: 'Carta', width: 216, height: 279, description: '8.5 x 11 in' },
     { id: 'CUSTOM', name: 'Personalizado', width: 0, height: 0, description: 'Dimensiones personalizadas' }
   ]
@@ -340,15 +338,7 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
                 />
               </div>
 
-              <div className="flex items-center space-x-1">
-                <ToolbarButton
-                  onClick={onExport}
-                  icon={<Download className="w-3 h-3" />}
-                  title="Exportar"
-                  variant="primary"
-                  className="p-1"
-                />
-              </div>
+              {/* Botón de exportar eliminado por solicitud del usuario */}
             </div>
           </div>
         )}
@@ -393,12 +383,7 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
               variant="primary"
             />
             
-            <ToolbarButton
-              onClick={onExport}
-              icon={<Download className="w-4 h-4" />}
-              title="Exportar"
-              variant="primary"
-            />
+            {/* Botón de exportar eliminado por solicitud del usuario */}
 
             <Separator />
 

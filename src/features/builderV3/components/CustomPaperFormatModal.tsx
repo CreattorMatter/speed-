@@ -62,8 +62,9 @@ export const CustomPaperFormatModal: React.FC<CustomPaperFormatModalProps> = ({
   };
 
   const presetFormats = [
-    { name: 'A4', width: 210, height: 297 },
+    { name: 'A2', width: 420, height: 594 },
     { name: 'A3', width: 297, height: 420 },
+    { name: 'A4', width: 210, height: 297 },
     { name: 'A5', width: 148, height: 210 },
     { name: 'Carta', width: 216, height: 279 },
     { name: 'Legal', width: 216, height: 356 },

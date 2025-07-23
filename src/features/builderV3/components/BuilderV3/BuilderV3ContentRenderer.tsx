@@ -113,7 +113,6 @@ export const BuilderV3ContentRenderer: React.FC<ContentRendererProps> = ({
             <ToolbarV3
               onSave={handleSaveWithRefresh}
               onPreview={() => setShowPreview(true)}
-              onExport={() => operations.exportCanvas(state.exportConfig)}
               onToggleGrid={operations.toggleGrid}
               onToggleRulers={operations.toggleRulers}
               onZoomIn={() => operations.setZoom(state.canvas.zoom + 0.1)}

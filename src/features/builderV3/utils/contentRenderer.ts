@@ -16,8 +16,7 @@ export const getFieldTechnicalNames = (component: DraggableComponentV3): string 
     // Fallback basado en el tipo de componente
     switch (component.type) {
       case 'field-dynamic-text': return '[product_name]';
-      case 'field-dynamic-date': return '[current_date]';
-      case 'qr-dynamic': return '[qr_code]';
+      case 'shape-geometric': return '[geometric_shape]';
       default: return `[${component.type.replace('-', '_')}]`;
     }
   }
@@ -126,15 +125,14 @@ export const getFieldTechnicalNames = (component: DraggableComponentV3): string 
   console.log(`⚠️ Fallback final para componente ${component.type}, contenido:`, content);
   switch (component.type) {
     case 'field-dynamic-text': return '[product_name]';
-    case 'field-dynamic-date': return '[current_date]';
-    case 'qr-dynamic': return '[qr_code]';
     case 'image-header': return '[header_image]';
     case 'image-footer': return '[footer_image]';
     case 'image-background': return '[background_image]';
     case 'image-product': return '[product_image]';
     case 'image-brand-logo': return '[brand_logo]';
     case 'image-decorative': return '[decorative_image]';
-    default: return `[${component.type.replace('-', '_')}]`;
+    case 'shape-geometric': return '[geometric_shape]';
+    default: return `[${(component.type as string).replace('-', '_')}]`;
   }
 };
 
@@ -148,13 +146,7 @@ export const getComponentDisplayName = (type: string): string => {
     'image-product': 'Imagen Producto', 
     'image-brand-logo': 'Logo Marca',
     'image-decorative': 'Imagen Decorativa',
-    'qr-dynamic': 'QR Dinámico',
-    'field-dynamic-date': 'Fecha Dinámica',
-    'shape-geometric': 'Forma Geométrica',
-    'decorative-line': 'Línea Decorativa',
-    'decorative-icon': 'Ícono Decorativo',
-    'container-flexible': 'Contenedor Flexible',
-    'container-grid': 'Grilla de Contenido'
+    'shape-geometric': 'Forma Geométrica'
   };
   return displayNames[type] || type;
 };

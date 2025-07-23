@@ -140,48 +140,9 @@ const imageComponents: ComponentDefinitionV3[] = [
   }
 ];
 
-const qrComponents: ComponentDefinitionV3[] = [
-  {
-    type: 'qr-dynamic',
-    name: 'Código QR Dinámico',
-    description: 'Código QR configurable para múltiples propósitos.',
-    icon: '📱',
-    category: 'QR y Enlaces',
-    tags: ['qr', 'enlace', 'digital'],
-    defaultSize: { width: 150, height: 150, isProportional: true },
-    defaultStyle: {},
-    defaultContent: {
-      qrUrl: 'https://cencosud.com',
-      qrConfig: { type: 'website' },
-      fieldType: 'static'
-    }
-  }
-];
+// QR y Enlaces eliminados por solicitud del usuario
 
-const dateComponents: ComponentDefinitionV3[] = [
-  {
-    type: 'field-dynamic-date',
-    name: 'Fecha Dinámica',
-    description: 'Campo de fecha configurable.',
-    icon: '📅',
-    category: 'Fechas y Períodos',
-    tags: ['fecha', 'dinámico', 'período'],
-    defaultSize: { width: 200, height: 30, isProportional: false },
-    defaultStyle: {
-      typography: {
-        fontSize: 14,
-        fontFamily: 'Inter',
-        fontWeight: 'normal',
-        textAlign: 'left'
-      }
-    },
-    defaultContent: {
-      fieldType: 'dynamic',
-      dynamicTemplate: '[current_date]',
-      dateConfig: { type: 'current-date', format: 'DD/MM/YYYY' }
-    }
-  }
-];
+// Fechas y Períodos eliminados por solicitud del usuario
 
 const decorativeComponents: ComponentDefinitionV3[] = [
   {
@@ -202,98 +163,11 @@ const decorativeComponents: ComponentDefinitionV3[] = [
       fieldType: 'static',
       shapeConfig: { type: 'rectangle' }
     }
-  },
-  {
-    type: 'decorative-line',
-    name: 'Línea Decorativa',
-    description: 'Líneas para separar secciones.',
-    icon: '➖',
-    category: 'Elementos Decorativos',
-    tags: ['línea', 'separador', 'decorativo'],
-    defaultSize: { width: 300, height: 2, isProportional: false },
-    defaultStyle: {
-      color: {
-        backgroundColor: '#cccccc',
-        color: '#cccccc'
-      }
-    },
-    defaultContent: {
-      fieldType: 'static',
-      lineConfig: { type: 'solid', thickness: 2 }
-    }
-  },
-  {
-    type: 'decorative-icon',
-    name: 'Ícono Decorativo',
-    description: 'Íconos y símbolos decorativos.',
-    icon: '⭐',
-    category: 'Elementos Decorativos',
-    tags: ['ícono', 'decorativo', 'símbolo'],
-    defaultSize: { width: 50, height: 50, isProportional: true },
-    defaultStyle: {
-      color: {
-        color: '#fbbf24',
-        backgroundColor: 'transparent'
-      }
-    },
-    defaultContent: {
-      fieldType: 'static',
-      staticValue: '⭐',
-      iconConfig: { type: 'star' }
-    }
   }
+  // Línea decorativa e ícono decorativo eliminados por solicitud del usuario
 ];
 
-const containerComponents: ComponentDefinitionV3[] = [
-  {
-    type: 'container-flexible',
-    name: 'Contenedor Flexible',
-    description: 'Contenedor adaptable para agrupar elementos.',
-    icon: '📦',
-    category: 'Contenedores y Layout',
-    tags: ['contenedor', 'layout', 'agrupación'],
-    defaultSize: { width: 400, height: 300, isProportional: false },
-    defaultStyle: {
-      color: {
-        backgroundColor: 'rgba(200, 200, 200, 0.1)',
-        color: '#666666'
-      },
-      border: {
-        width: 1,
-        style: 'dashed',
-        color: '#cccccc'
-      }
-    },
-    defaultContent: {
-      fieldType: 'static',
-      containerConfig: { type: 'flexible' }
-    }
-  },
-  {
-    type: 'container-grid',
-    name: 'Contenedor Grid',
-    description: 'Contenedor con layout de grilla.',
-    icon: '🔲',
-    category: 'Contenedores y Layout',
-    tags: ['contenedor', 'grid', 'grilla'],
-    defaultSize: { width: 400, height: 300, isProportional: false },
-    defaultStyle: {
-      color: {
-        backgroundColor: 'rgba(200, 200, 200, 0.1)',
-        color: '#666666'
-      },
-      border: {
-        width: 1,
-        style: 'solid',
-        color: '#cccccc'
-      }
-    },
-    defaultContent: {
-      fieldType: 'static',
-      containerConfig: { type: 'grid', gridColumns: 2, gridRows: 2 }
-    }
-  }
-];
+// Contenedores y Layout eliminados por solicitud del usuario
 
 // =====================================
 // LIBRERÍA COMPLETA
@@ -305,10 +179,7 @@ export const componentsLibrary: ComponentsLibraryV3 = {
   'Imagen de Footer': footerComponents,
   'Imagen de Fondo': backgroundComponents,
   'Imágenes y Media': imageComponents,
-  'QR y Enlaces': qrComponents,
-  'Fechas y Períodos': dateComponents,
-  'Elementos Decorativos': decorativeComponents,
-  'Contenedores y Layout': containerComponents
+  'Elementos Decorativos': decorativeComponents
 };
 
 // =====================================

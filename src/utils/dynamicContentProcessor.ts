@@ -91,6 +91,142 @@ const formatDate = (date: Date): string => {
 };
 
 // =====================
+// PROCESAMIENTO DE CAMPOS CALCULADOS
+// =====================
+
+/**
+ * Procesa una expresión matemática calculada reemplazando campos dinámicos con valores reales
+ */
+export const processCalculatedField = (
+  expression: string, 
+  mockData: MockDataV3 = defaultMockData,
+  outputFormat?: any
+): string => {
+  if (!expression) return '0';
+  
+  console.log(`🧮 Iniciando procesamiento de expresión: "${expression}"`);
+  
+  try {
+    let processedExpression = expression;
+    
+    // Usar el producto (real o mock) si está disponible
+    if (mockData.producto) {
+      // Extraer campos dinámicos de la expresión
+      const fieldRegex = /\[([^\]]+)\]/g;
+      let match;
+      
+      while ((match = fieldRegex.exec(expression)) !== null) {
+        const fieldId = match[1];
+        console.log(`🔍 Procesando campo en expresión: [${fieldId}]`);
+        
+        let fieldValue = getDynamicFieldValue(fieldId, mockData.producto);
+        
+        // Extraer solo el número de campos con formato de precio
+        if (fieldValue.includes('$')) {
+          fieldValue = fieldValue.replace(/[$.,\s]/g, '');
+        }
+        
+        // Extraer solo el número de campos con porcentaje
+        if (fieldValue.includes('%')) {
+          fieldValue = fieldValue.replace('%', '');
+        }
+        
+        // Convertir a número
+        const numericValue = parseFloat(fieldValue);
+        if (!isNaN(numericValue)) {
+          processedExpression = processedExpression.replace(match[0], numericValue.toString());
+          console.log(`✅ Reemplazado [${fieldId}] → ${numericValue}`);
+        } else {
+          console.warn(`⚠️ No se pudo convertir a número: [${fieldId}] = "${fieldValue}"`);
+          // Usar valor por defecto 0 para campos no numéricos
+          processedExpression = processedExpression.replace(match[0], '0');
+        }
+      }
+    } else {
+      // Fallback usando valores mock estándar
+      const mockValues: Record<string, number> = {
+        'product_price': 699999,
+        'price_previous': 849999,
+        'price_base': 578512,
+        'price_without_tax': 578512,
+        'discount_percentage': 18,
+        'discount_amount': 150000,
+        'stock_available': 15,
+        'installment_price': 58333
+      };
+      
+      const fieldRegex = /\[([^\]]+)\]/g;
+      let match;
+      
+      while ((match = fieldRegex.exec(expression)) !== null) {
+        const fieldId = match[1];
+        const mockValue = mockValues[fieldId] || 0;
+        processedExpression = processedExpression.replace(match[0], mockValue.toString());
+        console.log(`🎭 Mock - Reemplazado [${fieldId}] → ${mockValue}`);
+      }
+    }
+    
+    console.log(`🔄 Expresión procesada: "${processedExpression}"`);
+    
+    // Validar que solo contenga números, operadores y espacios
+    if (!/^[0-9+\-*/().\s]+$/.test(processedExpression)) {
+      console.error(`❌ Expresión inválida después del procesamiento: "${processedExpression}"`);
+      return 'Error: Expresión inválida';
+    }
+    
+    // Evaluar la expresión matemática de forma segura
+    const result = Function(`"use strict"; return (${processedExpression})`)();
+    
+    if (isNaN(result)) {
+      console.error(`❌ Resultado no numérico: ${result}`);
+      return 'Error de cálculo';
+    }
+    
+    // ⚙️ APLICAR OPCIONES DE FORMATO DE LA UI
+    console.log(`🎨 Aplicando opciones de formato:`, outputFormat);
+    
+    let formattedResult = result.toString();
+    
+    // Formatear decimales según la configuración
+    if (outputFormat?.precision && outputFormat.precision !== '0') {
+      if (outputFormat.precision === '2') {
+        formattedResult = Number(result).toFixed(2);
+      } else if (outputFormat.precision === '2-small') {
+        const [whole, decimal] = Number(result).toFixed(2).split('.');
+        formattedResult = `${whole}.${decimal.split('').map(d => String.fromCharCode(0x2070 + parseInt(d))).join('')}`;
+      } else {
+        const precision = parseInt(String(outputFormat.precision));
+        if (!isNaN(precision)) {
+          formattedResult = Number(result).toFixed(precision);
+        }
+      }
+    } else {
+      // Sin decimales
+      formattedResult = Math.round(result).toString();
+    }
+    
+    // Agregar formato de miles con comas
+    if (result >= 1000) {
+      const parts = formattedResult.split('.');
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      formattedResult = parts.join(',');
+    }
+    
+    // Agregar prefijo ($) si está configurado
+    if (outputFormat?.prefix !== false) {
+      formattedResult = `$ ${formattedResult}`;
+    }
+    
+    console.log(`✅ Resultado final con formato: "${formattedResult}"`);
+    return formattedResult;
+    
+  } catch (error) {
+    console.error(`❌ Error evaluando expresión "${expression}":`, error);
+    return 'Error de cálculo';
+  }
+};
+
+// =====================
 // PROCESAMIENTO PRINCIPAL
 // =====================
 
@@ -279,7 +415,15 @@ export const processDynamicContent = (
     return 'Texto Ejemplo';
   }
   
-  // 2. Plantilla dinámica (PRINCIPAL - MEJORADO)
+  // 2. Campo calculado (NUEVO - PROCESAMIENTO DE EXPRESIONES MATEMÁTICAS)
+  if (content?.fieldType === 'calculated' && content?.calculatedField?.expression) {
+    console.log(`🧮 Procesando campo calculado: "${content.calculatedField.expression}"`);
+    const result = processCalculatedField(content.calculatedField.expression, mockData, content.outputFormat);
+    console.log(`🧮 Resultado de cálculo: "${result}"`);
+    return result;
+  }
+
+  // 3. Plantilla dinámica (PRINCIPAL - MEJORADO)
   if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
     console.log(`🎭 Procesando plantilla dinámica: "${content.dynamicTemplate}"`);
     const result = processTemplate(content.dynamicTemplate, mockData, content.outputFormat);
@@ -287,28 +431,28 @@ export const processDynamicContent = (
     return result;
   }
   
-  // 3. Campo SAP directo (MEJORADO)
+  // 4. Campo SAP directo (MEJORADO)
   if (content?.fieldType === 'sap-product' && content?.sapField) {
     console.log(`🔗 Procesando campo SAP: "${content.sapField}"`);
     return getSAPFieldValue(content.sapField, mockData);
   }
   
-  // 4. Campo promoción directo
+  // 5. Campo promoción directo
   if (content?.fieldType === 'promotion-data' && content?.promotionField) {
     return getPromotionFieldValue(content.promotionField, mockData);
   }
   
-  // 5. QR Code
+  // 6. QR Code
   if (content?.fieldType === 'qr-code') {
     return 'QR Code';
   }
   
-  // 6. Imagen
+  // 7. Imagen
   if (content?.fieldType === 'image') {
     return 'Imagen';
   }
   
-  // 7. NUEVO: Manejo de textConfig para componentes de texto dinámico
+  // 8. NUEVO: Manejo de textConfig para componentes de texto dinámico
   if (content?.textConfig?.contentType) {
     const contentType = content.textConfig.contentType;
     const producto = mockData.producto;
@@ -342,7 +486,7 @@ export const processDynamicContent = (
     }
   }
   
-  // 8. NUEVO: Manejo de dateConfig para componentes de fecha
+  // 9. NUEVO: Manejo de dateConfig para componentes de fecha
   if (content?.dateConfig?.type) {
     const dateType = content.dateConfig.type;
     switch (dateType) {
@@ -359,7 +503,7 @@ export const processDynamicContent = (
     }
   }
   
-  // 9. Fallback para valores directos (MEJORADO) - generar datos mock
+  // 10. Fallback para valores directos (MEJORADO) - generar datos mock
   if (content?.staticValue) {
     // Si es un template dinámico en staticValue, procesarlo
     if (content.staticValue.includes('[') && content.staticValue.includes(']')) {
@@ -410,7 +554,7 @@ export const processDynamicContent = (
     return 'Texto Ejemplo';
   }
   
-  // 10. Fallback basado en el tipo de componente
+  // 11. Fallback basado en el tipo de componente
   if (componentType) {
     switch (componentType) {
       case 'field-dynamic-text':
@@ -424,7 +568,7 @@ export const processDynamicContent = (
     }
   }
   
-  // 11. Fallback final con dato realista
+  // 12. Fallback final con dato realista
   return 'Heladera Whirlpool No Frost 375L';
 };
 

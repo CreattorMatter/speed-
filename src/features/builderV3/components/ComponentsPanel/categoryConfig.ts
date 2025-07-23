@@ -7,10 +7,7 @@ import {
   Image,
   FileImage,
   Monitor,
-  QrCode,
-  Calendar,
-  Shapes,
-  Box
+  Shapes
 } from 'lucide-react';
 import { ComponentCategoryV3 } from '../../types';
 import { CategoryConfig } from './types';
@@ -41,25 +38,10 @@ export const categoryConfig: Record<ComponentCategoryV3, CategoryConfig> = {
     color: 'bg-pink-100 text-pink-800',
     borderColor: 'border-pink-200'
   },
-  'QR y Enlaces': {
-    icon: QrCode,
-    color: 'bg-cyan-100 text-cyan-800',
-    borderColor: 'border-cyan-200'
-  },
-  'Fechas y Períodos': {
-    icon: Calendar,
-    color: 'bg-orange-100 text-orange-800',
-    borderColor: 'border-orange-200'
-  },
   'Elementos Decorativos': {
     icon: Shapes,
     color: 'bg-teal-100 text-teal-800',
     borderColor: 'border-teal-200'
-  },
-  'Contenedores y Layout': {
-    icon: Box,
-    color: 'bg-gray-100 text-gray-800',
-    borderColor: 'border-gray-200'
   }
 };
 

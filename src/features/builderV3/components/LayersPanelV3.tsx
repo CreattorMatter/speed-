@@ -13,7 +13,6 @@ import {
   ChevronDown,
   Type,
   Image,
-  QrCode,
   DollarSign,
   Hash,
   Search,
@@ -51,13 +50,10 @@ export const LayersPanelV3: React.FC<LayersPanelV3Props> = ({
       case 'image-brand-logo':
       case 'image-decorative':
         return <Image className="w-4 h-4 text-purple-600" />;
-      case 'qr-dynamic':
-        return <QrCode className="w-4 h-4 text-gray-600" />;
+
       case 'field-dynamic-date':
         return <DollarSign className="w-4 h-4 text-green-600" />;
       case 'shape-geometric':
-      case 'decorative-line':
-      case 'decorative-icon':
         return <Tag className="w-4 h-4 text-orange-600" />;
       default:
         return <Hash className="w-4 h-4 text-gray-500" />;
@@ -94,24 +90,8 @@ export const LayersPanelV3: React.FC<LayersPanelV3Props> = ({
                component.type === 'image-decorative' ? 'Imagen decorativa' :
                component.type === 'image-product' ? 'Imagen producto' : 'Imagen';
       
-      case 'qr-dynamic':
-        return 'Código QR';
-      
-      case 'field-dynamic-date':
-        return 'Fecha';
-        
       case 'shape-geometric':
         return 'Forma Geométrica';
-        
-      case 'decorative-line':
-        return 'Línea Decorativa';
-        
-      case 'decorative-icon':
-        return 'Ícono Decorativo';
-        
-      case 'container-flexible':
-      case 'container-grid':
-        return 'Contenedor';
         
       default:
         return component.type;

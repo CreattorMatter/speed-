@@ -121,7 +121,9 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
     component.type,
     component.content?.staticValue,
     component.content?.fieldType,
-    (component.content as any)?.dynamicTemplate
+    (component.content as any)?.dynamicTemplate,
+    (component.content as any)?.outputFormat,
+    (component.content as any)?.calculatedField?.expression
   ]);
   
   // Función wrapper para mantizar compatibilidad
@@ -258,7 +260,6 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
 
     switch (component.type) {
       case 'field-dynamic-text':
-      case 'field-dynamic-date':
         return (
           <div style={baseStyle}>
             {getDisplayContent()}
@@ -290,25 +291,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
           </div>
         );
 
-      case 'qr-dynamic':
-        return (
-          <div style={{ ...baseStyle, justifyContent: 'center', alignItems: 'center' }}>
-            <div style={{
-              width: '80%',
-              height: '80%',
-              backgroundColor: '#000000',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '12px',
-              // 🔧 CRÍTICO: Evitar que el QR interfiera con el drag
-              pointerEvents: 'none'
-            }}>
-              QR
-            </div>
-          </div>
-        );
+
 
       default:
         return (
