@@ -250,11 +250,13 @@ export interface DynamicContentV3 {
   
   // Configuración de fechas
   dateConfig?: {
-    type: 'current-date' | 'promotion-start' | 'promotion-end' | 'custom';
-    dateType?: 'custom' | 'date-from' | 'date-to' | 'promotion-period' | 'expiry-date';
+    type: 'current-date' | 'promotion-start' | 'promotion-end' | 'promotion-period' | 'validity-period' | 'custom';
+    dateType?: 'custom' | 'date-from' | 'date-to' | 'promotion-period' | 'validity-period' | 'expiry-date';
     customDateField?: string;
     format?: string;
     locale?: string;
+    startDate?: string; // Para validity-period
+    endDate?: string;   // Para validity-period
   };
   
   // Configuración de formas geométricas

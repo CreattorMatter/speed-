@@ -22,6 +22,8 @@ export interface MockDataV3 {
   // Campos calculados dinámicamente
   fecha_actual: string;
   fecha_promocion_fin: string;
+  fecha_vigencia_desde?: string;
+  fecha_vigencia_hasta?: string;
   descuento_calculado: number;
 }
 
@@ -57,6 +59,8 @@ const createMockProduct = (): ProductoReal => ({
 export const defaultMockData: MockDataV3 = {
   fecha_actual: new Date().toLocaleDateString('es-AR'),
   fecha_promocion_fin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-AR'),
+  fecha_vigencia_desde: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-AR'),
+  fecha_vigencia_hasta: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-AR'),
   descuento_calculado: 18, // 18% de descuento
   producto: createMockProduct(), // AHORA INCLUYE PRODUCTO MOCK REALISTA
   tienda: {
@@ -498,6 +502,23 @@ export const processDynamicContent = (
         return mockData.fecha_promocion_fin;
       case 'promotion-period':
         return `${mockData.fecha_actual} - ${mockData.fecha_promocion_fin}`;
+      case 'validity-period':
+        // Nuevo: Campo fecha vigencia - muestra rango de fechas de validez
+        // Si hay fechas configuradas en dateConfig, usarlas; sino usar mock data
+        if (content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
+          const formatDate = (dateStr: string) => {
+            // Crear fecha local para evitar problemas de zona horaria
+            const [year, month, day] = dateStr.split('-');
+            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            return date.toLocaleDateString('es-AR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          };
+          return `${formatDate(content.dateConfig.startDate)} - ${formatDate(content.dateConfig.endDate)}`;
+        }
+        return `${mockData.fecha_vigencia_desde || mockData.fecha_actual} - ${mockData.fecha_vigencia_hasta || mockData.fecha_promocion_fin}`;
       default:
         return mockData.fecha_actual;
     }

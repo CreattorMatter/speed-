@@ -110,23 +110,38 @@ export const PreviewPanelV3: React.FC<PreviewPanelV3Props> = ({
     // Convertir mockDataSets al formato MockDataV3
     const currentMockSet = mockDataSets[selectedPreviewData as keyof typeof mockDataSets];
     const mockData: MockDataV3 = {
-      product_name: currentMockSet.ProductName,
-      product_price: parseFloat(currentMockSet.PriceOriginal.replace(/[$.,]/g, '')),
-      price_without_tax: parseFloat(currentMockSet.PriceWithoutTax.replace(/[$.,]/g, '')),
-      product_sku: currentMockSet.ProductSku,
-      product_brand: currentMockSet.ProductBrand,
-      product_category: 'Bebidas',
-      product_origin: 'Argentina',
-      product_description: `${currentMockSet.ProductBrand} ${currentMockSet.ProductName}`,
-      price_now: parseFloat(currentMockSet.PriceNow.replace(/[$.,]/g, '')),
-      discount_percentage: parseInt(currentMockSet.DiscountPercentage),
-      discount_amount: parseFloat(currentMockSet.DiscountAmount.replace(/[$.,]/g, '')),
-      date_from: currentMockSet.DateFrom,
-      date_to: currentMockSet.DateTo,
-      promotion_name: currentMockSet.PromotionName,
-      final_price: parseFloat(currentMockSet.PriceNow.replace(/[$.,]/g, '')),
-      store_name: 'Easy Pilar',
-      store_address: 'Av. Presidente Perón 1823, Pilar'
+      fecha_actual: currentMockSet.DateFrom,
+      fecha_promocion_fin: currentMockSet.DateTo,
+      descuento_calculado: parseInt(currentMockSet.DiscountPercentage),
+      producto: {
+        id: 'mock-product-1',
+        sku: parseInt(currentMockSet.ProductSku),
+        ean: 7790123456789,
+        descripcion: currentMockSet.ProductName,
+        precio: parseFloat(currentMockSet.PriceNow.replace(/[$.,]/g, '')),
+        precioAnt: parseFloat(currentMockSet.PriceOriginal.replace(/[$.,]/g, '')),
+        basePrice: parseFloat(currentMockSet.PriceWithoutTax.replace(/[$.,]/g, '')),
+        ppum: 1866,
+        unidadPpumExt: 'L',
+        umvExt: 'UN',
+        seccion: 'Bebidas',
+        grupo: 'Bebidas',
+        rubro: 'Bebidas',
+        subRubro: 'Bebidas',
+        marcaTexto: currentMockSet.ProductBrand,
+        paisTexto: 'Argentina',
+        origen: 'ARG',
+        tienda: 'E000',
+        stockDisponible: 15
+      },
+      tienda: {
+        numero: 'E000',
+        tienda: 'Easy Pilar'
+      },
+      seccion: {
+        numero: 12,
+        seccion: 'Bebidas'
+      }
     };
     
     return state.components.map(component => {
@@ -186,6 +201,13 @@ export const PreviewPanelV3: React.FC<PreviewPanelV3Props> = ({
         const fontFamily = style?.typography?.fontFamily || 'Arial';
         const fontWeight = style?.typography?.fontWeight || 'normal';
         const textAlign = style?.typography?.textAlign || 'left';
+        const lineHeight = (style?.typography?.lineHeight || 1.4) * fontSize;
+
+        // Dividir el texto en líneas y crear elementos tspan para cada línea
+        const lines = displayValue.split('\n');
+        const tspans = lines.map((line: string, index: number) => 
+          `<tspan x="${x}" dy="${index === 0 ? 0 : lineHeight}" text-anchor="${textAlign === 'center' ? 'middle' : textAlign === 'right' ? 'end' : 'start'}">${line}</tspan>`
+        ).join('');
 
         elementHTML = `
           <text x="${x}" y="${y + fontSize}" 
@@ -194,7 +216,7 @@ export const PreviewPanelV3: React.FC<PreviewPanelV3Props> = ({
                 font-weight="${fontWeight}"
                 fill="${color}"
                 text-anchor="${textAlign === 'center' ? 'middle' : textAlign === 'right' ? 'end' : 'start'}">
-            ${displayValue}
+            ${tspans}
           </text>`;
       } else if (component.type.includes('shape') || component.type.includes('container')) {
         const bgColor = style?.color?.backgroundColor || '#f0f0f0';

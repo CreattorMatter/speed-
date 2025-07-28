@@ -362,7 +362,14 @@ export const ContentTab: React.FC<ContentTabProps> = ({
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Tipo de contenido</label>
                 <select
-                  value={(selectedComponent.content as any)?.fieldType || 'static'}
+                  value={(() => {
+                    const content = selectedComponent.content as any;
+                    // Detectar si es fecha vigencia basado en dateConfig
+                    if (content?.dateConfig?.type === 'validity-period') {
+                      return 'validity-period';
+                    }
+                    return content?.fieldType || 'static';
+                  })()}
                   onChange={(e) => {
                     const fieldType = e.target.value;
                     
@@ -383,6 +390,16 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                           errorMessage: '' 
                         };
                         break;
+                      case 'validity-period':
+                        newContent.fieldType = 'dynamic';
+                        newContent.dynamicTemplate = '[validity_period]';
+                        newContent.dateConfig = { 
+                          type: 'validity-period', 
+                          format: 'DD/MM/YYYY',
+                          startDate: '2025-07-21',
+                          endDate: '2025-08-04'
+                        };
+                        break;
                     }
                     
                     // 🎯 HACER UN REEMPLAZO COMPLETO EN LUGAR DE UPDATES INCREMENTALES
@@ -394,6 +411,7 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                   <option value="static">Texto estático</option>
                   <option value="dynamic">Campo dinámico</option>
                   <option value="calculated">Campo calculado</option>
+                  <option value="validity-period">Fecha vigencia</option>
                 </select>
               </div>
 
@@ -411,7 +429,8 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                 </div>
               )}
 
-              {(selectedComponent.content as any)?.fieldType === 'dynamic' && (
+              {(selectedComponent.content as any)?.fieldType === 'dynamic' && 
+                (selectedComponent.content as any)?.dateConfig?.type !== 'validity-period' && (
                 <div className="space-y-3">
                   {/* Toggle para mostrar datos mock vs nombres de campo */}
                   <div>
@@ -637,6 +656,66 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                   </div>
 
 
+                </div>
+              )}
+
+              {/* Configuración específica para Fecha vigencia */}
+              {(() => {
+                const content = selectedComponent.content as any;
+                return content?.dateConfig?.type === 'validity-period';
+              })() && (
+                <div className="space-y-3">
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h4 className="text-sm font-medium text-blue-900 mb-3 flex items-center">
+                      📅 Configurar rango de fechas
+                    </h4>
+                    
+                    {/* Selectores de fecha */}
+                    <div className="space-y-3">
+                      {/* Fecha desde */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Fecha desde:
+                        </label>
+                        <input
+                          type="date"
+                          value={(selectedComponent.content as any)?.dateConfig?.startDate || '2025-07-21'}
+                          onChange={(e) => {
+                            const newDateConfig = {
+                              ...(selectedComponent.content as any)?.dateConfig,
+                              startDate: e.target.value
+                            };
+                            handlers.handleContentChange('dateConfig', newDateConfig);
+                          }}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                      
+                      {/* Fecha hasta */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Fecha hasta:
+                        </label>
+                        <input
+                          type="date"
+                          value={(selectedComponent.content as any)?.dateConfig?.endDate || '2025-08-04'}
+                          onChange={(e) => {
+                            const newDateConfig = {
+                              ...(selectedComponent.content as any)?.dateConfig,
+                              endDate: e.target.value
+                            };
+                            handlers.handleContentChange('dateConfig', newDateConfig);
+                          }}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Información adicional */}
+                    <div className="mt-3 text-xs text-blue-600">
+                      💡 <strong>Uso en cartelera:</strong> Este campo se usará para validar si la fecha actual está dentro del rango permitido para impresión.
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

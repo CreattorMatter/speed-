@@ -53,6 +53,7 @@ interface ComponentRendererProps {
   allComponents: DraggableComponentV3[];
   onClick: (e: React.MouseEvent) => void;
   operations: BuilderOperationsV3;
+  isPreviewMode?: boolean; // ✅ Nueva prop para modo preview
 }
 
 export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
@@ -65,7 +66,8 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
   snapTolerance,
   allComponents,
   onClick,
-  operations
+  operations,
+  isPreviewMode = false // ✅ Destructurar nueva prop con default false
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -87,6 +89,30 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
     // =====================
     // DECISIÓN PRINCIPAL: MOCK vs TÉCNICO
     // =====================
+    
+    // =====================
+    // CASO ESPECIAL: FECHA VIGENCIA
+    // =====================
+    // La fecha vigencia siempre muestra las fechas seleccionadas, sin importar el toggle
+    if ((component.content as any)?.dateConfig?.type === 'validity-period') {
+      const content = component.content as any;
+      if (content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
+        const formatDate = (dateStr: string) => {
+          // Crear fecha local para evitar problemas de zona horaria
+          const [year, month, day] = dateStr.split('-');
+          const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          return date.toLocaleDateString('es-AR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+        };
+        const result = `${formatDate(content.dateConfig.startDate)} - ${formatDate(content.dateConfig.endDate)}`;
+        return result;
+      }
+      // Fallback si no hay fechas configuradas
+      return '21/07/2025 - 04/08/2025';
+    }
     
     const shouldShowMockData = component.showMockData !== false; // Por defecto true
     
@@ -123,7 +149,10 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
     component.content?.fieldType,
     (component.content as any)?.dynamicTemplate,
     (component.content as any)?.outputFormat,
-    (component.content as any)?.calculatedField?.expression
+    (component.content as any)?.calculatedField?.expression,
+    (component.content as any)?.dateConfig?.type,
+    (component.content as any)?.dateConfig?.startDate,
+    (component.content as any)?.dateConfig?.endDate
   ]);
   
   // Función wrapper para mantizar compatibilidad
@@ -229,7 +258,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
   
   const renderComponentContent = () => {
     const baseStyle: React.CSSProperties = {
-      fontSize: component.style.typography?.fontSize || 16,
+      fontSize: (component.style.typography?.fontSize || 16) * zoom, // ✅ Aplicar zoom al fontSize para escalado correcto
       fontFamily: getFontFamilyWithFallbacks(component.style.typography?.fontFamily),
       fontWeight: component.style.typography?.fontWeight || 'normal',
       fontStyle: component.style.typography?.fontStyle || 'normal',
@@ -254,6 +283,9 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
       alignItems: 'center',
       justifyContent: component.style.typography?.textAlign === 'center' ? 'center' : 
                      component.style.typography?.textAlign === 'right' ? 'flex-end' : 'flex-start',
+      // 🔧 CRÍTICO: Preservar saltos de línea en textos dinámicos
+      whiteSpace: 'pre-wrap',
+      wordBreak: 'break-word',
       // 🔧 CRÍTICO: Evitar que el contenido interfiera con el drag
       pointerEvents: 'none'
     };
@@ -333,12 +365,22 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
     ).join(', ') || 'none'
   };
 
+  // Determinar el color del borde basado en la etiqueta personalizada
+  const getBorderColor = () => {
+    if (component.customLabel?.show && component.customLabel?.color) {
+      return component.customLabel.color;
+    }
+    
+    if (isSelected && !isMultiSelected) return '#3b82f6';
+    if (isSelected && isMultiSelected) return '#f59e0b';
+    if (isHovered) return '#93c5fd';
+    return 'transparent';
+  };
+
   const overlayStyles: React.CSSProperties = {
     position: 'absolute',
     inset: 0,
-    border: isSelected && !isMultiSelected ? '2px solid #3b82f6' : 
-           isSelected && isMultiSelected ? '2px solid #f59e0b' :
-           isHovered ? '1px solid #93c5fd' : 'none',
+    border: `2px solid ${getBorderColor()}`,
     borderRadius: '2px',
     backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
     pointerEvents: 'none',
@@ -368,39 +410,44 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
       {/* Contenido del componente */}
       {renderComponentContent()}
       
-      {/* Overlay de selección */}
-      <div style={overlayStyles} />
-      
-      {/* Etiqueta personalizada */}
-      {component.customLabel?.show && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '-24px',
-            left: '0',
-            backgroundColor: component.customLabel.color,
-            color: component.customLabel.textColor || 'white',
-            padding: '2px 6px',
-            borderRadius: '3px',
-            fontSize: '10px',
-            fontWeight: 'bold',
-            zIndex: 20,
-            whiteSpace: 'nowrap',
-            pointerEvents: 'none'
-          }}
-        >
-          {component.customLabel.name}
-        </div>
-      )}
+      {/* ✅ Ocultar elementos de UI del builder en modo preview */}
+      {!isPreviewMode && (
+        <>
+          {/* Overlay de selección */}
+          <div style={overlayStyles} />
+          
+          {/* Etiqueta personalizada */}
+          {component.customLabel?.show && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '-24px',
+                left: '0',
+                backgroundColor: component.customLabel.color,
+                color: component.customLabel.textColor || 'white',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                zIndex: 20,
+                whiteSpace: 'nowrap',
+                pointerEvents: 'none'
+              }}
+            >
+              {component.customLabel.name}
+            </div>
+          )}
 
-      {/* Handles de redimensionamiento */}
-      {isSelected && !component.isLocked && component.isResizable && (
-        <ResizeHandles
-          component={component}
-          zoom={zoom}
-          operations={operations}
-          isVisible={!isMultiSelected}
-        />
+          {/* Handles de redimensionamiento */}
+          {isSelected && !component.isLocked && component.isResizable && (
+            <ResizeHandles
+              component={component}
+              zoom={zoom}
+              operations={operations}
+              isVisible={!isMultiSelected}
+            />
+          )}
+        </>
       )}
     </div>
   );

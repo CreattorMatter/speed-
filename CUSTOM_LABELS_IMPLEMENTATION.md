@@ -1,105 +1,185 @@
-# 🏷️ **Etiquetas Personalizables - Builder V3**
+# 🏷️ Etiquetas Personalizadas - SPID Builder V3
 
-## 📊 **Implementación Completada**
+## 📋 Descripción
 
-### **✅ Funcionalidades Implementadas**
+Se ha implementado una nueva funcionalidad que permite agregar etiquetas personalizadas a los componentes desde el panel de propiedades. Esta característica permite a los usuarios identificar y organizar mejor sus componentes con nombres descriptivos y colores distintivos.
 
-#### **1. Configuración de Etiqueta Personalizable**
-- **Nombre personalizado**: Los usuarios pueden cambiar el nombre que aparece en la etiqueta
-- **Color de fondo**: Selector de color personalizado con paleta rápida de 12 colores
-- **Color de texto**: Configuración del color del texto de la etiqueta
-- **Mostrar/Ocultar**: Toggle para activar o desactivar la visualización de la etiqueta
+## ✨ Características Implementadas
 
-#### **2. Panel de Propiedades Actualizado**
-- Nueva sección "Etiqueta Personalizada" en la pestaña "Propiedades"
-- Controles intuitivos para configurar todos los aspectos de la etiqueta
-- Vista previa en tiempo real de los cambios
+### 🎯 **Panel de Propiedades - Nueva Sección**
 
-#### **3. Renderizado Dinámico en Canvas**
-- Las etiquetas se actualizan instantáneamente al cambiar la configuración
-- Soporte para colores personalizados y texto personalizado
-- Fallback automático a la etiqueta predeterminada si no hay configuración personalizada
+#### **Sección: Etiqueta Personalizada**
+- ✅ **Checkbox "Mostrar etiqueta"** - Activa/desactiva la visualización de la etiqueta
+- ✅ **Campo de texto "Nombre de la etiqueta"** - Permite escribir un nombre personalizado
+- ✅ **Selector de colores predefinidos** - 10 colores comunes (Rojo, Naranja, Amarillo, Verde, Azul, Púrpura, Rosa, Gris, Negro, Blanco)
+- ✅ **Selector de color personalizado** - Input de color HTML5 + campo de texto para códigos hexadecimales
 
-### **🔧 Archivos Modificados**
+### 🎨 **Colores Disponibles**
 
-#### **`src/types/builder-v3.ts`**
 ```typescript
-// Agregado a DraggableComponentV3
-customLabel?: {
+const LABEL_COLORS = [
+  { name: 'Rojo', value: '#ef4444', bgClass: 'bg-red-500' },
+  { name: 'Naranja', value: '#f97316', bgClass: 'bg-orange-500' },
+  { name: 'Amarillo', value: '#eab308', bgClass: 'bg-yellow-500' },
+  { name: 'Verde', value: '#22c55e', bgClass: 'bg-green-500' },
+  { name: 'Azul', value: '#3b82f6', bgClass: 'bg-blue-500' },
+  { name: 'Púrpura', value: '#8b5cf6', bgClass: 'bg-purple-500' },
+  { name: 'Rosa', value: '#ec4899', bgClass: 'bg-pink-500' },
+  { name: 'Gris', value: '#6b7280', bgClass: 'bg-gray-500' },
+  { name: 'Negro', value: '#000000', bgClass: 'bg-black' },
+  { name: 'Blanco', value: '#ffffff', bgClass: 'bg-white border border-gray-300' }
+];
+```
+
+### 🖼️ **Visualización en el Canvas**
+
+- ✅ **Etiqueta flotante** - Se muestra encima del componente seleccionado
+- ✅ **Borde del mismo color** - El componente se bordea con el color de la etiqueta
+- ✅ **Posicionamiento automático** - Aparece en la parte superior del componente
+- ✅ **Estilo visual** - Fondo de color, texto blanco, bordes redondeados
+- ✅ **Responsive** - Se adapta al zoom del canvas
+- ✅ **No interferencia** - No bloquea la interacción con el componente
+
+## 🔧 **Implementación Técnica**
+
+### **Estructura de Datos**
+
+```typescript
+interface CustomLabel {
   name: string;           // Nombre personalizado para la etiqueta
-  color: string;         // Color de fondo de la etiqueta
-  textColor?: string;    // Color del texto (opcional)
+  color: string;         // Color de fondo (ej: '#ff4444')
+  textColor?: string;    // Color del texto (opcional, por defecto blanco)
   show: boolean;         // Mostrar/ocultar etiqueta
+}
+```
+
+### **Archivos Modificados**
+
+1. **`PropertiesTab.tsx`** - Nueva sección de etiquetas personalizadas
+2. **`ComponentRenderer.tsx`** - Renderizado de etiquetas en el canvas
+3. **`useBuilderV3.ts`** - Inicialización de customLabel en nuevos componentes
+4. **`types/index.ts`** - Definición de tipos (ya existía)
+
+### **Funcionalidades del Panel**
+
+#### **1. Control de Visibilidad**
+```typescript
+const handleLabelShowChange = (show: boolean) => {
+  onComponentUpdate(selectedComponent.id, {
+    customLabel: {
+      ...customLabel,
+      show
+    }
+  });
 };
 ```
 
-#### **`src/components/BuilderV3/components/CanvasEditorV3.tsx`**
+#### **2. Cambio de Nombre**
 ```typescript
-// Renderizado dinámico de etiquetas
-style={{
-  backgroundColor: component.customLabel?.color || undefined,
-  color: component.customLabel?.textColor || '#ffffff',
-  display: component.customLabel?.show === false ? 'none' : 'block'
-}}
+const handleLabelNameChange = (name: string) => {
+  onComponentUpdate(selectedComponent.id, {
+    customLabel: {
+      ...customLabel,
+      name
+    }
+  });
+};
 ```
 
-#### **`src/components/BuilderV3/components/PropertiesPanelV3.tsx`**
-- Nueva sección completa para configurar etiquetas
-- Controles para nombre, colores y visibilidad
-- Paleta de colores rápida con 12 opciones predefinidas
+#### **3. Cambio de Color**
+```typescript
+const handleLabelColorChange = (color: string) => {
+  onComponentUpdate(selectedComponent.id, {
+    customLabel: {
+      ...customLabel,
+      color
+    }
+  });
+};
+```
 
-### **🎨 Paleta de Colores Incluida**
-- Azul (#3b82f6) - Color por defecto
-- Rojo (#ef4444) - Para elementos críticos
-- Verde (#10b981) - Para elementos de éxito
-- Amarillo (#f59e0b) - Para alertas
-- Púrpura (#8b5cf6) - Para elementos especiales
-- Cian (#06b6d4) - Para información
-- Naranja (#f97316) - Para acciones
-- Lima (#84cc16) - Para elementos nuevos
-- Rosa (#ec4899) - Para elementos destacados
-- Gris (#6b7280) - Para elementos secundarios
-- Gris oscuro (#1f2937) - Para texto importante
-- Rojo oscuro (#dc2626) - Para errores
+## 🎯 **Casos de Uso**
 
-### **📝 Casos de Uso**
+### **1. Organización de Componentes**
+- Etiquetar componentes de precio como "Precio Principal"
+- Etiquetar logos como "Logo Marca"
+- Etiquetar imágenes de producto como "Foto Producto"
 
-#### **Organización de Componentes**
-- **"Título Principal"** - Color azul para headers importantes
-- **"Precio Oferta"** - Color rojo para precios destacados
-- **"Descripción Producto"** - Color verde para información del producto
-- **"Fecha Promoción"** - Color naranja para información temporal
+### **2. Identificación Rápida**
+- Usar colores diferentes para diferentes tipos de contenido
+- Verde para precios, Azul para títulos, Rojo para descuentos
 
-#### **Identificación Visual**
-Cuando tienes múltiples componentes de "Texto Dinámico" en el canvas, ahora puedes:
-1. Darles nombres descriptivos únicos
-2. Asignar colores específicos por función
-3. Organizarlos visualmente por categorías
-4. Ocultar etiquetas cuando no son necesarias
+### **3. Colaboración en Equipo**
+- Facilitar la comunicación sobre qué componente es qué
+- Mejorar la experiencia de revisión de diseños
 
-### **🚀 Beneficios**
+## 🚀 **Cómo Usar**
 
-#### **1. Mejor Organización**
-- Identificación rápida de componentes por nombre y color
-- Reducción de confusión con múltiples textos dinámicos
-- Mejor flujo de trabajo para diseñadores
+1. **Seleccionar un componente** en el canvas
+2. **Ir al panel de propiedades** (pestaña "Propiedades")
+3. **Activar "Mostrar etiqueta"** con el checkbox
+4. **Escribir un nombre** en el campo "Nombre de la etiqueta"
+5. **Seleccionar un color** de los predefinidos o usar el selector personalizado
+6. **La etiqueta aparecerá** encima del componente en el canvas
+7. **El borde del componente** cambiará al mismo color de la etiqueta
 
-#### **2. Flexibilidad Total**
-- Configuración completamente personalizable
-- Sin limitaciones de cantidad de componentes
-- Adaptable a cualquier flujo de trabajo
+## 🔄 **Persistencia de Datos**
 
-#### **3. UX Mejorada**
-- Configuración intuitiva desde el panel de propiedades
-- Cambios en tiempo real
-- Paleta de colores rápida para productividad
+- Las etiquetas se guardan automáticamente con el componente
+- Se mantienen al duplicar componentes
+- Se incluyen en el historial de acciones
+- Se exportan con la plantilla
 
-### **✨ Estado Final**
-- ✅ Tipos actualizados con configuración personalizable
-- ✅ Canvas renderizando etiquetas dinámicas
-- ✅ Panel de propiedades con controles completos
-- ✅ Paleta de colores predefinida
-- ✅ Fallbacks automáticos para compatibilidad
-- ✅ Funcionalidad completamente operativa
+## 🎨 **Personalización Visual**
 
-La funcionalidad de etiquetas personalizables está **100% implementada y operativa**. 
+### **Estilo de la Etiqueta**
+```css
+{
+  position: 'absolute',
+  top: '-24px',
+  left: '0',
+  backgroundColor: component.customLabel.color,
+  color: component.customLabel.textColor || 'white',
+  padding: '2px 6px',
+  borderRadius: '3px',
+  fontSize: '10px',
+  fontWeight: 'bold',
+  zIndex: 20,
+  whiteSpace: 'nowrap',
+  pointerEvents: 'none'
+}
+```
+
+## 📱 **Responsive y Accesibilidad**
+
+- ✅ **Zoom compatible** - Las etiquetas se escalan con el zoom del canvas
+- ✅ **No interferencia** - Las etiquetas no bloquean la interacción
+- ✅ **Contraste adecuado** - Texto blanco por defecto para mejor legibilidad
+- ✅ **Tooltips informativos** - Los botones de color tienen tooltips con nombres
+
+## 🔮 **Futuras Mejoras**
+
+- [ ] **Posicionamiento personalizable** - Permitir mover la etiqueta
+- [ ] **Múltiples etiquetas** - Más de una etiqueta por componente
+- [ ] **Filtrado por etiquetas** - Filtrar componentes por color/nombre
+- [ ] **Exportación de etiquetas** - Incluir etiquetas en PDFs
+- [ ] **Plantillas de etiquetas** - Predefinir etiquetas comunes
+
+---
+
+## ✅ **Estado de Implementación**
+
+**COMPLETADO** ✅ - La funcionalidad está completamente implementada y lista para usar.
+
+**Archivos modificados:**
+- ✅ `src/features/builderV3/components/PropertiesPanel/PropertiesTab.tsx`
+- ✅ `src/features/builderV3/hooks/useBuilderV3.ts`
+- ✅ `src/features/builderV3/components/Canvas/ComponentRenderer.tsx` (ya tenía la implementación)
+
+**Funcionalidades:**
+- ✅ Panel de propiedades con controles de etiquetas
+- ✅ Selector de colores predefinidos y personalizados
+- ✅ Borde del componente del mismo color que la etiqueta
+- ✅ Renderizado en el canvas
+- ✅ Persistencia de datos
+- ✅ Inicialización automática en nuevos componentes 

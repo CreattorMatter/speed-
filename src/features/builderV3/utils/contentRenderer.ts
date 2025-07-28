@@ -89,10 +89,30 @@ export const getFieldTechnicalNames = (component: DraggableComponentV3): string 
   // 9. Campos de fecha específicos
   if (content?.dateConfig?.type) {
     console.log(`📅 dateConfig encontrado: "${content.dateConfig.type}"`);
+    
+    // CASO ESPECIAL: validity-period siempre muestra las fechas, no el nombre técnico
+    if (content.dateConfig.type === 'validity-period') {
+      if (content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
+        const formatDate = (dateStr: string) => {
+          // Crear fecha local para evitar problemas de zona horaria
+          const [year, month, day] = dateStr.split('-');
+          const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          return date.toLocaleDateString('es-AR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+        };
+        return `${formatDate(content.dateConfig.startDate)} - ${formatDate(content.dateConfig.endDate)}`;
+      }
+      return '21/07/2025 - 04/08/2025'; // Fallback
+    }
+    
     const dateTypeMap: Record<string, string> = {
       'current-date': '[current_date]',
       'promotion-start': '[promotion_start_date]',
-      'promotion-end': '[promotion_end_date]'
+      'promotion-end': '[promotion_end_date]',
+      'promotion-period': '[promotion_period]'
     };
     
     return dateTypeMap[content.dateConfig.type] || `[${content.dateConfig.type}]`;

@@ -968,6 +968,12 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
         isDraggable: true,
         isResizable: true,
         isEditable: true,
+        customLabel: {
+          name: '',
+          color: '#3b82f6',
+          textColor: '#ffffff',
+          show: false
+        },
         childrenIds: [],
         tags: [],
         createdAt: new Date(),

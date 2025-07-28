@@ -6,12 +6,9 @@ import React from 'react';
 import { 
   Move, 
   RotateCw, 
-  Layers,
-  EyeOff,
-  Lock,
-  Unlock,
   Trash2,
-  Copy
+  Copy,
+  Tag
 } from 'lucide-react';
 import { UnitConverter } from '../../utils/unitConverter';
 import { TabProps, PropertiesHandlers } from './types';
@@ -19,6 +16,20 @@ import { TabProps, PropertiesHandlers } from './types';
 interface PropertiesTabProps extends TabProps {
   handlers: PropertiesHandlers;
 }
+
+// Colores predefinidos para las etiquetas
+const LABEL_COLORS = [
+  { name: 'Rojo', value: '#ef4444', bgClass: 'bg-red-500' },
+  { name: 'Naranja', value: '#f97316', bgClass: 'bg-orange-500' },
+  { name: 'Amarillo', value: '#eab308', bgClass: 'bg-yellow-500' },
+  { name: 'Verde', value: '#22c55e', bgClass: 'bg-green-500' },
+  { name: 'Azul', value: '#3b82f6', bgClass: 'bg-blue-500' },
+  { name: 'Púrpura', value: '#8b5cf6', bgClass: 'bg-purple-500' },
+  { name: 'Rosa', value: '#ec4899', bgClass: 'bg-pink-500' },
+  { name: 'Gris', value: '#6b7280', bgClass: 'bg-gray-500' },
+  { name: 'Negro', value: '#000000', bgClass: 'bg-black' },
+  { name: 'Blanco', value: '#ffffff', bgClass: 'bg-white border border-gray-300' }
+];
 
 export const PropertiesTab: React.FC<PropertiesTabProps> = ({
   selectedComponent,
@@ -50,6 +61,41 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
       </div>
     );
   }
+
+  // Inicializar customLabel si no existe
+  const customLabel = selectedComponent.customLabel || {
+    name: '',
+    color: '#3b82f6',
+    textColor: '#ffffff',
+    show: false
+  };
+
+  const handleLabelNameChange = (name: string) => {
+    onComponentUpdate(selectedComponent.id, {
+      customLabel: {
+        ...customLabel,
+        name
+      }
+    });
+  };
+
+  const handleLabelColorChange = (color: string) => {
+    onComponentUpdate(selectedComponent.id, {
+      customLabel: {
+        ...customLabel,
+        color
+      }
+    });
+  };
+
+  const handleLabelShowChange = (show: boolean) => {
+    onComponentUpdate(selectedComponent.id, {
+      customLabel: {
+        ...customLabel,
+        show
+      }
+    });
+  };
 
   return (
     <div className="space-y-3">
@@ -126,7 +172,7 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
           <RotateCw className="w-4 h-4 mr-2" />
           Transformaciones
         </h4>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">Rotación (°)</label>
             <input
@@ -136,16 +182,6 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               min="-360"
               max="360"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Z-Index</label>
-            <input
-              type="number"
-              value={selectedComponent?.position.z || 0}
-              onChange={(e) => handlers.handlePositionChange('z', Number(e.target.value))}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              min="0"
             />
           </div>
           <div>
@@ -175,39 +211,85 @@ export const PropertiesTab: React.FC<PropertiesTabProps> = ({
         </div>
       </div>
 
-      {/* Estado del componente */}
+      {/* Etiqueta Personalizada */}
       <div>
         <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
-          <Layers className="w-4 h-4 mr-2" />
-          Estado
+          <Tag className="w-4 h-4 mr-2" />
+          Etiqueta Personalizada
         </h4>
-        <div className="space-y-2">
-          <label className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 flex items-center">
-              {selectedComponent.isVisible ? <EyeOff className="w-3 h-3 mr-1" /> : <EyeOff className="w-3 h-3 mr-1" />}
-              Visible
-            </span>
+        
+        {/* Mostrar/Ocultar etiqueta */}
+        <div className="mb-3">
+          <label className="flex items-center">
             <input
               type="checkbox"
-              checked={selectedComponent.isVisible}
-              onChange={() => onComponentToggleVisibility(selectedComponent.id)}
+              checked={customLabel.show}
+              onChange={(e) => handleLabelShowChange(e.target.checked)}
               className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
-          </label>
-          
-          <label className="flex items-center justify-between">
-            <span className="text-xs text-gray-700 flex items-center">
-              {selectedComponent.isLocked ? <Lock className="w-3 h-3 mr-1" /> : <Unlock className="w-3 h-3 mr-1" />}
-              Bloqueado
-            </span>
-            <input
-              type="checkbox"
-              checked={selectedComponent.isLocked}
-              onChange={() => onComponentToggleLock(selectedComponent.id)}
-              className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
+            <span className="ml-2 text-xs text-gray-700">Mostrar etiqueta</span>
           </label>
         </div>
+
+        {customLabel.show && (
+          <div className="space-y-3">
+            {/* Nombre de la etiqueta */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Nombre de la etiqueta</label>
+              <input
+                type="text"
+                value={customLabel.name}
+                onChange={(e) => handleLabelNameChange(e.target.value)}
+                placeholder="Ej: Precio, Título, Logo..."
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            {/* Selector de color */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-2">Color de la etiqueta</label>
+              <div className="grid grid-cols-5 gap-2">
+                {LABEL_COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => handleLabelColorChange(color.value)}
+                    className={`
+                      w-8 h-8 rounded-full border-2 transition-all
+                      ${customLabel.color === color.value 
+                        ? 'border-gray-800 scale-110' 
+                        : 'border-gray-300 hover:border-gray-500'
+                      }
+                      ${color.bgClass}
+                    `}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+              
+              {/* Input de color personalizado */}
+              <div className="mt-2">
+                <label className="block text-xs text-gray-500 mb-1">Color personalizado</label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="color"
+                    value={customLabel.color}
+                    onChange={(e) => handleLabelColorChange(e.target.value)}
+                    className="w-8 h-8 border border-gray-300 rounded cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={customLabel.color}
+                    onChange={(e) => handleLabelColorChange(e.target.value)}
+                    placeholder="#000000"
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+
+          </div>
+        )}
       </div>
 
       {/* Acciones */}

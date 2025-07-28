@@ -63,23 +63,50 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
   // };
 
   const getPreviewDimensions = () => {
-    const templateWidth = template.canvas.width;
-    const templateHeight = template.canvas.height;
+    // ✅ Calcular las dimensiones reales basadas en TODOS los componentes
+    let minX = 0, minY = 0, maxX = template.canvas.width, maxY = template.canvas.height;
+    
+    // Encontrar los límites reales de todos los componentes
+    state.components.forEach(component => {
+      const right = component.position.x + component.size.width;
+      const bottom = component.position.y + component.size.height;
+      
+      minX = Math.min(minX, component.position.x);
+      minY = Math.min(minY, component.position.y);
+      maxX = Math.max(maxX, right);
+      maxY = Math.max(maxY, bottom);
+    });
+    
+    // Usar las dimensiones reales que incluyen todos los componentes
+    const actualWidth = maxX - minX;
+    const actualHeight = maxY - minY;
+    
+    // Agregar un poco de padding para asegurar que todo se vea
+    const paddedWidth = actualWidth + 40;
+    const paddedHeight = actualHeight + 40;
     
     // Usar las dimensiones reales del viewport disponible
-    const availableWidth = window.innerWidth * 0.8; // 80% del ancho de pantalla
-    const availableHeight = window.innerHeight * 0.75; // 75% del alto de pantalla
-    const maxWidth = Math.min(availableWidth, 1400); // Máximo 1400px de ancho
-    const maxHeight = Math.min(availableHeight, 900); // Máximo 900px de alto
+    const availableWidth = window.innerWidth * 0.8;
+    const availableHeight = window.innerHeight * 0.75;
+    const maxWidth = Math.min(availableWidth, 1400);
+    const maxHeight = Math.min(availableHeight, 900);
     
     // Calcular escala para usar el máximo espacio disponible
-    const scaleByWidth = maxWidth / templateWidth;
-    const scaleByHeight = maxHeight / templateHeight;
-    const scale = Math.min(scaleByWidth, scaleByHeight, 2.0); // Permitir hasta 200% si es necesario
+    const scaleByWidth = maxWidth / paddedWidth;
+    const scaleByHeight = maxHeight / paddedHeight;
+    const scale = Math.min(scaleByWidth, scaleByHeight, 2.0);
+    
+    console.log('📐 Preview dimensions calculated:', {
+      templateSize: { width: template.canvas.width, height: template.canvas.height },
+      componentBounds: { minX, minY, maxX, maxY },
+      actualSize: { width: actualWidth, height: actualHeight },
+      paddedSize: { width: paddedWidth, height: paddedHeight },
+      scale
+    });
     
     return {
-      width: templateWidth * scale,
-      height: templateHeight * scale,
+      width: paddedWidth,
+      height: paddedHeight,
       scale
     };
   };
@@ -266,21 +293,25 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
         {/* Content Area - MEJORADO PARA USAR MÁS ESPACIO */}
         <div className="flex-1 overflow-auto bg-gray-100">
           <div className="w-full h-full flex items-center justify-center p-4 min-h-[600px]">
-            <div 
-              className="bg-white shadow-2xl border border-gray-200 flex items-center justify-center"
+            {/* 🎯 Canvas escalado correctamente usando dimensiones reales */}
+            <div
+              className="bg-white shadow-2xl border border-gray-200 flex items-center justify-center overflow-visible"
               style={{
-                width: `${previewDimensions.width}px`,
-                height: `${previewDimensions.height}px`,
+                width: `${previewDimensions.width * previewDimensions.scale}px`,
+                height: `${previewDimensions.height * previewDimensions.scale}px`,
                 transform: `rotate(${rotation}deg)`,
                 transition: 'all 0.3s ease',
-                maxWidth: '100%',
-                maxHeight: '100%'
+                transformOrigin: 'center center'
               }}
             >
               {/* Canvas content usando ComponentRenderer para consistencia con BuilderV3 */}
               <div 
-                className="relative w-full h-full overflow-hidden"
-                style={{ backgroundColor: template.canvas.backgroundColor }}
+                className="relative w-full h-full"
+                style={{ 
+                  backgroundColor: template.canvas.backgroundColor,
+                  transform: `scale(${previewDimensions.scale})`,
+                  transformOrigin: 'top left'
+                }}
               >
                 {processedComponents.map((component) => (
                   <ComponentRenderer
@@ -288,13 +319,14 @@ export const PreviewModalV3: React.FC<PreviewModalV3Props> = ({
                     component={component}
                     isSelected={false}
                     isMultiSelected={false}
-                    zoom={previewDimensions.scale}
+                    zoom={1.0}
                     snapToGrid={false}
                     gridSize={20}
                     snapTolerance={5}
                     allComponents={processedComponents}
-                    onClick={() => {}} // No interaction in preview
-                    operations={{} as any} // No operations in preview
+                    onClick={() => {}}
+                    operations={{} as any}
+                    isPreviewMode={true}
                   />
                 ))}
               </div>
