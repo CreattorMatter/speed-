@@ -383,8 +383,7 @@ export const processDynamicContent = (
     switch (componentType) {
       case 'field-dynamic-text':
         return mockData.producto?.descripcion || 'Heladera Whirlpool No Frost 375L';
-      case 'field-dynamic-date':
-        return mockData.fecha_actual;
+      // field-dynamic-date eliminado - usar validity-period en su lugar
       default:
         return 'Contenido por defecto';
     }
@@ -503,8 +502,7 @@ export const processDynamicContent = (
       case 'promotion-period':
         return `${mockData.fecha_actual} - ${mockData.fecha_promocion_fin}`;
       case 'validity-period':
-        // Nuevo: Campo fecha vigencia - muestra rango de fechas de validez
-        // Si hay fechas configuradas en dateConfig, usarlas; sino usar mock data
+        // Campo fecha vigencia - SIEMPRE usa las fechas configuradas en la plantilla
         if (content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
           const formatDate = (dateStr: string) => {
             // Crear fecha local para evitar problemas de zona horaria
@@ -518,7 +516,8 @@ export const processDynamicContent = (
           };
           return `${formatDate(content.dateConfig.startDate)} - ${formatDate(content.dateConfig.endDate)}`;
         }
-        return `${mockData.fecha_vigencia_desde || mockData.fecha_actual} - ${mockData.fecha_vigencia_hasta || mockData.fecha_promocion_fin}`;
+        // Fallback si no hay fechas configuradas
+        return '21/07/2025 - 04/08/2025';
       default:
         return mockData.fecha_actual;
     }
@@ -580,8 +579,7 @@ export const processDynamicContent = (
     switch (componentType) {
       case 'field-dynamic-text':
         return mockData.producto?.descripcion || 'Heladera Whirlpool No Frost 375L';
-      case 'field-dynamic-date':
-        return mockData.fecha_actual;
+      // field-dynamic-date eliminado - usar validity-period en su lugar
       case 'qr-dynamic':
         return 'QR Code';
       default:

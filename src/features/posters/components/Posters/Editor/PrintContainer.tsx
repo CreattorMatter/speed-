@@ -27,14 +27,24 @@ export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerPro
         const templateWidthMM = template.canvas.width * (25.4 / 96);
         const templateHeightMM = template.canvas.height * (25.4 / 96);
 
-        // Calcular la escala para que quepa en A4
+        // Calcular la escala para que quepa en A4 - CORREGIDO
         const scaleX = (isLandscape ? A4_HEIGHT_MM : A4_WIDTH_MM) / templateWidthMM;
         const scaleY = (isLandscape ? A4_WIDTH_MM : A4_HEIGHT_MM) / templateHeightMM;
-        const scale = Math.min(scaleX, scaleY, 1) * 0.95; // 0.95 para dejar un margen
+        const scale = Math.min(scaleX, scaleY, 1) * 0.9; // 0.9 para dejar un margen más generoso
 
         return (
           <div key={`${product.id}-${index}`} className="page-break">
-            <div className="renderer-print-container" style={{ transform: `scale(${scale})` }}>
+            <div 
+              className="renderer-print-container" 
+              style={{ 
+                transform: `scale(${scale})`,
+                transformOrigin: 'center center',
+                width: `${template.canvas.width}px`,
+                height: `${template.canvas.height}px`,
+                maxWidth: '100%',
+                maxHeight: '100%'
+              }}
+            >
               <BuilderTemplateRenderer
                 template={template}
                 components={template.defaultComponents}

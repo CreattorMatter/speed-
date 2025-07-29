@@ -4,6 +4,7 @@ import { ProductoReal } from '../../../../../../types/product';
 import { getDynamicFieldValue, processDynamicTemplate } from '../../../../../../utils/productFieldsMap';
 import { InlineEditableText } from './InlineEditableText';
 import { calcularDescuentoPorcentaje } from '../../../../../../data/products';
+import { formatValidityPeriod } from '../../../../../../utils/validityPeriodValidator';
 
 interface BuilderTemplateRendererProps {
   template: TemplateV3;
@@ -129,6 +130,27 @@ const getDynamicValue = (
   if (content?.fieldType === 'dynamic' && content?.dynamicTemplate && product) {
     console.log(`🎯 Procesando campo dinámico: ${content.dynamicTemplate}`);
     
+    // 🆕 NUEVO: Manejo especial para validity_period en dynamicTemplate
+    if (content.dynamicTemplate.includes('[validity_period]')) {
+      console.log(`📅 Detectado validity_period en dynamicTemplate, usando fecha de vigencia de la plantilla`);
+      // Si no hay dateConfig configurado, usar fallback
+      if (content?.dateConfig?.type === 'validity-period' && content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
+        try {
+          const formattedDate = formatValidityPeriod({
+            startDate: content.dateConfig.startDate as string,
+            endDate: content.dateConfig.endDate as string
+          });
+          console.log(`📅 Fecha de vigencia formateada desde dateConfig: ${formattedDate}`);
+          return formattedDate;
+        } catch (error) {
+          console.error(`📅 Error formateando fecha de vigencia:`, error);
+        }
+      }
+      // Fallback si no hay dateConfig configurado
+      console.log(`📅 Usando fallback para validity_period`);
+      return '21/07/2025 - 04/08/2025';
+    }
+    
     // Primero verificar cambios del usuario para el template completo
     const fieldType = getFieldType(content);
     if (productChanges && productChanges[product.id]) {
@@ -161,6 +183,36 @@ const getDynamicValue = (
     const processedValue = processDynamicTemplate(content.dynamicTemplate, product, outputFormat);
     console.log(`📊 Valor procesado del template: ${processedValue}`, { outputFormat });
     return processedValue;
+  }
+
+  // 🆕 NUEVO: SISTEMA PARA CAMPOS DE FECHA DE VIGENCIA (validity-period)
+  console.log(`🔍 DEBUG: Verificando content para validity-period:`, {
+    hasContent: !!content,
+    hasDateConfig: !!content?.dateConfig,
+    dateConfigType: content?.dateConfig?.type,
+    dateConfig: content?.dateConfig
+  });
+  
+  if (content?.dateConfig?.type === 'validity-period') {
+    console.log(`📅 Procesando fecha de vigencia desde la plantilla:`, content.dateConfig);
+    
+    // Usar el validador de fechas de vigencia
+    if (content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
+      try {
+        const formattedDate = formatValidityPeriod({
+          startDate: content.dateConfig.startDate as string,
+          endDate: content.dateConfig.endDate as string
+        });
+        console.log(`📅 Fecha de vigencia formateada: ${formattedDate}`);
+        return formattedDate;
+      } catch (error) {
+        console.error(`📅 Error formateando fecha de vigencia:`, error);
+        return '21/07/2025 - 04/08/2025'; // Fallback
+      }
+    } else {
+      console.log(`📅 No hay fechas configuradas, usando fallback`);
+      return '21/07/2025 - 04/08/2025'; // Fallback
+    }
   }
 
   // 🆕 NUEVO: SISTEMA DE CAMPOS CALCULADOS
@@ -928,9 +980,19 @@ const renderComponent = (
         </div>
       );
       
-    case 'field-dynamic-date':
+    // field-dynamic-date eliminado - usar validity-period en su lugar
       let dateValue = '';
-      if (content?.dateConfig?.type === 'current-date') {
+      if (content?.dateConfig?.type === 'validity-period') {
+        // Usar el validador de fechas de vigencia
+        if (content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
+          dateValue = formatValidityPeriod({
+            startDate: content.dateConfig.startDate as string,
+            endDate: content.dateConfig.endDate as string
+          });
+        } else {
+          dateValue = '21/07/2025 - 04/08/2025'; // Fallback
+        }
+      } else if (content?.dateConfig?.type === 'current-date') {
         dateValue = new Date().toLocaleDateString('es-AR');
       } else if (content?.dateConfig?.type === 'promotion-start') {
         dateValue = '15/05/2025';

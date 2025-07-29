@@ -343,7 +343,7 @@ export const analyzeComponentForEditing = (component: DraggableComponentV3): Edi
     case 'field-dynamic-text':
       return analyzeDynamicTextField(component, baseInfo);
     
-    case 'field-dynamic-date':
+    // field-dynamic-date eliminado - usar validity-period en su lugar
       return analyzeDateField(component, baseInfo);
     
     default:

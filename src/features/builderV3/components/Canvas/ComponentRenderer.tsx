@@ -7,6 +7,7 @@ import { DraggableComponentV3, BuilderOperationsV3 } from '../../types';
 import { ResizeHandles } from './ResizeHandles';
 import { processDynamicContent, defaultMockData } from '../../../../utils/dynamicContentProcessor';
 import { getFieldTechnicalNames } from '../../utils/contentRenderer';
+import { formatValidityPeriod } from '../../../../utils/validityPeriodValidator';
 
 /**
  * 🆕 FUNCIÓN HELPER: Obtener font-family con fallbacks apropiados
@@ -93,22 +94,15 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
     // =====================
     // CASO ESPECIAL: FECHA VIGENCIA
     // =====================
-    // La fecha vigencia siempre muestra las fechas seleccionadas, sin importar el toggle
+    // La fecha vigencia SIEMPRE muestra las fechas configuradas en la plantilla
     if ((component.content as any)?.dateConfig?.type === 'validity-period') {
       const content = component.content as any;
       if (content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
-        const formatDate = (dateStr: string) => {
-          // Crear fecha local para evitar problemas de zona horaria
-          const [year, month, day] = dateStr.split('-');
-          const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-          return date.toLocaleDateString('es-AR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
-        };
-        const result = `${formatDate(content.dateConfig.startDate)} - ${formatDate(content.dateConfig.endDate)}`;
-        return result;
+        // Usar el validador de fechas de vigencia
+        return formatValidityPeriod({
+          startDate: content.dateConfig.startDate,
+          endDate: content.dateConfig.endDate
+        });
       }
       // Fallback si no hay fechas configuradas
       return '21/07/2025 - 04/08/2025';

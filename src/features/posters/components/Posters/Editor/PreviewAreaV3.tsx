@@ -9,6 +9,7 @@ import { TemplateGrid } from './Selectors/TemplateGrid';
 import { BuilderTemplateRenderer } from './Renderers/BuilderTemplateRenderer';
 import { detectEditableFields, getEditableFieldsStats, EditableFieldInfo } from '../../../../../utils/templateFieldDetector';
 import { ProductChangesModal } from './ProductChangesModal';
+import { ValidityPeriodModal } from './ValidityPeriodModal';
 import { PrintContainer } from './PrintContainer';
 import { EmailService } from '../../../../../services/emailService';
 
@@ -47,6 +48,8 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   
   // Estados para sistema de impresión
   const [showChangesModal, setShowChangesModal] = useState(false);
+  const [showValidityModal, setShowValidityModal] = useState(false);
+  const [validityError, setValidityError] = useState<string>('');
   const [isPrinting, setIsPrinting] = useState(false);
   const [printOrientation, setPrintOrientation] = useState<'portrait' | 'landscape'>('portrait');
 
@@ -292,6 +295,8 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
 
   // Funciones para sistema de impresión
   const handlePrintClick = () => {
+    console.log('🖨️ handlePrintClick iniciado');
+    
     // Verificar si hay productos seleccionados
     if (selectedProducts.length === 0) {
       alert('Debes seleccionar al menos un producto para imprimir.');
@@ -303,6 +308,154 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       alert('Debes seleccionar una plantilla para imprimir.');
       return;
     }
+
+    // 🆕 NUEVO: Validar fecha de vigencia antes de imprimir
+    const validateValidityPeriod = () => {
+      console.log('🔍 Iniciando validación de fecha de vigencia...');
+      
+      // Buscar componentes de fecha de vigencia en la plantilla
+      console.log('🔍 Todos los componentes de la plantilla:', selectedTemplate.template.defaultComponents);
+      
+      const validityComponents = selectedTemplate.template.defaultComponents.filter(
+        (component: any) => {
+          // Buscar por dateConfig.type === 'validity-period'
+          const hasValidityPeriodConfig = component.content?.dateConfig?.type === 'validity-period';
+          
+          // Buscar por dynamicTemplate que contenga [validity_period]
+          const hasValidityPeriodTemplate = component.content?.dynamicTemplate?.includes('[validity_period]');
+          
+          // Buscar por type === 'validity-period' (por si acaso)
+          const isValidityPeriodType = component.type === 'validity-period';
+          
+          const isValidityPeriod = hasValidityPeriodConfig || hasValidityPeriodTemplate || isValidityPeriodType;
+          
+          console.log('🔍 Componente:', {
+            type: component.type,
+            hasDateConfig: !!component.content?.dateConfig,
+            dateConfigType: component.content?.dateConfig?.type,
+            hasDynamicTemplate: !!component.content?.dynamicTemplate,
+            dynamicTemplate: component.content?.dynamicTemplate,
+            hasValidityPeriodConfig,
+            hasValidityPeriodTemplate,
+            isValidityPeriodType,
+            isValidityPeriod
+          });
+          
+          return isValidityPeriod;
+        }
+      );
+
+      console.log('📅 Componentes de fecha de vigencia encontrados:', validityComponents.length);
+
+      if (validityComponents.length === 0) {
+        console.log('⚠️ No se encontraron componentes de fecha de vigencia específicos');
+        
+        // 🔧 FIX: Buscar cualquier componente que tenga fechas configuradas
+        const anyDateComponents = selectedTemplate.template.defaultComponents.filter(
+          (component: any) => {
+            const hasStartDate = !!component.content?.dateConfig?.startDate;
+            const hasEndDate = !!component.content?.dateConfig?.endDate;
+            const hasDateConfig = !!component.content?.dateConfig;
+            
+            console.log('🔍 Buscando componentes con fechas:', {
+              type: component.type,
+              hasStartDate,
+              hasEndDate,
+              hasDateConfig,
+              dateConfig: component.content?.dateConfig
+            });
+            
+            return hasStartDate && hasEndDate;
+          }
+        );
+        
+        console.log('📅 Componentes con fechas encontrados:', anyDateComponents.length);
+        
+        if (anyDateComponents.length === 0) {
+          console.log('⚠️ No se encontraron componentes con fechas, permitiendo impresión');
+          return true; // No hay fecha de vigencia, permitir impresión
+        }
+        
+        // Usar estos componentes para validación
+        validityComponents.push(...anyDateComponents);
+      }
+
+      // Verificar cada componente de fecha de vigencia
+      for (const component of validityComponents) {
+        let startDate: string | null = null;
+        let endDate: string | null = null;
+
+        // Obtener fechas del dateConfig (cualquier tipo que tenga fechas)
+        if (component.content?.dateConfig?.startDate && component.content?.dateConfig?.endDate) {
+          startDate = component.content.dateConfig.startDate;
+          endDate = component.content.dateConfig.endDate;
+          console.log('📅 Fechas encontradas:', { startDate, endDate, type: component.content.dateConfig.type });
+        }
+
+        // Si no hay fechas configuradas, continuar con el siguiente componente
+        if (!startDate || !endDate) {
+          continue;
+        }
+
+        // Validar si la fecha actual está dentro del rango
+        const now = new Date();
+        // Parseo local seguro:
+        let start, end;
+        if (startDate && endDate) {
+          const [sy, sm, sd] = startDate.split('-').map(Number);
+          const [ey, em, ed] = endDate.split('-').map(Number);
+          start = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
+          end = new Date(ey, em - 1, ed, 23, 59, 59, 999);
+        } else {
+          start = new Date();
+          end = new Date();
+        }
+
+        // Ajustar fechas para comparación
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        now.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+
+        console.log('📅 Validando fechas:', {
+          now: now.toLocaleDateString('es-AR'),
+          start: start.toLocaleDateString('es-AR'),
+          end: end.toLocaleDateString('es-AR'),
+          isBeforeStart: now < start,
+          isAfterEnd: now > end,
+          shouldBlock: now < start || now > end
+        });
+
+        if (now < start || now > end) {
+          const startFormatted = start.toLocaleDateString('es-AR');
+          const endFormatted = end.toLocaleDateString('es-AR');
+          const nowFormatted = now.toLocaleDateString('es-AR');
+          
+          // Mostrar modal de error con mensaje amigable
+          const errorMsg = `El cartel tiene una fecha de vigencia del ${startFormatted} al ${endFormatted}, pero hoy es ${nowFormatted}. 
+
+Para imprimir este cartel, necesitas actualizar la fecha de vigencia en el builder para que incluya la fecha actual.`;
+          console.log('❌ Mostrando modal de error:', errorMsg);
+          setValidityError(errorMsg);
+          setShowValidityModal(true);
+          return false;
+        }
+      }
+
+      console.log('✅ Validación de fecha de vigencia exitosa');
+      return true; // Todas las fechas de vigencia son válidas
+    };
+
+    // Ejecutar validación de fecha de vigencia
+    console.log('🖨️ Ejecutando validación antes de imprimir...');
+    
+    const validationResult = validateValidityPeriod();
+    console.log('🔍 Resultado de validación:', validationResult);
+    
+    if (!validationResult) {
+      console.log('❌ Validación falló, cancelando impresión');
+      return;
+    }
+    console.log('✅ Validación exitosa, continuando con impresión');
 
     // Determinar la orientación de la plantilla y actualizar el estado
     const isLandscape = selectedTemplate.template.canvas.width > selectedTemplate.template.canvas.height;
@@ -793,6 +946,13 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
         onConfirmPrint={handleConfirmPrintWithChanges}
       />
 
+      {/* Modal de validación de fecha de vigencia */}
+      <ValidityPeriodModal
+        isOpen={showValidityModal}
+        onClose={() => setShowValidityModal(false)}
+        errorMessage={validityError}
+      />
+
       {/* Contenedor oculto para impresión */}
       <div className="print-container-wrapper">
         <PrintContainer
@@ -840,15 +1000,33 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                 size: A4 ${printOrientation};
               }
               
-              /* Saltos de página y centrado */
+              /* Saltos de página y centrado - CORREGIDO */
               .page-break {
-                page-break-after: always;
+                page-break-after: auto;
                 page-break-inside: avoid;
-                width: 100vw;
-                height: 100vh;
+                width: 100%;
+                height: 100%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                margin: 0;
+                padding: 0;
+              }
+              
+              /* Eliminar página en blanco al final */
+              .page-break:last-child {
+                page-break-after: auto;
+              }
+              
+              /* Contenedor del renderer */
+              .renderer-print-container {
+                transform-origin: center center;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+              }
                 box-sizing: border-box;
                 padding: 1cm;
               }

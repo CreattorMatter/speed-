@@ -51,8 +51,7 @@ export const LayersPanelV3: React.FC<LayersPanelV3Props> = ({
       case 'image-decorative':
         return <Image className="w-4 h-4 text-purple-600" />;
 
-      case 'field-dynamic-date':
-        return <DollarSign className="w-4 h-4 text-green-600" />;
+      // field-dynamic-date eliminado - usar validity-period en su lugar
       case 'shape-geometric':
         return <Tag className="w-4 h-4 text-orange-600" />;
       default:
@@ -109,8 +108,7 @@ export const LayersPanelV3: React.FC<LayersPanelV3Props> = ({
         return 'bg-purple-100 text-purple-800';
       case 'qr-dynamic':
         return 'bg-gray-100 text-gray-800';
-      case 'field-dynamic-date':
-        return 'bg-green-100 text-green-800';
+      // field-dynamic-date eliminado - usar validity-period en su lugar
       case 'shape-geometric':
       case 'decorative-line':
       case 'decorative-icon':

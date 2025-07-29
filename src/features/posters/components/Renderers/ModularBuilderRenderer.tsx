@@ -56,7 +56,7 @@ export const ModularBuilderRenderer: React.FC<ModularBuilderRendererProps> = ({
     switch (component.type) {
       // 📝 CAMPOS DE TEXTO
       case 'field-dynamic-text':
-      case 'field-dynamic-date':
+      // field-dynamic-date eliminado - usar validity-period en su lugar
         return (
           <TextFieldRenderer
             key={component.id}
@@ -80,15 +80,7 @@ export const ModularBuilderRenderer: React.FC<ModularBuilderRendererProps> = ({
         );
 
       // 📱 QR CODES
-      case 'qr-dynamic':
-        return (
-          <QRRenderer
-            key={component.id}
-            component={component}
-            product={product}
-            scale={scale}
-          />
-        );
+      
 
       // 🔷 FORMAS GEOMÉTRICAS
       case 'shape-geometric':
@@ -101,35 +93,13 @@ export const ModularBuilderRenderer: React.FC<ModularBuilderRendererProps> = ({
         );
 
       // ➖ LÍNEAS DECORATIVAS
-      case 'decorative-line':
-        return (
-          <LineRenderer
-            key={component.id}
-            component={component}
-            scale={scale}
-          />
-        );
+     
 
       // ⭐ ÍCONOS DECORATIVOS
-      case 'decorative-icon':
-        return (
-          <IconRenderer
-            key={component.id}
-            component={component}
-            scale={scale}
-          />
-        );
+      
 
       // �� CONTENEDORES
-      case 'container-flexible':
-      case 'container-grid':
-        return (
-          <ContainerRenderer
-            key={component.id}
-            component={component}
-            scale={scale}
-          />
-        );
+      
 
       // ❓ COMPONENTE DESCONOCIDO
       default:

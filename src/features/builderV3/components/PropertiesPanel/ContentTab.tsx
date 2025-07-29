@@ -247,7 +247,7 @@ export const ContentTab: React.FC<ContentTabProps> = ({
   };
 
   const renderTextContent = () => {
-    const isTextComponent = ['field-dynamic-text', 'field-dynamic-date'].includes(selectedComponent.type);
+    const isTextComponent = ['field-dynamic-text'].includes(selectedComponent.type);
     if (!isTextComponent) return null;
 
     return (
@@ -271,7 +271,7 @@ export const ContentTab: React.FC<ContentTabProps> = ({
           {expandedSections.has('content') && (
             <div className="p-3 border-t border-gray-200 space-y-3">
               {/* Botón para regenerar contenido dinámico si está mal configurado */}
-              {(['field-dynamic-text', 'field-dynamic-date'].includes(selectedComponent.type)) && 
+              {(['field-dynamic-text'].includes(selectedComponent.type)) && 
                (!selectedComponent.content || !(selectedComponent.content as any)?.fieldType) && (
                 <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                   <div className="flex items-center space-x-2 mb-2">
@@ -283,17 +283,11 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                   </p>
                   <button
                     onClick={() => {
-                      const defaultContent = selectedComponent.type === 'field-dynamic-text' 
-                        ? {
-                            fieldType: 'dynamic',
-                            dynamicTemplate: '[product_name]',
-                            textConfig: { contentType: 'product-name' }
-                          }
-                        : {
-                            fieldType: 'dynamic', 
-                            dynamicTemplate: '[current_date]',
-                            dateConfig: { type: 'current-date', format: 'DD/MM/YYYY' }
-                          };
+                      const defaultContent = {
+                        fieldType: 'dynamic',
+                        dynamicTemplate: '[product_name]',
+                        textConfig: { contentType: 'product-name' }
+                      };
                       
                       console.log('🔧 Regenerando contenido para:', selectedComponent.id, defaultContent);
                       // Usar 'content' para reemplazar completamente el objeto content
@@ -310,7 +304,7 @@ export const ContentTab: React.FC<ContentTabProps> = ({
 
 
               {/* Toggle para mostrar datos mock vs nombres de campo - VERSIÓN LIMPIA */}
-              {(['field-dynamic-text', 'field-dynamic-date'].includes(selectedComponent.type)) && (
+              {(['field-dynamic-text'].includes(selectedComponent.type)) && (
                 <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex-1">

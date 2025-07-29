@@ -226,7 +226,7 @@ export const isComponentEditable = (
   // Solo permitir edición en campos de texto dinámico
   const editableTypes = [
     'field-dynamic-text',
-    'field-dynamic-date'
+    // 'field-dynamic-date' eliminado - usar validity-period en su lugar
   ];
   
   return editableTypes.includes(component.type);
