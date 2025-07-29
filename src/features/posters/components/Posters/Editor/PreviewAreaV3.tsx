@@ -397,7 +397,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
           continue;
         }
 
-        // Validar si la fecha actual está dentro del rango
+        // Validar si la fecha actual está dentro del rango (con margen de 3 días antes)
         const now = new Date();
         // Parseo local seguro:
         let start, end;
@@ -411,29 +411,35 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
           end = new Date();
         }
 
+        // Aplicar margen de 3 días antes de la fecha de inicio
+        const startWithMargin = new Date(start);
+        startWithMargin.setDate(startWithMargin.getDate() - 3);
+
         // Ajustar fechas para comparación
-        start.setHours(0, 0, 0, 0);
+        startWithMargin.setHours(0, 0, 0, 0);
         end.setHours(23, 59, 59, 999);
         now.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
 
-        console.log('📅 Validando fechas:', {
+        console.log('📅 Validando fechas (con margen de 3 días):', {
           now: now.toLocaleDateString('es-AR'),
-          start: start.toLocaleDateString('es-AR'),
+          startOriginal: start.toLocaleDateString('es-AR'),
+          startWithMargin: startWithMargin.toLocaleDateString('es-AR'),
           end: end.toLocaleDateString('es-AR'),
-          isBeforeStart: now < start,
+          isBeforeStartWithMargin: now < startWithMargin,
           isAfterEnd: now > end,
-          shouldBlock: now < start || now > end
+          shouldBlock: now < startWithMargin || now > end
         });
 
-        if (now < start || now > end) {
+        if (now < startWithMargin || now > end) {
           const startFormatted = start.toLocaleDateString('es-AR');
           const endFormatted = end.toLocaleDateString('es-AR');
           const nowFormatted = now.toLocaleDateString('es-AR');
           
           // Mostrar modal de error con mensaje amigable
+          const startWithMarginFormatted = startWithMargin.toLocaleDateString('es-AR');
           const errorMsg = `El cartel tiene una fecha de vigencia del ${startFormatted} al ${endFormatted}, pero hoy es ${nowFormatted}. 
 
-Para imprimir este cartel, necesitas actualizar la fecha de vigencia en el builder para que incluya la fecha actual.`;
+Se puede imprimir desde el ${startWithMarginFormatted} (3 días antes del inicio de vigencia). Para imprimir ahora, actualiza la fecha de vigencia en el builder.`;
           console.log('❌ Mostrando modal de error:', errorMsg);
           setValidityError(errorMsg);
           setShowValidityModal(true);
@@ -994,31 +1000,35 @@ Para imprimir este cartel, necesitas actualizar la fecha de vigencia en el build
                 height: 100%;
               }
               
-              /* Configuración de página dinámica */
+              /* Configuración de página SIN márgenes */
               @page {
-                margin: 0;
+                margin: 0 !important;
                 size: A4 ${printOrientation};
               }
               
-              /* Saltos de página y centrado - CORREGIDO */
+              /* Saltos de página y centrado */
               .page-break {
-                page-break-after: auto;
                 page-break-inside: avoid;
                 width: 100%;
                 height: 100%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                margin: 0;
-                padding: 0;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              
+              /* Solo hacer salto de página entre elementos, no después del último */
+              .page-break:not(:last-child) {
+                page-break-after: always;
               }
               
               /* Eliminar página en blanco al final */
               .page-break:last-child {
-                page-break-after: auto;
+                page-break-after: avoid !important;
               }
               
-              /* Contenedor del renderer */
+              /* Contenedor del renderer SIN márgenes */
               .renderer-print-container {
                 transform-origin: center center;
                 display: flex;
@@ -1026,22 +1036,8 @@ Para imprimir este cartel, necesitas actualizar la fecha de vigencia en el build
                 justify-content: center;
                 width: 100%;
                 height: 100%;
-              }
-                box-sizing: border-box;
-                padding: 1cm;
-              }
-              
-              .page-break:last-child {
-                page-break-after: avoid;
-              }
-
-              /* Contenedor del renderer con escalado */
-              .renderer-print-container {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                margin: 0 !important;
+                padding: 0 !important;
               }
               
               /* Asegurar que el contenido se vea bien */

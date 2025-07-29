@@ -27,10 +27,10 @@ export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerPro
         const templateWidthMM = template.canvas.width * (25.4 / 96);
         const templateHeightMM = template.canvas.height * (25.4 / 96);
 
-        // Calcular la escala para que quepa en A4 - CORREGIDO
+        // Calcular la escala para que quepa en A4 - SIN márgenes extra
         const scaleX = (isLandscape ? A4_HEIGHT_MM : A4_WIDTH_MM) / templateWidthMM;
         const scaleY = (isLandscape ? A4_WIDTH_MM : A4_HEIGHT_MM) / templateHeightMM;
-        const scale = Math.min(scaleX, scaleY, 1) * 0.9; // 0.9 para dejar un margen más generoso
+        const scale = Math.min(scaleX, scaleY, 1); // Sin factor de margen extra
 
         return (
           <div key={`${product.id}-${index}`} className="page-break">
@@ -42,7 +42,9 @@ export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerPro
                 width: `${template.canvas.width}px`,
                 height: `${template.canvas.height}px`,
                 maxWidth: '100%',
-                maxHeight: '100%'
+                maxHeight: '100%',
+                margin: '0',
+                padding: '0'
               }}
             >
               <BuilderTemplateRenderer
@@ -63,7 +65,15 @@ export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerPro
               display: block !important;
             }
             .page-break {
+              page-break-after: auto;
+              page-break-inside: avoid;
+            }
+            /* Solo hacer salto de página entre elementos, no después del último */
+            .page-break:not(:last-child) {
               page-break-after: always;
+            }
+            .page-break:last-child {
+              page-break-after: avoid;
             }
           }
           @media screen {
