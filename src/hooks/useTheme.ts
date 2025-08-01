@@ -27,10 +27,15 @@ export const useTheme = (forceDark?: boolean) => {
     
     // Guardar la preferencia
     localStorage.setItem('theme', theme);
+    
+    // Debug: verificar que se aplique
+    console.log('🌙 [THEME] Tema cambiado a:', theme, 'HTML classes:', document.documentElement.className);
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark');
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    console.log('🌙 [THEME] Cambiando tema de', theme, 'a', newTheme);
+    setTheme(newTheme);
   };
 
   return { theme, toggleTheme };

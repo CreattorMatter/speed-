@@ -4,6 +4,7 @@
 
 import { supabase, supabaseAdmin, isSupabaseConfigured } from '../lib/supabaseClient';
 import { FamilyV3, TemplateV3, ComponentsLibraryV3, ComponentDefinitionV3, ComponentCategoryV3, FamilyTypeV3 } from '../features/builderV3/types';
+import { componentsLibrary } from '../features/builderV3/data/componentsLibrary';
 import { UnitConverter } from '../features/builderV3/utils/unitConverter';
 
 // ===============================================
@@ -16,19 +17,33 @@ export const componentsV3Service = {
    * ✅ SIMPLE Y EFICIENTE: Sin llamadas HTTP, sin dependencias externas
    */
   async getLibrary(): Promise<ComponentsLibraryV3> {
-    console.log('📦 Cargando componentes desde código (modularizado)');
+    console.log('📦 Cargando componentes desde código (import estático)');
     
-    // Importar dinámicamente para evitar circular dependencies
-    const { componentsLibrary } = await import('../features/builderV3/data/componentsLibrary');
-    
-    // Obtener estadísticas
-    const totalComponents = Object.values(componentsLibrary)
-      .reduce((total, category) => total + (category?.length || 0), 0);
-    const categoriesCount = Object.keys(componentsLibrary).length;
-    
-    console.log(`📊 Librería cargada: ${totalComponents} componentes en ${categoriesCount} categorías`);
-    
-    return componentsLibrary;
+    try {
+      // Usar import estático para evitar problemas de dynamic import
+      if (!componentsLibrary) {
+        throw new Error('componentsLibrary no encontrado en el módulo');
+      }
+      
+      // Obtener estadísticas
+      const totalComponents = Object.values(componentsLibrary)
+        .reduce((total, category) => total + (category?.length || 0), 0);
+      const categoriesCount = Object.keys(componentsLibrary).length;
+      
+      console.log(`📊 Librería cargada: ${totalComponents} componentes en ${categoriesCount} categorías`);
+      return componentsLibrary;
+    } catch (error) {
+      console.error('❌ Error loading components library:', error);
+      // Fallback: devolver librería vacía pero válida
+      return {
+        basicos: [],
+        texto: [],
+        imagenes: [],
+        formas: [],
+        layout: []
+      } as ComponentsLibraryV3;
+    }
+
   },
 
   /**

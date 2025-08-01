@@ -14,7 +14,7 @@ import { Analytics } from './features/analytics/components/Analytics';
 import { supabase, supabaseAdmin } from './lib/supabaseClient';
 import { HeaderProvider } from './components/shared/HeaderProvider';
 import { Toaster } from 'react-hot-toast';
-import { MobileDetectionModal } from './components/shared/MobileDetectionModal';
+
 import { CameraCapture } from './components/shared/CameraCapture';
 import { toast } from 'react-hot-toast';
 import { DigitalSignageView } from './features/digital-signage/components/DigitalSignageView';
@@ -60,7 +60,7 @@ function AppContent() {
   //const [showAnalytics, setShowAnalytics] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showMobileModal, setShowMobileModal] = useState(false);
+
   const [showCamera, setShowCamera] = useState(false);
   //const [showDigitalCarousel, setShowDigitalCarousel] = useState(false);
 
@@ -92,9 +92,7 @@ function AppContent() {
         setIsAuthenticated(true);
         setUserRole(parsedUser.role === 'admin' ? 'admin' : parsedUser.role === 'limited' ? 'limited' : 'sucursal');
 
-        if (isMobile()) {
-          setShowMobileModal(true);
-        }
+
       }
     } catch (error) {
       console.error('Error durante la verificación del usuario:', error);
@@ -160,10 +158,7 @@ function AppContent() {
       setIsAuthenticated(true);
       setUserRole(user.role as any);
 
-      // Verificar si es dispositivo móvil
-      if (isMobile()) {
-        setShowMobileModal(true);
-      }
+
 
       // 3. Redirección basada en rol
       if (user.role === 'sucursal') {
@@ -232,15 +227,7 @@ function AppContent() {
 
 
 
-  const isMobile = () => {
-    const userAgent = navigator.userAgent || navigator.vendor;
-    const mobilePattern = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet|ipad/i;
-    
-    // Verificar también el tipo de dispositivo si está disponible
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    
-    return mobilePattern.test(userAgent.toLowerCase()) || isTouchDevice;
-  };
+
 
   const handlePhotoTaken = async (imageUrl: string) => {
     try {
@@ -523,20 +510,12 @@ function AppContent() {
 
         <Route path="/enhanced-builder" element={<div>Enhanced Builder (ruta por definir)</div>} />
 
-        <Route path="/test-builder" element={<div>Test Builder (ruta por definir)</div>} />
+
       </Routes>
 
       {/* ConfigurationPortal removed - now using /administration route */}
 
-      <MobileDetectionModal
-        isOpen={showMobileModal}
-        onClose={() => setShowMobileModal(false)}
-        onCapture={() => {
-          setShowMobileModal(false);
-          setShowCamera(true);
-        }}
-        onContinue={() => setShowMobileModal(false)}
-      />
+
 
       <CameraCapture
         isOpen={showCamera}
@@ -544,14 +523,7 @@ function AppContent() {
         onPhotoTaken={handlePhotoTaken}
       />
 
-      {process.env.NODE_ENV === 'development' && (
-        <button
-          onClick={() => setShowMobileModal(true)}
-          className="fixed bottom-4 right-4 bg-blue-500 text-white p-2 rounded"
-        >
-          Test Mobile Modal
-        </button>
-      )}
+
     </HeaderProvider>
   );
 }

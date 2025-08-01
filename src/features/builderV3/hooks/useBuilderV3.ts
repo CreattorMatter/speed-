@@ -431,8 +431,8 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
   // =====================
   
   const [state, dispatch] = useReducer(builderReducer, createInitialState());
-  const [families] = useState<FamilyV3[]>([]);
-  const [templates] = useState<TemplateV3[]>([]);
+  const [families, setFamilies] = useState<FamilyV3[]>([]);
+  const [templates, setTemplates] = useState<TemplateV3[]>([]);
 
   // =====================
   // VARIABLES DE CONTROL PARA EVITAR BUCLES (PERSISTENTES)

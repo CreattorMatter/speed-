@@ -4,6 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class', // 🌙 Habilitar modo oscuro con clase
   theme: {
     screens: {
       'xs': '475px',

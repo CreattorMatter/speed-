@@ -373,8 +373,8 @@ export const useBuilderV3Integration = () => {
     operations: extendedOperations as any,
     
     // Datos reales (si está conectado) o mock (si está offline)
-    families: isConnected ? realFamilies : builderCore.families,
-    templates: isConnected ? realTemplates : builderCore.templates,
+    families: isConnected && realFamilies.length > 0 ? realFamilies : builderCore.families,
+    templates: isConnected && realTemplates.length > 0 ? realTemplates : builderCore.templates,
     componentsLibrary: builderCore.componentsLibrary,
     
     // Estado de conexión

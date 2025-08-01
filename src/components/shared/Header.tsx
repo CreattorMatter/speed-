@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowLeft, LogOut, User, ChevronDown, HelpCircle, Settings } from 'lucide-react';
+import { ArrowLeft, LogOut, User, ChevronDown, HelpCircle, Settings, Moon, Sun } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useHeader } from './HeaderProvider';
 import { GuideModal } from './GuideModal';
+import { useTheme } from '../../hooks/useTheme';
 
 interface HeaderProps {
   onBack: () => void;
@@ -15,6 +16,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, onGoToDashboard, userName }) => {
   const { userEmail, userRole } = useHeader();
+  const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const navigate = useNavigate();
@@ -31,7 +33,7 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, onGoToDa
 
   return (
     <>
-      <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900 border-b border-white/10 shadow-lg">
+      <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-b border-white/10 dark:border-gray-700/50 shadow-lg transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-2 xs:px-3 sm:px-4 lg:px-6">
           <div className="flex justify-between items-center h-14 xs:h-16 relative">
             {/* Botón de volver a la izquierda - Solo si onBack está definido */}
@@ -64,6 +66,26 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, onGoToDa
             </div>
 
             <div className="flex items-center gap-2 xs:gap-3 sm:gap-4">
+              {/* Theme Toggle Button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={toggleTheme}
+                className="header-button group flex items-center gap-2 px-3 py-2.5 relative overflow-hidden"
+                title={`Cambiar a modo ${theme === 'light' ? 'oscuro' : 'claro'}`}
+              >
+                <div className="relative">
+                  {theme === 'light' ? (
+                    <Moon className="w-4 h-4 xs:w-5 xs:h-5 transition-all duration-500 group-hover:rotate-12 text-white" />
+                  ) : (
+                    <Sun className="w-4 h-4 xs:w-5 xs:h-5 transition-all duration-500 group-hover:rotate-180 text-yellow-300" />
+                  )}
+                </div>
+                <span className="hidden lg:inline text-xs font-medium text-white/80 group-hover:text-white transition-all duration-300">
+                  {theme === 'light' ? 'Oscuro' : 'Claro'}
+                </span>
+              </motion.button>
+
               <button
                 onClick={() => setIsGuideOpen(true)}
                 className="header-button group flex items-center gap-2 px-3 xs:px-4 py-2 xs:py-2.5 text-xs xs:text-sm font-medium"

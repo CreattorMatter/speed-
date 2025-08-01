@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Package2, Tags, FileText, LayoutTemplate, Settings, BarChart3, Monitor } from 'lucide-react';
+import { Package2, Tags, FileText, LayoutTemplate, Settings, BarChart3, Monitor, Sparkles, TrendingUp, Users, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Header } from '../../../components/shared/Header';
-import { Chatbot } from '../../chatbot/components/Chatbot';
+
 import { NewsModal } from '../../../components/shared/NewsModal';
+import { useTheme } from '../../../hooks/useTheme';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -44,13 +45,15 @@ export default function Dashboard({
   userRole,
   onAnalytics
 }: DashboardProps) {
-  // Datos de ejemplo
+  const { theme } = useTheme();
+  
+  // Datos de ejemplo - Nuevas métricas
   const stats: DashboardStats = {
     carteles: {
-      total: 856,
-      fisicos: 650,
-      digitales: 206,
-      playlists: 45,
+      total: 147,      // Plantillas
+      fisicos: 23,     // Familias
+      digitales: 1205, // Impresiones
+      playlists: 89,   // Usuarios activos
       lastWeek: 28
     }
   };
@@ -76,7 +79,7 @@ export default function Dashboard({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors duration-300">
       <Header onBack={onBack} onLogout={handleLogoutClick} userName={userEmail || ''} onGoToAdmin={onSettings} />
       
       {/* Agregar el Modal de Novedades */}
@@ -85,30 +88,38 @@ export default function Dashboard({
         onClose={handleCloseNewsModal}
       />
 
+      {/* Background Decorative Elements */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-purple-400/20 via-pink-400/20 to-indigo-400/20 dark:from-purple-600/10 dark:via-pink-600/10 dark:to-indigo-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-blue-400/20 via-cyan-400/20 to-teal-400/20 dark:from-blue-600/10 dark:via-cyan-600/10 dark:to-teal-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-violet-400/10 via-purple-400/10 to-pink-400/10 dark:from-violet-600/5 dark:via-purple-600/5 dark:to-pink-600/5 rounded-full blur-3xl"></div>
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-7xl mx-auto px-4 py-12"
+        className="relative z-10 max-w-7xl mx-auto px-4 py-12"
       >
         {/* Welcome Section */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="mb-8 flex items-center gap-3"
+          className="mb-8 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6"
         >
-          <h2 className="text-3xl font-medium">
-            <span className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 bg-clip-text text-transparent">
-              Bienvenido a{' '}
-            </span>
-            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 bg-clip-text text-transparent">
-              SPID
-            </span>
-            <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-              {' '}Plus
-            </span>
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
+              <span className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 dark:from-gray-100 dark:via-gray-200 dark:to-indigo-200 bg-clip-text text-transparent">
+                Bienvenido a{' '}
+              </span>
+              <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 dark:from-indigo-400 dark:via-purple-400 dark:to-violet-400 bg-clip-text text-transparent">
+                SPID
+              </span>
+              <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 dark:from-violet-400 dark:to-fuchsia-400 bg-clip-text text-transparent">
+                {' '}Plus
+              </span>
+            </h2>
           <motion.span
             animate={{
               rotate: [0, 14, -8, 14, -4, 10, 0],
@@ -124,151 +135,282 @@ export default function Dashboard({
           >
             👋
           </motion.span>
-          <p className="text-slate-500">
-            Todos los carteles físicos y digitales en un solo lugar.
-          </p>
+          </div>
+          
+          {/* Quick Stats Cards */}
+          <div className="flex flex-wrap gap-3 sm:gap-4">
+            <div className="px-4 py-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-600/20 dark:to-purple-600/20 border border-blue-200/50 dark:border-blue-500/30 rounded-full backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">+{stats.carteles.lastWeek} esta semana</span>
+              </div>
+            </div>
+            <div className="px-4 py-2 bg-gradient-to-r from-green-500/10 to-emerald-500/10 dark:from-green-600/20 dark:to-emerald-600/20 border border-green-200/50 dark:border-green-500/30 rounded-full backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium text-green-700 dark:text-green-300">Activo</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="w-full">
+            <p className="text-slate-500 dark:text-slate-400 text-lg">
+              Todos los carteles físicos y digitales en un solo lugar.
+            </p>
+          </div>
         </motion.div>
 
-        {/* Action Buttons Section */}
-        <div className="flex flex-col xs:flex-row xs:flex-wrap sm:flex-nowrap justify-center gap-3 xs:gap-4 sm:gap-6 lg:gap-8 xl:gap-12 mb-6 sm:mb-8 lg:mb-12 py-4 sm:py-6 lg:py-12 px-2 sm:px-4">
-          {/* 🔧 ELEMENTOS "PRÓXIMAMENTE" ELIMINADOS - Solo módulos activos */}
-
-          {/* Botón de Cartel */}
-          <motion.button
-            whileHover={!isEasyPilarUser(userEmail) ? { scale: 1.05 } : {}}
-            whileTap={!isEasyPilarUser(userEmail) ? { scale: 0.95 } : {}}
-            onClick={!isEasyPilarUser(userEmail) ? onNewPoster : undefined}
-            className={`group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
-              ${!isEasyPilarUser(userEmail)
-                ? 'bg-gradient-to-br from-violet-500 to-violet-600 text-white hover:shadow-[0_0_35px_rgba(139,92,246,0.4)]'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
-            disabled={isEasyPilarUser(userEmail)}
-          >
-            <div className={`mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl ${
-              !isEasyPilarUser(userEmail)
-                ? 'bg-white/20 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
-                : 'bg-gray-300'
-            }`}>
-              <FileText className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
-            </div>
-            <span className="text-base xs:text-lg sm:text-xl font-semibold text-center">
-              Cartel
-            </span>
-          </motion.button>
-
-          {/* 🔧 CARTEL DIGITAL ELIMINADO - Estaba marcado como "Próximamente" */}
-
-          {/* Botón de Builder */}
-          <motion.button
-            whileHover={!isEasyPilarUser(userEmail) ? { scale: 1.05 } : {}}
-            whileTap={!isEasyPilarUser(userEmail) ? { scale: 0.95 } : {}}
-            onClick={!isEasyPilarUser(userEmail) ? onNewTemplate : undefined}
-            className={`group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
-              ${!isEasyPilarUser(userEmail)
-                ? 'bg-gradient-to-br from-white to-gray-100 border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-lg'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
-            disabled={isEasyPilarUser(userEmail)}
-          >
-            <div className={`mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl ${
-              !isEasyPilarUser(userEmail)
-                ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300'
-                : 'bg-gray-300'
-            }`}>
-              <LayoutTemplate className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${!isEasyPilarUser(userEmail) ? 'text-white' : 'text-gray-400'}`} />
-            </div>
-            <span className={`text-base xs:text-lg sm:text-xl font-semibold text-center ${!isEasyPilarUser(userEmail) ? 'bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent' : ''}`}>
-              Builder
-            </span>
-          </motion.button>
-
-          {/* Botón de Config - Solo para ADMIN */}
-          {userRole === 'admin' && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={onSettings}
-              className="group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
-                bg-gradient-to-r from-white/95 via-white/90 to-violet-100/80 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl"
+        {/* Main Action Cards Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {/* Cartel Card */}
+          {!isEasyPilarUser(userEmail) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              whileHover={{ y: -5 }}
+              className="group"
             >
-              <div className="mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500 to-violet-600 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                <Settings className="w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-white" />
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 dark:from-violet-600 dark:via-purple-700 dark:to-indigo-700 p-8 h-64 shadow-2xl hover:shadow-violet-500/25 transition-all duration-500">
+                <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10 h-full flex flex-col justify-between">
+                  <div className="flex items-start justify-between">
+                    <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                      <FileText className="w-8 h-8 text-white" />
+                    </div>
+                    <Sparkles className="w-6 h-6 text-white/60 group-hover:text-yellow-300 transition-colors duration-300" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Cartel</h3>
+                    <p className="text-white/80 mb-4 text-sm leading-relaxed">Crear carteles promocionales y informativos de forma rápida</p>
+                    <button
+                      onClick={onNewPoster}
+                      className="w-full py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl text-white font-semibold transition-all duration-300 border border-white/20 hover:border-white/40"
+                    >
+                      Crear Cartel
+                    </button>
+                  </div>
+                </div>
               </div>
-              <span className="text-base xs:text-lg sm:text-xl font-semibold text-center bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                Administración
-              </span>
-            </motion.button>
+            </motion.div>
           )}
 
-          {/* 🔧 ANALÍTICA ELIMINADA - Estaba marcada como "Próximamente" */}
+          {/* Builder Card */}
+          {!isEasyPilarUser(userEmail) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              whileHover={{ y: -5 }}
+              className="group"
+            >
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 p-8 h-64 shadow-2xl hover:shadow-emerald-500/25 transition-all duration-500">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10 h-full flex flex-col justify-between">
+                  <div className="flex items-start justify-between">
+                    <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg">
+                      <LayoutTemplate className="w-8 h-8 text-white" />
+                    </div>
+                    <Calendar className="w-6 h-6 text-gray-400 dark:text-gray-500 group-hover:text-emerald-500 transition-colors duration-300" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Builder</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm leading-relaxed">Diseña templates personalizados con herramientas avanzadas</p>
+                    <button
+                      onClick={onNewTemplate}
+                      className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 rounded-xl text-white font-semibold transition-all duration-300 shadow-md hover:shadow-lg"
+                    >
+                      Abrir Builder
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Admin Card - Solo para ADMIN */}
+          {userRole === 'admin' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              whileHover={{ y: -5 }}
+              className="group"
+            >
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-700 dark:from-blue-600 dark:via-indigo-700 dark:to-purple-800 p-8 h-64 shadow-2xl hover:shadow-blue-500/25 transition-all duration-500">
+                <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10 h-full flex flex-col justify-between">
+                  <div className="flex items-start justify-between">
+                    <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                      <Settings className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="px-3 py-1 bg-yellow-400/90 rounded-full">
+                      <span className="text-xs font-bold text-yellow-900">ADMIN</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Administración</h3>
+                    <p className="text-white/80 mb-4 text-sm leading-relaxed">Gestión avanzada de usuarios, configuraciones y sistema</p>
+                    <button
+                      onClick={onSettings}
+                      className="w-full py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl text-white font-semibold transition-all duration-300 border border-white/20 hover:border-white/40"
+                    >
+                      Panel Admin
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
 
-        {/* Stats Grid - Solo Carteles visible */}
+        {/* Enhanced Stats Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="flex justify-center mb-8 sm:mb-12 px-2 sm:px-4 lg:px-0"
+          transition={{ delay: 0.6 }}
+          className="mb-12"
         >
-          {/* Templates Stats - Reemplazar por Carteles Stats */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="rounded-xl p-6 transition-colors border bg-white border-slate-200 shadow-lg max-w-md w-full"
-          >
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 
-                            flex items-center justify-center shadow-lg shadow-violet-500/20">
-                <Monitor className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className={`text-lg font-medium text-slate-900 flex items-center gap-2`}>
-                  Carteles
-                  <span className="text-xs px-2 py-0.5 bg-violet-100 text-violet-600 rounded-full">
-                    Físicos y Digitales
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Plantillas */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/50 border border-blue-200/50 dark:border-blue-800/50 p-6 hover:shadow-lg transition-all duration-300"
+            >
+              <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full -mr-10 -mt-10"></div>
+              <div className="relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-blue-500 rounded-xl shadow-lg">
+                    <LayoutTemplate className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      {stats.carteles.total}
+                    </div>
+                    <div className="text-sm text-blue-500 dark:text-blue-300">Plantillas</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <span className="text-sm text-green-600 dark:text-green-400 font-medium">
+                    +{stats.carteles.lastWeek} esta semana
                   </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Familias */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/50 dark:to-emerald-900/50 border border-green-200/50 dark:border-green-800/50 p-6 hover:shadow-lg transition-all duration-300"
+            >
+              <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-full -mr-10 -mt-10"></div>
+              <div className="relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-green-500 rounded-xl shadow-lg">
+                    <Package2 className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                      {stats.carteles.fisicos}
+                    </div>
+                    <div className="text-sm text-green-500 dark:text-green-300">Familias</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-green-600 dark:text-green-400 font-medium">
+                    Activas
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Impresiones */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-950/50 dark:to-violet-900/50 border border-purple-200/50 dark:border-purple-800/50 p-6 hover:shadow-lg transition-all duration-300"
+            >
+              <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full -mr-10 -mt-10"></div>
+              <div className="relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-purple-500 rounded-xl shadow-lg">
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                      {stats.carteles.digitales.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-purple-500 dark:text-purple-300">Impresiones</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-500" />
+                  <span className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                    Este mes
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+
+          </div>
+        </motion.div>
+
+        {/* Quick Actions Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-700 dark:via-purple-700 dark:to-pink-700 p-8 mb-12"
+        >
+          <div className="absolute inset-0 opacity-30">
+            <svg className="w-full h-full" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)" />
+            </svg>
+          </div>
+          <div className="relative z-10">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="flex-1">
+                <h3 className="text-2xl lg:text-3xl font-bold text-white mb-2">
+                  ¿Listo para crear algo increíble?
                 </h3>
-                <p className={`text-slate-500`}>
-                  Vista general
+                <p className="text-white/80 text-lg max-w-2xl">
+                  Comienza con plantillas profesionales o diseña desde cero con nuestro editor avanzado. La creatividad no tiene límites.
                 </p>
               </div>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className={`text-slate-500`}>Total</span>
-                  <span className={`text-2xl font-semibold text-slate-900`}>
-                    {stats.carteles.total}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className={`text-slate-500`}>Físicos</span>
-                  <span className="text-slate-900">
-                    {stats.carteles.fisicos}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className={`text-slate-500`}>Digitales</span>
-                  <span className="text-slate-900">
-                    {stats.carteles.digitales}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className={`text-slate-500`}>Playlists</span>
-                  <span className="text-slate-900">
-                    {stats.carteles.playlists}
-                  </span>
-                </div>
-              </div>
-              <div className={`text-sm text-slate-500`}>
-                <span className="text-emerald-400">+{stats.carteles.lastWeek}</span> nuevos esta semana
+              <div className="flex flex-col sm:flex-row gap-4">
+                {!isEasyPilarUser(userEmail) && (
+                  <>
+                    <button
+                      onClick={onNewPoster}
+                      className="px-6 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl text-white font-semibold transition-all duration-300 border border-white/20 hover:border-white/40 flex items-center gap-2"
+                    >
+                      <FileText className="w-5 h-5" />
+                      Crear Cartel
+                    </button>
+                    <button
+                      onClick={onNewTemplate}
+                      className="px-6 py-3 bg-white hover:bg-gray-50 rounded-xl text-gray-900 font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2"
+                    >
+                      <LayoutTemplate className="w-5 h-5" />
+                      Abrir Builder
+                    </button>
+                  </>
+                )}
               </div>
             </div>
-          </motion.div>
+          </div>
         </motion.div>
 
       </motion.div>
 
-      {/* Agregar el Chatbot */}
-      <Chatbot userEmail={userEmail} />
+      
     </div>
   );
 }
