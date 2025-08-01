@@ -131,41 +131,7 @@ export default function Dashboard({
 
         {/* Action Buttons Section */}
         <div className="flex flex-col xs:flex-row xs:flex-wrap sm:flex-nowrap justify-center gap-3 xs:gap-4 sm:gap-6 lg:gap-8 xl:gap-12 mb-6 sm:mb-8 lg:mb-12 py-4 sm:py-6 lg:py-12 px-2 sm:px-4">
-          {/* Botón de Productos - Deshabilitado temporalmente */}
-          <motion.button
-            className="group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
-              bg-gray-200 text-gray-400 cursor-not-allowed relative"
-            disabled={true}
-            title="Funcionalidad temporalmente deshabilitada"
-          >
-            <div className="mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gray-300">
-              <Package2 className="w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-gray-400" />
-            </div>
-            <span className="text-base xs:text-lg sm:text-xl font-semibold text-center">
-              Productos
-            </span>
-            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-lg">
-              Próximamente
-            </div>
-          </motion.button>
-
-          {/* Botón de Promociones - Deshabilitado temporalmente */}
-          <motion.button
-            className="group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
-              bg-gray-200 text-gray-400 cursor-not-allowed relative"
-            disabled={true}
-            title="Funcionalidad temporalmente deshabilitada"
-          >
-            <div className="mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gray-300">
-              <Tags className="w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-gray-400" />
-            </div>
-            <span className="text-base xs:text-lg sm:text-xl font-semibold text-center">
-              Promociones
-            </span>
-            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-lg">
-              Próximamente
-            </div>
-          </motion.button>
+          {/* 🔧 ELEMENTOS "PRÓXIMAMENTE" ELIMINADOS - Solo módulos activos */}
 
           {/* Botón de Cartel */}
           <motion.button
@@ -190,22 +156,7 @@ export default function Dashboard({
             </span>
           </motion.button>
 
-          {/* Botón de Cartel Digital - Próximamente */}
-          <motion.button
-            className="group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
-              bg-gray-200 text-gray-400 cursor-not-allowed relative"
-            disabled={true}
-          >
-            <div className="mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gray-300">
-              <Monitor className="w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-gray-400" />
-            </div>
-            <span className="text-base xs:text-lg sm:text-xl font-semibold text-center">
-              Cartel Digital
-            </span>
-            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-lg">
-              Próximamente
-            </div>
-          </motion.button>
+          {/* 🔧 CARTEL DIGITAL ELIMINADO - Estaba marcado como "Próximamente" */}
 
           {/* Botón de Builder */}
           <motion.button
@@ -248,23 +199,7 @@ export default function Dashboard({
             </motion.button>
           )}
 
-          {/* Botón de Analítica - Deshabilitado temporalmente */}
-          <motion.button
-            className="group flex flex-col items-center w-full xs:w-40 sm:w-48 lg:w-56 px-4 xs:px-6 sm:px-8 py-6 xs:py-7 sm:py-8 rounded-2xl sm:rounded-3xl
-              bg-gray-200 text-gray-400 cursor-not-allowed relative"
-            disabled={true}
-            title="Funcionalidad temporalmente deshabilitada"
-          >
-            <div className="mb-3 sm:mb-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gray-300">
-              <BarChart3 className="w-6 h-6 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-gray-400" />
-            </div>
-            <span className="text-base xs:text-lg sm:text-xl font-semibold text-center">
-              Analítica
-            </span>
-            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-lg">
-              Próximamente
-            </div>
-          </motion.button>
+          {/* 🔧 ANALÍTICA ELIMINADA - Estaba marcada como "Próximamente" */}
         </div>
 
         {/* Stats Grid - Solo Carteles visible */}

@@ -34,14 +34,16 @@ const Header: React.FC<HeaderProps> = ({ onBack, onLogout, onGoToAdmin, onGoToDa
       <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900 border-b border-white/10 shadow-lg">
         <div className="max-w-7xl mx-auto px-2 xs:px-3 sm:px-4 lg:px-6">
           <div className="flex justify-between items-center h-14 xs:h-16 relative">
-            {/* Botón de volver a la izquierda */}
-            <button
-              onClick={onBack}
-              className="header-button group flex items-center gap-2 px-4 py-2.5"
-            >
-              <ArrowLeft className="w-4 h-4 xs:w-5 xs:h-5 transition-all duration-300 group-hover:translate-x-[-2px]" />
-              <span className="hidden sm:inline text-sm font-medium transition-all duration-300">Volver</span>
-            </button>
+            {/* Botón de volver a la izquierda - Solo si onBack está definido */}
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="header-button group flex items-center gap-2 px-4 py-2.5"
+              >
+                <ArrowLeft className="w-4 h-4 xs:w-5 xs:h-5 transition-all duration-300 group-hover:translate-x-[-2px]" />
+                <span className="hidden sm:inline text-sm font-medium transition-all duration-300">Volver</span>
+              </button>
+            )}
 
             {/* Título centrado - Clickeable para ir al dashboard */}
             <div className="flex items-center gap-1 xs:gap-2 absolute left-1/2 transform -translate-x-1/2">

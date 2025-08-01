@@ -282,7 +282,7 @@ function AppContent() {
           onLogout={handleLogout}
           onProducts={() => navigate('/products')}
           onPromotions={() => navigate('/promotions')}
-          onBack={handleBack}
+          onBack={undefined} // 🔧 NO mostrar botón "Volver" en dashboard Easy Pilar
           userEmail={user?.email || ''}
           userName={user?.name || ''}
           onSettings={handleSettings}
@@ -298,7 +298,7 @@ function AppContent() {
         onNewPoster={handleNewPoster}
         onProducts={() => navigate('/products')}
         onPromotions={() => navigate('/promotions')}
-        onBack={handleBack}
+        onBack={undefined} // 🔧 NO mostrar botón "Volver" en dashboard principal
         userEmail={user?.email || ''}
         onSettings={handleSettings}
         userRole={userRole}

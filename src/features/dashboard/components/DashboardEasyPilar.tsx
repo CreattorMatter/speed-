@@ -1004,28 +1004,7 @@ const DashboardEasyPilar: React.FC<DashboardEasyPilarProps> = ({
             <span>Promociones</span>
           </button>
 
-          <button
-            disabled
-            className="p-6 bg-gray-100 rounded-xl cursor-not-allowed text-center opacity-50 relative"
-          >
-            <div className="w-12 h-12 mx-auto mb-2 bg-emerald-500 rounded-lg flex items-center justify-center">
-              <Monitor className="w-6 h-6 text-white" />
-            </div>
-            <span>Cartel Digital</span>
-            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-lg">
-              Próximamente
-            </div>
-          </button>
-
-          <button
-            disabled
-            className="p-6 bg-gray-100 rounded-xl cursor-not-allowed text-center opacity-50"
-          >
-            <div className="w-12 h-12 mx-auto mb-2 bg-violet-500 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-6 h-6 text-white" />
-            </div>
-            <span>Analítica</span>
-          </button>
+          {/* 🔧 MÓDULOS "PRÓXIMAMENTE" ELIMINADOS DE EASY PILAR DASHBOARD */}
         </div>
 
         {/* Compliance Section */}
