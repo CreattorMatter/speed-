@@ -4,7 +4,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { selectSelectedProducts, selectProductChanges, trackProductChange, selectHasAnyChanges } from '../../../../../store/features/poster/posterSlice';
 import { PosterTemplateData, PosterFamilyData } from '../../../../../services/posterTemplateService';
 import { Product } from '../../../../../data/products';
+import { type ProductoReal } from '../../../../../types/product';
 import { productos } from '../../../../../data/products';
+import { type TemplateV3 } from '../../../../builderV3/types';
 import { TemplateGrid } from './Selectors/TemplateGrid';
 import { BuilderTemplateRenderer } from './Renderers/BuilderTemplateRenderer';
 import { detectEditableFields, getEditableFieldsStats, EditableFieldInfo } from '../../../../../utils/templateFieldDetector';
@@ -12,6 +14,9 @@ import { ProductChangesModal } from './ProductChangesModal';
 import { ValidityPeriodModal } from './ValidityPeriodModal';
 import { PrintContainer } from './PrintContainer';
 import { EmailService } from '../../../../../services/emailService';
+// import { CuotasSelector } from './Selectors/CuotasSelector'; // ❌ REMOVIDO: Ahora se edita inline
+
+import { FinancingLogoModal } from '../FinancingLogoModal';
 
 interface PreviewAreaV3Props {
   selectedFamily?: PosterFamilyData | null;
@@ -52,6 +57,11 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   const [validityError, setValidityError] = useState<string>('');
   const [isPrinting, setIsPrinting] = useState(false);
   const [printOrientation, setPrintOrientation] = useState<'portrait' | 'landscape'>('portrait');
+
+  // 🆕 Estado para financiación (ahora manejado via inline edit)
+  const [selectedCuotas, setSelectedCuotas] = useState<number>(0);
+  const [showFinancingModal, setShowFinancingModal] = useState(false);
+  const [financingComponentId, setFinancingComponentId] = useState<string | null>(null);
 
   // Observer para el tamaño del contenedor
   useEffect(() => {
@@ -217,6 +227,33 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       }
     }
     
+    // 🆕 MANEJO ESPECIAL PARA CAMPOS DE CUOTAS
+    if (baseFieldType === 'cuota' || baseFieldType.includes('cuota')) {
+      const cuotasValue = parseInt(String(newValue), 10);
+      console.log(`💳 [CUOTAS INLINE] Cambio de cuotas detectado: ${cuotasValue} (antes: ${selectedCuotas})`);
+      
+      // Actualizar el estado local de cuotas inmediatamente
+      setSelectedCuotas(cuotasValue);
+      console.log(`💳 [CUOTAS INLINE] Estado selectedCuotas actualizado a: ${cuotasValue}`);
+      
+      // 🔧 FORZAR ACTUALIZACIÓN DE PRECIO_CUOTA automáticamente
+      const precio = currentProduct.precio || 0;
+      const precioCuota = cuotasValue > 0 && precio > 0 ? Number((precio / cuotasValue).toFixed(2)) : 0;
+      console.log(`💳 [CUOTAS INLINE] Auto-calculando precio_cuota: ${precio} / ${cuotasValue} = ${precioCuota}`);
+      
+      // 🚫 CAMPOS DE FINANCIACIÓN NO SE REPORTAN: 
+      // Los campos de cuotas y precio_cuota son calculados dinámicamente y no deben reportarse como modificaciones
+      
+      console.log(`💳 [CUOTAS INLINE] Forzando re-render para actualizar ambos campos: cuotas=${cuotasValue}, precio_cuota=${precioCuota}`);
+      return;
+    }
+    
+    // Para precio_cuota, no hacer nada especial (se actualiza automáticamente)
+    if (baseFieldType === 'precio_cuota') {
+      console.log(`💰 [PRECIO_CUOTA] Campo calculado automáticamente, ignorando edición manual`);
+      return;
+    }
+    
     // Obtener valor original usando el tipo base
     originalValue = getOriginalFieldValue(currentProduct, baseFieldType);
     
@@ -267,6 +304,12 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
         }
       }
       
+      // 🆕 NO REPORTAR campos de financiación como cambios (se editan siempre)
+      if (baseFieldType === 'cuota' || baseFieldType === 'precio_cuota') {
+        console.log(`🔥 [FINANCIACIÓN] Campo ${baseFieldType} NO se reporta como cambio (skip)`);
+        return;
+      }
+      
       let originalValue = getOriginalFieldValue(currentProduct, baseFieldType);
       
       // Para campos estáticos, usar un valor por defecto si no se encuentra
@@ -291,6 +334,52 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   const handleCancelAllChanges = () => {
     console.log('❌ Cancelando todos los cambios');
     setPendingChanges({});
+  };
+
+  // ✅ CUOTAS INLINE: Manejado a través del handleFieldEdit cuando se edita [cuota] inline
+
+  // 🆕 Handlers para modal de financiación
+  const handleFinancingImageClick = (componentId: string) => {
+    setFinancingComponentId(componentId);
+    setShowFinancingModal(true);
+  };
+
+  const handleFinancingLogoSelect = (bank: string, logo: string, plan: string) => {
+    if (financingComponentId && selectedTemplate?.template?.defaultComponents) {
+      // Encontrar y actualizar el componente de financiación
+      const updatedComponents = selectedTemplate.template.defaultComponents.map(component => {
+        if (component.id === financingComponentId) {
+          return {
+            ...component,
+            content: {
+              ...component.content,
+              fieldType: 'financing-logo',
+              imageUrl: logo,
+              selectedBank: bank,
+              selectedPlan: plan,
+              imageAlt: `Logo de ${bank} - ${plan}`
+            }
+          };
+        }
+        return component;
+      });
+
+      // ✅ Actualizar la plantilla usando onTemplateSelect
+      const updatedTemplate = {
+        ...selectedTemplate,
+        template: {
+          ...selectedTemplate.template,
+          defaultComponents: updatedComponents
+        }
+      };
+      
+      if (onTemplateSelect) {
+        onTemplateSelect(updatedTemplate);
+      }
+    }
+    
+    setShowFinancingModal(false);
+    setFinancingComponentId(null);
   };
 
   // Funciones para sistema de impresión
@@ -730,6 +819,8 @@ Se puede imprimir desde el ${startWithMarginFormatted} (3 días antes del inicio
                 </div>
               )}
 
+              {/* ✅ CUOTAS INLINE: Ahora se edita directamente en el cartel haciendo click en los campos [cuota] y [precio_cuota] */}
+
               {/* Controles de edición inline estilo SPID viejo */}
               {selectedProducts.length > 0 && (
                 <div className="flex items-center gap-2">
@@ -898,7 +989,9 @@ Se puede imprimir desde el ${startWithMarginFormatted} (3 días antes del inicio
                 maxHeight: '100%'
               }}
             >
+
               <BuilderTemplateRenderer 
+                key={`template-${selectedTemplate.id}-cuotas-${selectedCuotas}-${currentProduct?.id || 'no-product'}`}
                 template={selectedTemplate.template}
                 components={selectedTemplate.template.defaultComponents || []}
                 product={currentProduct}
@@ -908,6 +1001,8 @@ Se puede imprimir desde el ${startWithMarginFormatted} (3 días antes del inicio
                 enableInlineEdit={isEditModeActive}
                 onEditField={handleFieldEdit}
                 onPendingChange={handlePendingChange}
+                onFinancingImageClick={handleFinancingImageClick}
+                financingCuotas={selectedCuotas}
               />
             </div>
           </div>
@@ -969,8 +1064,9 @@ Se puede imprimir desde el ${startWithMarginFormatted} (3 días antes del inicio
               product,
               template: selectedTemplate.template
             } : null;
-          }).filter(Boolean) as Array<{ product: Product; template: any }>}
+          }).filter(Boolean) as Array<{ product: ProductoReal; template: TemplateV3 }>}
           productChanges={productChanges}
+          financingCuotas={selectedCuotas}
         />
         
         {/* Estilos adicionales para impresión */}
@@ -1053,6 +1149,16 @@ Se puede imprimir desde el ${startWithMarginFormatted} (3 días antes del inicio
             }
           `}
         </style>
+
+        {/* 🆕 Modal de selección de logos de financiación */}
+        <FinancingLogoModal
+          isOpen={showFinancingModal}
+          onClose={() => {
+            setShowFinancingModal(false);
+            setFinancingComponentId(null);
+          }}
+          onSelect={handleFinancingLogoSelect}
+        />
       </div>
     </div>
   );

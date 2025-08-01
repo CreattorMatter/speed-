@@ -30,11 +30,15 @@ export interface DynamicField {
 // =====================
 
 const formatPrice = (price: number, options?: { prefix?: string | boolean; precision?: number }): string => {
+  // 🆕 Por defecto usar 2 decimales para mejor precisión en cuotas
+  const defaultPrecision = 2;
+  const precision = options?.precision !== undefined ? options.precision : defaultPrecision;
+  
   const formatOptions: Intl.NumberFormatOptions = {
     style: 'currency',
     currency: 'ARS',
-    minimumFractionDigits: options?.precision === 2 ? 2 : 0,
-    maximumFractionDigits: options?.precision === 2 ? 2 : 0,
+    minimumFractionDigits: precision,
+    maximumFractionDigits: precision,
   };
 
   let formattedPrice = new Intl.NumberFormat('es-AR', formatOptions).format(price);
@@ -49,8 +53,8 @@ const formatPrice = (price: number, options?: { prefix?: string | boolean; preci
 
 const formatPriceWithoutCurrency = (price: number): string => {
   return new Intl.NumberFormat('es-AR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(price);
 };
 
@@ -264,6 +268,34 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         fieldKey: 'static',
         example: '$',
         formatter: () => '$'
+      },
+      {
+        id: 'cuota',
+        name: 'Número de Cuotas',
+        description: 'Cantidad de cuotas seleccionadas (se actualiza desde la cartelera)',
+        fieldKey: 'cuotas',
+        example: '6',
+        formatter: (_baseValue: any, _product?: any, _outputFormat?: any, cuotas?: number) => {
+          // 🎯 Usar cuotas del parámetro financingCuotas, no del baseValue
+          const cuotasValue = cuotas || 0;
+          console.log(`🔢 [CUOTA FORMATTER] Formateando cuotas: ${cuotasValue}`);
+          return cuotasValue.toString();
+        }
+      },
+      {
+        id: 'precio_cuota',
+        name: 'Precio por Cuota',
+        description: 'Precio calculado por cuota (precio_producto / cuota)',
+        fieldKey: 'precio_cuota',
+        example: '$ 116.666',
+        formatter: (_baseValue: any, product?: any, outputFormat?: any, cuotas?: number) => {
+          // 🎯 Usar precio del producto, no el baseValue (que es undefined)
+          const precioProducto = product?.precio || 0;
+          if (!precioProducto || !cuotas || cuotas === 0) return '$ 0,00';
+          const precioCuota = Number((precioProducto / cuotas).toFixed(2));
+          // 🆕 Forzar 2 decimales para cuotas
+          return formatPrice(precioCuota, { ...outputFormat, precision: 2 });
+        }
       }
     ]
   },
@@ -434,7 +466,8 @@ export const ALL_DYNAMIC_FIELDS = DYNAMIC_FIELD_CATEGORIES.reduce((acc, category
 export const getDynamicFieldValue = (
   fieldId: string, 
   product: ProductoReal,
-  outputFormat?: any
+  outputFormat?: any,
+  financingCuotas?: number  // 🆕 Parámetro de cuotas para cálculos de financiación
 ): string => {
   const field = ALL_DYNAMIC_FIELDS[fieldId];
   if (!field) {
@@ -454,7 +487,8 @@ export const getDynamicFieldValue = (
 
     // Aplicar formateador si existe
     if (field.formatter) {
-      return field.formatter(baseValue, product, outputFormat);
+      // @ts-ignore - Los formatters pueden aceptar diferentes números de parámetros
+      return field.formatter(baseValue, product, outputFormat, financingCuotas);
     }
 
     // Retornar valor base o fallback
@@ -487,7 +521,8 @@ export const extractDynamicFields = (dynamicTemplate: string): string[] => {
 export const processDynamicTemplate = (
   dynamicTemplate: string, 
   product: ProductoReal,
-  outputFormat?: any
+  outputFormat?: any,
+  financingCuotas?: number  // 🆕 Parámetro de cuotas para cálculos de financiación
 ): string => {
   if (!dynamicTemplate || !product) {
     return dynamicTemplate || '';
@@ -497,7 +532,7 @@ export const processDynamicTemplate = (
   const fields = extractDynamicFields(dynamicTemplate);
 
   fields.forEach(fieldId => {
-    const value = getDynamicFieldValue(fieldId, product, outputFormat);
+    const value = getDynamicFieldValue(fieldId, product, outputFormat, financingCuotas);
     const regex = new RegExp(`\\[${fieldId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'g');
     processedTemplate = processedTemplate.replace(regex, value);
   });

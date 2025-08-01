@@ -56,6 +56,11 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
           const numericValue = processedValue.replace(/[^\d.,]/g, '').replace(',', '.');
           const parsedValue = parseFloat(numericValue);
           processedValue = !isNaN(parsedValue) ? parsedValue.toString() : '0';
+        } else if (fieldType.includes('cuota') || fieldType === 'cuota') {
+          // 🆕 PROCESAMIENTO ESPECIAL PARA CUOTAS (número entero)
+          const numericValue = processedValue.replace(/[^\d]/g, '');
+          const parsedValue = parseInt(numericValue, 10);
+          processedValue = !isNaN(parsedValue) ? parsedValue.toString() : '0';
         }
       }
       
@@ -82,17 +87,22 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
     
     let initialEditValue = value.toString();
     
-    if (!isComplexTemplate) {
-      if (fieldType.includes('precio') || fieldType.includes('price')) {
-        const numericValue = initialEditValue.replace(/[^\d.,]/g, '').replace(',', '.');
-        const parsedValue = parseFloat(numericValue);
-        initialEditValue = !isNaN(parsedValue) ? parsedValue.toString() : '0';
-      } else if (fieldType.includes('porcentaje') || fieldType.includes('percentage')) {
-        const numericValue = initialEditValue.replace(/[^\d.,]/g, '').replace(',', '.');
-        const parsedValue = parseFloat(numericValue);
-        initialEditValue = !isNaN(parsedValue) ? parsedValue.toString() : '0';
-      }
-    } else {
+          if (!isComplexTemplate) {
+        if (fieldType.includes('precio') || fieldType.includes('price')) {
+          const numericValue = initialEditValue.replace(/[^\d.,]/g, '').replace(',', '.');
+          const parsedValue = parseFloat(numericValue);
+          initialEditValue = !isNaN(parsedValue) ? parsedValue.toString() : '0';
+        } else if (fieldType.includes('porcentaje') || fieldType.includes('percentage')) {
+          const numericValue = initialEditValue.replace(/[^\d.,]/g, '').replace(',', '.');
+          const parsedValue = parseFloat(numericValue);
+          initialEditValue = !isNaN(parsedValue) ? parsedValue.toString() : '0';
+        } else if (fieldType.includes('cuota') || fieldType === 'cuota') {
+          // 🆕 PROCESAMIENTO ESPECIAL PARA CUOTAS (número entero)
+          const numericValue = initialEditValue.replace(/[^\d]/g, '');
+          const parsedValue = parseInt(numericValue, 10);
+          initialEditValue = !isNaN(parsedValue) ? parsedValue.toString() : '0';
+        }
+      } else {
       initialEditValue = value.toString();
       console.log(`🎨 Campo complejo - usando valor procesado: "${initialEditValue}"`);
     }
@@ -133,6 +143,11 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
         const numericValue = parseFloat(editValue.replace('%', ''));
         processedValue = isNaN(numericValue) ? 0 : numericValue;
         console.log(`📊 Procesando porcentaje: "${editValue}" → ${processedValue}`);
+      } else if (fieldType.includes('cuota') || fieldType === 'cuota') {
+        // 🆕 PROCESAMIENTO ESPECIAL PARA CUOTAS (número entero)
+        const numericValue = parseInt(editValue, 10);
+        processedValue = isNaN(numericValue) ? 0 : numericValue;
+        console.log(`💳 Procesando cuotas: "${editValue}" → ${processedValue}`);
       }
     }
     
@@ -174,6 +189,20 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       }
       if (numericValue < 0 || numericValue > 100) {
         return { isValid: false, message: 'El porcentaje debe estar entre 0% y 100%' };
+      }
+    }
+    
+    // 🆕 VALIDACIÓN PARA CAMPOS DE CUOTAS
+    if (fieldType.includes('cuota') || fieldType === 'cuota') {
+      const numericValue = parseInt(value, 10);
+      if (isNaN(numericValue)) {
+        return { isValid: false, message: 'Las cuotas deben ser un número entero válido' };
+      }
+      if (numericValue < 0) {
+        return { isValid: false, message: 'Las cuotas no pueden ser negativas. Usa 0 para "sin financiación"' };
+      }
+      if (numericValue > 60) {
+        return { isValid: false, message: 'Máximo 60 cuotas permitidas' };
       }
     }
     
@@ -273,22 +302,34 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setEditValue(e.target.value),
       onKeyDown: handleKeyDown,
       onWheel: handleWheel,
-      className: `${className} outline-none border-2 border-blue-500 bg-white rounded px-2 py-1 shadow-lg`,
+      className: `${className} outline-none bg-white shadow-lg focus:ring-2 focus:ring-blue-300`,
       style: {
         ...style,
-        width: '100%',
-        height: '100%',
-        minWidth: 'auto',
-        minHeight: '24px',
+        // 🔧 CORREGIDO: Mantener dimensiones del contenedor original
+        width: style.width || '100%',
+        height: style.height || 'auto',
+        minWidth: style.minWidth || '60px',
+        minHeight: style.minHeight || '24px',
+        maxWidth: style.maxWidth || '100%',
+        maxHeight: style.maxHeight || 'none',
         boxSizing: 'border-box' as const,
         fontSize: style.fontSize || 'inherit',
         fontFamily: style.fontFamily || 'inherit',
         fontWeight: style.fontWeight || 'inherit',
         color: style.color || 'inherit',
         textAlign: style.textAlign || 'left',
+        lineHeight: style.lineHeight || 'inherit',
         resize: 'none' as const,
-        overflow: 'hidden',
-        whiteSpace: multiline ? 'pre-wrap' as const : 'nowrap' as const
+        // 🔧 CORREGIDO: Permitir scroll y word-wrap
+        overflow: 'auto',
+        overflowWrap: 'break-word',
+        wordWrap: 'break-word',
+        whiteSpace: multiline ? 'pre-wrap' as const : 'pre-wrap' as const, // 🔧 Siempre permitir wrap
+        // 🔧 NUEVO: Mantener consistencia visual
+        padding: style.padding || '2px 4px',
+        margin: style.margin || '0',
+        border: style.border || '2px solid #3b82f6',
+        borderRadius: style.borderRadius || '4px'
       },
       placeholder: placeholder || `Editar ${fieldType}...`,
       maxLength,
@@ -297,12 +338,21 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       spellCheck: false
     };
 
-    if (multiline) {
+    // 🔧 MEJORADO: Detectar automáticamente si necesita múltiples líneas
+    const needsMultipleLines = editValue.length > 50 || editValue.includes('\n') || multiline;
+    
+    if (needsMultipleLines) {
       return (
         <textarea
           ref={textareaRef}
           {...commonProps}
-          rows={3}
+          rows={Math.min(Math.max(2, Math.ceil(editValue.length / 40)), 6)} // Altura dinámica
+          style={{
+            ...commonProps.style,
+            resize: 'vertical', // Permitir redimensionamiento vertical
+            minHeight: '40px',
+            maxHeight: '200px'
+          }}
         />
       );
     }

@@ -270,18 +270,29 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
       border: component.style.border?.width ? 
         `${component.style.border.width}px ${component.style.border.style || 'solid'} ${component.style.border.color || '#000000'}` : 
         'none',
+      // 🔧 CRÍTICO: Forzar que el contenido respete estrictamente las dimensiones del contenedor
       overflow: 'hidden',
       width: '100%',
       height: '100%',
+      maxWidth: '100%',
+      maxHeight: '100%',
+      minWidth: 0,
+      minHeight: 0,
       display: 'flex',
       alignItems: 'center',
       justifyContent: component.style.typography?.textAlign === 'center' ? 'center' : 
                      component.style.typography?.textAlign === 'right' ? 'flex-end' : 'flex-start',
-      // 🔧 CRÍTICO: Preservar saltos de línea en textos dinámicos
+      // 🔧 CRÍTICO: Preservar saltos de línea en textos dinámicos pero forzar wrap
       whiteSpace: 'pre-wrap',
       wordBreak: 'break-word',
+      wordWrap: 'break-word',
+      hyphens: 'auto',
       // 🔧 CRÍTICO: Evitar que el contenido interfiera con el drag
-      pointerEvents: 'none'
+      pointerEvents: 'none',
+      // 🔧 NUEVO: Asegurar que el texto no se desborde
+      textOverflow: 'ellipsis',
+      // 🔧 NUEVO: Forzar layout estricto
+      boxSizing: 'border-box'
     };
 
     switch (component.type) {

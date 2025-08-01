@@ -31,16 +31,16 @@ export const FINANCING_OPTIONS: FinancingOption[] = [
     },
     {
       bank: "Cencosud",
-      logo: "/images/banks/cencosud-logo.png",
+      logo: "/images/banks/cencosud.png",
       cardName: "Tarjeta Cencosud",
-      cardImage: "/images/banks/cencosud-logo.png",
+      cardImage: "/images/banks/cencosud.png",
       plan: "20% OFF + 6 cuotas sin interés",
     },
     {
       bank: "CencoPay",
-      logo: "/images/banks/cencopay-logo.png",
+      logo: "/images/banks/cencopay.png",
       cardName: "CencoPay",
-      cardImage: "/images/banks/cencopay-logo.png",
+      cardImage: "/images/banks/cencopay.png",
       plan: "25% OFF + 3 cuotas sin interés",
     },
   ];

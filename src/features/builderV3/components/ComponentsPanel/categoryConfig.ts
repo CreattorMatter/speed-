@@ -7,7 +7,8 @@ import {
   Image,
   FileImage,
   Monitor,
-  Shapes
+  Shapes,
+  CreditCard
 } from 'lucide-react';
 import { ComponentCategoryV3 } from '../../types';
 import { CategoryConfig } from './types';
@@ -37,6 +38,11 @@ export const categoryConfig: Record<ComponentCategoryV3, CategoryConfig> = {
     icon: Image,
     color: 'bg-pink-100 text-pink-800',
     borderColor: 'border-pink-200'
+  },
+  'Financiación': {
+    icon: CreditCard,
+    color: 'bg-green-100 text-green-800',
+    borderColor: 'border-green-200'
   },
   'Elementos Decorativos': {
     icon: Shapes,

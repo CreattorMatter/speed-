@@ -36,16 +36,24 @@ export type ComponentTypeV3 =
   // 📝 Campo de texto dinámico (CONSOLIDADO - reemplaza 25+ componentes de texto)
   | 'field-dynamic-text'
   
-  // 🖼️ Imágenes especializadas (6 tipos únicos)
+  // 🖼️ Imágenes especializadas (7 tipos únicos)
   | 'image-header'           // Header promocional
   | 'image-footer'           // Footer promocional
   | 'image-background'       // Imagen de fondo del cartel
   | 'image-product'          // Imagen de producto
   | 'image-brand-logo'       // Logo de marca
   | 'image-decorative'       // Imagen decorativa
+  | 'image-financing'        // Imagen de financiación (no editable manualmente)
   
   // 🎨 Elementos decorativos únicos (1 tipo)
-  | 'shape-geometric';       // Formas geométricas únicamente
+  | 'shape-geometric'        // Formas geométricas únicamente
+  
+  // 🔧 Componentes adicionales para compatibilidad
+  | 'qr-dynamic'             // QR dinámico
+  | 'decorative-line'        // Línea decorativa
+  | 'decorative-icon'        // Ícono decorativo
+  | 'container-flexible'     // Contenedor flexible
+  | 'container-grid';        // Contenedor grid
 
 // =====================
 // CATEGORÍAS DE COMPONENTES
@@ -57,6 +65,7 @@ export type ComponentCategoryV3 =
   | 'Imagen de Footer'        // Footers promocionales  
   | 'Imagen de Fondo'         // Fondos del cartel
   | 'Imágenes y Media'        // Otras imágenes especializadas
+  | 'Financiación'            // Componentes de financiación (logos, cuotas)
   | 'Elementos Decorativos'; // Solo formas geométricas
 
 // =====================
@@ -193,7 +202,7 @@ export interface StyleV3 {
 
 export interface DynamicContentV3 {
   // Tipo de campo dinámico
-  fieldType: 'static' | 'sap-product' | 'promotion-data' | 'custom-formula' | 'user-input';
+  fieldType: 'static' | 'dynamic' | 'calculated' | 'sap-product' | 'promotion-data' | 'custom-formula' | 'user-input' | 'financing-logo';
   
   // Configuración de conexión con SAP
   sapConnection?: {
@@ -259,6 +268,9 @@ export interface DynamicContentV3 {
     endDate?: string;   // Para validity-period
   };
   
+  // Campo para plantillas dinámicas (campos con [campo] syntax)
+  dynamicTemplate?: string;
+  
   // Configuración de formas geométricas
   shapeConfig?: {
     type: 'rectangle' | 'circle' | 'triangle' | 'star' | 'polygon';
@@ -302,6 +314,10 @@ export interface DynamicContentV3 {
     prefix?: string;
     suffix?: string;
   };
+
+  // 🆕 Campos específicos para imagen de financiación
+  selectedBank?: string;
+  selectedPlan?: string;
 }
 
 // =====================

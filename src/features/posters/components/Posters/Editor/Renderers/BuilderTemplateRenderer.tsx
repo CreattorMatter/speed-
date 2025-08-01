@@ -1,7 +1,7 @@
 import React from 'react';
 import { TemplateV3, DraggableComponentV3 } from '../../../../../../features/builderV3/types';
 import { ProductoReal } from '../../../../../../types/product';
-import { getDynamicFieldValue, processDynamicTemplate } from '../../../../../../utils/productFieldsMap';
+import { processDynamicTemplate } from '../../../../../../utils/productFieldsMap';
 import { InlineEditableText } from './InlineEditableText';
 import { calcularDescuentoPorcentaje } from '../../../../../../data/products';
 import { formatValidityPeriod } from '../../../../../../utils/validityPeriodValidator';
@@ -13,9 +13,11 @@ interface BuilderTemplateRendererProps {
   isPreview?: boolean; // Si es vista previa, usar datos de ejemplo
   scale?: number; // Escala para la vista previa
   productChanges?: any; // Cambios del usuario desde Redux
-  onEditField?: (fieldType: string, newValue: string) => void; // 🆕 Callback para edición inline
+  onEditField?: (fieldType: string, newValue: string | number) => void; // 🆕 Callback para edición inline
   onPendingChange?: (fieldType: string, newValue: string | number) => void; // 🆕 Callback para cambios pendientes
   enableInlineEdit?: boolean; // 🆕 Habilitar edición inline directa
+  onFinancingImageClick?: (componentId: string) => void; // 🆕 Callback para clic en imagen de financiación
+  financingCuotas?: number; // 🆕 Cuotas seleccionadas para cálculos
 }
 
 /**
@@ -25,10 +27,11 @@ interface BuilderTemplateRendererProps {
 const getDynamicValue = (
   content: any,
   product?: ProductoReal,
-  isPreview?: boolean,
+  _isPreview?: boolean,
   productChanges?: any, // Cambios del usuario desde Redux
   componentId?: string, // 🆕 ID del componente para campos estáticos únicos
-  showMockData: boolean = true // 🆕 Flag para mostrar datos mock o nombres de campo
+  showMockData: boolean = true, // 🆕 Flag para mostrar datos mock o nombres de campo
+  financingCuotas?: number // 🆕 Cuotas para cálculos de financiación
 ): string => {
   if (!content) return '';
   
@@ -180,8 +183,8 @@ const getDynamicValue = (
     if (content.dynamicTemplate && !outputFormat.hasOwnProperty('prefix')) {
         outputFormat.prefix = true; // Mostrar $ por defecto
     }
-    const processedValue = processDynamicTemplate(content.dynamicTemplate, product, outputFormat);
-    console.log(`📊 Valor procesado del template: ${processedValue}`, { outputFormat });
+    const processedValue = processDynamicTemplate(content.dynamicTemplate, product, outputFormat, financingCuotas);
+    console.log(`📊 Valor procesado del template: ${processedValue}`, { outputFormat, financingCuotas });
     return processedValue;
   }
 
@@ -444,101 +447,7 @@ const getDynamicValue = (
   return content?.fallbackText || '';
 };
 
-/**
- * Obtiene la URL de una imagen dinámica
- * 🔧 MEJORADA: Mejor manejo de URLs de Supabase y cache busting
- */
-const getDynamicImageUrl = (
-  content: any,
-  product?: ProductoReal,
-  isPreview?: boolean
-): string => {
-  // Si hay URL estática válida, usarla con cache busting para Supabase
-  if (content?.imageUrl && !content.imageUrl.includes('placeholder-product.jpg')) {
-    const url = content.imageUrl;
-    
-    // Si es URL de Supabase, agregar cache busting
-    if (url.includes('supabase')) {
-      const separator = url.includes('?') ? '&' : '?';
-      return `${url}${separator}t=${Date.now()}`;
-    }
-    return url;
-  }
-  
-  // Si hay producto con imagen válida, usarla con cache busting
-  if (product?.imageUrl && !product.imageUrl.includes('placeholder-product.jpg')) {
-    const url = product.imageUrl;
-    
-    // Si es URL de Supabase, agregar cache busting  
-    if (url.includes('supabase')) {
-      const separator = url.includes('?') ? '&' : '?';
-      return `${url}${separator}t=${Date.now()}`;
-    }
-    return url;
-  }
-  
-  // Para preview, usar imagen de ejemplo en lugar de null
-  if (isPreview) {
-    return '/images/example-product.jpg'; // Imagen de ejemplo para preview
-  }
-  
-  // Fallback final con imagen placeholder
-  return '/images/placeholder-product.jpg';
-};
 
-/**
- * Extrae estilos CSS válidos del objeto de estilo de BuilderV3
- */
-const extractCSSStyles = (style: any): React.CSSProperties => {
-  const cssStyles: React.CSSProperties = {};
-  
-  if (style?.typography) {
-    if (style.typography.fontSize) cssStyles.fontSize = style.typography.fontSize;
-    if (style.typography.fontFamily) cssStyles.fontFamily = style.typography.fontFamily;
-    if (style.typography.fontWeight) cssStyles.fontWeight = style.typography.fontWeight;
-    if (style.typography.textAlign) cssStyles.textAlign = style.typography.textAlign;
-    if (style.typography.lineHeight) cssStyles.lineHeight = style.typography.lineHeight;
-    if (style.typography.letterSpacing) cssStyles.letterSpacing = style.typography.letterSpacing;
-    if (style.typography.textDecoration) cssStyles.textDecoration = style.typography.textDecoration;
-  }
-  
-  if (style?.color) {
-    if (style.color.color) cssStyles.color = style.color.color;
-    if (style.color.backgroundColor) cssStyles.backgroundColor = style.color.backgroundColor;
-  }
-  
-  if (style?.border) {
-    // ❌ ELIMINADO: Lógica de borde conflictiva. Se manejará directamente en el componente.
-    // if (style.border.width && style.border.style && style.border.color) {
-    //   cssStyles.border = `${style.border.width}px ${style.border.style} ${style.border.color}`;
-    // }
-    if (style.border.radius) {
-      const radius = style.border.radius;
-      if (typeof radius === 'object') {
-        cssStyles.borderRadius = `${radius.topLeft || 0}px ${radius.topRight || 0}px ${radius.bottomRight || 0}px ${radius.bottomLeft || 0}px`;
-      } else {
-        cssStyles.borderRadius = `${radius}px`;
-      }
-    }
-  }
-  
-  if (style?.spacing) {
-    if (style.spacing.padding) {
-      const padding = style.spacing.padding;
-      cssStyles.padding = `${padding.top || 0}px ${padding.right || 0}px ${padding.bottom || 0}px ${padding.left || 0}px`;
-    }
-    if (style.spacing.margin) {
-      const margin = style.spacing.margin;
-      cssStyles.margin = `${margin.top || 0}px ${margin.right || 0}px ${margin.bottom || 0}px ${margin.left || 0}px`;
-    }
-  }
-  
-  if (style?.effects) {
-    if (style.effects.opacity !== undefined) cssStyles.opacity = style.effects.opacity;
-  }
-  
-  return cssStyles;
-};
 
 /**
  * 🆕 NUEVA FUNCIÓN: Mapea contenido a tipo de campo para edición inline
@@ -784,17 +693,31 @@ const renderComponent = (
   product?: ProductoReal, 
   isPreview?: boolean, 
   productChanges?: any,
-  onEditField?: (fieldType: string, newValue: string) => void,
+  onEditField?: (fieldType: string, newValue: string | number) => void,
   onPendingChange?: (fieldType: string, newValue: string | number) => void,
-  enableInlineEdit?: boolean
+  enableInlineEdit?: boolean,
+  onFinancingImageClick?: (componentId: string) => void,
+  financingCuotas?: number  // 🆕 Cuotas para cálculos de financiación
 ) => {
   const { type, content, style } = component;
   const baseStyles = getBaseComponentStyles(component);
   
   switch (type) {
     case 'field-dynamic-text':
-      const textValue = getDynamicValue(content, product, isPreview, productChanges, component.id, component.showMockData !== false);
+      const textValue = getDynamicValue(content, product, isPreview, productChanges, component.id, component.showMockData !== false, financingCuotas);
       const fieldType = getFieldType(content);
+      
+      // 🔥 DEBUG: Log especial para campos de cuotas
+      const componentDynamicTemplate = (content as any)?.dynamicTemplate || '';
+      if (componentDynamicTemplate.includes('[cuota]') || componentDynamicTemplate.includes('[precio_cuota]')) {
+        console.log(`🔥 [CUOTAS DEBUG] Renderizando campo de cuotas:`, {
+          dynamicTemplate: componentDynamicTemplate,
+          financingCuotas,
+          textValue,
+          fieldType,
+          componentId: component.id
+        });
+      }
       
               // 🆕 DETECTAR SI ES CAMPO ESTÁTICO O DINÁMICO
         const isCalculatedField = (content as any)?.fieldType === 'calculated';
@@ -827,15 +750,69 @@ const renderComponent = (
         whiteSpace: 'pre-wrap'
       };
       
-      const textContent = textValue || 
+      const textContent = textValue?.toString() || 
                         (isCalculatedField ? 'Campo calculado' : 
                          (isStaticField ? 'Texto estático' : 
                           (product ? 'Nuevo componente' : 'Campo dinámico')));
       
-      // 🎯 EDICIÓN INLINE: Habilitar para campos dinámicos Y estáticos
-      if (enableInlineEdit && onEditField && !isPreview && (product || isStaticField)) {
-        console.log(`🖱️ Habilitando edición inline para campo: ${fieldType} (${isStaticField ? 'estático' : 'dinámico'})`);
-        
+      // 🔍 DETECTAR CAMPOS DE FINANCIACIÓN (MEJORADO)
+      const templateContent = (content as any)?.dynamicTemplate || '';
+      
+      // 🎯 DETECCIÓN MEJORADA: Si contiene cuota/financiación -> EDITABLE INLINE
+      const isFinancingField = 
+        templateContent.includes('[cuota]') || 
+        templateContent.includes('[precio_cuota]') ||
+        fieldType === 'cuota' || 
+        fieldType === 'precio_cuota' ||
+        fieldType.includes('cuota') ||
+        textContent.includes('CUOTAS') ||
+        textContent.toLowerCase().includes('cuota') ||
+        // Detección adicional por contenido dinámico
+        (content?.fieldType === 'dynamic' && (
+          templateContent.includes('cuota') || 
+          templateContent.includes('financ')
+        ));
+      
+      // 🔥 Debug ACTIVO: Mostrar TODO componente de texto dinámico
+      if (type === 'field-dynamic-text' || textContent.includes('CUOTAS')) {
+        console.log(`🔥 [COMPONENTE TEXTO] Analizando:`, {
+          type,
+          fieldType,
+          dynamicTemplate: templateContent,
+          textContent: textContent.substring(0, 100),
+          isFinancingField,
+          contentFieldType: content?.fieldType
+        });
+      }
+      
+      // 🎯 EDICIÓN INLINE: Habilitar para:
+      // 1. Modo inline normal (enableInlineEdit = true) - solo si NO es preview
+      // 2. Campos de financiación (cuotas) - SIEMPRE editables (incluso en preview)
+      const canEdit = onEditField && (product || isStaticField) && 
+                     ((enableInlineEdit && !isPreview) || isFinancingField);
+      
+      // 🆕 MEJORAR FIELDTYPE PARA CUOTAS
+      let enhancedFieldType = fieldType;
+      if (isFinancingField) {
+        if (templateContent.includes('[cuota]') && !templateContent.includes('[precio_cuota]')) {
+          enhancedFieldType = 'cuota';
+        } else if (templateContent.includes('[precio_cuota]')) {
+          enhancedFieldType = 'precio_cuota';
+        }
+      }
+      
+      // 🔥 Debug SIMPLIFICADO para campos de financiación
+      if (isFinancingField) {
+        console.log(`🟢 [FINANCIACIÓN] CanEdit resultado:`, {
+          isFinancingField,
+          enableInlineEdit,
+          canEdit,
+          onEditField: !!onEditField,
+          isPreview
+        });
+      }
+      
+      if (canEdit) {
         // 🆕 DETECTAR SI ES TEMPLATE COMPLEJO (solo para campos dinámicos)
         const isComplex = !isStaticField && isComplexTemplate(content);
         
@@ -848,7 +825,7 @@ const renderComponent = (
         });
         
         // Determinar el tipo de input según el campo
-        const getInputType = (fieldType: string, isComplex: boolean, isStatic: boolean): 'text' | 'number' => {
+        const getInputType = (_fieldType: string, isComplex: boolean, isStatic: boolean): 'text' | 'number' => {
           // 🚫 SIEMPRE USAR 'text' PARA EVITAR FLECHAS DE INCREMENTO Y SCROLL DEL MOUSE
           // Para campos complejos o estáticos, siempre usar texto
           if (isComplex || isStatic) return 'text';
@@ -889,8 +866,23 @@ const renderComponent = (
 
         // 🆕 CREAR IDENTIFICADOR ÚNICO PARA TODOS LOS CAMPOS (ESTÁTICOS Y DINÁMICOS)
         // Esto evita que al cambiar un campo se cambien otros campos del mismo tipo
-        const uniqueFieldId = `${fieldType}_${component.id}`;
+        const uniqueFieldId = `${enhancedFieldType}_${component.id}`;
         
+        // 🔧 MEJORADO: Estilos optimizados para edición inline
+        const editableStyle = {
+          ...baseStyle,
+          // 🔧 Asegurar dimensiones mínimas para edición
+          minWidth: baseStyle.width || '100px',
+          minHeight: baseStyle.height || '24px',
+          // 🔧 Permitir expansión si es necesario
+          maxWidth: baseStyle.maxWidth || '100%',
+          maxHeight: baseStyle.maxHeight || '200px',
+          // 🔧 Mantener word-wrap del contenedor original
+          wordWrap: 'break-word' as const,
+          overflowWrap: 'break-word' as const,
+          whiteSpace: 'pre-wrap' as const
+        };
+
         return (
           <InlineEditableText
             value={textValue}
@@ -898,14 +890,15 @@ const renderComponent = (
               console.log(`📝 Guardando edición inline: ${uniqueFieldId} = ${newValue}`, { isComplex, isStaticField, componentId: component.id });
               onEditField(uniqueFieldId, String(newValue));
             }}
-            onPendingChange={onPendingChange ? (fieldType, newValue) => onPendingChange(uniqueFieldId, newValue) : undefined}
-            fieldType={uniqueFieldId}
-            style={baseStyle}
+            onPendingChange={onPendingChange ? (_fieldType, newValue) => onPendingChange(uniqueFieldId, newValue) : undefined}
+            fieldType={enhancedFieldType}
+            style={editableStyle}
             inputType={getInputType(fieldType, !!isComplex, !!isStaticField)}
             placeholder={getPlaceholder(fieldType, !!isComplex, !!isStaticField)}
             maxLength={fieldType.includes('descripcion') ? 100 : (isComplex || isStaticField) ? 200 : undefined}
             isComplexTemplate={true} // FORZAR MODO TEXTO SIEMPRE
             originalTemplate={textValue}
+            multiline={textValue.length > 30 || textValue.includes('\n')} // 🔧 Auto-detectar si necesita múltiples líneas
           >
             <div title={`${fieldType}: ${textValue}${isComplex ? ' (Editar texto completo)' : isStaticField ? ' (Campo estático editable)' : ''} [ID: ${component.id}]`}>
               {textContent}
@@ -951,6 +944,42 @@ const renderComponent = (
         </div>
       );
       
+    case 'image-financing':
+      // 🚫 COMPONENTE ESPECIAL: No editable manualmente, solo seleccionable desde modal
+      // 🎯 FUNCIONA INDEPENDIENTEMENTE DEL MODO DE EDICIÓN INLINE
+      return (
+        <div
+          className="w-full h-full flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-green-400 transition-all duration-200"
+          style={{ backgroundColor: component.style?.color?.backgroundColor || 'transparent' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onFinancingImageClick) {
+              onFinancingImageClick(component.id);
+            }
+          }}
+          title="Clic para seleccionar logo de financiación"
+        >
+          {component.content?.imageUrl ? (
+            <img
+              src={component.content.imageUrl}
+              alt={component.content?.imageAlt || 'Logo de financiación'}
+              className="w-full h-full object-contain"
+              draggable={false}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-green-50 to-blue-50 border-2 border-dashed border-green-300 rounded-lg flex flex-col items-center justify-center text-green-600">
+              <div className="text-4xl mb-2">💳</div>
+              <div className="text-sm font-medium text-center px-2">
+                Logo de financiación
+              </div>
+              <div className="text-xs text-green-500 mt-1 text-center px-2">
+                ¡Clic para seleccionar!
+              </div>
+            </div>
+          )}
+        </div>
+      );
+      
     case 'qr-dynamic':
       const qrSize = Math.min(component.size.width, component.size.height);
       return (
@@ -984,13 +1013,17 @@ const renderComponent = (
       let dateValue = '';
       if (content?.dateConfig?.type === 'validity-period') {
         // Usar el validador de fechas de vigencia
-        if (content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
-          dateValue = formatValidityPeriod({
-            startDate: content.dateConfig.startDate as string,
-            endDate: content.dateConfig.endDate as string
-          });
-        } else {
-          dateValue = '21/07/2025 - 04/08/2025'; // Fallback
+        try {
+          if (content.dateConfig?.startDate && content.dateConfig?.endDate) {
+            dateValue = formatValidityPeriod({
+              startDate: content.dateConfig!.startDate!,
+              endDate: content.dateConfig!.endDate!
+            });
+          } else {
+            dateValue = '21/07/2025 - 04/08/2025'; // Fallback
+          }
+        } catch (error) {
+          dateValue = '21/07/2025 - 04/08/2025'; // Fallback en caso de error
         }
       } else if (content?.dateConfig?.type === 'current-date') {
         dateValue = new Date().toLocaleDateString('es-AR');
@@ -1026,7 +1059,7 @@ const renderComponent = (
             value={dateValue}
             onSave={(newValue) => {
               console.log(`📝 Guardando fecha editada: ${newValue}`);
-              onEditField(dateFieldType, String(newValue));
+              onEditField?.(dateFieldType, String(newValue));
             }}
             onPendingChange={onPendingChange}
             fieldType={dateFieldType}
@@ -1200,17 +1233,20 @@ const renderComponent = (
  * Renderizador principal de plantillas del Builder V3
  * 🎯 MEJORA: Ahora considera cambios del usuario para renderizado dinámico
  */
-export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = ({ 
-  template, 
-  components, 
-  product, 
+export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = ({
+  template,
+  components,
+  product,
   isPreview = false,
-  scale = 1,
+  scale: _scale = 1,
   productChanges,
   onEditField,
   onPendingChange,
-  enableInlineEdit = false
+  enableInlineEdit = false,
+  onFinancingImageClick,
+  financingCuotas = 0
 }) => {
+
   // Filtrar componentes visibles y ordenarlos por z-index
   const visibleComponents = components
     .filter(c => c.isVisible !== false)
@@ -1245,7 +1281,7 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
 
         return (
           <div key={component.id} style={componentPositionStyle}>
-            {renderComponent(component, product, isPreview, productChanges, onEditField, onPendingChange, enableInlineEdit)}
+            {renderComponent(component, product, isPreview, productChanges, onEditField, onPendingChange, enableInlineEdit, onFinancingImageClick, financingCuotas)}
           </div>
         );
       })}

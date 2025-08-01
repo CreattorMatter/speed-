@@ -39,6 +39,9 @@ export const usePropertiesPanel = ({
       'price_unit_alt', 'discount_percentage', 'discount_amount', 
       'installment_price', 'currency_symbol',
       
+      // Campos de financiación (cuotas)
+      'cuota', 'precio_cuota',
+      
       // Origen y ubicación
       'product_origin', 'product_origin_code', 'store_code',
       

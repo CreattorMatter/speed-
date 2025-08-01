@@ -167,6 +167,30 @@ const decorativeComponents: ComponentDefinitionV3[] = [
   // Línea decorativa e ícono decorativo eliminados por solicitud del usuario
 ];
 
+// =====================================
+// COMPONENTES DE FINANCIACIÓN
+// =====================================
+
+const financingComponents: ComponentDefinitionV3[] = [
+  {
+    type: 'image-financing',
+    name: 'Logo de Financiación',
+    description: 'Logo de financiación que se selecciona desde un modal, no editable manualmente.',
+    icon: '💳',
+    category: 'Financiación',
+    tags: ['financiación', 'logo', 'banco', 'tarjeta', 'modal'],
+    defaultSize: { width: 150, height: 100, isProportional: true },
+    defaultStyle: {},
+    defaultContent: {
+      fieldType: 'financing-logo',
+      imageAlt: 'Logo de financiación',
+      imageUrl: '', // Se llenará desde el modal
+      selectedBank: '', // Banco seleccionado
+      selectedPlan: '' // Plan seleccionado
+    }
+  }
+];
+
 // Contenedores y Layout eliminados por solicitud del usuario
 
 // =====================================
@@ -179,6 +203,7 @@ export const componentsLibrary: ComponentsLibraryV3 = {
   'Imagen de Footer': footerComponents,
   'Imagen de Fondo': backgroundComponents,
   'Imágenes y Media': imageComponents,
+  'Financiación': financingComponents,
   'Elementos Decorativos': decorativeComponents
 };
 

@@ -5,6 +5,7 @@
 
 import { ProductoReal, Tienda, Seccion, Promocion } from '../types/product';
 import { getDynamicFieldValue, ALL_DYNAMIC_FIELDS } from './productFieldsMap';
+import { calculatePricePorCuota, formatPriceCuota } from './financingCalculator';
 
 // =====================
 // TIPOS Y INTERFACES
@@ -25,6 +26,10 @@ export interface MockDataV3 {
   fecha_vigencia_desde?: string;
   fecha_vigencia_hasta?: string;
   descuento_calculado: number;
+  
+  // Nuevos campos de financiación
+  cuotas?: number;
+  precio_cuota?: number;
 }
 
 // =====================
@@ -70,7 +75,10 @@ export const defaultMockData: MockDataV3 = {
   seccion: {
     numero: 12,
     seccion: 'Electrodomésticos'
-  }
+  },
+  // Campos de financiación con valores por defecto
+  cuotas: 0,
+  precio_cuota: 0
 };
 
 // =====================
@@ -231,6 +239,60 @@ export const processCalculatedField = (
 };
 
 // =====================
+// CÁLCULO DE FINANCIACIÓN EN TIEMPO REAL
+// =====================
+
+/**
+ * Calcula y actualiza los campos de financiación en tiempo real
+ * @param mockData - Datos actuales
+ * @param nuevasCuotas - Nueva cantidad de cuotas (opcional)
+ * @returns MockData actualizado con cálculos de financiación
+ */
+export const updateFinancingFields = (
+  mockData: MockDataV3,
+  nuevasCuotas?: number
+): MockDataV3 => {
+  const cuotas = nuevasCuotas ?? mockData.cuotas ?? 0;
+  const precio = mockData.producto?.precio ?? 0;
+
+  // Calcular precio por cuota usando la función utilitaria
+  const precioCuota = calculatePricePorCuota(precio, cuotas);
+
+  console.log(`🔢 [FINANCING] Actualizando campos de financiación:`, {
+    cuotas,
+    precio,
+    precioCuota,
+    formatted: formatPriceCuota(precioCuota, true)
+  });
+
+  return {
+    ...mockData,
+    cuotas,
+    precio_cuota: precioCuota
+  };
+};
+
+/**
+ * Procesa campos de financiación específicos
+ * @param fieldId - ID del campo ('cuota' o 'precio_cuota')
+ * @param mockData - Datos actuales
+ * @returns Valor formateado del campo
+ */
+export const processFinancingField = (fieldId: string, mockData: MockDataV3): string => {
+  switch (fieldId) {
+    case 'cuota':
+      return mockData.cuotas?.toString() ?? '0';
+    
+    case 'precio_cuota':
+      const precioCuota = mockData.precio_cuota ?? 0;
+      return formatPriceCuota(precioCuota, true);
+    
+    default:
+      return '';
+  }
+};
+
+// =====================
 // PROCESAMIENTO PRINCIPAL
 // =====================
 
@@ -254,8 +316,15 @@ export const processTemplate = (
     
     while ((match = fieldRegex.exec(template)) !== null) {
       const fieldId = match[1];
-      const fieldValue = getDynamicFieldValue(fieldId, mockData.producto, outputFormat);
-      processedTemplate = processedTemplate.replace(match[0], fieldValue);
+      
+      // 🆕 CAMPOS DE FINANCIACIÓN: Manejo especial
+      if (fieldId === 'cuota' || fieldId === 'precio_cuota') {
+        const fieldValue = processFinancingField(fieldId, mockData);
+        processedTemplate = processedTemplate.replace(match[0], fieldValue);
+      } else {
+        const fieldValue = getDynamicFieldValue(fieldId, mockData.producto, outputFormat);
+        processedTemplate = processedTemplate.replace(match[0], fieldValue);
+      }
     }
   } else {
     // Fallback usando ejemplos reales de productFieldsMap
@@ -279,7 +348,9 @@ export const processTemplate = (
           'current_date': mockData.fecha_actual,
           'promotion_end_date': mockData.fecha_promocion_fin,
           'store_code': mockData.tienda?.numero || 'E000',
-          'product_seccion': mockData.seccion?.seccion || 'Electrodomésticos'
+          'product_seccion': mockData.seccion?.seccion || 'Electrodomésticos',
+          'cuota': mockData.cuotas?.toString() || '0',
+          'precio_cuota': mockData.precio_cuota ? formatPrice(mockData.precio_cuota) : '$ 0'
         };
         
         const fallbackValue = fieldMappings[fieldId] || `[${fieldId}]`;

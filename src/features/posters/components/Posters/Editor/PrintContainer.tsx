@@ -1,15 +1,16 @@
 import React from 'react';
-import { type TemplateV3 as PosterTemplate } from '../../../../../features/builderV3/types';
-import { type Product } from '../../../../../data/products';
+import { type TemplateV3 } from '../../../../../features/builderV3/types';
+import { type ProductoReal } from '../../../../../types/product';
 import { type EditedProduct } from '../../../../../store/features/poster/posterSlice';
 import { BuilderTemplateRenderer } from './Renderers/BuilderTemplateRenderer';
 
 interface PrintContainerProps {
-  templates: { product: Product; template: PosterTemplate }[];
+  templates: { product: ProductoReal; template: TemplateV3 }[];
   productChanges: Record<string, EditedProduct>;
+  financingCuotas?: number; // 🆕 Para cálculos de financiación en impresión
 }
 
-export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerProps>(({ templates, productChanges }, ref) => {
+export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerProps>(({ templates, productChanges, financingCuotas = 0 }, ref) => {
   if (!templates || templates.length === 0) {
     return null;
   }
@@ -53,6 +54,7 @@ export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerPro
                 product={product}
                 productChanges={productChanges}
                 enableInlineEdit={false}
+                financingCuotas={financingCuotas}
               />
             </div>
           </div>
