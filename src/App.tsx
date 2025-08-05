@@ -9,6 +9,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ConfigurationPortal } from './features/settings/components/ConfigurationPortal';
 import { Administration } from './features/settings/components/Administration';
+import { ErrorPage } from './pages/ErrorPage';
 import { PosterPreviewPage } from './pages/PosterPreview';
 import { Analytics } from './features/analytics/components/Analytics';
 import { supabase, supabaseAdmin } from './lib/supabaseClient';
@@ -510,6 +511,25 @@ function AppContent() {
 
         <Route path="/enhanced-builder" element={<div>Enhanced Builder (ruta por definir)</div>} />
 
+        {/* 🆕 Error Pages */}
+        <Route 
+          path="/error" 
+          element={<ErrorPage />} 
+        />
+        
+        {/* 🆕 404 Catch-all Route */}
+        <Route 
+          path="*" 
+          element={
+            <ErrorPage 
+              error={{
+                type: '404',
+                message: 'Página no encontrada',
+                details: 'La página que buscas no existe o ha sido movida.'
+              }}
+            />
+          } 
+        />
 
       </Routes>
 

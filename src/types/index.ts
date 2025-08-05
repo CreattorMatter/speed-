@@ -95,12 +95,48 @@ export interface User {
   status: 'active' | 'inactive';
   lastLogin?: string;
   created_at?: string;
+  // 🆕 User Management System fields
+  temporary_password?: string;
+  first_login?: boolean;
+  domain_type?: 'external' | 'cencosud' | 'easy';
+  groups?: string[]; // Array of group IDs
 }
 
 export interface Role {
   id: string;
   name: string;
   description: string;
+}
+
+// 🆕 Groups Management System
+export interface Group {
+  id: string;
+  name: string;
+  description: string;
+  created_at?: string;
+  created_by?: string; // User ID who created the group
+  users?: string[]; // Array of user IDs
+}
+
+// 🆕 Email Templates
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  htmlContent: string;
+  textContent?: string;
+  type: 'welcome_external' | 'welcome_internal' | 'password_changed' | 'password_reset';
+}
+
+// 🆕 Authentication & Login Flow
+export interface LoginAttempt {
+  id: string;
+  email: string;
+  success: boolean;
+  error_type?: 'invalid_credentials' | 'user_not_found' | 'domain_not_allowed' | 'first_login_required' | 'entraid_error';
+  error_message?: string;
+  timestamp: string;
+  ip_address?: string;
 }
 
 export * from './admin'; 

@@ -13,7 +13,7 @@ import { detectEditableFields, getEditableFieldsStats, EditableFieldInfo } from 
 import { ProductChangesModal } from './ProductChangesModal';
 import { ValidityPeriodModal } from './ValidityPeriodModal';
 import { PrintContainer } from './PrintContainer';
-import { EmailService } from '../../../../../services/emailService';
+import { sendChangeReport } from '../../../../../services/supabaseEmailSMTP';
 // import { CuotasSelector } from './Selectors/CuotasSelector'; // ❌ REMOVIDO: Ahora se edita inline
 
 import { FinancingLogoModal } from '../FinancingLogoModal';
@@ -656,7 +656,7 @@ Se puede imprimir desde el ${startWithMarginFormatted} (3 días antes del inicio
             };
           });
 
-          const emailSent = await EmailService.sendChangeReport({
+          const emailSent = await sendChangeReport({
             plantillaFamily: selectedFamily?.displayName || 'N/A',
             plantillaType: selectedTemplate?.name || 'N/A',
             editedProducts: editedProductsForEmail,

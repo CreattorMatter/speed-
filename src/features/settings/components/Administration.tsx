@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
-import { Users, Shield, Key, ArrowLeft, Activity } from 'lucide-react';
+import { Users, Shield, Key, ArrowLeft, Activity, UserPlus } from 'lucide-react';
 import { UsersTable } from './UsersTable';
 import { EditUserModal } from './EditUserModal';
+import { AddUserModal, type NewUserData } from './AddUserModal';
 import { RolesAndPermissions } from './RolesAndPermissions';
 import { SecuritySettings } from './SecuritySettings';
 import { SecurityDashboard } from './SecurityDashboard';
-import { User, Role } from '@/types/index';
+import { GroupsManagement } from './GroupsManagement';
+import { User, Role, Group } from '@/types/index';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/shared/Header';
+import { toast } from 'react-hot-toast';
+import { generateTemporaryPassword } from '@/utils/passwordGenerator';
+import { sendWelcomeExternalEmail, sendWelcomeInternalEmail } from '@/services/supabaseEmailSMTP';
 
 // Datos mock iniciales. En una aplicación real, vendrían de una API.
 const initialUsers: User[] = [
@@ -20,6 +25,26 @@ const mockRoles: Role[] = [
     { id: 'admin', name: 'Administrador', description: 'Acceso total a todas las funciones.' },
     { id: 'editor', name: 'Editor', description: 'Puede crear y editar plantillas y carteles.' },
     { id: 'viewer', name: 'Visualizador', description: 'Solo puede ver carteles y plantillas.' },
+];
+
+// 🆕 Mock data for groups
+const initialGroups: Group[] = [
+  { 
+    id: 'grp_1', 
+    name: 'Sucursal Almagro', 
+    description: 'Usuarios de la sucursal Almagro',
+    created_at: '2024-01-15T10:00:00Z',
+    created_by: 'usr_1',
+    users: ['usr_2']
+  },
+  { 
+    id: 'grp_2', 
+    name: 'Editorial', 
+    description: 'Equipo editorial y creativo',
+    created_at: '2024-02-01T10:00:00Z',
+    created_by: 'usr_1',
+    users: ['usr_2']
+  }
 ];
 
 interface AdministrationProps {
@@ -39,7 +64,9 @@ export const Administration: React.FC<AdministrationProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [users, setUsers] = useState<User[]>(initialUsers);
+  const [groups, setGroups] = useState<Group[]>(initialGroups);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const navigate = useNavigate();
 
@@ -61,6 +88,177 @@ export const Administration: React.FC<AdministrationProps> = ({
     setIsEditModalOpen(false);
   };
 
+  // 🆕 User Management Handlers
+  const handleAddUser = () => {
+    setIsAddUserModalOpen(true);
+  };
+
+  const handleCreateUser = async (userData: NewUserData): Promise<void> => {
+    try {
+      // Generate unique ID
+      const newUserId = `usr_${Date.now()}`;
+      
+      // Create new user object
+      const newUser: User = {
+        id: newUserId,
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        status: 'active',
+        domain_type: userData.domain_type,
+        first_login: userData.first_login,
+        groups: userData.groups,
+        temporary_password: userData.temporary_password,
+        created_at: new Date().toISOString(),
+        lastLogin: undefined
+      };
+
+      // Add to users list
+      setUsers(prevUsers => [...prevUsers, newUser]);
+
+      // Send welcome email based on domain type
+      if (userData.domain_type === 'external' && userData.temporary_password) {
+        await sendWelcomeExternalEmail(newUser, userData.temporary_password);
+      } else {
+        await sendWelcomeInternalEmail(newUser);
+      }
+
+      console.log('🎉 [USER CREATED]', {
+        user: newUser,
+        emailSent: true,
+        type: userData.domain_type === 'external' ? 'external_welcome' : 'internal_welcome'
+      });
+
+      // TODO: En producción, guardar en base de datos via API
+      
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  };
+
+  // 🆕 Group Management Handlers
+  const handleCreateGroup = async (groupData: Omit<Group, 'id' | 'created_at'>): Promise<void> => {
+    try {
+      const newGroup: Group = {
+        id: `grp_${Date.now()}`,
+        name: groupData.name,
+        description: groupData.description,
+        users: groupData.users || [],
+        created_at: new Date().toISOString(),
+        created_by: currentUser.id
+      };
+
+      setGroups(prevGroups => [...prevGroups, newGroup]);
+      
+      console.log('🎉 [GROUP CREATED]', newGroup);
+      // TODO: En producción, guardar en base de datos via API
+
+    } catch (error) {
+      console.error('Error creating group:', error);
+      throw error;
+    }
+  };
+
+  const handleUpdateGroup = async (groupId: string, groupData: Partial<Group>): Promise<void> => {
+    try {
+      setGroups(prevGroups => 
+        prevGroups.map(group => 
+          group.id === groupId 
+            ? { ...group, ...groupData }
+            : group
+        )
+      );
+
+      console.log('✅ [GROUP UPDATED]', { groupId, updates: groupData });
+      // TODO: En producción, actualizar en base de datos via API
+
+    } catch (error) {
+      console.error('Error updating group:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteGroup = async (groupId: string): Promise<void> => {
+    try {
+      // Remove group from groups list
+      setGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
+
+      // Remove group from all users
+      setUsers(prevUsers => 
+        prevUsers.map(user => ({
+          ...user,
+          groups: user.groups?.filter(gId => gId !== groupId) || []
+        }))
+      );
+
+      console.log('🗑️ [GROUP DELETED]', { groupId });
+      // TODO: En producción, eliminar de base de datos via API
+
+    } catch (error) {
+      console.error('Error deleting group:', error);
+      throw error;
+    }
+  };
+
+  const handleAddUserToGroup = async (groupId: string, userId: string): Promise<void> => {
+    try {
+      // Add group to user
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId
+            ? { ...user, groups: [...(user.groups || []), groupId] }
+            : user
+        )
+      );
+
+      // Add user to group
+      setGroups(prevGroups => 
+        prevGroups.map(group => 
+          group.id === groupId
+            ? { ...group, users: [...(group.users || []), userId] }
+            : group
+        )
+      );
+
+      console.log('👥 [USER ADDED TO GROUP]', { groupId, userId });
+      // TODO: En producción, actualizar en base de datos via API
+
+    } catch (error) {
+      console.error('Error adding user to group:', error);
+      throw error;
+    }
+  };
+
+  const handleRemoveUserFromGroup = async (groupId: string, userId: string): Promise<void> => {
+    try {
+      // Remove group from user
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId
+            ? { ...user, groups: (user.groups || []).filter(gId => gId !== groupId) }
+            : user
+        )
+      );
+
+      // Remove user from group
+      setGroups(prevGroups => 
+        prevGroups.map(group => 
+          group.id === groupId
+            ? { ...group, users: (group.users || []).filter(uId => uId !== userId) }
+            : group
+        )
+      );
+
+      console.log('👥 [USER REMOVED FROM GROUP]', { groupId, userId });
+      // TODO: En producción, actualizar en base de datos via API
+
+    } catch (error) {
+      console.error('Error removing user from group:', error);
+      throw error;
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -68,9 +266,22 @@ export const Administration: React.FC<AdministrationProps> = ({
       case 'users':
         return <UsersTable 
                   users={users} 
-                  roles={mockRoles} 
+                  roles={mockRoles}
+                  groups={groups}
                   onEditUser={handleEditUser}
                   onDeleteUser={handleDeleteUser}
+                  onAddUser={handleAddUser}
+                />;
+      case 'groups':
+        return <GroupsManagement
+                  groups={groups}
+                  users={users}
+                  roles={mockRoles}
+                  onCreateGroup={handleCreateGroup}
+                  onUpdateGroup={handleUpdateGroup}
+                  onDeleteGroup={handleDeleteGroup}
+                  onAddUserToGroup={handleAddUserToGroup}
+                  onRemoveUserFromGroup={handleRemoveUserFromGroup}
                 />;
       case 'roles':
         return <RolesAndPermissions />;
@@ -107,6 +318,13 @@ export const Administration: React.FC<AdministrationProps> = ({
               <span>Gestión de Usuarios</span>
             </button>
             <button 
+              onClick={() => setActiveTab('groups')}
+              className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-left ${activeTab === 'groups' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <UserPlus className="w-5 h-5 mr-3" />
+              <span>Gestión de Grupos</span>
+            </button>
+            <button 
               onClick={() => setActiveTab('roles')}
               className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-left ${activeTab === 'roles' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
             >
@@ -128,7 +346,16 @@ export const Administration: React.FC<AdministrationProps> = ({
         </main>
       </div>
 
-      {/* Modal de edición de usuario */}
+      {/* 🆕 Add User Modal */}
+      <AddUserModal
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+        onCreateUser={handleCreateUser}
+        roles={mockRoles}
+        groups={groups}
+      />
+
+      {/* Edit User Modal */}
       {isEditModalOpen && selectedUser && (
         <EditUserModal
           user={selectedUser}
