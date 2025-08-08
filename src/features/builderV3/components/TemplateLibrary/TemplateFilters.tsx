@@ -3,15 +3,15 @@
 // =====================================
 
 import React from 'react';
-import { Search, Filter, Grid, List, Plus } from 'lucide-react';
+import { Search, Grid, List, Plus } from 'lucide-react';
 import { TemplateFiltersProps } from './types';
 
 export const TemplateFilters: React.FC<TemplateFiltersProps> = ({
   searchTerm,
   onSearchChange,
-  selectedCategory,
-  onCategoryChange,
-  categories,
+  // selectedCategory,
+  // onCategoryChange,
+  // categories,
   sortBy,
   onSortChange,
   viewMode,
@@ -35,21 +35,7 @@ export const TemplateFilters: React.FC<TemplateFiltersProps> = ({
 
         {/* Filtros y controles */}
         <div className="flex items-center space-x-4">
-          {/* Filtro de categoría */}
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <select
-              value={selectedCategory}
-              onChange={(e) => onCategoryChange(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {categories.map(category => (
-                <option key={category.id} value={category.id}>
-                  {category.label} ({category.count})
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Filtro de categoría oculto por solicitud */}
 
           {/* Ordenamiento */}
           <select

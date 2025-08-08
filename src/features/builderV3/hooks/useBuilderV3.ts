@@ -20,6 +20,7 @@ import {
 } from '../types';
 import { generateId } from '../../../utils/generateId';
 import { templatesV3Service, familiesV3Service } from '../../../services/builderV3Service';
+import { getComponentByType } from '../data/componentsLibrary';
 
 // =====================
 // ESTADO INICIAL
@@ -920,49 +921,63 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
 
     // ===== GESTIÓN DE COMPONENTES =====
     createComponent: useCallback((type: ComponentTypeV3, position: PositionV3) => {
+      // Intentar tomar defaults desde la librería de componentes
+      const definition = getComponentByType(type);
+
+      const baseStyle: DraggableComponentV3['style'] = {
+        typography: {
+          fontFamily: 'Inter',
+          fontSize: 16,
+          fontWeight: 'normal',
+          fontStyle: 'normal',
+          lineHeight: 1.4,
+          letterSpacing: 0,
+          textAlign: 'left',
+          textDecoration: 'none',
+          textTransform: 'none'
+        },
+        color: {
+          color: '#333333',
+          backgroundColor: 'transparent'
+        },
+        border: {
+          width: 0,
+          style: 'none',
+          color: '#000000',
+          radius: { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 }
+        },
+        spacing: {
+          padding: { top: 0, right: 0, bottom: 0, left: 0 },
+          margin: { top: 0, right: 0, bottom: 0, left: 0 }
+        },
+        effects: {
+          opacity: 1
+        }
+      };
+
+      // Merge de defaults con definición específica (si existe)
+      const mergedStyle: DraggableComponentV3['style'] = {
+        ...baseStyle,
+        ...(definition?.defaultStyle || {}),
+        // Merge explícito para objetos anidados comunes
+        color: { ...baseStyle.color, ...(definition?.defaultStyle as any)?.color },
+        border: { ...baseStyle.border, ...(definition?.defaultStyle as any)?.border },
+        typography: { ...baseStyle.typography, ...(definition?.defaultStyle as any)?.typography },
+        spacing: { ...baseStyle.spacing, ...(definition?.defaultStyle as any)?.spacing },
+        effects: { ...baseStyle.effects, ...(definition?.defaultStyle as any)?.effects }
+      };
+
       const component: DraggableComponentV3 = {
         id: generateId(),
         type,
-        category: 'Texto y Datos', // Determinar dinámicamente
-        name: `Component ${type}`,
-        description: '',
-        icon: '📦',
+        category: (definition?.category as any) || 'Texto y Datos',
+        name: definition?.name || `Component ${type}`,
+        description: definition?.description || '',
+        icon: definition?.icon || '📦',
         position,
-        size: { width: 100, height: 50, isProportional: false },
-        style: {
-          typography: {
-            fontFamily: 'Inter',
-            fontSize: 16,
-            fontWeight: 'normal',
-            fontStyle: 'normal',
-            lineHeight: 1.4,
-            letterSpacing: 0,
-            textAlign: 'left',
-            textDecoration: 'none',
-            textTransform: 'none'
-          },
-          color: {
-            color: '#333333',
-            backgroundColor: 'transparent'
-          },
-          border: {
-            width: 0,
-            style: 'none',
-            color: '#000000',
-            radius: { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 }
-          },
-          spacing: {
-            padding: { top: 0, right: 0, bottom: 0, left: 0 },
-            margin: { top: 0, right: 0, bottom: 0, left: 0 }
-          },
-          effects: {
-            opacity: 1
-          }
-        },
-        content: {
-          fieldType: 'static',
-          staticValue: 'Nuevo componente'
-        },
+        size: definition?.defaultSize || { width: 100, height: 50, isProportional: false },
+        style: mergedStyle,
+        content: definition?.defaultContent || { fieldType: 'static', staticValue: 'Nuevo componente' },
         isVisible: true,
         isLocked: false,
         isDraggable: true,

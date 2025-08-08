@@ -26,7 +26,7 @@ export const useComponentsPanelState = ({
   
   const [state, setState] = useState<ComponentsPanelState>({
     viewMode: 'grid',
-    expandedCategories: new Set(['Texto y Datos', 'Imágenes y Media']),
+    expandedCategories: new Set(['Texto y Datos']),
     hoveredComponent: null,
     internalSearchTerm: '',
     internalSelectedCategory: 'all',

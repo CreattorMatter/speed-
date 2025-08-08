@@ -42,6 +42,8 @@ export const PriceSection: React.FC<PriceSectionProps> = ({
     }
   }
 
+  const formatARS = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+
   return (
     <div className="absolute bottom-32 left-8 right-8">
       {/* Precio original */}
@@ -50,7 +52,7 @@ export const PriceSection: React.FC<PriceSectionProps> = ({
           className="text-red-500 line-through text-2xl font-bold mb-2"
           style={roundedFontStyle}
         >
-          ${originalPrice.toFixed(2)}
+          {formatARS(originalPrice)}
         </div>
       )}
 
@@ -59,7 +61,7 @@ export const PriceSection: React.FC<PriceSectionProps> = ({
         className="text-green-600 text-5xl font-black"
         style={roundedFontStyle}
       >
-        ${finalPrice.toFixed(2)}
+        {formatARS(finalPrice)}
       </div>
 
       {/* Información de promoción */}

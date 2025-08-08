@@ -3,13 +3,11 @@
 // =====================================
 
 import React, { useState, useCallback } from 'react';
-import { FamilyV3, FamilyTypeV3 } from '../types';
+import { FamilyV3 } from '../types';
 import { EditFamilyModal } from './EditFamilyModal';
 import { 
   Search,
-  Filter,
   Star,
-  Copy, 
   ArrowRight,
   Tag,
   Zap,
@@ -43,7 +41,7 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
   onFamilyUpdate
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  // const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showMigrationModal, setShowMigrationModal] = useState(false);
   const [migrationSource, setMigrationSource] = useState<FamilyV3 | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -54,28 +52,21 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
     const matchesSearch = family.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          family.description.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCategory = selectedCategory === 'all' || 
-                           (selectedCategory === 'featured' && family.featuredTemplates.length > 0) ||
-                           (selectedCategory === 'recent' && family.templates.some(t => t.lastUsed));
-    
-    return matchesSearch && matchesCategory && family.isActive;
+    // Filtro por categoría deshabilitado por solicitud
+    return matchesSearch && family.isActive;
   });
 
   // Categorías disponibles
-  const categories = [
-    { id: 'all', label: 'Todas las familias', count: families.length },
-    { id: 'featured', label: 'Destacadas', count: families.filter(f => f.featuredTemplates.length > 0).length },
-    { id: 'recent', label: 'Recientes', count: families.filter(f => f.templates.some(t => t.lastUsed)).length }
-  ];
+  // const categories = [...] // oculto por solicitud
 
   const handleFamilyClick = useCallback((family: FamilyV3) => {
     onFamilySelect(family);
   }, [onFamilySelect]);
 
-  const handleMigrationStart = useCallback((sourceFamily: FamilyV3) => {
-    setMigrationSource(sourceFamily);
-    setShowMigrationModal(true);
-  }, []);
+  // const handleMigrationStart = useCallback((sourceFamily: FamilyV3) => {
+  //   setMigrationSource(sourceFamily);
+  //   setShowMigrationModal(true);
+  // }, []);
 
   const handleMigrationExecute = useCallback((targetFamily: FamilyV3, options: {
     migrateAllTemplates: boolean;
@@ -198,16 +189,6 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleMigrationStart(family);
-                }}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition-colors"
-                title="Migrar plantillas"
-              >
-                <Copy className="w-4 h-4" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
                   if (window.confirm(`¿Estás seguro de que deseas eliminar la familia "${family.displayName}"? Esta acción no se puede deshacer.`)) {
                     onFamilyDelete?.(family.id);
                   }
@@ -241,25 +222,8 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
             />
           </div>
 
-          {/* Filtros por categoría */}
+          {/* Filtro por categoría oculto por solicitud */}
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Filter className="w-4 h-4 text-gray-500" />
-              <span className="text-sm text-gray-700">Categoría:</span>
-            </div>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {categories.map(category => (
-                <option key={category.id} value={category.id}>
-                  {category.label} ({category.count})
-                </option>
-              ))}
-            </select>
-
-            {/* Botón Nueva Familia (solo para admins) */}
             {userRole === 'admin' && onCreateFamily && (
               <button
                 onClick={onCreateFamily}

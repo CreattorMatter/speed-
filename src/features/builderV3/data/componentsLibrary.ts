@@ -47,10 +47,12 @@ const headerComponents: ComponentDefinitionV3[] = [
     category: 'Imagen de Header',
     tags: ['imagen', 'header', 'promocional', 'migration-header'],
     defaultSize: { width: 800, height: 200, isProportional: true },
-    defaultStyle: {},
+    defaultStyle: {
+      color: { backgroundColor: 'transparent', color: '#333333' }
+    },
     defaultContent: {
-      imageAlt: 'Header promocional',
-      imageUrl: '/images/headers/default.png',
+      imageAlt: '',
+      imageUrl: '',
       fieldType: 'static'
     }
   }
@@ -65,10 +67,12 @@ const footerComponents: ComponentDefinitionV3[] = [
     category: 'Imagen de Footer',
     tags: ['imagen', 'footer', 'información', 'migration-footer'],
     defaultSize: { width: 800, height: 150, isProportional: true },
-    defaultStyle: {},
+    defaultStyle: {
+      color: { backgroundColor: 'transparent', color: '#333333' }
+    },
     defaultContent: {
-      imageAlt: 'Footer promocional',
-      imageUrl: '/images/footers/default.png',
+      imageAlt: '',
+      imageUrl: '',
       fieldType: 'static'
     }
   }
@@ -92,53 +96,7 @@ const backgroundComponents: ComponentDefinitionV3[] = [
   }
 ];
 
-const imageComponents: ComponentDefinitionV3[] = [
-  {
-    type: 'image-product',
-    name: 'Imagen de Producto',
-    description: 'Imagen del producto conectada al sistema SAP.',
-    icon: '🖼️',
-    category: 'Imágenes y Media',
-    tags: ['imagen', 'producto', 'sap'],
-    defaultSize: { width: 300, height: 300, isProportional: true },
-    defaultStyle: {},
-    defaultContent: {
-      imageAlt: 'Imagen del producto',
-      imageUrl: '',
-      fieldType: 'sap-product'
-    }
-  },
-  {
-    type: 'image-brand-logo',
-    name: 'Logo de Marca',
-    description: 'Logo o marca del producto.',
-    icon: '🏪',
-    category: 'Imágenes y Media',
-    tags: ['imagen', 'marca', 'logo'],
-    defaultSize: { width: 200, height: 100, isProportional: true },
-    defaultStyle: {},
-    defaultContent: {
-      imageAlt: 'Logo de marca',
-      imageUrl: '',
-      fieldType: 'static'
-    }
-  },
-  {
-    type: 'image-decorative',
-    name: 'Imagen Decorativa',
-    description: 'Imagen decorativa o ilustrativa.',
-    icon: '🎨',
-    category: 'Imágenes y Media',
-    tags: ['imagen', 'decorativa', 'ilustración'],
-    defaultSize: { width: 250, height: 200, isProportional: true },
-    defaultStyle: {},
-    defaultContent: {
-      imageAlt: 'Imagen decorativa',
-      imageUrl: '',
-      fieldType: 'static'
-    }
-  }
-];
+const imageComponents: ComponentDefinitionV3[] = [];
 
 // QR y Enlaces eliminados por solicitud del usuario
 
@@ -155,8 +113,14 @@ const decorativeComponents: ComponentDefinitionV3[] = [
     defaultSize: { width: 200, height: 100, isProportional: false },
     defaultStyle: {
       color: {
-        backgroundColor: '#e0e0e0',
+        backgroundColor: 'transparent',
         color: '#333333'
+      },
+      border: {
+        width: 1,
+        style: 'solid',
+        color: '#333333',
+        radius: { topLeft: 4, topRight: 4, bottomLeft: 4, bottomRight: 4 }
       }
     },
     defaultContent: {

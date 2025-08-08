@@ -304,29 +304,73 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
         );
 
       case 'image-header':
+      case 'image-footer':
+      case 'image-background':
       case 'image-product':
       case 'image-brand-logo':
+      case 'image-financing':
       case 'image-decorative':
-        const imageUrl = component.content?.imageUrl || '/placeholder-image.png';
+        // Si no hay URL de imagen, mostrar contenedor vacío (sin placeholder)
+        if (!component.content?.imageUrl) {
+          const label = component.type === 'image-header' 
+            ? 'Header (sin imagen)'
+            : component.type === 'image-footer' 
+              ? 'Footer (sin imagen)'
+              : component.type === 'image-financing'
+                ? 'Logo financiación (sin imagen)'
+                : 'Imagen (sin imagen)';
+
+          return (
+            <div
+              style={{
+                ...baseStyle,
+                padding: 0,
+                backgroundColor: 'rgba(148, 163, 184, 0.12)', // slate-400/20
+                border: '2px dashed #cbd5e1', // slate-300
+                color: '#64748b', // slate-500
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: (component.style.typography?.fontSize || 14) * Math.max(0.8, zoom)
+              }}
+            >
+              {label}
+            </div>
+          );
+        }
         return (
           <div style={{ ...baseStyle, padding: 0 }}>
             <img
-              src={imageUrl}
+              src={component.content.imageUrl}
               alt={component.content?.imageAlt || 'Imagen'}
               style={{
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover',
+                objectFit: component.type === 'image-background' ? 'cover' : 'contain',
                 borderRadius: component.style.border?.radius?.topLeft || 0,
-                // 🔧 CRÍTICO: Evitar que la imagen interfiera con el drag
                 pointerEvents: 'none'
-              }}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/placeholder-image.png';
               }}
             />
           </div>
         );
+
+      case 'shape-geometric': {
+        const bg = component.style.color?.backgroundColor ?? 'transparent';
+        const borderWidth = component.style.border?.width ?? 1;
+        const borderStyle = component.style.border?.style ?? 'solid';
+        const borderColor = component.style.border?.color ?? '#333333';
+        const shapeType = (component.content as any)?.shapeConfig?.type || 'rectangle';
+        const radiusValue = component.style.border?.radius?.topLeft ?? 0;
+
+        const shapeStyle: React.CSSProperties = {
+          ...baseStyle,
+          backgroundColor: bg,
+          border: `${borderWidth}px ${borderStyle} ${borderColor}`,
+          borderRadius: shapeType === 'circle' ? '50%' : radiusValue,
+        };
+
+        return <div style={shapeStyle} />;
+      }
 
 
 
@@ -343,6 +387,11 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
   // ESTILOS PRINCIPALES
   // =====================
   
+  // Tomar transformaciones desde position (panel de propiedades) con fallback a style.effects.transform
+  const rotationDeg = (component.position?.rotation ?? component.style.effects?.transform?.rotate ?? 0);
+  const scaleXVal = (component.position?.scaleX ?? component.style.effects?.transform?.scaleX ?? 1);
+  const scaleYVal = (component.position?.scaleY ?? component.style.effects?.transform?.scaleY ?? 1);
+
   const componentStyles: React.CSSProperties = {
     position: 'absolute',
     left: `${component.position.x * zoom}px`,
@@ -352,8 +401,8 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
     zIndex: isSelected ? 1000 : component.position.z || 1,
     opacity: component.isVisible ? (component.style.effects?.opacity || 1) : 0.3,
     transform: `
-      rotate(${component.style.effects?.transform?.rotate || 0}deg)
-      scale(${component.style.effects?.transform?.scaleX || 1}, ${component.style.effects?.transform?.scaleY || 1})
+      rotate(${rotationDeg}deg)
+      scale(${scaleXVal}, ${scaleYVal})
     `,
     filter: `
       blur(${component.style.effects?.filter?.blur || 0}px)

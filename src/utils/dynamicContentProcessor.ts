@@ -133,9 +133,13 @@ export const processCalculatedField = (
         
         let fieldValue = getDynamicFieldValue(fieldId, mockData.producto);
         
-        // Extraer solo el número de campos con formato de precio
+        // Extraer valor numérico desde formatos locales de precio (ej: "$ 849.999,00")
         if (fieldValue.includes('$')) {
-          fieldValue = fieldValue.replace(/[$.,\s]/g, '');
+          // 1) quitar símbolo y espacios, 2) remover separador de miles '.', 3) cambiar coma decimal por punto
+          fieldValue = fieldValue
+            .replace(/[$\s]/g, '')
+            .replace(/\./g, '')
+            .replace(/,/g, '.');
         }
         
         // Extraer solo el número de campos con porcentaje

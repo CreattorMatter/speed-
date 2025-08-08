@@ -3,7 +3,7 @@
 // =====================================
 
 import React, { useState } from 'react';
-import { Star, Clock, Eye, Copy, Trash2, ArrowRight, Loader2, Calendar, Layers, Sparkles } from 'lucide-react';
+import { Star, Eye, Copy, Trash2, ArrowRight, Loader2, Calendar, Layers, Sparkles } from 'lucide-react';
 import { TemplateCardProps } from './types';
 import { ImageWithFallback } from './ImageWithFallback';
 
@@ -18,7 +18,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
   isDuplicating
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
+  // const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
   
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('es-ES', {
@@ -65,10 +65,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
           )}
         </div>
         
-        {/* Dimensiones */}
-        <div className="bg-black/70 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-xs font-semibold">
-          {template.canvas.width} × {template.canvas.height}
-        </div>
+        {/* Dimensiones ocultas por solicitud */}
       </div>
 
       {/* Thumbnail mejorado */}
@@ -78,7 +75,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
           size="large"
           aspectRatio="card"
           lazy={true}
-          onLoad={() => setThumbnailLoaded(true)}
+          onLoad={() => {}}
           className="group-hover:scale-105 transition-transform duration-500"
         />
         

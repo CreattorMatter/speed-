@@ -15,7 +15,7 @@ import {
   Plus,
   Minus
 } from 'lucide-react';
-import { supabase } from '../../../../lib/supabaseClient';
+import { supabase, isSupabaseConfigured } from '../../../../lib/supabaseClient';
 import { TabProps, PropertiesHandlers, ProductFieldOption } from './types';
 
 interface ContentTabProps extends TabProps {
@@ -166,33 +166,38 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                     const file = (e.target as HTMLInputElement).files?.[0];
                     if (file && selectedComponent) {
                       try {
-                        // Generar nombre único para Supabase
-                        const fileExt = file.name.split('.').pop();
-                        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-                        const filePath = `builder/${fileName}`;
-                        
-                        // Subir a Supabase Storage
-                        const { error: uploadError } = await supabase.storage
-                          .from('assets')
-                          .upload(filePath, file);
-
-                        if (uploadError) {
-                          console.error('Error subiendo imagen:', uploadError);
-                          alert('Error al subir la imagen. Intenta de nuevo.');
-                          return;
-                        }
-
-                        // Obtener URL pública
-                        const { data: { publicUrl } } = supabase.storage
-                          .from('assets')
-                          .getPublicUrl(filePath);
-
-                        // Actualizar componente con la URL
-                        handlers.handleContentChange('imageUrl', publicUrl);
+                        // 1) Mostrar preview inmediata con URL local
+                        const localUrl = URL.createObjectURL(file);
+                        handlers.handleContentChange('imageUrl', localUrl);
                         handlers.handleContentChange('imageAlt', file.name);
+
+                        // 2) Si Supabase está configurado, subir en segundo plano y reemplazar URL
+                        if (isSupabaseConfigured) {
+                          (async () => {
+                            try {
+                              const fileExt = file.name.split('.').pop();
+                              const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+                              const filePath = `builder/${fileName}`;
+                              const { error: uploadError } = await supabase.storage
+                                .from('assets')
+                                .upload(filePath, file);
+                              if (!uploadError) {
+                                const { data: { publicUrl } } = supabase.storage
+                                  .from('assets')
+                                  .getPublicUrl(filePath);
+                                if (publicUrl) {
+                                  handlers.handleContentChange('imageUrl', publicUrl);
+                                }
+                              } else {
+                                console.warn('Upload falló, se mantiene URL local:', uploadError);
+                              }
+                            } catch (err) {
+                              console.warn('Upload exception, se mantiene URL local:', err);
+                            }
+                          })();
+                        }
                       } catch (error) {
                         console.error('Error procesando imagen:', error);
-                        alert('Error al procesar la imagen.');
                       }
                     }
                   };
