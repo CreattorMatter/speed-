@@ -181,6 +181,10 @@ const getDynamicValue = (
     
     // Si no hay cambios, procesar el template dinámico usando la configuración del componente
     const outputFormat = { ...(content.outputFormat || {}) } as any;
+    // Compatibilidad: mapear "prefix" → "showCurrencySymbol" si fuera necesario
+    if (outputFormat.showCurrencySymbol === undefined && typeof outputFormat.prefix === 'boolean') {
+      outputFormat.showCurrencySymbol = outputFormat.prefix;
+    }
     // 💡 Default inteligente: si no está definido, inferirlo de la plantilla.
     // - Si la plantilla trae "$" o [currency_symbol] → true
     // - Si no hay indicios → false (no agregar símbolo por defecto)
@@ -293,8 +297,18 @@ const getDynamicValue = (
         
         if (!isNaN(result) && isFinite(result)) {
           // Aplicar formato de salida si está configurado
-          const outputFormat = content.outputFormat || {};
-          return applyOutputFormat(result, outputFormat);
+          const outputFormat = { ...(content.outputFormat || {}) } as any;
+          // Compatibilidad: aceptar tanto prefix como showCurrencySymbol
+          if (outputFormat.showCurrencySymbol === undefined && typeof outputFormat.prefix === 'boolean') {
+            outputFormat.showCurrencySymbol = outputFormat.prefix;
+          }
+          // Si el resultado viene como string con "$" por un preformateo, normalizar
+          let numericResult = result;
+          if (typeof result === 'string') {
+            const normalized = Number(String(result).replace(/\$/g, '').replace(/\./g, '').replace(/,/g, '.'));
+            if (!isNaN(normalized)) numericResult = normalized;
+          }
+          return applyOutputFormat(numericResult, outputFormat);
         } else {
           console.log(`❌ Resultado inválido: ${result}`);
           return 'Error: resultado inválido';
