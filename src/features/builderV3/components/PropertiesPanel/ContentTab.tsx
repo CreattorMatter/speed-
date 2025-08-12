@@ -372,12 +372,18 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                   onChange={(e) => {
                     const fieldType = e.target.value;
                     
-                    // 🔧 REEMPLAZO COMPLETO DEL CONTENT - Evita conflictos con staticValue residual
-                    let newContent: any = { fieldType };
+                    // 🔧 SOLUCIÓN DEFINITIVA: Resetear el contenido para evitar datos residuales
+                    let newContent: any = { 
+                      fieldType,
+                      staticValue: undefined,
+                      dynamicTemplate: undefined,
+                      calculatedField: undefined,
+                      dateConfig: undefined
+                    };
                     
                     switch (fieldType) {
                       case 'static':
-                        newContent.staticValue = 'Texto estático';
+                        newContent.staticValue = (selectedComponent.content as any)?.staticValue || 'Texto estático';
                         break;
                       case 'dynamic':
                         newContent.dynamicTemplate = '[product_name]';
@@ -390,8 +396,9 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                         };
                         break;
                       case 'validity-period':
-                        newContent.fieldType = 'dynamic';
-                        newContent.dynamicTemplate = '[validity_period]';
+                        // Al seleccionar 'validity-period', configuramos todo lo necesario
+                        newContent.fieldType = 'dynamic'; // Sigue siendo un tipo dinámico
+                        newContent.dynamicTemplate = '[validity_period]'; // Template visual
                         newContent.dateConfig = { 
                           type: 'validity-period', 
                           format: 'DD/MM/YYYY',
@@ -401,11 +408,10 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                         break;
                     }
                     
-                    // 🎯 HACER UN REEMPLAZO COMPLETO EN LUGAR DE UPDATES INCREMENTALES
-                    console.log('🔄 Cambiando tipo de contenido a:', fieldType, newContent);
+                    // 🎯 LLAMAR A LA FUNCIÓN CORRECTA: handleContentChange
                     handlers.handleContentChange('content', newContent);
                   }}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                 >
                   <option value="static">Texto estático</option>
                   <option value="dynamic">Campo dinámico</option>

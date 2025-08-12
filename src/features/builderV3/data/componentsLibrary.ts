@@ -31,9 +31,8 @@ const textComponents: ComponentDefinitionV3[] = [
       }
     },
     defaultContent: {
-      fieldType: 'dynamic',
-      dynamicTemplate: '[product_name]',
-      textConfig: { contentType: 'product-name' }
+      fieldType: 'static',
+      staticValue: 'Texto estático'
     }
   }
 ];

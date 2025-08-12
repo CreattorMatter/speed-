@@ -1,10 +1,12 @@
 import React from 'react';
 import { TemplateV3, DraggableComponentV3 } from '../../../../../../features/builderV3/types';
 import { ProductoReal } from '../../../../../../types/product';
-import { processDynamicTemplate } from '../../../../../../utils/productFieldsMap';
+
 import { InlineEditableText } from './InlineEditableText';
 import { calcularDescuentoPorcentaje } from '../../../../../../data/products';
 import { formatValidityPeriod } from '../../../../../../utils/validityPeriodValidator';
+import { calculatePricePorCuota } from '../../../../../../utils/financingCalculator';
+import { getDynamicFieldValue } from '../../../../../../utils/productFieldsMap';
 
 interface BuilderTemplateRendererProps {
   template: TemplateV3;
@@ -272,56 +274,24 @@ const getDynamicValue = (
         discountPercentage = 0;
       }
       
-      // Reemplazar campos con valores reales del producto
-      const replacements = {
-        '[product_price]': String(product.precio || 0),
-        '[discount_percentage]': String(discountPercentage),
-        '[price_previous]': String(product.precioAnt || 0),
-        '[stock_available]': String(product.stockDisponible || 0),
-        '[price_base]': String(product.basePrice || 0),
-        '[price_without_tax]': String(product.basePrice || product.precio || 0)
-      };
+      // Reemplazar campos con valores reales
+      expression = expression.replace(/\[product_price\]/g, String(product?.precio || 0));
+      expression = expression.replace(/\[price_previous\]/g, String(product?.precioAnt || 0));
+      expression = expression.replace(/\[price_base\]/g, String(product?.basePrice || 0));
+      expression = expression.replace(/\[stock_available\]/g, String(product?.stockDisponible || 0));
+      expression = expression.replace(/\[discount_percentage\]/g, String(discountPercentage));
       
-      console.log(`🔄 Reemplazos a realizar:`, replacements);
+      console.log(`🔢 Expresión con reemplazos: "${expression}"`);
       
-      // Aplicar reemplazos
-      for (const [placeholder, value] of Object.entries(replacements)) {
-        expression = expression.replace(new RegExp(placeholder.replace(/[[\]]/g, '\\$&'), 'g'), value);
-      }
-      
-      console.log(`🔢 Expresión después de reemplazos: "${expression}"`);
-      
-      // Validar que solo contenga números, operadores y espacios
-      if (expression && /^[0-9+\-*/().\s]+$/.test(expression)) {
-        console.log(`✅ Expresión válida, evaluando...`);
-        
+      // Evaluar la expresión de forma segura
+      // Validar que solo contenga caracteres permitidos
+      if (/^[0-9+\-*/().\s]+$/.test(expression)) {
         const result = Function(`"use strict"; return (${expression})`)();
-        console.log(`🧮 Resultado crudo: ${result} (tipo: ${typeof result})`);
         
         if (!isNaN(result) && isFinite(result)) {
           // Aplicar formato de salida si está configurado
           const outputFormat = content.outputFormat || {};
-          let formattedResult = result.toString();
-          
-          console.log(`🎨 Aplicando formato:`, outputFormat);
-          
-          // Formatear decimales
-          if (outputFormat.precision && outputFormat.precision !== '0') {
-            const precision = outputFormat.precision === '2-small' ? 2 : parseInt(String(outputFormat.precision));
-            if (!isNaN(precision)) {
-              formattedResult = Number(result).toFixed(precision);
-            }
-          } else {
-            formattedResult = Math.round(result).toString();
-          }
-          
-          // Agregar prefijo ($) si está configurado
-          if (outputFormat.prefix) {
-            formattedResult = `$ ${formattedResult}`;
-          }
-          
-          console.log(`🧮 ✅ Resultado final calculado: "${formattedResult}"`);
-          return formattedResult;
+          return applyOutputFormat(result, outputFormat);
         } else {
           console.log(`❌ Resultado inválido: ${result}`);
           return 'Error: resultado inválido';
@@ -447,6 +417,108 @@ const getDynamicValue = (
   return content?.fallbackText || '';
 };
 
+
+// ===============================================
+// PROCESADOR DE PLANTILLAS DINÁMICAS (CORREGIDO)
+// =ual=============================================
+const processDynamicTemplate = (
+  template: string,
+  product: ProductoReal,
+  outputFormat: any = {}, // 🔧 CORRECCIÓN: Aceptar y usar outputFormat
+  financingCuotas?: number
+): string => {
+  if (!template) return '';
+  let processed = template;
+  const fieldRegex = /\[([^\]]+)\]/g;
+  let match;
+
+  while ((match = fieldRegex.exec(template)) !== null) {
+    const fieldId = match[1];
+    let value: any = '';
+
+    // Mapeo de valores
+    if (fieldId === 'cuota') {
+      value = financingCuotas || 0;
+    } else if (fieldId === 'precio_cuota') {
+      value = calculatePricePorCuota(product?.precio || 0, financingCuotas || 0);
+    } else {
+      // Usar getDynamicFieldValue para obtener valores del producto (ej: product_price -> product.precio)
+      value = getDynamicFieldValue(fieldId, product);
+    }
+    
+    // 🔧 SOLUCIÓN: Aplicar siempre el formato de salida a cada valor reemplazado
+    // La función applyOutputFormat ya se encarga de formatear números con separador de miles
+    processed = processed.replace(match[0], applyOutputFormat(value, outputFormat));
+  }
+  
+  return processed;
+};
+
+// ===============================================
+// APLICADOR DE FORMATO DE SALIDA (UNIFICADO)
+// ===============================================
+const applyOutputFormat = (value: any, format: any): string => {
+  if (format) {
+    let formattedValue = value;
+
+    // Formato de decimales
+    if (format.precision && typeof value === 'number') {
+      if (format.precision === '0') {
+        formattedValue = Math.round(value);
+      } else {
+        const precision = parseInt(String(format.precision), 10);
+        if (!isNaN(precision)) {
+          formattedValue = value.toFixed(precision);
+        }
+      }
+    }
+    
+    // Formato de moneda con separador de miles
+    if (typeof formattedValue === 'number') {
+      formattedValue = formattedValue.toLocaleString('es-AR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+        useGrouping: true
+      });
+    }
+
+    // Prefijo (ej: "$")
+    if (format.prefix && formattedValue) {
+       // Evitar doble prefijo si ya lo tiene
+      if (!String(formattedValue).trim().startsWith('$')) {
+        formattedValue = `$ ${formattedValue}`;
+      }
+    }
+
+    // Transformación de texto
+    if (format.transform) {
+      switch (format.transform) {
+        case 'uppercase':
+          formattedValue = String(formattedValue).toUpperCase();
+          break;
+        case 'lowercase':
+          formattedValue = String(formattedValue).toLowerCase();
+          break;
+        case 'capitalize':
+          formattedValue = String(formattedValue).replace(/\b\w/g, l => l.toUpperCase());
+          break;
+      }
+    }
+    
+    return String(formattedValue);
+  }
+  
+  // Si no hay formato, aplicar formato de número por defecto para consistencia
+  if (typeof value === 'number') {
+    return value.toLocaleString('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+      useGrouping: true
+    });
+  }
+  
+  return String(value);
+};
 
 
 /**

@@ -809,13 +809,58 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
       try {
         console.log('💾 Guardando plantilla con sistema de thumbnails completo...');
 
+        // ===============================================
+        // PASO 0: LIMPIAR Y SANITIZAR COMPONENTES (SOLUCIÓN DEFINITIVA)
+        // ===============================================
+        const sanitizedComponents = state.components.map(comp => {
+          if (comp.type !== 'field-dynamic-text') return comp;
+
+          const content = comp.content as any;
+          const newContent = { ...content };
+          let changed = false;
+
+          // Regla 1: Si tiene un template dinámico, DEBE ser de tipo 'dynamic'
+          if (newContent.dynamicTemplate) {
+            if (newContent.fieldType !== 'dynamic') {
+              console.warn(`🧼 Saneando: Componente ${comp.id} con dynamicTemplate forzado a 'dynamic'.`);
+              newContent.fieldType = 'dynamic';
+              // Limpiar staticValue si es un placeholder como "Nuevo Componente"
+              if (newContent.staticValue === 'Nuevo componente' || newContent.staticValue === 'Texto estático') {
+                newContent.staticValue = '';
+              }
+              changed = true;
+            }
+          } 
+          // Regla 2: Si tiene staticValue que no parece un template, DEBE ser 'static'
+          else if (newContent.staticValue && !/\[.*\]/.test(newContent.staticValue)) {
+            if (newContent.fieldType !== 'static') {
+              console.warn(`🧼 Saneando: Componente ${comp.id} con valor estático forzado a 'static'.`);
+              newContent.fieldType = 'static';
+              changed = true;
+            }
+          }
+          // Regla 3: Si no tiene dynamicTemplate ni staticValue, es un error de datos.
+          // Forzar a estático para que sea editable.
+          else if (!newContent.dynamicTemplate && !newContent.staticValue) {
+             console.warn(`🧼 Saneando: Componente ${comp.id} sin contenido. Forzado a 'static' para ser editable.`);
+             newContent.fieldType = 'static';
+             newContent.staticValue = 'Texto Vacío';
+             changed = true;
+          }
+
+          if (changed) {
+            return { ...comp, content: newContent };
+          }
+          return comp;
+        });
+        
         // =====================
         // PASO 1: GUARDAR PLANTILLA EN BD (SIN THUMBNAIL AÚN)
         // =====================
         
         const templateToSave: Partial<TemplateV3> = {
           ...state.currentTemplate,
-          defaultComponents: state.components,
+          defaultComponents: sanitizedComponents, // USAR COMPONENTES LIMPIOS
           updatedAt: new Date()
           // thumbnail se actualizará después
         };
