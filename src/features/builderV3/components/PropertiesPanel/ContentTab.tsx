@@ -472,6 +472,70 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                       ))}
                     </div>
                   </div>
+
+                  {/* 🆕 NUEVOS CONTROLES DE FORMATO PARA CAMPOS MONETARIOS */}
+                  {(() => {
+                    const dynamicTemplate = (selectedComponent.content as any)?.dynamicTemplate || '';
+                    const isPriceField = ['product_price', 'price', 'precio', 'cuota'].some(priceKey => 
+                      dynamicTemplate.toLowerCase().includes(priceKey)
+                    );
+                    
+                    if (isPriceField) {
+                      return (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-3">
+                          <h5 className="text-sm font-medium text-green-900 flex items-center">
+                            <DollarSign className="w-4 h-4 mr-2" />
+                            Formato Monetario
+                          </h5>
+                          
+                          <div className="space-y-2">
+                            {/* Control para símbolo $ */}
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={(selectedComponent.content as any)?.outputFormat?.showCurrencySymbol !== false}
+                                onChange={(e) => {
+                                  const currentOutputFormat = (selectedComponent.content as any)?.outputFormat || {};
+                                  const newOutputFormat = {
+                                    ...currentOutputFormat,
+                                    showCurrencySymbol: e.target.checked,
+                                    prefix: e.target.checked ? '$' : undefined
+                                  };
+                                  handlers.handleContentChange('outputFormat', newOutputFormat);
+                                }}
+                                className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                              />
+                              <span className="text-xs text-gray-700">Mostrar símbolo $ (peso)</span>
+                            </label>
+                            
+                            {/* Control para decimales */}
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={(selectedComponent.content as any)?.outputFormat?.showDecimals === true}
+                                onChange={(e) => {
+                                  const currentOutputFormat = (selectedComponent.content as any)?.outputFormat || {};
+                                  const newOutputFormat = {
+                                    ...currentOutputFormat,
+                                    showDecimals: e.target.checked,
+                                    precision: e.target.checked ? '2' : '0'
+                                  };
+                                  handlers.handleContentChange('outputFormat', newOutputFormat);
+                                }}
+                                className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                              />
+                              <span className="text-xs text-gray-700">Mostrar decimales (.00)</span>
+                            </label>
+                          </div>
+                          
+                          <p className="text-xs text-green-600">
+                            ℹ️ Estos controles solo afectan campos de precio detectados automáticamente
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               )}
 

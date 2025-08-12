@@ -180,10 +180,13 @@ const getDynamicValue = (
     }
     
     // Si no hay cambios, procesar el template dinámico usando la configuración del componente
-    const outputFormat = content.outputFormat || {};
-    // 💡 Mantener el símbolo $ por defecto para campos de precio (solo remover si outputFormat.prefix es explícitamente false)
-    if (content.dynamicTemplate && !outputFormat.hasOwnProperty('prefix')) {
-        outputFormat.prefix = true; // Mostrar $ por defecto
+    const outputFormat = { ...(content.outputFormat || {}) } as any;
+    // 💡 Default inteligente: si no está definido, inferirlo de la plantilla.
+    // - Si la plantilla trae "$" o [currency_symbol] → true
+    // - Si no hay indicios → false (no agregar símbolo por defecto)
+    if (content.dynamicTemplate && outputFormat.showCurrencySymbol === undefined) {
+      const templateHasSymbol = /\$/.test(content.dynamicTemplate) || content.dynamicTemplate.includes('[currency_symbol]');
+      outputFormat.showCurrencySymbol = templateHasSymbol;
     }
     const processedValue = processDynamicTemplate(content.dynamicTemplate, product, outputFormat, financingCuotas);
     console.log(`📊 Valor procesado del template: ${processedValue}`, { outputFormat, financingCuotas });
@@ -446,9 +449,38 @@ const processDynamicTemplate = (
       value = getDynamicFieldValue(fieldId, product);
     }
     
-    // 🔧 SOLUCIÓN: Aplicar siempre el formato de salida a cada valor reemplazado
-    // La función applyOutputFormat ya se encarga de formatear números con separador de miles
-    processed = processed.replace(match[0], applyOutputFormat(value, outputFormat));
+    // 🔧 SOLUCIÓN MEJORADA: Aplicar formato solo cuando corresponde según el tipo de campo
+    let formattedValue;
+    
+    // Determinar si es un campo monetario para aplicar formato de precio
+    const isPriceField = ['precio', 'price', 'cuota', 'precio_cuota'].some(priceKey => 
+      fieldId.toLowerCase().includes(priceKey)
+    );
+    
+    // Normalización: si el formateador aguas arriba ya agregó "$" pero la config
+    // indica que NO debe mostrarse, quitarlo antes de aplicar formato propio
+    if (
+      isPriceField &&
+      outputFormat && outputFormat.showCurrencySymbol === false &&
+      typeof value === 'string' && /\$/.test(value)
+    ) {
+      value = value.replace(/^\s*\$\s*/, '');
+      // Reconvertir a número si es posible, para que nuestro formateo sea consistente
+      const normalized = Number(String(value).replace(/\./g, '').replace(/,/g, '.'));
+      if (!isNaN(normalized)) {
+        value = normalized;
+      }
+    }
+
+    if (isPriceField && typeof value === 'number') {
+      // Para campos de precio, aplicar formato completo
+      formattedValue = applyOutputFormat(value, outputFormat);
+    } else {
+      // Para otros campos, aplicar solo formato básico (sin prefijos monetarios)
+      formattedValue = applyOutputFormat(value, {});
+    }
+    
+    processed = processed.replace(match[0], formattedValue);
   }
   
   return processed;
@@ -461,29 +493,28 @@ const applyOutputFormat = (value: any, format: any): string => {
   if (format) {
     let formattedValue = value;
 
-    // Formato de decimales
-    if (format.precision && typeof value === 'number') {
-      if (format.precision === '0') {
-        formattedValue = Math.round(value);
-      } else {
-        const precision = parseInt(String(format.precision), 10);
-        if (!isNaN(precision)) {
-          formattedValue = value.toFixed(precision);
-        }
+    // 🔧 MEJORA: Determinar el número de decimales desde showDecimals o precision
+    let decimalPlaces = 0;
+    if (format.showDecimals === true || format.precision === '2') {
+      decimalPlaces = 2;
+    } else if (format.precision && format.precision !== '0') {
+      const precision = parseInt(String(format.precision), 10);
+      if (!isNaN(precision)) {
+        decimalPlaces = precision;
       }
     }
-    
-    // Formato de moneda con separador de miles
-    if (typeof formattedValue === 'number') {
-      formattedValue = formattedValue.toLocaleString('es-AR', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+
+    // Formato de números con separador de miles y decimales configurables
+    if (typeof value === 'number') {
+      formattedValue = value.toLocaleString('es-AR', {
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces,
         useGrouping: true
       });
     }
 
-    // Prefijo (ej: "$")
-    if (format.prefix && formattedValue) {
+    // 🔧 MEJORA: Prefijo monetario solo si showCurrencySymbol es true
+    if (format.showCurrencySymbol === true && formattedValue && typeof value === 'number') {
        // Evitar doble prefijo si ya lo tiene
       if (!String(formattedValue).trim().startsWith('$')) {
         formattedValue = `$ ${formattedValue}`;

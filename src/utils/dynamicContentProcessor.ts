@@ -85,13 +85,27 @@ export const defaultMockData: MockDataV3 = {
 // FORMATEADORES
 // =====================
 
-const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(price);
+const formatPrice = (price: number, outputFormat?: any): string => {
+  // 🔧 CORREGIDO: Respetar la configuración de outputFormat
+  const showCurrencySymbol = outputFormat?.showCurrencySymbol !== false; // Por defecto true para compatibilidad
+  const showDecimals = outputFormat?.showDecimals === true;
+  
+  if (showCurrencySymbol) {
+    // Usar formato con símbolo de moneda
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: showDecimals ? 2 : 0,
+      maximumFractionDigits: showDecimals ? 2 : 0
+    }).format(price);
+  } else {
+    // Usar formato sin símbolo de moneda
+    return new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: showDecimals ? 2 : 0,
+      maximumFractionDigits: showDecimals ? 2 : 0,
+      useGrouping: true
+    }).format(price);
+  }
 };
 
 const formatDate = (date: Date): string => {
@@ -346,7 +360,7 @@ export const processTemplate = (
         // Mapeo básico como fallback final
         const fieldMappings: Record<string, string> = {
           'product_name': 'Heladera Whirlpool No Frost 375L',
-          'product_price': formatPrice(699999),
+          'product_price': formatPrice(699999, outputFormat),
           'product_sku': '123001',
           'product_brand': 'WHIRLPOOL',
           'current_date': mockData.fecha_actual,
@@ -354,7 +368,7 @@ export const processTemplate = (
           'store_code': mockData.tienda?.numero || 'E000',
           'product_seccion': mockData.seccion?.seccion || 'Electrodomésticos',
           'cuota': mockData.cuotas?.toString() || '0',
-          'precio_cuota': mockData.precio_cuota ? formatPrice(mockData.precio_cuota) : '$ 0'
+          'precio_cuota': mockData.precio_cuota ? formatPrice(mockData.precio_cuota, outputFormat) : '$ 0'
         };
         
         const fallbackValue = fieldMappings[fieldId] || `[${fieldId}]`;
@@ -369,7 +383,7 @@ export const processTemplate = (
 /**
  * Obtiene el valor de un campo SAP específico (usando ejemplos reales)
  */
-export const getSAPFieldValue = (fieldName: string, data: MockDataV3): string => {
+export const getSAPFieldValue = (fieldName: string, data: MockDataV3, outputFormat?: any): string => {
   if (data.producto) {
     // Usar datos reales del producto
     return getDynamicFieldValue(fieldName, data.producto);
@@ -384,8 +398,8 @@ export const getSAPFieldValue = (fieldName: string, data: MockDataV3): string =>
   // Fallback con datos de ejemplo realistas
   const fieldMap: Record<string, string> = {
     'product_name': 'Heladera Whirlpool No Frost 375L',
-    'product_price': formatPrice(699999),
-    'price_without_tax': formatPrice(578512),
+    'product_price': formatPrice(699999, outputFormat),
+    'price_without_tax': formatPrice(578512, outputFormat),
     'product_sku': '123001',
     'product_brand': 'WHIRLPOOL',
     'product_seccion': data.seccion?.seccion || 'Electrodomésticos',
@@ -434,7 +448,8 @@ export const getPromotionFieldValue = (fieldName: string, data: MockDataV3): str
 
 export const processDynamicContent = (
   contentOrComponent: any, 
-  mockData: MockDataV3 = defaultMockData
+  mockData: MockDataV3 = defaultMockData,
+  outputFormat?: any
 ): string => {
   // 🔧 CORRECCIÓN: Detectar si se pasó el content directamente o el componente completo
   let content: any;
@@ -546,10 +561,10 @@ export const processDynamicContent = (
         case 'product-brand':
           return producto.marcaTexto || 'WHIRLPOOL';
         case 'price-original':
-          return formatPrice(producto.precioAnt || 849999);
+          return formatPrice(producto.precioAnt || 849999, outputFormat);
         case 'price-discount':
         case 'price-final':
-          return formatPrice(producto.precio || 699999);
+          return formatPrice(producto.precio || 699999, outputFormat);
         case 'discount-percentage':
           const precioAnt = producto.precioAnt || 849999;
           const precio = producto.precio || 699999;

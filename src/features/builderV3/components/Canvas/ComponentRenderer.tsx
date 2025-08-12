@@ -124,7 +124,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
       }
       
       // Procesar con mock data
-      const mockResult = processDynamicContent(component.content as any, defaultMockData);
+      const mockResult = processDynamicContent(component.content as any, defaultMockData, (component.content as any)?.outputFormat);
       return mockResult;
       
     } else {

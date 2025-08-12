@@ -29,26 +29,39 @@ export interface DynamicField {
 // FORMATEADORES AUXILIARES  
 // =====================
 
-const formatPrice = (price: number, options?: { prefix?: string | boolean; precision?: number }): string => {
-  // 🆕 Por defecto usar 2 decimales para mejor precisión en cuotas
-  const defaultPrecision = 2;
-  const precision = options?.precision !== undefined ? options.precision : defaultPrecision;
-  
-  const formatOptions: Intl.NumberFormatOptions = {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: precision,
-    maximumFractionDigits: precision,
-  };
+const formatPrice = (
+  price: number,
+  options?: { prefix?: string | boolean; precision?: number | string; showCurrencySymbol?: boolean; showDecimals?: boolean }
+): string => {
+  // Compatibilidad y opciones modernas
+  const showCurrencySymbol = options?.showCurrencySymbol !== false && options?.prefix !== false;
 
-  let formattedPrice = new Intl.NumberFormat('es-AR', formatOptions).format(price);
-
-  // Solo remover el símbolo $ cuando prefix es explícitamente false
-  if (options?.prefix === false) {
-    formattedPrice = formattedPrice.replace(/[$\s]/g, '');
+  let precision: number;
+  if (options?.precision !== undefined) {
+    const parsed = typeof options.precision === 'string' ? parseInt(options.precision, 10) : options.precision;
+    precision = Number.isFinite(parsed) ? (parsed as number) : 0;
+  } else if (options?.showDecimals === true) {
+    precision = 2;
+  } else {
+    precision = 0;
   }
 
-  return formattedPrice;
+  if (showCurrencySymbol) {
+    // Con símbolo de moneda (peso)
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: precision,
+      maximumFractionDigits: precision,
+    }).format(price);
+  }
+
+  // Sin símbolo de moneda
+  return new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: precision,
+    maximumFractionDigits: precision,
+    useGrouping: true,
+  }).format(price);
 };
 
 const formatPriceWithoutCurrency = (price: number): string => {

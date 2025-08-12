@@ -245,6 +245,13 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
     dispatch(setIsProductSelectorOpen(false));
   };
 
+  // 🔄 Al montar el editor, iniciar sesión limpia: sin selección y sin cambios previos
+  React.useEffect(() => {
+    dispatch(setSelectedProducts([]));
+    dispatch(setSelectedProduct(null));
+    dispatch(clearAllChanges());
+  }, [dispatch]);
+
   const handleUpdateProduct = (productId: string, updates: Partial<Product>) => {
     console.log('📝 Actualizando producto:', productId, updates);
     // La lógica de actualización se maneja en PreviewAreaV3 a través de Redux
