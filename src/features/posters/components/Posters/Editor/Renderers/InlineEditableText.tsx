@@ -43,6 +43,8 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+
+
   useEffect(() => {
     if (!isEditing && !hasBeenManuallyEdited) {
       let processedValue = value.toString();
@@ -205,6 +207,15 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
         return { isValid: false, message: 'Máximo 60 cuotas permitidas' };
       }
     }
+
+    // 🆕 VALIDACIÓN SIMPLE PARA CAMPOS DE FECHA
+    if (fieldType === 'date' || fieldType.includes('fecha') || fieldType.includes('vigencia')) {
+      // Validación básica: simplemente verificar que no esté vacío
+      if (!value.trim()) {
+        return { isValid: false, message: 'El campo de fecha no puede estar vacío' };
+      }
+      // Permitir cualquier formato de fecha, el usuario puede escribir libremente
+    }
     
     if (fieldType.includes('descripcion') || fieldType.includes('nombre')) {
       if (!value.trim()) {
@@ -299,7 +310,15 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
   if (isEditing) {
     const commonProps = {
       value: editValue,
-      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setEditValue(e.target.value),
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const newValue = e.target.value;
+        setEditValue(newValue);
+        
+        // Notificar cambio pendiente si hay callback
+        if (onPendingChange) {
+          onPendingChange(fieldType, newValue);
+        }
+      },
       onKeyDown: handleKeyDown,
       onWheel: handleWheel,
       className: `${className} outline-none bg-white shadow-lg focus:ring-2 focus:ring-blue-300`,

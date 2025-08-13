@@ -363,9 +363,9 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                 <select
                   value={(() => {
                     const content = selectedComponent.content as any;
-                    // Detectar si es fecha vigencia basado en dateConfig
+                    // Detectar si es fecha basado en dateConfig
                     if (content?.dateConfig?.type === 'validity-period') {
-                      return 'validity-period';
+                      return 'date';
                     }
                     return content?.fieldType || 'static';
                   })()}
@@ -395,8 +395,8 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                           errorMessage: '' 
                         };
                         break;
-                      case 'validity-period':
-                        // Al seleccionar 'validity-period', configuramos todo lo necesario
+                      case 'date':
+                        // Al seleccionar 'date', configuramos todo lo necesario
                         newContent.fieldType = 'dynamic'; // Sigue siendo un tipo dinámico
                         newContent.dynamicTemplate = '[validity_period]'; // Template visual
                         newContent.dateConfig = { 
@@ -416,7 +416,7 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                   <option value="static">Texto estático</option>
                   <option value="dynamic">Campo dinámico</option>
                   <option value="calculated">Campo calculado</option>
-                  <option value="validity-period">Fecha vigencia</option>
+                  <option value="date">Fecha</option>
                 </select>
               </div>
 

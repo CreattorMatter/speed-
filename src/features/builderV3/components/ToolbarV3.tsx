@@ -14,9 +14,11 @@ import {
   Trash2,
   Menu,
   FileText,
-  Info
+  Info,
+  Calendar
 } from 'lucide-react';
 import { CustomPaperFormatModal } from './CustomPaperFormatModal';
+import { ValidityPeriodModal } from './ValidityPeriodModal';
 
 interface ToolbarV3Props {
   onSave: () => void;
@@ -32,6 +34,7 @@ interface ToolbarV3Props {
   onToggleCanvasInfo?: () => void;
   onTitleChange: (title: string) => void;
   onOrientationToggle: () => void;
+  onValidityPeriodChange?: (validityPeriod: { startDate: string; endDate: string; enabled: boolean }) => void;
   
   hasSelection?: boolean;
   gridVisible?: boolean;
@@ -45,6 +48,7 @@ interface ToolbarV3Props {
   templateTitle?: string;
   hasUnsavedChanges?: boolean;
   orientation?: 'portrait' | 'landscape';
+  validityPeriod?: { startDate: string; endDate: string; enabled: boolean };
   availablePaperFormats?: Array<{
     id: string;
     name: string;
@@ -68,6 +72,7 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   onToggleCanvasInfo,
   onTitleChange,
   onOrientationToggle,
+  onValidityPeriodChange,
   
   hasSelection = false,
   gridVisible = false,
@@ -81,6 +86,7 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   templateTitle = 'Nueva Plantilla Sin Título',
   hasUnsavedChanges = false,
   orientation = 'portrait',
+  validityPeriod,
   availablePaperFormats = [
     { id: 'A2', name: 'A2', width: 420, height: 594, description: '420 x 594 mm' },
     { id: 'A3', name: 'A3', width: 297, height: 420, description: '297 x 420 mm' },
@@ -90,6 +96,7 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   ]
 }) => {
   const [showCustomModal, setShowCustomModal] = useState(false);
+  const [showValidityModal, setShowValidityModal] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [localTitle, setLocalTitle] = useState(templateTitle);
 
@@ -128,6 +135,13 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
       onCustomPaperFormat(width, height);
     }
     setShowCustomModal(false);
+  };
+
+  const handleValidityPeriodChange = (newValidityPeriod: { startDate: string; endDate: string; enabled: boolean }) => {
+    if (onValidityPeriodChange) {
+      onValidityPeriodChange(newValidityPeriod);
+    }
+    setShowValidityModal(false);
   };
 
   const ToolbarButton: React.FC<{
@@ -429,6 +443,25 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
               </button>
             </div>
 
+            {/* Validity Period Selector */}
+            <div className="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg border min-w-0">
+              <Calendar className="w-4 h-4 text-gray-600 flex-shrink-0" />
+              <span className="text-sm font-medium text-gray-700">Vigencia:</span>
+              <button
+                onClick={() => setShowValidityModal(true)}
+                className="text-sm text-gray-600 hover:text-gray-800 transition-colors flex items-center space-x-1"
+                title="Configurar fecha de vigencia para impresión"
+              >
+                {validityPeriod?.enabled ? (
+                  <span className="text-green-600 font-medium">
+                    {validityPeriod.startDate} - {validityPeriod.endDate}
+                  </span>
+                ) : (
+                  <span className="text-gray-500">Sin restricción</span>
+                )}
+              </button>
+            </div>
+
             <Separator />
 
             {/* Zoom Controls */}
@@ -499,6 +532,14 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
         onConfirm={handleCustomPaperFormat}
         currentWidth={customWidth}
         currentHeight={customHeight}
+      />
+
+      {/* Validity Period Modal */}
+      <ValidityPeriodModal
+        isOpen={showValidityModal}
+        onClose={() => setShowValidityModal(false)}
+        onConfirm={handleValidityPeriodChange}
+        currentValidityPeriod={validityPeriod}
       />
     </div>
   );

@@ -75,6 +75,7 @@ export interface BuilderV3CanvasActions {
   handleMultipleComponentSelect: (componentIds: string[]) => void;
   handlePaperFormatChange: (formatId: string) => void;
   handleOrientationToggle: () => void;
+  handleValidityPeriodChange: (validityPeriod: { startDate: string; endDate: string; enabled: boolean }) => void;
 }
 
 export interface BuilderV3StateUpdaters {

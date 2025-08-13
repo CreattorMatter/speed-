@@ -405,6 +405,12 @@ export interface TemplateV3 {
     dpi: number;
     backgroundColor: string;
     backgroundImage?: string;
+    // 🆕 Configuración de fecha de vigencia para impresión
+    validityPeriod?: {
+      startDate: string; // ISO format YYYY-MM-DD
+      endDate: string;   // ISO format YYYY-MM-DD
+      enabled: boolean;  // Si está habilitada la validación
+    };
   };
   
   // Componentes por defecto

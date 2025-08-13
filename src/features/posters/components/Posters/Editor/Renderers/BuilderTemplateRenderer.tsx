@@ -137,8 +137,31 @@ const getDynamicValue = (
     
     // 🆕 NUEVO: Manejo especial para validity_period en dynamicTemplate
     if (content.dynamicTemplate.includes('[validity_period]')) {
-      console.log(`📅 Detectado validity_period en dynamicTemplate, usando fecha de vigencia de la plantilla`);
-      // Si no hay dateConfig configurado, usar fallback
+      console.log(`📅 Detectado validity_period en dynamicTemplate, verificando cambios del usuario primero`);
+      
+      // 🆕 VERIFICAR CAMBIOS DEL USUARIO PRIMERO para campos de fecha
+      const fieldType = getFieldType(content);
+      if (productChanges && productChanges[product.id]) {
+        const changes = productChanges[product.id].changes || [];
+        
+        // Buscar cambio con ID único primero (fieldType_componentId)
+        const uniqueFieldId = `${fieldType}_${componentId}`;
+        let change = changes.find((c: any) => c.field === uniqueFieldId);
+        
+        // Si no se encuentra con ID único, buscar con el fieldType original
+        if (!change) {
+          change = changes.find((c: any) => c.field === fieldType);
+        }
+        
+        if (change) {
+          console.log(`📅 ✅ CAMBIO DE FECHA ENCONTRADO: ${change.newValue} (ID único: ${uniqueFieldId})`);
+          return String(change.newValue);
+        } else {
+          console.log(`📅 ❌ NO se encontró cambio para campo de fecha "${fieldType}" (ID único: ${uniqueFieldId})`);
+        }
+      }
+      
+      // Si no hay cambios del usuario, usar la configuración original del dateConfig
       if (content?.dateConfig?.type === 'validity-period' && content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
         try {
           const formattedDate = formatValidityPeriod({
@@ -593,6 +616,11 @@ const getFieldType = (content: any): string => {
   if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
     const dynamicTemplate = content.dynamicTemplate;
     
+    // 🆕 CASO ESPECIAL: Campos de fecha de vigencia
+    if (dynamicTemplate.includes('[validity_period]') || content?.dateConfig?.type === 'validity-period') {
+      return 'date';
+    }
+    
     // Extraer el campo del template [field_name]
     const match = dynamicTemplate.match(/\[([^\]]+)\]/);
     if (match) {
@@ -611,6 +639,7 @@ const getFieldType = (content: any): string => {
         case 'product_origin': return 'paisTexto';
         case 'product_origin_code': return 'origen';
         case 'stock_available': return 'stockDisponible';
+        case 'validity_period': return 'date'; // 🆕 CAMPO DE FECHA
         default: return fieldId;
       }
     }
@@ -872,7 +901,7 @@ const renderComponent = (
                          (isStaticField ? 'Texto estático' : 
                           (product ? 'Nuevo componente' : 'Campo dinámico')));
       
-      // 🔍 DETECTAR CAMPOS DE FINANCIACIÓN (MEJORADO)
+      // 🔍 DETECTAR CAMPOS DE FINANCIACIÓN Y FECHA (MEJORADO)
       const templateContent = (content as any)?.dynamicTemplate || '';
       
       // 🎯 DETECCIÓN MEJORADA: Si contiene cuota/financiación -> EDITABLE INLINE
@@ -889,26 +918,37 @@ const renderComponent = (
           templateContent.includes('cuota') || 
           templateContent.includes('financ')
         ));
+
+      // 🆕 DETECCIÓN DE CAMPOS DE FECHA -> EDITABLE CON MÁSCARA
+      const isDateField = 
+        templateContent.includes('[validity_period]') ||
+        (content as any)?.dateConfig?.type === 'validity-period' ||
+        textContent.includes('/') && textContent.includes('2025') || // Pattern like DD/MM/YYYY
+        textContent.match(/\d{2}\/\d{2}\/\d{4}/) || // Date format XX/XX/XXXX
+        textContent.includes(' - ') && textContent.match(/\d{2}\/\d{2}\/\d{4}/); // Date range
       
       // 🔥 Debug ACTIVO: Mostrar TODO componente de texto dinámico
-      if (type === 'field-dynamic-text' || textContent.includes('CUOTAS')) {
+      if (type === 'field-dynamic-text' || textContent.includes('CUOTAS') || isDateField) {
         console.log(`🔥 [COMPONENTE TEXTO] Analizando:`, {
           type,
           fieldType,
           dynamicTemplate: templateContent,
           textContent: textContent.substring(0, 100),
           isFinancingField,
-          contentFieldType: content?.fieldType
+          isDateField,
+          contentFieldType: content?.fieldType,
+          dateConfig: (content as any)?.dateConfig
         });
       }
       
       // 🎯 EDICIÓN INLINE: Habilitar para:
       // 1. Modo inline normal (enableInlineEdit = true) - solo si NO es preview
       // 2. Campos de financiación (cuotas) - SIEMPRE editables (incluso en preview)
+      // 3. Campos de fecha - SIEMPRE editables (incluso en preview)
       const canEdit = onEditField && (product || isStaticField) && 
-                     ((enableInlineEdit && !isPreview) || isFinancingField);
+                     ((enableInlineEdit && !isPreview) || isFinancingField || isDateField);
       
-      // 🆕 MEJORAR FIELDTYPE PARA CUOTAS
+      // 🆕 MEJORAR FIELDTYPE PARA CUOTAS Y FECHAS
       let enhancedFieldType = fieldType;
       if (isFinancingField) {
         if (templateContent.includes('[cuota]') && !templateContent.includes('[precio_cuota]')) {
@@ -916,9 +956,11 @@ const renderComponent = (
         } else if (templateContent.includes('[precio_cuota]')) {
           enhancedFieldType = 'precio_cuota';
         }
+      } else if (isDateField) {
+        enhancedFieldType = 'date';
       }
       
-      // 🔥 Debug SIMPLIFICADO para campos de financiación
+      // 🔥 Debug SIMPLIFICADO para campos de financiación y fecha
       if (isFinancingField) {
         console.log(`🟢 [FINANCIACIÓN] CanEdit resultado:`, {
           isFinancingField,
@@ -926,6 +968,18 @@ const renderComponent = (
           canEdit,
           onEditField: !!onEditField,
           isPreview
+        });
+      }
+      
+      if (isDateField) {
+        console.log(`📅 [FECHA] CanEdit resultado:`, {
+          isDateField,
+          enableInlineEdit,
+          canEdit,
+          onEditField: !!onEditField,
+          isPreview,
+          textContent,
+          dateConfig: (content as any)?.dateConfig
         });
       }
       

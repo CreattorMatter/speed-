@@ -122,11 +122,32 @@ export const useBuilderV3CanvasActions = ({
     operations
   ]);
 
+  // =====================
+  // VALIDITY PERIOD ACTIONS
+  // =====================
+  
+  const handleValidityPeriodChange = useCallback((validityPeriod: { startDate: string; endDate: string; enabled: boolean }) => {
+    if (!state.currentTemplate) return;
+    
+    console.log(`📅 Actualizando fecha de vigencia:`, validityPeriod);
+    
+    operations.updateTemplate(state.currentTemplate.id, {
+      canvas: {
+        ...state.currentTemplate.canvas,
+        validityPeriod
+      }
+    });
+  }, [
+    state.currentTemplate,
+    operations
+  ]);
+
   return {
     handleComponentAdd,
     handleComponentSelect,
     handleMultipleComponentSelect,
     handlePaperFormatChange,
-    handleOrientationToggle
+    handleOrientationToggle,
+    handleValidityPeriodChange
   };
 }; 
