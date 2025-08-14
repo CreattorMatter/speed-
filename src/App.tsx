@@ -6,13 +6,16 @@ import Promotions from './features/promotions/components';
 import { PosterEditorV3 } from './features/posters/components/Posters/PosterEditorV3';
 import { PrintView } from './features/posters/components/Posters/PrintView';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { ProtectedRoute } from './components/shared/ProtectedRoute';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ConfigurationPortal } from './features/settings/components/ConfigurationPortal';
 import { Administration } from './features/settings/components/Administration';
 import { ErrorPage } from './pages/ErrorPage';
 import { PosterPreviewPage } from './pages/PosterPreview';
+import Welcome from './pages/Welcome';
 import { Analytics } from './features/analytics/components/Analytics';
 import { supabase, supabaseAdmin } from './lib/supabaseClient';
+import { signInWithPassword, signOut as authSignOut, getCurrentProfile } from './services/authService';
 import { HeaderProvider } from './components/shared/HeaderProvider';
 import { Toaster } from 'react-hot-toast';
 
@@ -74,8 +77,8 @@ function AppContent() {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
-        
-        // Verificar que el usuario sigue activo en la base de datos
+
+        // Verificar activo y refrescar perfil desde DB/Auth
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('*')
@@ -89,9 +92,12 @@ function AppContent() {
           return;
         }
 
-        setUser(parsedUser);
+        const freshProfile = await getCurrentProfile();
+        const profileToUse = freshProfile || parsedUser;
+        localStorage.setItem('user', JSON.stringify(profileToUse));
+        setUser(profileToUse);
         setIsAuthenticated(true);
-        setUserRole(parsedUser.role === 'admin' ? 'admin' : parsedUser.role === 'limited' ? 'limited' : 'sucursal');
+        setUserRole((profileToUse.role as any) || 'viewer');
 
 
       }
@@ -105,81 +111,22 @@ function AppContent() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
     try {
-      console.log('Intentando login con:', email);
-      
-      const validCredentials = [
-        { email: 'admin@admin.com', password: 'admin', role: 'admin', name: 'Administrador Principal' },
-        { email: 'easypilar@cenco.com', password: 'pilar2024', role: 'admin', name: 'Easy Pilar Manager' },
-        { email: 'sucursal@test.com', password: 'sucursal', role: 'sucursal', name: 'Usuario Sucursal' },
-        { email: 'user@example.com', password: 'user123', role: 'limited', name: 'Usuario Ejemplo' }
-      ];
-
-      const validUser = validCredentials.find(cred => 
-        cred.email === email && cred.password === password
-      );
-
-      if (!validUser) {
-        setError('Usuario o contraseña incorrectos');
-        return;
-      }
-
-      const { data: userData, error: userError } = await supabaseAdmin
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
-
-      if (userError || !userData) {
-        setError('Error al verificar usuario en base de datos');
-        console.error('Error fetching user from Supabase:', userError);
-        return;
-      }
-
-      if (!userData.is_active) {
-        setError('El usuario no está activo');
-        return;
-      }
-
-      // Crear objeto de usuario
-      const user: User = {
-        id: userData.id,
-        email: userData.email,
-        name: userData.name,
-        role: userData.role,
-        status: 'active', // We already checked userData.active is true
-        lastLogin: new Date().toISOString(),
-        created_at: userData.created_at || new Date().toISOString()
-      };
-
-      // Guardar en localStorage y estado
-      localStorage.setItem('user', JSON.stringify(user));
-      setUser(user);
+      const profile = await signInWithPassword(email, password);
+      setUser(profile);
       setIsAuthenticated(true);
-      setUserRole(user.role as any);
-
-
-
-      // 3. Redirección basada en rol
-      if (user.role === 'sucursal') {
-        navigate('/sucursal');
-      } else {
-        navigate('/');
-      }
-
-      console.log('Login exitoso:', user);
+      setUserRole((profile.role as any) || 'viewer');
+      navigate('/');
     } catch (error) {
       console.error('Error durante el login:', error);
-      setError('Error al iniciar sesión');
+      setError('Usuario o contraseña incorrectos');
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      // Limpiar el usuario y localStorage
+      await authSignOut();
       setUser(null);
-      localStorage.removeItem('user');
       
       // Limpiar todos los estados de la aplicación
       setIsAuthenticated(false);
@@ -412,25 +359,29 @@ function AppContent() {
         <Route
           path="/builder"
           element={
-            <BuilderV3 
-              onBack={handleBack}
-              onLogout={handleLogout}
-              userEmail={user?.email || ''}
-              userName={user?.name || ''}
-              userRole={userRole as any}
-            />
+            <ProtectedRoute allowedRoles={['admin','editor']}>
+              <BuilderV3 
+                onBack={handleBack}
+                onLogout={handleLogout}
+                userEmail={user?.email || ''}
+                userName={user?.name || ''}
+                userRole={userRole as any}
+              />
+            </ProtectedRoute>
           }
         />
         
         <Route
           path="/products"
           element={
-            <Products 
-              onBack={handleBack} 
-              onLogout={handleLogout}
-              userEmail={user?.email || ''} 
-              userName={user?.name || ''}
-            />
+            <ProtectedRoute allowedRoles={['admin','editor','viewer','sucursal']}>
+              <Products 
+                onBack={handleBack} 
+                onLogout={handleLogout}
+                userEmail={user?.email || ''} 
+                userName={user?.name || ''}
+              />
+            </ProtectedRoute>
           }
         />
         
@@ -444,17 +395,20 @@ function AppContent() {
         <Route
           path="/poster-editor"
           element={
-            <PosterEditorV3 
-              onBack={handleBack} 
-              onLogout={handleLogout}
-              userEmail={user?.email || ''}
-              userName={user?.name || ''}
-            />
+            <ProtectedRoute allowedRoles={['admin','editor','sucursal']}>
+              <PosterEditorV3 
+                onBack={handleBack} 
+                onLogout={handleLogout}
+                userEmail={user?.email || ''}
+                userName={user?.name || ''}
+              />
+            </ProtectedRoute>
           }
         />
         
         <Route path="/print-view" element={<PrintView />} />
         <Route path="/poster-preview" element={<PosterPreviewPage />} />
+        <Route path="/welcome" element={<Welcome />} />
         <Route path="/digital-signage" element={<DigitalSignageView />} />
         
         <Route
@@ -472,13 +426,15 @@ function AppContent() {
         <Route
           path="/administration"
           element={
-            <Administration
-              onBack={handleBack}
-              onLogout={handleLogout}
-              userEmail={user?.email || ''}
-              userName={user?.name || ''}
-              currentUser={user || { id: '0', email: '', name: '', role: '', status: 'active', lastLogin: '', created_at: '' }}
-            />
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Administration
+                onBack={handleBack}
+                onLogout={handleLogout}
+                userEmail={user?.email || ''}
+                userName={user?.name || ''}
+                currentUser={user || { id: '0', email: '', name: '', role: '', status: 'active', lastLogin: '', created_at: '' }}
+              />
+            </ProtectedRoute>
           }
         />
 

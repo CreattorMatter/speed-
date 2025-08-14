@@ -4,10 +4,16 @@ import { UsersTable } from './UsersTable';
 import { EditUserModal } from './EditUserModal';
 import { AddUserModal, type NewUserData } from './AddUserModal';
 import { RolesAndPermissions } from './RolesAndPermissions';
-import { SecuritySettings } from './SecuritySettings';
+// import { SecuritySettings } from './SecuritySettings';
 import { SecurityDashboard } from './SecurityDashboard';
 import { GroupsManagement } from './GroupsManagement';
 import { User, Role, Group } from '@/types/index';
+import {
+  getRoles, getUsers, createUser as apiCreateUser,
+  getGroups as apiGetGroups, createGroup as apiCreateGroup,
+  updateGroupDb, deleteGroupDb, addUserToGroupDb, removeUserFromGroupDb,
+  updateUser as updateUserDb, deleteUser as deleteUserDb
+} from '@/services/rbacService';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/shared/Header';
 import { toast } from 'react-hot-toast';
@@ -65,6 +71,24 @@ export const Administration: React.FC<AdministrationProps> = ({
   const [activeTab, setActiveTab] = useState('dashboard');
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [groups, setGroups] = useState<Group[]>(initialGroups);
+  const [roles, setRoles] = useState<Role[]>(mockRoles);
+  // Load from Supabase if available
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const [srvRoles, srvUsers, srvGroups] = await Promise.all([
+          getRoles(),
+          getUsers(),
+          apiGetGroups()
+        ]);
+        if (srvRoles?.length) setRoles(srvRoles);
+        if (srvUsers?.length) setUsers(srvUsers);
+        if (srvGroups?.length) setGroups(srvGroups);
+      } catch (e) {
+        console.warn('RBAC service unreachable, staying on mock data');
+      }
+    })();
+  }, []);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -75,17 +99,35 @@ export const Administration: React.FC<AdministrationProps> = ({
     setIsEditModalOpen(true);
   };
 
-  const handleDeleteUser = (userId: string) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar a este usuario?')) {
-      setUsers(prevUsers => prevUsers.filter(u => u.id !== userId));
-      // TODO: Llamar a la API para eliminar el usuario
+  const handleDeleteUser = async (userId: string) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar a este usuario?')) return;
+    // Optimistic UI
+    const prev = users;
+    setUsers(prevUsers => prevUsers.filter(u => u.id !== userId));
+    try {
+      await deleteUserDb(userId);
+      toast.success('Usuario eliminado');
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      setUsers(prev); // revert
+      toast.error('No se pudo eliminar el usuario');
     }
   };
 
-  const handleSaveUser = (userId: string, updates: { name: string; email: string; role: string }) => {
+  const handleSaveUser = async (userId: string, updates: { name: string; email: string; role: string }) => {
+    // Optimistic UI
+    const prev = users;
     setUsers(prevUsers => prevUsers.map(u => (u.id === userId ? { ...u, ...updates } : u)));
-    // TODO: Llamar a la API para guardar los cambios
-    setIsEditModalOpen(false);
+    try {
+      await updateUserDb(userId, updates);
+      toast.success('Usuario actualizado');
+    } catch (err) {
+      console.error('Error updating user:', err);
+      setUsers(prev); // revert
+      toast.error('No se pudo actualizar el usuario');
+    } finally {
+      setIsEditModalOpen(false);
+    }
   };
 
   // 🆕 User Management Handlers
@@ -95,41 +137,31 @@ export const Administration: React.FC<AdministrationProps> = ({
 
   const handleCreateUser = async (userData: NewUserData): Promise<void> => {
     try {
-      // Generate unique ID
-      const newUserId = `usr_${Date.now()}`;
-      
-      // Create new user object
-      const newUser: User = {
-        id: newUserId,
+      const created = await apiCreateUser({
         name: userData.name,
         email: userData.email,
         role: userData.role,
-        status: 'active',
         domain_type: userData.domain_type,
-        first_login: userData.first_login,
         groups: userData.groups,
+        first_login: userData.first_login,
         temporary_password: userData.temporary_password,
-        created_at: new Date().toISOString(),
-        lastLogin: undefined
-      };
-
-      // Add to users list
-      setUsers(prevUsers => [...prevUsers, newUser]);
+      });
+      setUsers(prev => [...prev, created]);
 
       // Send welcome email based on domain type
       if (userData.domain_type === 'external' && userData.temporary_password) {
-        await sendWelcomeExternalEmail(newUser, userData.temporary_password);
+        await sendWelcomeExternalEmail(created, userData.temporary_password);
       } else {
-        await sendWelcomeInternalEmail(newUser);
+        await sendWelcomeInternalEmail(created);
       }
 
       console.log('🎉 [USER CREATED]', {
-        user: newUser,
+        user: created,
         emailSent: true,
         type: userData.domain_type === 'external' ? 'external_welcome' : 'internal_welcome'
       });
 
-      // TODO: En producción, guardar en base de datos via API
+      // Persisted via rbacService when DB available
       
     } catch (error) {
       console.error('Error creating user:', error);
@@ -140,19 +172,8 @@ export const Administration: React.FC<AdministrationProps> = ({
   // 🆕 Group Management Handlers
   const handleCreateGroup = async (groupData: Omit<Group, 'id' | 'created_at'>): Promise<void> => {
     try {
-      const newGroup: Group = {
-        id: `grp_${Date.now()}`,
-        name: groupData.name,
-        description: groupData.description,
-        users: groupData.users || [],
-        created_at: new Date().toISOString(),
-        created_by: currentUser.id
-      };
-
-      setGroups(prevGroups => [...prevGroups, newGroup]);
-      
-      console.log('🎉 [GROUP CREATED]', newGroup);
-      // TODO: En producción, guardar en base de datos via API
+      const created = await apiCreateGroup({ ...groupData, created_by: currentUser.id } as any);
+      setGroups(prev => [...prev, created]);
 
     } catch (error) {
       console.error('Error creating group:', error);
@@ -169,9 +190,7 @@ export const Administration: React.FC<AdministrationProps> = ({
             : group
         )
       );
-
-      console.log('✅ [GROUP UPDATED]', { groupId, updates: groupData });
-      // TODO: En producción, actualizar en base de datos via API
+      await updateGroupDb(groupId, groupData);
 
     } catch (error) {
       console.error('Error updating group:', error);
@@ -191,9 +210,7 @@ export const Administration: React.FC<AdministrationProps> = ({
           groups: user.groups?.filter(gId => gId !== groupId) || []
         }))
       );
-
-      console.log('🗑️ [GROUP DELETED]', { groupId });
-      // TODO: En producción, eliminar de base de datos via API
+      await deleteGroupDb(groupId);
 
     } catch (error) {
       console.error('Error deleting group:', error);
@@ -212,7 +229,7 @@ export const Administration: React.FC<AdministrationProps> = ({
         )
       );
 
-      // Add user to group
+      // Add user to group (db)
       setGroups(prevGroups => 
         prevGroups.map(group => 
           group.id === groupId
@@ -220,9 +237,7 @@ export const Administration: React.FC<AdministrationProps> = ({
             : group
         )
       );
-
-      console.log('👥 [USER ADDED TO GROUP]', { groupId, userId });
-      // TODO: En producción, actualizar en base de datos via API
+      await addUserToGroupDb(groupId, userId);
 
     } catch (error) {
       console.error('Error adding user to group:', error);
@@ -249,9 +264,7 @@ export const Administration: React.FC<AdministrationProps> = ({
             : group
         )
       );
-
-      console.log('👥 [USER REMOVED FROM GROUP]', { groupId, userId });
-      // TODO: En producción, actualizar en base de datos via API
+      await removeUserFromGroupDb(groupId, userId);
 
     } catch (error) {
       console.error('Error removing user from group:', error);
@@ -285,8 +298,7 @@ export const Administration: React.FC<AdministrationProps> = ({
                 />;
       case 'roles':
         return <RolesAndPermissions />;
-      case 'security':
-        return <SecuritySettings />;
+      // 'security' tab removed
       default:
         return null;
     }
@@ -331,13 +343,7 @@ export const Administration: React.FC<AdministrationProps> = ({
               <Shield className="w-5 h-5 mr-3" />
               <span>Roles y Permisos</span>
             </button>
-            <button 
-              onClick={() => setActiveTab('security')}
-              className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-left ${activeTab === 'security' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
-            >
-              <Key className="w-5 h-5 mr-3" />
-              <span>Configuración de Seguridad</span>
-            </button>
+            {/* Security Settings removed for now */}
           </nav>
         </aside>
         

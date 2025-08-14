@@ -3,7 +3,7 @@ import React, { createContext, useContext } from 'react';
 interface HeaderContextType {
   userEmail: string;
   userName: string;
-  userRole?: 'admin' | 'limited';
+  userRole?: 'admin' | 'limited' | 'sucursal' | 'viewer';
 }
 
 const HeaderContext = createContext<HeaderContextType>({
@@ -18,7 +18,7 @@ interface HeaderProviderProps {
   children: React.ReactNode;
   userEmail: string;
   userName: string;
-  userRole?: 'admin' | 'limited';
+  userRole?: 'admin' | 'limited' | 'sucursal' | 'viewer';
 }
 
 export function HeaderProvider({ children, userEmail, userName, userRole = 'admin' }: HeaderProviderProps) {

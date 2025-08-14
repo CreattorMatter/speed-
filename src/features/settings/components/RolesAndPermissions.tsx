@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Users, Shield, Plus, Edit, Trash2, Copy, Settings, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  getPermissions, getRolesWithPermissions, createRole as createRoleDb,
+  updateRole as updateRoleDb, deleteRole as deleteRoleDb, updateRolePermissions, upsertPermissions
+} from '@/services/rbacService';
+import { toast } from 'react-hot-toast';
 
 // Tipos de datos para roles y permisos
 interface Permission {
@@ -22,7 +27,7 @@ interface Role {
   color: string;
 }
 
-// Datos mock de permisos
+// Datos base de permisos (se suben a DB al montar si faltan)
 const PERMISSIONS: Permission[] = [
   // Dashboard
   { id: 'dashboard.view', module: 'Dashboard', action: 'ver', description: 'Acceder al dashboard principal' },
@@ -331,38 +336,79 @@ export const RolesAndPermissions: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [showPermissionsMatrix, setShowPermissionsMatrix] = useState(false);
 
-  const handleCreateRole = (roleData: Omit<Role, 'id' | 'userCount' | 'createdAt'>) => {
-    const newRole: Role = {
-      ...roleData,
-      id: `custom_${Date.now()}`,
-      userCount: 0,
-      createdAt: new Date().toISOString()
-    };
-    setRoles([...roles, newRole]);
+  // Cargar desde DB y sembrar permisos si faltan
+  useEffect(() => {
+    (async () => {
+      try {
+        // Upsert catálogo de permisos por nombre
+        await upsertPermissions(PERMISSIONS.map(p => ({ name: p.id, description: `${p.module}:${p.action}` })));
+        const [dbPerms, dbRoles] = await Promise.all([
+          getPermissions(),
+          getRolesWithPermissions()
+        ]);
+        if (dbRoles?.length) {
+          // Mapear a estructura de UI
+          const mapped: Role[] = dbRoles.map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            displayName: r.name,
+            description: r.description || '',
+            permissions: r.permissions || [],
+            isCustom: r.name !== 'admin' && r.name !== 'editor' && r.name !== 'viewer' && r.name !== 'sucursal',
+            userCount: r.userCount || 0,
+            createdAt: new Date().toISOString(),
+            color: '#6366F1'
+          }));
+          setRoles(mapped);
+        }
+      } catch (e) {
+        console.warn('Roles/permissions DB not reachable, staying on mock');
+      }
+    })();
+  }, []);
+
+  const handleCreateRole = async (roleData: Omit<Role, 'id' | 'userCount' | 'createdAt'>) => {
+    try {
+      const created = await createRoleDb({ name: roleData.name, description: roleData.description });
+      await updateRolePermissions(created.id, roleData.permissions);
+      setRoles(prev => [...prev, { ...roleData, id: created.id, userCount: 0, createdAt: new Date().toISOString() }]);
+      toast.success('Rol creado');
+    } catch (e) {
+      console.error(e);
+      toast.error('No se pudo crear el rol');
+    }
   };
 
-  const handleEditRole = (roleData: Omit<Role, 'id' | 'userCount' | 'createdAt'>) => {
+  const handleEditRole = async (roleData: Omit<Role, 'id' | 'userCount' | 'createdAt'>) => {
     if (!editingRole) return;
-    
-    setRoles(roles.map(role => 
-      role.id === editingRole.id 
-        ? { ...role, ...roleData }
-        : role
-    ));
-    setEditingRole(undefined);
+    try {
+      await updateRoleDb(editingRole.id, { name: roleData.name, description: roleData.description });
+      await updateRolePermissions(editingRole.id, roleData.permissions);
+      setRoles(prev => prev.map(r => r.id === editingRole.id ? { ...r, ...roleData } : r));
+      toast.success('Rol actualizado');
+    } catch (e) {
+      console.error(e);
+      toast.error('No se pudo actualizar el rol');
+    } finally {
+      setEditingRole(undefined);
+    }
   };
 
-  const handleDeleteRole = (roleId: string) => {
+  const handleDeleteRole = async (roleId: string) => {
     const role = roles.find(r => r.id === roleId);
     if (!role) return;
-
     if (role.userCount > 0) {
       alert(`No se puede eliminar el rol "${role.displayName}" porque tiene ${role.userCount} usuarios asignados.`);
       return;
     }
-
-    if (window.confirm(`¿Estás seguro de que quieres eliminar el rol "${role.displayName}"?`)) {
-      setRoles(roles.filter(r => r.id !== roleId));
+    if (!window.confirm(`¿Eliminar el rol "${role.displayName}"?`)) return;
+    try {
+      await deleteRoleDb(roleId);
+      setRoles(prev => prev.filter(r => r.id !== roleId));
+      toast.success('Rol eliminado');
+    } catch (e) {
+      console.error(e);
+      toast.error('No se pudo eliminar el rol');
     }
   };
 

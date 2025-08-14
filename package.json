@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "seed:admin": "node src/scripts/seedAdmin.mjs",
     "setup:thumbnails": "node src/scripts/runThumbnailSetup.cjs",
     "test:thumbnails": "node src/scripts/testThumbnails.js",
     "clean:test-thumbnails": "node src/scripts/cleanTestThumbnails.js"
