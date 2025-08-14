@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { LayoutTemplate, BoxSelect, FileSpreadsheet, Download, Upload } from 'lucide-react';
+import { LayoutTemplate, BoxSelect, FileSpreadsheet, Download, Upload, ArrowUpDown } from 'lucide-react';
 
 // Importar hooks de Redux y el slice de poster
 import { useSelector, useDispatch } from 'react-redux';
@@ -29,7 +29,6 @@ import { posterTemplateService, PosterFamilyData, PosterTemplateData } from '../
 import { downloadSKUTemplate, importProductsFromExcel, exportSelectedProductsToExcel, validateExcelFile, ExcelImportResult } from '../../../../services/excelTemplateService';
 
 // Componentes
-import { PosterEditorHeader } from "./Editor/PosterEditorHeader";
 import { PreviewAreaV3 } from "./Editor/PreviewAreaV3";
 import { Header } from "../../../../components/shared/Header";
 import { HeaderProvider } from "../../../../components/shared/HeaderProvider";
@@ -87,6 +86,7 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showSearchFilters, setShowSearchFilters] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'name-asc' | 'name-desc'>('name-asc');
   
   // Estado para producto expandido
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
@@ -96,7 +96,7 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
   const [showImportModal, setShowImportModal] = useState(false);
   const [importResult, setImportResult] = useState<ExcelImportResult | null>(null);
 
-  // Filtrar plantillas de la familia seleccionada
+  // Filtrar y ordenar plantillas de la familia seleccionada
   const filteredTemplates = useMemo(() => {
     if (!selectedFamily) return [];
     
@@ -119,8 +119,20 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
       );
     }
     
-    return templates;
-  }, [selectedFamily, searchTerm, selectedCategory]);
+    // Ordenar plantillas
+    const sortedTemplates = [...templates].sort((a, b) => {
+      switch (sortOrder) {
+        case 'name-asc':
+          return a.name.localeCompare(b.name);
+        case 'name-desc':
+          return b.name.localeCompare(a.name);
+        default:
+          return 0;
+      }
+    });
+    
+    return sortedTemplates;
+  }, [selectedFamily, searchTerm, selectedCategory, sortOrder]);
 
   // Obtener categorías disponibles de la familia seleccionada
   const availableCategories = useMemo(() => {
@@ -349,11 +361,7 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
     }
   };
 
-  // Handlers para búsqueda (simplificado por ahora)
-  const handleSearchPosters = () => {
-    console.log('🔍 Búsqueda de carteles (por implementar)');
-    toast('Funcionalidad de búsqueda en desarrollo');
-  };
+
 
   if (isLoading) {
     return <LoadingModal isOpen={true} />;
@@ -368,7 +376,11 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
           <main className="pt-4 sm:pt-6 lg:pt-8 px-2 xs:px-3 sm:px-4 lg:px-6 pb-4 sm:pb-6 max-w-none mx-auto space-y-4 sm:space-y-6 min-h-[calc(100vh-3rem)] sm:min-h-[900px] lg:min-h-[1100px]">
             
             {/* Header del editor */}
-            <PosterEditorHeader onSearchPosters={handleSearchPosters} />
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h2 className="text-lg xs:text-xl sm:text-2xl font-medium text-gray-900">
+                Editor de Carteles
+              </h2>
+            </div>
 
             {/* Layout principal */}
             <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 sm:gap-6 h-full">
@@ -394,10 +406,24 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
                   {/* Selector de Plantillas (aparece cuando se selecciona una familia) */}
                   {selectedFamily && (
                     <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        <LayoutTemplate className="w-5 h-5 text-indigo-500" />
-                        Plantillas ({filteredTemplates.length})
-                      </h3>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                          <LayoutTemplate className="w-5 h-5 text-indigo-500" />
+                          Plantillas ({filteredTemplates.length})
+                        </h3>
+                        {/* Selector de ordenamiento */}
+                        <div className="flex items-center gap-2">
+                          <ArrowUpDown className="w-4 h-4 text-gray-500" />
+                          <select
+                            value={sortOrder}
+                            onChange={(e) => setSortOrder(e.target.value as any)}
+                            className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white hover:border-gray-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                          >
+                            <option value="name-asc">Nombre A-Z</option>
+                            <option value="name-desc">Nombre Z-A</option>
+                          </select>
+                        </div>
+                      </div>
                       <TemplateSelect
                         templates={filteredTemplates}
                         selectedTemplate={selectedTemplate}
