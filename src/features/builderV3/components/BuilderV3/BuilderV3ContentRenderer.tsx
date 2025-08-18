@@ -41,10 +41,10 @@ export const BuilderV3ContentRenderer: React.FC<ContentRendererProps> = ({
       // 🎯 USAR LA NUEVA FUNCIÓN QUE ESPERA EL THUMBNAIL COMPLETO
       await operations.saveTemplateAndWaitForThumbnail();
       
-      // 🔄 Refrescar datos después de que el thumbnail esté listo
+      // 🔄 Refrescar solo plantillas (no familias) después de guardar
       if (refreshData) {
-        await refreshData();
-        console.log('🔄 Datos refrescados con thumbnail completo desde toolbar');
+        await (refreshData as any)({ refreshFamilies: false });
+        console.log('🔄 Plantillas refrescadas con thumbnail completo desde toolbar');
       }
     } catch (error) {
       console.error('Error en handleSaveWithRefresh:', error);

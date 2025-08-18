@@ -59,8 +59,9 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   const [isPrinting, setIsPrinting] = useState(false);
   const [printOrientation, setPrintOrientation] = useState<'portrait' | 'landscape'>('portrait');
 
-  // 🆕 Estado para financiación (ahora manejado via inline edit)
+  // 🆕 Estado para financiación y descuentos (manejados via inline edit)
   const [selectedCuotas, setSelectedCuotas] = useState<number>(0);
+  const [selectedDescuento, setSelectedDescuento] = useState<number>(0);
   const [showFinancingModal, setShowFinancingModal] = useState(false);
   const [financingComponentId, setFinancingComponentId] = useState<string | null>(null);
 
@@ -119,10 +120,34 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     return productos.find(p => p.id === productId);
   }, [selectedProducts, currentProductIndex]);
 
+  // 🆕 RESETEAR CUOTAS Y DESCUENTOS cuando cambia el producto actual
+  useEffect(() => {
+    setSelectedCuotas(0);
+    setSelectedDescuento(0);
+  }, [currentProduct?.id]);
+
   // Calcular si hay cambios basándose en Redux + cambios pendientes
   const hasUnsavedChanges = useMemo(() => {
-    const hasReduxChanges = currentProduct && productChanges[currentProduct.id]?.isEdited;
-    const hasPendingChanges = Object.keys(pendingChanges).length > 0;
+    // 🚫 FILTRAR CAMPOS DE FINANCIACIÓN Y DESCUENTOS (no son cambios "reales")
+    const financingFields = ['cuota', 'precio_cuota', 'descuento', 'precio_descuento', 'discount_percentage'];
+    
+    // Verificar cambios en Redux (excluyendo campos de financiación)
+    let hasReduxChanges = false;
+    if (currentProduct && productChanges[currentProduct.id]) {
+      const changes = productChanges[currentProduct.id].changes || [];
+      hasReduxChanges = changes.some((change: any) => {
+        const baseField = change.field.split('_')[0]; // Extraer tipo base
+        return !financingFields.includes(baseField);
+      });
+    }
+    
+    // Verificar cambios pendientes (excluyendo campos de financiación)
+    const pendingKeys = Object.keys(pendingChanges).filter(key => {
+      const baseField = key.split('_')[0]; // Extraer tipo base
+      return !financingFields.includes(baseField);
+    });
+    const hasPendingChanges = pendingKeys.length > 0;
+    
     return hasReduxChanges || hasPendingChanges;
   }, [currentProduct, productChanges, pendingChanges]);
 
@@ -254,6 +279,24 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       console.log(`💰 [PRECIO_CUOTA] Campo calculado automáticamente, ignorando edición manual`);
       return;
     }
+
+    // 🆕 MANEJO ESPECIAL PARA CAMPOS DE DESCUENTO (igual que cuotas)
+    if (baseFieldType === 'descuento' || baseFieldType.includes('descuento') || 
+        baseFieldType === 'discount_percentage' || baseFieldType.includes('discount')) {
+      const descuentoValue = parseInt(String(newValue).replace(/[^\d]/g, ''), 10) || 0;
+      // Actualizar el estado local de descuento inmediatamente
+      setSelectedDescuento(descuentoValue);
+      
+      // 🚫 CAMPOS DE DESCUENTO NO SE REPORTAN: 
+      // Los campos de descuento y precio_descuento son calculados dinámicamente y no deben reportarse como modificaciones
+      return;
+    }
+    
+    // Para precio_descuento, no hacer nada especial (se actualiza automáticamente)
+    if (baseFieldType === 'precio_descuento') {
+      console.log(`💰 [PRECIO_DESCUENTO] Campo calculado automáticamente, ignorando edición manual`);
+      return;
+    }
     
     // Obtener valor original usando el tipo base
     originalValue = getOriginalFieldValue(currentProduct, baseFieldType);
@@ -305,9 +348,9 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
         }
       }
       
-      // 🆕 NO REPORTAR campos de financiación como cambios (se editan siempre)
-      if (baseFieldType === 'cuota' || baseFieldType === 'precio_cuota') {
-        console.log(`🔥 [FINANCIACIÓN] Campo ${baseFieldType} NO se reporta como cambio (skip)`);
+      // 🆕 NO REPORTAR campos de financiación y descuentos como cambios (se editan siempre)
+      if (baseFieldType === 'cuota' || baseFieldType === 'precio_cuota' || baseFieldType === 'descuento' || baseFieldType === 'precio_descuento') {
+        console.log(`🔥 [FINANCIACIÓN/DESCUENTO] Campo ${baseFieldType} NO se reporta como cambio (skip)`);
         return;
       }
       
@@ -886,7 +929,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
             >
 
               <BuilderTemplateRenderer 
-                key={`template-${selectedTemplate.id}-cuotas-${selectedCuotas}-${currentProduct?.id || 'no-product'}`}
+                key={`template-${selectedTemplate.id}-cuotas-${selectedCuotas}-descuento-${selectedDescuento}-${currentProduct?.id || 'no-product'}`}
                 template={selectedTemplate.template}
                 components={selectedTemplate.template.defaultComponents || []}
                 product={currentProduct}
@@ -898,6 +941,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                 onPendingChange={handlePendingChange}
                 onFinancingImageClick={handleFinancingImageClick}
                 financingCuotas={selectedCuotas}
+                discountPercent={selectedDescuento}
               />
             </div>
           </div>
@@ -962,6 +1006,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
           }).filter(Boolean) as Array<{ product: ProductoReal; template: TemplateV3 }>}
           productChanges={productChanges}
           financingCuotas={selectedCuotas}
+          discountPercent={selectedDescuento}
         />
         
         {/* Estilos adicionales para impresión */}

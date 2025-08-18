@@ -3,7 +3,7 @@
 // ===============================================
 
 import { supabase, supabaseAdmin, isSupabaseConfigured } from '../lib/supabaseClient';
-import { FamilyV3, TemplateV3, ComponentsLibraryV3, ComponentDefinitionV3, ComponentCategoryV3, FamilyTypeV3 } from '../features/builderV3/types';
+import { FamilyV3, TemplateV3, ComponentsLibraryV3, FamilyTypeV3 } from '../features/builderV3/types';
 import { componentsLibrary } from '../features/builderV3/data/componentsLibrary';
 import { UnitConverter } from '../features/builderV3/utils/unitConverter';
 
@@ -108,31 +108,41 @@ export const familiesV3Service = {
 
       if (error) throw error;
       
-      // 🚀 NUEVO: Cargar plantillas para cada familia
+      // 🚀 NUEVO: Cargar familias y contar plantillas en UNA llamada RPC
       const families = data?.map(item => this.mapToV3Family(item)) || this.getDefaultFamilies();
-      
-      console.log(`📋 Cargando plantillas para ${families.length} familias...`);
-      const familiesWithTemplates: FamilyV3[] = [];
-      
-      for (const family of families) {
-        try {
-          const templates = await templatesV3Service.getByFamily(family.id);
-          console.log(`📝 Familia "${family.displayName}": ${templates.length} plantillas encontradas`);
-          
-          const familyWithTemplates: FamilyV3 = {
-            ...family,
-            templates: templates
-          };
-          
-          familiesWithTemplates.push(familyWithTemplates);
-        } catch (error) {
-          console.error(`❌ Error obteniendo plantillas para familia ${family.displayName}:`, error);
-          // Agregar familia sin plantillas en caso de error
-          familiesWithTemplates.push(family);
-        }
+
+      console.log(`📋 Calculando conteos (batch) para ${families.length} familias...`);
+      // Armar un set con todos los identificadores posibles (id, name, displayName)
+      const allIdentifiers = Array.from(new Set(
+        families.flatMap(f => [f.id, f.name, f.displayName])
+          .filter(Boolean)
+          .map(String)
+      ));
+
+      // Una sola llamada al RPC para obtener counts por family_id
+      const { data: batchCounts, error: batchError } = await supabaseAdmin
+        .rpc('get_template_counts', { family_ids: allIdentifiers });
+      if (batchError) throw batchError;
+
+      // Mapear family_id -> total
+      const countsMap = new Map<string, number>();
+      for (const row of (batchCounts || [])) {
+        countsMap.set(String(row.family_id), Number(row.total) || 0);
       }
-      
-      console.log(`✅ ${familiesWithTemplates.length} familias procesadas con sus plantillas`);
+
+      // Construir respuesta con templatesCount sin precarga de plantillas
+      const familiesWithTemplates: FamilyV3[] = families.map(family => {
+        const count = (countsMap.get(family.id) || 0)
+          + (countsMap.get(family.name as unknown as string) || 0)
+          + (countsMap.get(family.displayName) || 0);
+        return {
+          ...family,
+          templates: [],
+          templatesCount: count
+        };
+      });
+
+      console.log(`✅ ${familiesWithTemplates.length} familias procesadas (batch counts)`);
       return familiesWithTemplates;
       
     } catch (error) {
@@ -421,7 +431,7 @@ export const templatesV3Service = {
         .from('templates')
         .select('*')
         .eq('family_id', familyId)
-        .eq('is_active', true)
+        .or('is_active.eq.true,is_active.is.null')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -430,6 +440,98 @@ export const templatesV3Service = {
     } catch (error) {
       console.warn('⚠️ Error obteniendo plantillas de familia, usando datos mock:', error);
       return [];
+    }
+  },
+
+  /**
+   * Compatibilidad: hay entornos donde `templates.family_id` guarda el nombre de la familia
+   * en vez del `id`. Esta función consulta por cualquiera de los identificadores provistos.
+   */
+  async getByFamilyAny(params: { id: string; name?: string; displayName?: string }): Promise<TemplateV3[]> {
+    try {
+      const identifiers = Array.from(
+        new Set([params.id, params.name, params.displayName].filter(Boolean) as string[])
+      );
+
+      console.log('🔑 Leyendo plantillas por identificadores:', identifiers);
+
+      const query = supabaseAdmin
+        .from('templates')
+        .select('*')
+        .or('is_active.eq.true,is_active.is.null')
+        .order('created_at', { ascending: false });
+
+      // Usar IN para evitar múltiples parámetros `or=` y mejorar compatibilidad
+      const { data, error } = await query.in('family_id', identifiers);
+
+      if (error) throw error;
+
+      return (data || []).map(this.mapToV3Template);
+    } catch (error) {
+      console.warn('⚠️ Error obteniendo plantillas (getByFamilyAny):', error);
+      return [];
+    }
+  },
+
+  /**
+   * Consulta por un conjunto de identificadores (ids y/o nombres) usando IN.
+   */
+  async getByFamilyIdentifiers(identifiers: string[]): Promise<TemplateV3[]> {
+    try {
+      const uniq = Array.from(new Set((identifiers || []).filter(Boolean)));
+      if (uniq.length === 0) return [];
+
+      const { data, error } = await supabaseAdmin
+        .from('templates')
+        .select('*')
+        .in('family_id', uniq)
+        .or('is_active.eq.true,is_active.is.null')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []).map(this.mapToV3Template);
+    } catch (error) {
+      console.warn('⚠️ Error obteniendo plantillas (getByFamilyIdentifiers):', error);
+      return [];
+    }
+  },
+
+  async countByFamilyIdentifiers(identifiers: string[]): Promise<number> {
+    try {
+      const uniq = Array.from(new Set((identifiers || []).filter(Boolean)));
+      if (uniq.length === 0) return 0;
+
+      const { count, error } = await supabaseAdmin
+        .from('templates')
+        .select('*', { count: 'exact', head: true })
+        .in('family_id', uniq)
+        .or('is_active.eq.true,is_active.is.null');
+
+      if (error) throw error;
+      return count || 0;
+    } catch (error) {
+      console.warn('⚠️ Error contando plantillas (countByFamilyIdentifiers):', error);
+      return 0;
+    }
+  },
+
+  /**
+   * Conteo por lote vía RPC para un conjunto de posibles ids/nombres.
+   */
+  async countByFamiliesRpc(identifiers: string[]): Promise<number> {
+    try {
+      const uniq = Array.from(new Set((identifiers || []).filter(Boolean)));
+      if (uniq.length === 0) return 0;
+
+      const { data, error } = await supabaseAdmin
+        .rpc('get_template_counts', { family_ids: uniq });
+
+      if (error) throw error;
+      const total = (data || []).reduce((sum: number, row: any) => sum + (row.total || 0), 0);
+      return total;
+    } catch (error) {
+      console.warn('⚠️ Error contando plantillas por RPC (countByFamiliesRpc):', error);
+      return 0;
     }
   },
 
@@ -753,7 +855,7 @@ export const imageUploadService = {
 
       console.log('📷 Subiendo imagen a Supabase Storage:', fileName);
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from(bucket)
         .upload(fileName, file, {
           cacheControl: '3600',

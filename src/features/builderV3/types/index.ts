@@ -471,6 +471,8 @@ export interface FamilyV3 {
   // Plantillas disponibles
   templates: TemplateV3[];
   featuredTemplates: string[]; // IDs de plantillas destacadas
+  // Conteo de plantillas (cuando no se pre-cargan)
+  templatesCount?: number;
   
   // Configuración visual por defecto
   defaultStyle: {

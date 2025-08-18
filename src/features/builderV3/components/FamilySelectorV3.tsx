@@ -125,7 +125,7 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
           <div className="p-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <div className="flex items-center space-x-2">
               <Tag className="w-4 h-4" />
-              <span className="text-sm font-medium">{family.templates.length} plantillas</span>
+              <span className="text-sm font-medium">{family.templatesCount ?? family.templates.length} plantillas</span>
             </div>
           </div>
         </div>
@@ -154,10 +154,10 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
         <div className="flex justify-center mb-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">
-              {family.templates.length}
+              {family.templatesCount ?? family.templates.length}
             </div>
             <div className="text-xs text-gray-500">
-              Plantilla{family.templates.length !== 1 ? 's' : ''}
+              Plantilla{(family.templatesCount ?? family.templates.length) !== 1 ? 's' : ''}
             </div>
           </div>
         </div>

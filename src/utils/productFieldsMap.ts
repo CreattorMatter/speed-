@@ -275,6 +275,41 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         formatter: (price: number, _: any, outputFormat?: any) => price ? formatPrice(price / 12, outputFormat) : 'No disponible'
       },
       {
+        id: 'descuento',
+        name: 'Descuento',
+        description: 'Porcentaje de descuento del producto (entero sin %)',
+        fieldKey: 'static',
+        example: '20',
+        formatter: (_: any, product?: ProductoReal, outputFormat?: any, discountPercent?: number) => {
+          // 🆕 Priorizar discountPercent (editado inline) sobre valor por defecto 0
+          if (discountPercent !== undefined && discountPercent !== null) {
+            return discountPercent.toString();
+          }
+          // 🔧 CAMBIO CRÍTICO: Inicializar en 0, NO usar cálculo automático
+          return '0';
+        }
+      },
+      {
+        id: 'precio_descuento',
+        name: 'Precio con Descuento',
+        description: 'Precio final con el descuento aplicado',
+        fieldKey: 'static',
+        example: '$ 560.000',
+        formatter: (_: any, product?: ProductoReal, outputFormat?: any, discountPercent?: number) => {
+          if (!product?.precio) return formatPrice(0, outputFormat);
+          
+          // 🔧 CAMBIO CRÍTICO: Solo aplicar descuento si discountPercent > 0 (CÁLCULO EXACTO)
+          // Si discountPercent es 0 o undefined, mostrar precio original SIN descuento
+          if (discountPercent !== undefined && discountPercent !== null && discountPercent > 0) {
+            const finalPrice = Math.round(product.precio * (1 - discountPercent / 100));
+            return formatPrice(finalPrice, outputFormat);
+          }
+          
+          // Si no hay descuento (0 o undefined), mostrar precio original
+          return formatPrice(product.precio, outputFormat);
+        }
+      },
+      {
         id: 'currency_symbol',
         name: 'Símbolo de Moneda',
         description: 'Símbolo $ de pesos',
@@ -480,7 +515,8 @@ export const getDynamicFieldValue = (
   fieldId: string, 
   product: ProductoReal,
   outputFormat?: any,
-  financingCuotas?: number  // 🆕 Parámetro de cuotas para cálculos de financiación
+  financingCuotas?: number,  // 🆕 Parámetro de cuotas para cálculos de financiación
+  discountPercent?: number   // 🆕 Parámetro de descuento para cálculos de descuento
 ): string => {
   const field = ALL_DYNAMIC_FIELDS[fieldId];
   if (!field) {
@@ -500,8 +536,18 @@ export const getDynamicFieldValue = (
 
     // Aplicar formateador si existe
     if (field.formatter) {
+      // Manejo especial para campos de descuento
+      if (fieldId === 'descuento' || fieldId === 'discount_percentage') {
+        return (discountPercent || 0).toString();
+      } else if (fieldId === 'precio_descuento') {
+        const precio = product.precio || 0;
+        const dto = discountPercent || 0;
+        // 🔧 CÁLCULO EXACTO: usar Math.round para evitar decimales flotantes
+        const finalPrice = dto > 0 ? Math.round(precio * (1 - dto / 100)) : precio;
+        return formatPrice(finalPrice, outputFormat);
+      }
       // @ts-ignore - Los formatters pueden aceptar diferentes números de parámetros
-      return field.formatter(baseValue, product, outputFormat, financingCuotas);
+      return field.formatter(baseValue, product, outputFormat, discountPercent);
     }
 
     // Retornar valor base o fallback
@@ -535,7 +581,8 @@ export const processDynamicTemplate = (
   dynamicTemplate: string, 
   product: ProductoReal,
   outputFormat?: any,
-  financingCuotas?: number  // 🆕 Parámetro de cuotas para cálculos de financiación
+  financingCuotas?: number,  // 🆕 Parámetro de cuotas para cálculos de financiación
+  discountPercent?: number   // 🆕 Parámetro de descuento para cálculos de descuento
 ): string => {
   if (!dynamicTemplate || !product) {
     return dynamicTemplate || '';
@@ -545,7 +592,19 @@ export const processDynamicTemplate = (
   const fields = extractDynamicFields(dynamicTemplate);
 
   fields.forEach(fieldId => {
-    const value = getDynamicFieldValue(fieldId, product, outputFormat, financingCuotas);
+    // Manejo especial para campos de descuento que usan el parámetro discountPercent
+    let value: string;
+    if (fieldId === 'descuento' || fieldId === 'discount_percentage') {
+      value = (discountPercent || 0).toString();
+    } else if (fieldId === 'precio_descuento') {
+      const precio = product.precio || 0;
+      const dto = discountPercent || 0;
+      // 🔧 CÁLCULO EXACTO: usar Math.round para evitar decimales flotantes
+      const finalPrice = dto > 0 ? Math.round(precio * (1 - dto / 100)) : precio;
+      value = formatPrice(finalPrice, outputFormat);
+    } else {
+      value = getDynamicFieldValue(fieldId, product, outputFormat, financingCuotas, discountPercent);
+    }
     const regex = new RegExp(`\\[${fieldId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'g');
     processedTemplate = processedTemplate.replace(regex, value);
   });

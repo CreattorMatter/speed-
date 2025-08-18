@@ -452,13 +452,28 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                     </p>
                   </div>
 
-                  {/* Lista de campos disponibles */}
+                  {/* Lista de campos disponibles con buscador */}
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Campos disponibles</label>
-                    <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-md">
+                    <input
+                      type="text"
+                      placeholder="Buscar campo..."
+                      className="w-full mb-2 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={(e) => {
+                        const q = e.target.value.toLowerCase().trim();
+                        const container = document.getElementById('field-options-container');
+                        if (!container) return;
+                        Array.from(container.querySelectorAll('button[data-label]')).forEach((el) => {
+                          const label = (el as HTMLElement).dataset.label || '';
+                          (el as HTMLElement).style.display = label.includes(q) ? '' : 'none';
+                        });
+                      }}
+                    />
+                    <div id="field-options-container" className="max-h-32 overflow-y-auto border border-gray-200 rounded-md">
                       {productFieldOptions.map((field, index) => (
                         <button
                           key={index}
+                          data-label={(field.label || '').toLowerCase()}
                           onClick={() => {
                             const currentTemplate = (selectedComponent.content as any)?.dynamicTemplate || '';
                             const newTemplate = currentTemplate + `[${field.value}]`;

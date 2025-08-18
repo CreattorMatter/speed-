@@ -20,6 +20,7 @@ interface BuilderTemplateRendererProps {
   enableInlineEdit?: boolean; // 🆕 Habilitar edición inline directa
   onFinancingImageClick?: (componentId: string) => void; // 🆕 Callback para clic en imagen de financiación
   financingCuotas?: number; // 🆕 Cuotas seleccionadas para cálculos
+  discountPercent?: number; // 🆕 Descuento seleccionado para cálculos
 }
 
 /**
@@ -33,7 +34,8 @@ const getDynamicValue = (
   productChanges?: any, // Cambios del usuario desde Redux
   componentId?: string, // 🆕 ID del componente para campos estáticos únicos
   showMockData: boolean = true, // 🆕 Flag para mostrar datos mock o nombres de campo
-  financingCuotas?: number // 🆕 Cuotas para cálculos de financiación
+  financingCuotas?: number, // 🆕 Cuotas para cálculos de financiación
+  discountPercent?: number // 🆕 Descuento para cálculos de descuento
 ): string => {
   if (!content) return '';
   
@@ -215,7 +217,7 @@ const getDynamicValue = (
       const templateHasSymbol = /\$/.test(content.dynamicTemplate) || content.dynamicTemplate.includes('[currency_symbol]');
       outputFormat.showCurrencySymbol = templateHasSymbol;
     }
-    const processedValue = processDynamicTemplate(content.dynamicTemplate, product, outputFormat, financingCuotas);
+    const processedValue = processDynamicTemplate(content.dynamicTemplate, product, outputFormat, financingCuotas, discountPercent);
     console.log(`📊 Valor procesado del template: ${processedValue}`, { outputFormat, financingCuotas });
     return processedValue;
   }
@@ -465,7 +467,8 @@ const processDynamicTemplate = (
   template: string,
   product: ProductoReal,
   outputFormat: any = {}, // 🔧 CORRECCIÓN: Aceptar y usar outputFormat
-  financingCuotas?: number
+  financingCuotas?: number,
+  discountPercent?: number
 ): string => {
   if (!template) return '';
   let processed = template;
@@ -481,16 +484,28 @@ const processDynamicTemplate = (
       value = financingCuotas || 0;
     } else if (fieldId === 'precio_cuota') {
       value = calculatePricePorCuota(product?.precio || 0, financingCuotas || 0);
+    } else if (fieldId === 'descuento') {
+      // 🔧 CAMBIO CRÍTICO: Usar selectedDescuento (0 por defecto)
+      value = discountPercent || 0;
+    } else if (fieldId === 'precio_descuento') {
+      const precio = product?.precio || 0;
+      const dto = discountPercent || 0;
+      // 🔧 CAMBIO CRÍTICO: Si descuento es 0, mostrar precio original (CÁLCULO EXACTO)
+      const finalPrice = dto > 0 ? Math.round(precio * (1 - dto / 100)) : precio;
+      value = finalPrice;
+    } else if (fieldId === 'discount_percentage') {
+      // 🔧 MAPEAR discount_percentage a descuento
+      value = discountPercent || 0;
     } else {
       // Usar getDynamicFieldValue para obtener valores del producto (ej: product_price -> product.precio)
-      value = getDynamicFieldValue(fieldId, product);
+      value = getDynamicFieldValue(fieldId, product, outputFormat, financingCuotas, discountPercent);
     }
     
     // 🔧 SOLUCIÓN MEJORADA: Aplicar formato solo cuando corresponde según el tipo de campo
     let formattedValue;
     
     // Determinar si es un campo monetario para aplicar formato de precio
-    const isPriceField = ['precio', 'price', 'cuota', 'precio_cuota'].some(priceKey => 
+    const isPriceField = ['precio', 'price', 'cuota', 'precio_cuota', 'precio_descuento'].some(priceKey => 
       fieldId.toLowerCase().includes(priceKey)
     );
     
@@ -843,14 +858,15 @@ const renderComponent = (
   onPendingChange?: (fieldType: string, newValue: string | number) => void,
   enableInlineEdit?: boolean,
   onFinancingImageClick?: (componentId: string) => void,
-  financingCuotas?: number  // 🆕 Cuotas para cálculos de financiación
+  financingCuotas?: number,  // 🆕 Cuotas para cálculos de financiación
+  discountPercent?: number   // 🆕 Descuento para cálculos de descuento
 ) => {
   const { type, content, style } = component;
   const baseStyles = getBaseComponentStyles(component);
   
   switch (type) {
     case 'field-dynamic-text':
-      const textValue = getDynamicValue(content, product, isPreview, productChanges, component.id, component.showMockData !== false, financingCuotas);
+      const textValue = getDynamicValue(content, product, isPreview, productChanges, component.id, component.showMockData !== false, financingCuotas, discountPercent);
       const fieldType = getFieldType(content);
       
       // 🔥 DEBUG: Log especial para campos de cuotas
@@ -919,6 +935,19 @@ const renderComponent = (
           templateContent.includes('financ')
         ));
 
+      // 🎯 DETECCIÓN MEJORADA: Si contiene descuento -> EDITABLE INLINE
+      const isDiscountField = 
+        templateContent.includes('[descuento]') || 
+        templateContent.includes('[precio_descuento]') ||
+        templateContent.includes('[discount_percentage]') ||
+        fieldType === 'descuento' || 
+        fieldType === 'precio_descuento' ||
+        fieldType === 'discount_percentage' ||
+        fieldType.includes('descuento') ||
+        fieldType.includes('discount') ||
+        textContent.includes('DESCUENTO') ||
+        textContent.toLowerCase().includes('descuento');
+
       // 🆕 DETECCIÓN DE CAMPOS DE FECHA -> EDITABLE CON MÁSCARA
       const isDateField = 
         templateContent.includes('[validity_period]') ||
@@ -928,13 +957,14 @@ const renderComponent = (
         textContent.includes(' - ') && textContent.match(/\d{2}\/\d{2}\/\d{4}/); // Date range
       
       // 🔥 Debug ACTIVO: Mostrar TODO componente de texto dinámico
-      if (type === 'field-dynamic-text' || textContent.includes('CUOTAS') || isDateField) {
+      if (type === 'field-dynamic-text' || textContent.includes('CUOTAS') || isDateField || isDiscountField) {
         console.log(`🔥 [COMPONENTE TEXTO] Analizando:`, {
           type,
           fieldType,
           dynamicTemplate: templateContent,
           textContent: textContent.substring(0, 100),
           isFinancingField,
+          isDiscountField,
           isDateField,
           contentFieldType: content?.fieldType,
           dateConfig: (content as any)?.dateConfig
@@ -944,11 +974,12 @@ const renderComponent = (
       // 🎯 EDICIÓN INLINE: Habilitar para:
       // 1. Modo inline normal (enableInlineEdit = true) - solo si NO es preview
       // 2. Campos de financiación (cuotas) - SIEMPRE editables (incluso en preview)
-      // 3. Campos de fecha - SIEMPRE editables (incluso en preview)
+      // 3. Campos de descuento - SIEMPRE editables (incluso en preview)
+      // 4. Campos de fecha - SIEMPRE editables (incluso en preview)
       const canEdit = onEditField && (product || isStaticField) && 
-                     ((enableInlineEdit && !isPreview) || isFinancingField || isDateField);
+                     ((enableInlineEdit && !isPreview) || isFinancingField || isDiscountField || isDateField);
       
-      // 🆕 MEJORAR FIELDTYPE PARA CUOTAS Y FECHAS
+      // 🆕 MEJORAR FIELDTYPE PARA CUOTAS, DESCUENTOS Y FECHAS
       let enhancedFieldType = fieldType;
       if (isFinancingField) {
         if (templateContent.includes('[cuota]') && !templateContent.includes('[precio_cuota]')) {
@@ -956,14 +987,32 @@ const renderComponent = (
         } else if (templateContent.includes('[precio_cuota]')) {
           enhancedFieldType = 'precio_cuota';
         }
+      } else if (isDiscountField) {
+        if (templateContent.includes('[descuento]') && !templateContent.includes('[precio_descuento]')) {
+          enhancedFieldType = 'descuento';
+        } else if (templateContent.includes('[precio_descuento]')) {
+          enhancedFieldType = 'precio_descuento';
+        } else if (templateContent.includes('[discount_percentage]')) {
+          enhancedFieldType = 'descuento'; // 🔧 Mapear discount_percentage a descuento
+        }
       } else if (isDateField) {
         enhancedFieldType = 'date';
       }
       
-      // 🔥 Debug SIMPLIFICADO para campos de financiación y fecha
+      // 🔥 Debug SIMPLIFICADO para campos de financiación, descuento y fecha
       if (isFinancingField) {
         console.log(`🟢 [FINANCIACIÓN] CanEdit resultado:`, {
           isFinancingField,
+          enableInlineEdit,
+          canEdit,
+          onEditField: !!onEditField,
+          isPreview
+        });
+      }
+
+      if (isDiscountField) {
+        console.log(`🟢 [DESCUENTO] CanEdit resultado:`, {
+          isDiscountField,
           enableInlineEdit,
           canEdit,
           onEditField: !!onEditField,
@@ -1415,7 +1464,8 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
   onPendingChange,
   enableInlineEdit = false,
   onFinancingImageClick,
-  financingCuotas = 0
+  financingCuotas = 0,
+  discountPercent = 0
 }) => {
 
   // Filtrar componentes visibles y ordenarlos por z-index
@@ -1452,7 +1502,7 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
 
         return (
           <div key={component.id} style={componentPositionStyle}>
-            {renderComponent(component, product, isPreview, productChanges, onEditField, onPendingChange, enableInlineEdit, onFinancingImageClick, financingCuotas)}
+            {renderComponent(component, product, isPreview, productChanges, onEditField, onPendingChange, enableInlineEdit, onFinancingImageClick, financingCuotas, discountPercent)}
           </div>
         );
       })}

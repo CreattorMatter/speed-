@@ -8,9 +8,10 @@ interface PrintContainerProps {
   templates: { product: ProductoReal; template: TemplateV3 }[];
   productChanges: Record<string, EditedProduct>;
   financingCuotas?: number; // 🆕 Para cálculos de financiación en impresión
+  discountPercent?: number; // 🆕 Para cálculos de descuento en impresión
 }
 
-export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerProps>(({ templates, productChanges, financingCuotas = 0 }, ref) => {
+export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerProps>(({ templates, productChanges, financingCuotas = 0, discountPercent = 0 }, ref) => {
   if (!templates || templates.length === 0) {
     return null;
   }
@@ -55,6 +56,7 @@ export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerPro
                 productChanges={productChanges}
                 enableInlineEdit={false}
                 financingCuotas={financingCuotas}
+                discountPercent={discountPercent}
               />
             </div>
           </div>

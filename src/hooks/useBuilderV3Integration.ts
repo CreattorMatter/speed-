@@ -337,21 +337,26 @@ export const useBuilderV3Integration = () => {
     return JSON.parse(storedUser);
   };
 
-  const refreshData = useCallback(async () => {
-    if (isConnected) {
-      try {
-        console.log('🔄 Refrescando datos...');
+  const refreshData = useCallback(async (options: { refreshFamilies?: boolean } = {}) => {
+    if (!isConnected) return;
+    try {
+      console.log('🔄 Refrescando datos...');
+      
+      // Solo refrescar familias si se solicita explícitamente
+      if (options.refreshFamilies) {
         const families = await familiesV3Service.getAll();
         setRealFamilies(families);
-        
-        if (builderCore.state.currentFamily) {
-          const templates = await templatesV3Service.getByFamily(builderCore.state.currentFamily.id);
-          setRealTemplates(templates);
-        }
-        console.log('✅ Datos refrescados');
-      } catch (error) {
-        console.error('❌ Error refreshing data:', error);
+        console.log('✅ Familias refrescadas');
       }
+      
+      // Siempre refrescar plantillas de la familia actual si existe
+      if (builderCore.state.currentFamily) {
+        const templates = await templatesV3Service.getByFamily(builderCore.state.currentFamily.id);
+        setRealTemplates(templates);
+        console.log('✅ Plantillas refrescadas');
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing data:', error);
     }
   }, [isConnected, builderCore.state.currentFamily]);
 

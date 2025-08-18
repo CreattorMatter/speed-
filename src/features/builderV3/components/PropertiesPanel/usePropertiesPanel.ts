@@ -6,7 +6,7 @@ import { useCallback } from 'react';
 import { DollarSign, Hash, Package, Tag, Type, MapPin } from 'lucide-react';
 import { DraggableComponentV3, PositionV3, SizeV3, DynamicContentV3 } from '../../types';
 import { getAvailableFields } from '../../../../utils/dynamicContentProcessor';
-import { PropertiesHandlers, ProductFieldOption, CalculatedFieldResult } from './types';
+import { PropertiesHandlers, ProductFieldOption } from './types';
 
 interface UsePropertiesPanelProps {
   selectedComponent: DraggableComponentV3 | null;
@@ -36,7 +36,7 @@ export const usePropertiesPanel = ({
       
       // Sistema de precios
       'product_price', 'price_previous', 'price_base', 'price_without_tax',
-      'price_unit_alt', 'discount_percentage', 'discount_amount', 
+      'price_unit_alt', 'discount_percentage', 'discount_amount', 'descuento', 'precio_descuento', 
       'installment_price', 'currency_symbol',
       
       // Campos de financiación (cuotas)

@@ -54,7 +54,8 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
           const numericValue = processedValue.replace(/[^\d.,]/g, '').replace(',', '.');
           const parsedValue = parseFloat(numericValue);
           processedValue = !isNaN(parsedValue) ? parsedValue.toString() : '0';
-        } else if (fieldType.includes('porcentaje') || fieldType.includes('percentage')) {
+        } else if (fieldType.includes('porcentaje') || fieldType.includes('percentage') || 
+                   fieldType.includes('descuento') || fieldType.includes('discount')) {
           const numericValue = processedValue.replace(/[^\d.,]/g, '').replace(',', '.');
           const parsedValue = parseFloat(numericValue);
           processedValue = !isNaN(parsedValue) ? parsedValue.toString() : '0';
@@ -150,6 +151,13 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
         const numericValue = parseInt(editValue, 10);
         processedValue = isNaN(numericValue) ? 0 : numericValue;
         console.log(`💳 Procesando cuotas: "${editValue}" → ${processedValue}`);
+      } else if (fieldType.includes('descuento') || fieldType === 'descuento' || 
+                 fieldType.includes('discount') || fieldType === 'discount_percentage') {
+        // 🆕 DESCUENTO ENTERO (0-100)
+        const numericValue = parseInt(editValue.replace(/[^\d]/g, ''), 10);
+        const bounded = isNaN(numericValue) ? 0 : Math.max(0, Math.min(100, numericValue));
+        processedValue = bounded;
+        console.log(`🏷️ Procesando descuento: "${editValue}" → ${processedValue}`);
       }
     }
     
@@ -205,6 +213,18 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       }
       if (numericValue > 60) {
         return { isValid: false, message: 'Máximo 60 cuotas permitidas' };
+      }
+    }
+
+    // 🆕 VALIDACIÓN PARA DESCUENTO (0-100)
+    if (fieldType.includes('descuento') || fieldType === 'descuento' || 
+        fieldType.includes('discount') || fieldType === 'discount_percentage') {
+      const numericValue = parseInt(value.replace(/[^\d]/g, ''), 10);
+      if (isNaN(numericValue)) {
+        return { isValid: false, message: 'El descuento debe ser un número entero' };
+      }
+      if (numericValue < 0 || numericValue > 100) {
+        return { isValid: false, message: 'El descuento debe estar entre 0 y 100' };
       }
     }
 
