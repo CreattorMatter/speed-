@@ -116,7 +116,12 @@ function AppContent() {
       setUser(profile);
       setIsAuthenticated(true);
       setUserRole((profile.role as any) || 'viewer');
-      navigate('/');
+      // Si es primer login, redirigir a crear nueva contraseña
+      if ((profile as any).first_login) {
+        navigate('/welcome');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       console.error('Error durante el login:', error);
       setError('Usuario o contraseña incorrectos');

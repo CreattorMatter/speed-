@@ -15,7 +15,7 @@ export async function getCurrentProfile(): Promise<User | null> {
   // Fetch base profile from users (use status, not is_active)
   const { data: baseProfile, error: baseErr } = await supabase
     .from('users')
-    .select('id, name, email, created_at, auth_user_id, status')
+    .select('id, name, email, created_at, auth_user_id, status, first_login')
     .eq('auth_user_id', authUserId)
     .single();
 
@@ -53,6 +53,7 @@ export async function getCurrentProfile(): Promise<User | null> {
     role: roleName,
     status: isActive ? 'active' : 'inactive',
     created_at: baseProfile.created_at,
+    first_login: (baseProfile as any).first_login ?? undefined,
   } as User;
 
   return user;
@@ -80,6 +81,20 @@ export async function signOut(): Promise<void> {
 export async function updatePassword(newPassword: string): Promise<void> {
   const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) throw error;
+}
+
+// Marca en la tabla users que el primer login fue completado
+export async function markFirstLoginCompleted(): Promise<void> {
+  try {
+    const session = await getSession();
+    if (!session) return;
+    await supabase
+      .from('users')
+      .update({ first_login: false })
+      .eq('auth_user_id', session.user.id);
+  } catch {
+    // silenciar para entornos donde la columna no exista aún
+  }
 }
 
 

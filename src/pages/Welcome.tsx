@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { updatePassword, getCurrentProfile } from '@/services/authService';
+import { updatePassword, getCurrentProfile, markFirstLoginCompleted } from '@/services/authService';
 
 export default function Welcome() {
   const navigate = useNavigate();
@@ -40,7 +40,8 @@ export default function Welcome() {
     }
     try {
       await updatePassword(password);
-      // marcar first_login=false
+      // marcar first_login=false en BD y en localStorage
+      await markFirstLoginCompleted();
       const stored = localStorage.getItem('user');
       if (stored) {
         const u = JSON.parse(stored);

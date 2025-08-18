@@ -201,6 +201,8 @@ export async function createUser(input: {
     role: input.role,
     status: true, // boolean schema in your DB
     auth_user_id: authUserId || null,
+    // si existe la columna en el esquema actual, quedará persistido; si no existe, se ignora en los retries
+    first_login: input.first_login ?? (input.domain_type === 'external' ? true : false),
   };
 
   let lastError: any = null;
@@ -233,6 +235,10 @@ export async function createUser(input: {
     }
     if (/column .*role.* does not exist/i.test(error.message || '')) {
       delete payload.role;
+      continue;
+    }
+    if (/column .*first_login.* does not exist/i.test(error.message || '')) {
+      delete (payload as any).first_login;
       continue;
     }
     // si otro error, cortar
