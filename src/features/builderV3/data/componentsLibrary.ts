@@ -95,7 +95,25 @@ const backgroundComponents: ComponentDefinitionV3[] = [
   }
 ];
 
-const imageComponents: ComponentDefinitionV3[] = [];
+const imageComponents: ComponentDefinitionV3[] = [
+  {
+    type: 'image-decorative',
+    name: 'Imagen',
+    description: 'Imagen genérica utilizable en cualquier parte del cartel.',
+    icon: '🖼️',
+    category: 'Imágenes y Media',
+    tags: ['imagen', 'genérica', 'media', 'decorativa'],
+    defaultSize: { width: 300, height: 200, isProportional: true },
+    defaultStyle: {
+      color: { backgroundColor: 'transparent', color: '#333333' }
+    },
+    defaultContent: {
+      imageAlt: 'Imagen',
+      imageUrl: '',
+      fieldType: 'static'
+    }
+  }
+];
 
 // QR y Enlaces eliminados por solicitud del usuario
 

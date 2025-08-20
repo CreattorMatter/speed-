@@ -1138,6 +1138,8 @@ const renderComponent = (
       );
       
     case 'image-header':
+    case 'image-footer':
+    case 'image-background':
     case 'image-product':
     case 'image-brand-logo':
     case 'image-decorative':
@@ -1146,16 +1148,22 @@ const renderComponent = (
           className="w-full h-full flex items-center justify-center"
           style={{ backgroundColor: component.style?.color?.backgroundColor || 'transparent' }}
         >
-          {component.content?.imageUrl ? (
+          {component.content?.imageUrl || component.style?.color?.backgroundImage ? (
             <img
-              src={component.content.imageUrl}
-              alt={component.content?.imageAlt || 'Imagen'}
-              className="w-full h-full object-cover"
+              src={component.content?.imageUrl || (component.style?.color?.backgroundImage as any)}
+              alt={component.content?.imageAlt || (
+                component.type === 'image-background' ? 'Imagen de fondo' : 'Imagen'
+              )}
+              className={
+                component.type === 'image-product' ? 'w-full h-full object-contain' : 'w-full h-full object-cover'
+              }
               draggable={false}
             />
           ) : (
             <div className="text-center">
               {component.type === 'image-header' && '🏷️'}
+              {component.type === 'image-footer' && '📌'}
+              {component.type === 'image-background' && '🖼️'}
               {component.type === 'image-product' && '📦'}
               {component.type === 'image-brand-logo' && '🏪'}
               {component.type === 'image-decorative' && '🎨'}
