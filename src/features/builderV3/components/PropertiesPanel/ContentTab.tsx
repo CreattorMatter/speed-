@@ -577,77 +577,26 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                     </p>
                   </div>
 
-                  {/* Selector de campos numéricos */}
+                  {/* Selector de campos numéricos dinámico */}
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Campos numéricos disponibles</label>
-                    <div className="max-h-24 overflow-y-auto border border-gray-200 rounded-md">
-                      {/* Campos de precios */}
-                      <button
-                        onClick={() => {
-                          const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
-                          const newExpression = currentExpression + '[product_price]';
-                          handlers.handleCalculatedFieldChange(newExpression);
-                        }}
-                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2 border-b border-gray-100"
-                      >
-                        <DollarSign className="w-3 h-3 text-green-600" />
-                        <span><strong>[product_price]</strong> - Precio Actual</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
-                          const newExpression = currentExpression + '[price_previous]';
-                          handlers.handleCalculatedFieldChange(newExpression);
-                        }}
-                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2 border-b border-gray-100"
-                      >
-                        <DollarSign className="w-3 h-3 text-orange-600" />
-                        <span><strong>[price_previous]</strong> - Precio Anterior</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
-                          const newExpression = currentExpression + '[price_without_tax]';
-                          handlers.handleCalculatedFieldChange(newExpression);
-                        }}
-                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2 border-b border-gray-100"
-                      >
-                        <DollarSign className="w-3 h-3 text-blue-600" />
-                        <span><strong>[price_without_tax]</strong> - Precio sin IVA</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
-                          const newExpression = currentExpression + '[discount_percentage]';
-                          handlers.handleCalculatedFieldChange(newExpression);
-                        }}
-                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2 border-b border-gray-100"
-                      >
-                        <Minus className="w-3 h-3 text-red-600" />
-                        <span><strong>[discount_percentage]</strong> - % Descuento</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
-                          const newExpression = currentExpression + '[stock_available]';
-                          handlers.handleCalculatedFieldChange(newExpression);
-                        }}
-                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2 border-b border-gray-100"
-                      >
-                        <Plus className="w-3 h-3 text-purple-600" />
-                        <span><strong>[stock_available]</strong> - Stock Disponible</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
-                          const newExpression = currentExpression + '[price_base]';
-                          handlers.handleCalculatedFieldChange(newExpression);
-                        }}
-                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2"
-                      >
-                        <DollarSign className="w-3 h-3 text-gray-600" />
-                        <span><strong>[price_base]</strong> - Precio Base</span>
-                      </button>
+                    <div className="max-h-28 overflow-y-auto border border-gray-200 rounded-md divide-y">
+                      {productFieldOptions
+                        .filter(opt => /price|precio|discount|descuento|stock|cuota/i.test(opt.value))
+                        .map((opt, idx) => (
+                          <button
+                            key={`${opt.value}-${idx}`}
+                            onClick={() => {
+                              const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
+                              const newExpression = currentExpression + `[${opt.value}]`;
+                              handlers.handleCalculatedFieldChange(newExpression);
+                            }}
+                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2"
+                          >
+                            <opt.icon className="w-3 h-3 text-gray-600" />
+                            <span><strong>[{opt.value}]</strong> - {opt.label}</span>
+                          </button>
+                        ))}
                     </div>
                   </div>
 

@@ -312,6 +312,12 @@ const getDynamicValue = (
       expression = expression.replace(/\[price_base\]/g, String(product?.basePrice || 0));
       expression = expression.replace(/\[stock_available\]/g, String(product?.stockDisponible || 0));
       expression = expression.replace(/\[discount_percentage\]/g, String(discountPercentage));
+      // 🆕 soportar campos de financiación y descuento en expresiones
+      expression = expression.replace(/\[cuota\]/g, String(financingCuotas || 0));
+      // precio_descuento calculado en base a product_price y discountPercent
+      const dto = (typeof discountPercent === 'number' ? discountPercent : discountPercentage) || 0;
+      const precioDesc = dto > 0 ? Math.round((product?.precio || 0) * (1 - dto / 100)) : (product?.precio || 0);
+      expression = expression.replace(/\[precio_descuento\]/g, String(precioDesc));
       
       console.log(`🔢 Expresión con reemplazos: "${expression}"`);
       
@@ -335,12 +341,21 @@ const getDynamicValue = (
           }
           return applyOutputFormat(numericResult, outputFormat);
         } else {
-          console.log(`❌ Resultado inválido: ${result}`);
-          return 'Error: resultado inválido';
+          console.log(`❌ Resultado inválido (división por 0 u operación no finita): ${result}`);
+          // Fallback seguro: 0
+          const outputFormat = { ...(content.outputFormat || {}) } as any;
+          if (outputFormat.showCurrencySymbol === undefined && typeof outputFormat.prefix === 'boolean') {
+            outputFormat.showCurrencySymbol = outputFormat.prefix;
+          }
+          return applyOutputFormat(0, outputFormat);
         }
       } else {
         console.log(`❌ Expresión inválida después de reemplazos: "${expression}"`);
-        return 'Error: expresión inválida';
+        const outputFormat = { ...(content.outputFormat || {}) } as any;
+        if (outputFormat.showCurrencySymbol === undefined && typeof outputFormat.prefix === 'boolean') {
+          outputFormat.showCurrencySymbol = outputFormat.prefix;
+        }
+        return applyOutputFormat(0, outputFormat);
       }
       
     } catch (error) {

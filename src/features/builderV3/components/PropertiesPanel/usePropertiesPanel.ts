@@ -65,6 +65,12 @@ export const usePropertiesPanel = ({
           field.value.includes('origin') || field.value.includes('store') ? MapPin : Tag
   }));
 
+  // Helper: detectar si un campo es numérico (heurística por id)
+  const isNumericFieldId = (id: string): boolean => {
+    const key = id.toLowerCase();
+    return /price|precio|discount|descuento|stock|cuota/.test(key);
+  };
+
   // =====================
   // EVENT HANDLERS
   // =====================
@@ -165,13 +171,26 @@ export const usePropertiesPanel = ({
     
     try {
       // Crear una preview con valores de ejemplo
-      let previewExpression = expression
-        .replace(/\[product_price\]/g, '99999')
-        .replace(/\[discount_percentage\]/g, '15')
-        .replace(/\[price_previous\]/g, '119999')
-        .replace(/\[stock_available\]/g, '25')
-        .replace(/\[price_base\]/g, '85000')
-        .replace(/\[price_without_tax\]/g, '85000');
+      let previewExpression = expression || '';
+      // Reemplazar dinámicamente TODOS los campos numéricos disponibles
+      const numericFields = availableFields
+        .map(f => f.value)
+        .filter(isNumericFieldId);
+      const sampleOf = (id: string): string => {
+        const k = id.toLowerCase();
+        if (/price_previous/.test(k)) return '119999';
+        if (/price_without_tax|price_base/.test(k)) return '85000';
+        if (/product_price|precio$/.test(k)) return '99999';
+        if (/precio_descuento/.test(k)) return '89999';
+        if (/cuota|precio_cuota/.test(k)) return '6';
+        if (/discount|descuento/.test(k)) return '10';
+        if (/stock/.test(k)) return '25';
+        return '0';
+      };
+      numericFields.forEach((id) => {
+        const re = new RegExp(`\\[${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'g');
+        previewExpression = previewExpression.replace(re, sampleOf(id));
+      });
       
       // Validar que solo contenga números, operadores y espacios
       if (previewExpression && /^[0-9+\-*/().\s]+$/.test(previewExpression)) {

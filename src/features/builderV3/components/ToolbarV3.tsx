@@ -17,7 +17,7 @@ import {
   Info,
   Calendar
 } from 'lucide-react';
-import { CustomPaperFormatModal } from './CustomPaperFormatModal';
+// import { CustomPaperFormatModal } from './CustomPaperFormatModal';
 import { ValidityPeriodModal } from './ValidityPeriodModal';
 
 interface ToolbarV3Props {
@@ -30,7 +30,7 @@ interface ToolbarV3Props {
   onZoomReset: () => void;
   onDelete: () => void;
   onPaperFormatChange: (format: string) => void;
-  onCustomPaperFormat?: (width: number, height: number) => void;
+  // onCustomPaperFormat?: (width: number, height: number) => void;
   onToggleCanvasInfo?: () => void;
   onTitleChange: (title: string) => void;
   onOrientationToggle: () => void;
@@ -43,8 +43,8 @@ interface ToolbarV3Props {
   zoomLevel?: number;
   isSaving?: boolean;
   paperFormat?: string;
-  customWidth?: number;
-  customHeight?: number;
+  // customWidth?: number;
+  // customHeight?: number;
   templateTitle?: string;
   hasUnsavedChanges?: boolean;
   orientation?: 'portrait' | 'landscape';
@@ -68,7 +68,7 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   onZoomReset,
   onDelete,
   onPaperFormatChange,
-  onCustomPaperFormat,
+  // onCustomPaperFormat,
   onToggleCanvasInfo,
   onTitleChange,
   onOrientationToggle,
@@ -81,8 +81,8 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   zoomLevel = 100,
   isSaving = false,
   paperFormat = 'A4',
-  customWidth = 210,
-  customHeight = 297,
+  // customWidth = 210,
+  // customHeight = 297,
   templateTitle = 'Nueva Plantilla Sin Título',
   hasUnsavedChanges = false,
   orientation = 'portrait',
@@ -92,10 +92,10 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
     { id: 'A3', name: 'A3', width: 297, height: 420, description: '297 x 420 mm' },
     { id: 'A4', name: 'A4', width: 210, height: 297, description: '210 x 297 mm' },
     { id: 'LETTER', name: 'Carta', width: 216, height: 279, description: '8.5 x 11 in' },
-    { id: 'CUSTOM', name: 'Personalizado', width: 0, height: 0, description: 'Dimensiones personalizadas' }
+    // { id: 'CUSTOM', name: 'Personalizado', width: 0, height: 0, description: 'Dimensiones personalizadas' }
   ]
 }) => {
-  const [showCustomModal, setShowCustomModal] = useState(false);
+  // const [showCustomModal, setShowCustomModal] = useState(false);
   const [showValidityModal, setShowValidityModal] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [localTitle, setLocalTitle] = useState(templateTitle);
@@ -123,19 +123,15 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   };
 
   const handlePaperFormatChange = (format: string) => {
-    if (format === 'CUSTOM') {
-      setShowCustomModal(true);
-    } else {
-      onPaperFormatChange(format);
-    }
+    onPaperFormatChange(format);
   };
 
-  const handleCustomPaperFormat = (width: number, height: number) => {
-    if (onCustomPaperFormat) {
-      onCustomPaperFormat(width, height);
-    }
-    setShowCustomModal(false);
-  };
+  // const handleCustomPaperFormat = (width: number, height: number) => {
+  //   if (onCustomPaperFormat) {
+  //     onCustomPaperFormat(width, height);
+  //   }
+  //   setShowCustomModal(false);
+  // };
 
   const handleValidityPeriodChange = (newValidityPeriod: { startDate: string; endDate: string; enabled: boolean }) => {
     if (onValidityPeriodChange) {
@@ -197,11 +193,8 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
 
   const currentPaperFormat = availablePaperFormats.find(f => f.id === paperFormat) || availablePaperFormats[0];
 
-  // Descripción dinámica para formato personalizado
+  // Descripción dinámica para formato actual
   const getFormatDescription = () => {
-    if (paperFormat === 'CUSTOM') {
-      return `${customWidth} × ${customHeight} mm`;
-    }
     return currentPaperFormat.description;
   };
 
@@ -526,13 +519,7 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
 
 
       {/* Custom Paper Format Modal */}
-      <CustomPaperFormatModal
-        isOpen={showCustomModal}
-        onClose={() => setShowCustomModal(false)}
-        onConfirm={handleCustomPaperFormat}
-        currentWidth={customWidth}
-        currentHeight={customHeight}
-      />
+      {/* Modal de formato personalizado eliminado */}
 
       {/* Validity Period Modal */}
       <ValidityPeriodModal

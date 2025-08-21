@@ -48,7 +48,7 @@ export const useBuilderV3State = ({
     { id: 'A3', name: 'A3', width: 297, height: 420, description: '297 x 420 mm' },
     { id: 'A4', name: 'A4', width: 210, height: 297, description: '210 x 297 mm' },
     { id: 'LETTER', name: 'Carta', width: 216, height: 279, description: '8.5 x 11 in' },
-    { id: 'CUSTOM', name: 'Personalizado', width: 0, height: 0, description: 'Dimensiones personalizadas' }
+    // { id: 'CUSTOM', name: 'Personalizado', width: 0, height: 0, description: 'Dimensiones personalizadas' }
   ];
 
   // =====================

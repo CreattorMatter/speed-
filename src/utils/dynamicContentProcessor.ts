@@ -207,52 +207,43 @@ export const processCalculatedField = (
     // Evaluar la expresión matemática de forma segura
     const result = Function(`"use strict"; return (${processedExpression})`)();
     
-    if (isNaN(result)) {
-      console.error(`❌ Resultado no numérico: ${result}`);
-      return 'Error de cálculo';
+    if (isNaN(result) || !isFinite(result)) {
+      console.error(`❌ Resultado no numérico o infinito: ${result}`);
+      // Fallback seguro a 0 para evitar Infinity en el canvas
+      return formatWithOutput(0, outputFormat);
     }
     
-    // ⚙️ APLICAR OPCIONES DE FORMATO DE LA UI
-    console.log(`🎨 Aplicando opciones de formato:`, outputFormat);
-    
-    let formattedResult = result.toString();
-    
-    // Formatear decimales según la configuración
-    if (outputFormat?.precision && outputFormat.precision !== '0') {
-      if (outputFormat.precision === '2') {
-        formattedResult = Number(result).toFixed(2);
-      } else if (outputFormat.precision === '2-small') {
-        const [whole, decimal] = Number(result).toFixed(2).split('.');
-        formattedResult = `${whole}.${decimal.split('').map(d => String.fromCharCode(0x2070 + parseInt(d))).join('')}`;
-      } else {
-        const precision = parseInt(String(outputFormat.precision));
-        if (!isNaN(precision)) {
-          formattedResult = Number(result).toFixed(precision);
-        }
-      }
-    } else {
-      // Sin decimales
-      formattedResult = Math.round(result).toString();
-    }
-    
-    // Agregar formato de miles con comas
-    if (result >= 1000) {
-      const parts = formattedResult.split('.');
-      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-      formattedResult = parts.join(',');
-    }
-    
-    // Agregar prefijo ($) si está configurado
-    if (outputFormat?.prefix !== false) {
-      formattedResult = `$ ${formattedResult}`;
-    }
-    
-    console.log(`✅ Resultado final con formato: "${formattedResult}"`);
-    return formattedResult;
+    return formatWithOutput(result, outputFormat);
     
   } catch (error) {
     console.error(`❌ Error evaluando expresión "${expression}":`, error);
-    return 'Error de cálculo';
+    return formatWithOutput(0, outputFormat);
+  }
+};
+
+// Helper: aplica formato respetando outputFormat o devuelve string simple
+const formatWithOutput = (value: number, outputFormat?: any): string => {
+  try {
+    let formatted = '';
+    // precision
+    const precision = outputFormat?.precision === '2' ? 2
+      : (typeof outputFormat?.precision === 'string' && !isNaN(parseInt(outputFormat.precision))
+        ? parseInt(outputFormat.precision)
+        : 0);
+    formatted = Number(value).toFixed(precision);
+    // miles
+    if (Math.abs(value) >= 1000) {
+      const parts = formatted.split('.');
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      formatted = parts.join(precision > 0 ? ',' : '');
+    }
+    // prefijo
+    if (outputFormat?.prefix !== false) {
+      formatted = `$ ${formatted}`;
+    }
+    return formatted || '0';
+  } catch {
+    return '0';
   }
 };
 
