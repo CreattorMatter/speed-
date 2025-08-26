@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { LayoutDashboard, Grid, ChevronLeft, ChevronRight, Save, X, Printer } from 'lucide-react';
+import { LayoutDashboard, Grid, ChevronLeft, ChevronRight, Save, X, Printer, Send } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectSelectedProducts, selectProductChanges, trackProductChange, selectHasAnyChanges } from '../../../../../store/features/poster/posterSlice';
@@ -14,10 +14,14 @@ import { getEditableFieldsStats } from '../../../../../utils/templateFieldDetect
 import { ProductChangesModal } from './ProductChangesModal';
 import { ValidityPeriodModal } from './ValidityPeriodModal';
 import { PrintContainer } from './PrintContainer';
+
 import { sendChangeReport } from '../../../../../services/supabaseEmailSMTP';
 // import { CuotasSelector } from './Selectors/CuotasSelector'; // ❌ REMOVIDO: Ahora se edita inline
 
 import { FinancingLogoModal } from '../FinancingLogoModal';
+import { SucursalSelectionModal, type Sucursal } from '../../../../../components/shared/SucursalSelectionModal';
+import { getGroups } from '../../../../../services/rbacService';
+import { PosterSendService } from '../../../../../services/posterSendService';
 
 interface PreviewAreaV3Props {
   selectedFamily?: PosterFamilyData | null;
@@ -43,6 +47,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   const dispatch = useDispatch();
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const printContainerRef = useRef<HTMLDivElement>(null);
+
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   
   // Estado para navegación entre productos
@@ -64,6 +69,10 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   const [selectedDescuento, setSelectedDescuento] = useState<number>(0);
   const [showFinancingModal, setShowFinancingModal] = useState(false);
   const [financingComponentId, setFinancingComponentId] = useState<string | null>(null);
+
+  // 🆕 Estado para envío a sucursales
+  const [showSucursalModal, setShowSucursalModal] = useState(false);
+  const [availableGroups, setAvailableGroups] = useState<Sucursal[]>([]);
 
   // Observer para el tamaño del contenedor
   useEffect(() => {
@@ -633,6 +642,113 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     }
   };
 
+  // 🆕 Función para manejar envío a sucursales
+  const handleSendToSucursales = () => {
+    console.log('📤 Iniciando envío a sucursales...');
+    
+    // Verificar si hay productos seleccionados
+    if (selectedProducts.length === 0) {
+      toast.error('Debes seleccionar al menos un producto para enviar.');
+      return;
+    }
+
+    // Verificar si hay una plantilla seleccionada
+    if (!selectedTemplate) {
+      toast.error('Debes seleccionar una plantilla para enviar.');
+      return;
+    }
+
+    // Cargar grupos reales y luego abrir modal
+    (async () => {
+      try {
+        const groups = await getGroups();
+        const mapped: Sucursal[] = (groups || []).map((g: any) => ({
+          id: g.id,
+          name: g.name,
+          description: g.description,
+          type: 'group',
+          memberCount: Array.isArray((g as any).users) ? (g as any).users.length : undefined
+        }));
+        setAvailableGroups(mapped);
+      } catch (err) {
+        console.error('❌ Error cargando grupos:', err);
+        setAvailableGroups([]);
+      } finally {
+        setShowSucursalModal(true);
+      }
+    })();
+  };
+
+  const handleConfirmSendToSucursales = async (selectedSucursales: Sucursal[]) => {
+    console.log('📤 Enviando a sucursales:', selectedSucursales);
+    
+    if (!selectedTemplate || !printContainerRef.current) {
+      toast.error('Error: No se puede generar el PDF del cartel');
+      return;
+    }
+
+    try {
+      // Mostrar loading
+      toast.loading('Generando y enviando cartel...', { id: 'sending-poster' });
+
+      // 🔧 CLAVE: Activar modo impresión como lo hace handleDirectPrint
+      console.log('🖨️ Preparando contenido de impresión para PDF...');
+      setIsPrinting(true);
+      
+      // 🔧 CLAVE: Esperar el mismo tiempo que la impresión normal para que el DOM se actualice
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      console.log('🎯 Usando elemento de impresión para PDF:', {
+        element: printContainerRef.current,
+        dimensions: {
+          width: printContainerRef.current.offsetWidth,
+          height: printContainerRef.current.offsetHeight
+        }
+      });
+
+      // Preparar templates para el servicio directo
+      const templates = selectedProducts.map(productId => {
+        const product = productos.find((p: ProductoReal) => p.id === productId);
+        if (!product) throw new Error(`Producto no encontrado: ${productId}`);
+        return { product, template: selectedTemplate };
+      });
+
+      // Enviar usando el servicio directo sin transformaciones CSS
+      const sendResult = await PosterSendService.sendToBranches({
+        templateName: selectedTemplate.name,
+        templateId: selectedTemplate.id,
+        productsCount: selectedProducts.length,
+        groups: selectedSucursales.map(s => ({ id: s.id, name: s.name })),
+        selectedProducts: selectedProducts,
+        templates,
+        productChanges,
+        financingCuotas: selectedCuotas,
+        discountPercent: selectedDescuento
+      });
+
+      // Mostrar confirmación
+      toast.success(
+        `Cartel enviado exitosamente a ${selectedSucursales.length} sucursal${selectedSucursales.length !== 1 ? 'es' : ''}`,
+        { id: 'sending-poster' }
+      );
+
+      console.log('✅ Cartel enviado con ID:', sendResult.id);
+      
+      // Cerrar modal
+      setShowSucursalModal(false);
+      
+    } catch (error) {
+      console.error('❌ Error enviando cartel:', error);
+      toast.error(
+        `Error al enviar el cartel: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        { id: 'sending-poster' }
+      );
+    } finally {
+      // 🔧 CLAVE: Desactivar modo impresión igual que handleDirectPrint
+      setIsPrinting(false);
+    }
+  };
+
   // Navegación con teclado y atajos para edición inline
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -806,35 +922,59 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                     </div>
                   )}
 
-                  {/* Botón de imprimir */}
-                  <button
-                    onClick={handlePrintClick}
-                    disabled={selectedProducts.length === 0 || !selectedTemplate || isPrinting}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                      selectedProducts.length === 0 || !selectedTemplate || isPrinting
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : hasAnyChanges
-                          ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-md'
-                          : 'bg-purple-500 text-white hover:bg-purple-600 shadow-md'
-                    }`}
-                    title={
-                      selectedProducts.length === 0 
-                        ? 'Selecciona productos para imprimir'
-                        : !selectedTemplate
-                          ? 'Selecciona una plantilla para imprimir'
+                  {/* Botones de acción */}
+                  <div className="flex gap-3">
+                    {/* Botón de imprimir */}
+                    <button
+                      onClick={handlePrintClick}
+                      disabled={selectedProducts.length === 0 || !selectedTemplate || isPrinting}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                        selectedProducts.length === 0 || !selectedTemplate || isPrinting
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           : hasAnyChanges
-                            ? 'Imprimir con reporte de cambios'
-                            : 'Imprimir plantillas'
-                    }
-                  >
-                    <Printer className="w-4 h-4" />
-                    {isPrinting ? 'Imprimiendo...' : hasAnyChanges ? 'Imprimir con Cambios' : 'Imprimir'}
-                    {hasAnyChanges && (
-                      <span className="bg-orange-600 text-white text-xs px-2 py-1 rounded-full ml-1">
-                        {Object.keys(productChanges).length}
-                      </span>
-                    )}
-                  </button>
+                            ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-md'
+                            : 'bg-purple-500 text-white hover:bg-purple-600 shadow-md'
+                      }`}
+                      title={
+                        selectedProducts.length === 0 
+                          ? 'Selecciona productos para imprimir'
+                          : !selectedTemplate
+                            ? 'Selecciona una plantilla para imprimir'
+                            : hasAnyChanges
+                              ? 'Imprimir con reporte de cambios'
+                              : 'Imprimir plantillas'
+                      }
+                    >
+                      <Printer className="w-4 h-4" />
+                      {isPrinting ? 'Imprimiendo...' : hasAnyChanges ? 'Imprimir con Cambios' : 'Imprimir'}
+                      {hasAnyChanges && (
+                        <span className="bg-orange-600 text-white text-xs px-2 py-1 rounded-full ml-1">
+                          {Object.keys(productChanges).length}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Botón de enviar a sucursal */}
+                    <button
+                      onClick={handleSendToSucursales}
+                      disabled={selectedProducts.length === 0 || !selectedTemplate}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                        selectedProducts.length === 0 || !selectedTemplate
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-md'
+                      }`}
+                      title={
+                        selectedProducts.length === 0 
+                          ? 'Selecciona productos para enviar'
+                          : !selectedTemplate
+                            ? 'Selecciona una plantilla para enviar'
+                            : 'Enviar cartel a sucursales'
+                      }
+                    >
+                      <Send className="w-4 h-4" />
+                      Enviar a Sucursal
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1098,6 +1238,17 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
             setFinancingComponentId(null);
           }}
           onSelect={handleFinancingLogoSelect}
+        />
+
+
+
+        {/* 🆕 Modal de selección de sucursales */}
+        <SucursalSelectionModal
+          isOpen={showSucursalModal}
+          onClose={() => setShowSucursalModal(false)}
+          onConfirm={handleConfirmSendToSucursales}
+          title="Enviar Cartel a Sucursales"
+          groups={availableGroups}
         />
       </div>
     </div>

@@ -41,7 +41,8 @@ const initialGroups: Group[] = [
     description: 'Usuarios de la sucursal Almagro',
     created_at: '2024-01-15T10:00:00Z',
     created_by: 'usr_1',
-    users: ['usr_2']
+    users: ['usr_2'],
+    enabledCards: ['cartel', 'recibidos'] // Solo cartel y recibidos para sucursales
   },
   { 
     id: 'grp_2', 
@@ -49,7 +50,8 @@ const initialGroups: Group[] = [
     description: 'Equipo editorial y creativo',
     created_at: '2024-02-01T10:00:00Z',
     created_by: 'usr_1',
-    users: ['usr_2']
+    users: ['usr_2'],
+    enabledCards: ['cartel', 'builder', 'enviados'] // Editorial puede crear y enviar
   }
 ];
 

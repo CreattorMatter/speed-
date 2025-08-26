@@ -79,14 +79,21 @@ export const generateThumbnailFromCanvas = async (
     const originalWidth = canvasElement.style.width;
     const originalHeight = canvasElement.style.height;
     
-    // Obtener las dimensiones reales del template sin zoom
-    const templateWidth = parseInt(canvasElement.getAttribute('data-template-width') || canvasElement.style.width || '0');
-    const templateHeight = parseInt(canvasElement.getAttribute('data-template-height') || canvasElement.style.height || '0');
-    
-    if (templateWidth > 0 && templateHeight > 0) {
-      canvasElement.style.width = `${templateWidth}px`;
-      canvasElement.style.height = `${templateHeight}px`;
-    }
+    // Quitar estilos visuales que desalinean (sombra/borde) para una captura centrada
+    const originalBoxShadow = (canvasElement.style as any).boxShadow;
+    const originalBorder = canvasElement.style.border;
+    const originalMargin = canvasElement.style.margin;
+    const originalLeft = canvasElement.style.left;
+    const originalTop = canvasElement.style.top;
+    canvasElement.style.boxShadow = 'none';
+    canvasElement.style.border = 'none';
+    canvasElement.style.margin = '0';
+    canvasElement.style.left = '0';
+    canvasElement.style.top = '0';
+
+    // Obtener dimensiones informativas del template (no forzar px para evitar distorsión)
+    const templateWidth = parseInt(canvasElement.getAttribute('data-template-width') || '0');
+    const templateHeight = parseInt(canvasElement.getAttribute('data-template-height') || '0');
     
     console.log('🎯 Capturando canvas con dimensiones:', {
       width: canvasElement.style.width,
@@ -98,18 +105,57 @@ export const generateThumbnailFromCanvas = async (
     // Esperar un momento para que se apliquen los estilos
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    const dataUrl = await domToImage.toJpeg(canvasElement, {
+    // Ocultar overlays (regla, grilla, guías, selección) para una captura limpia
+    const hiddenOverlays: HTMLElement[] = [];
+    canvasElement.querySelectorAll('[data-overlay]')?.forEach((el: Element) => {
+      const htmlEl = el as HTMLElement;
+      if (htmlEl && htmlEl.style) {
+        hiddenOverlays.push(htmlEl);
+        htmlEl.style.display = 'none';
+      }
+    });
+
+    // Envolver el canvas en un contenedor temporal centrado para la captura
+    const wrapper = document.createElement('div');
+    const parent = canvasElement.parentElement as HTMLElement;
+    const originalNext = canvasElement.nextSibling;
+    parent?.insertBefore(wrapper, canvasElement);
+    wrapper.appendChild(canvasElement);
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.justifyContent = 'center';
+    wrapper.style.backgroundColor = backgroundColor;
+    // El wrapper debe tener al menos el tamaño del canvas renderizado
+    wrapper.style.width = `${rect.width}px`;
+    wrapper.style.height = `${rect.height}px`;
+
+    // Usar dom-to-image más robusto con scroll fix: convertir el wrapper completo, no solo viewport
+    const dataUrl = await domToImage.toJpeg(wrapper, {
       quality,
       bgcolor: backgroundColor,
       cacheBust: true
     } as any);
     
-    // Restaurar estilos originales
+    // Restaurar DOM y estilos originales
+    if (originalNext) {
+      parent?.insertBefore(canvasElement, originalNext);
+    } else {
+      parent?.appendChild(canvasElement);
+    }
+    wrapper.remove();
     canvasElement.style.transform = originalTransform;
     canvasElement.style.zoom = originalZoom;
     canvasElement.style.scale = originalScale;
     canvasElement.style.width = originalWidth;
     canvasElement.style.height = originalHeight;
+    canvasElement.style.boxShadow = originalBoxShadow || '';
+    canvasElement.style.border = originalBorder || '';
+    canvasElement.style.margin = originalMargin || '';
+    canvasElement.style.left = originalLeft || '';
+    canvasElement.style.top = originalTop || '';
+
+    // Restaurar overlays ocultos
+    hiddenOverlays.forEach(el => (el.style.display = ''));
 
     // =====================
     // REDIMENSIONAR PARA THUMBNAIL
@@ -205,7 +251,7 @@ const resizeImageToThumbnail = async (
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, targetWidth, targetHeight);
 
-      // Calcular dimensiones manteniendo aspect ratio
+      // Calcular dimensiones manteniendo aspect ratio (con margen de seguridad)
       const sourceRatio = img.width / img.height;
       const targetRatio = targetWidth / targetHeight;
       
@@ -213,16 +259,21 @@ const resizeImageToThumbnail = async (
       let drawHeight = targetHeight;
       let drawX = 0;
       let drawY = 0;
+      // Márgenes de seguridad: solo vertical para que el header no quede al ras
+      const verticalPad = 0.06;   // 6% arriba/abajo
+      const horizontalPad = 0;    // 0% izquierda/derecha
 
       if (sourceRatio > targetRatio) {
-        // Imagen más ancha, ajustar por altura
-        drawHeight = targetHeight;
-        drawWidth = targetHeight * sourceRatio;
+        // Imagen más ancha, ajustar por altura con padding vertical
+        drawHeight = targetHeight * (1 - verticalPad * 2);
+        drawWidth = drawHeight * sourceRatio;
         drawX = (targetWidth - drawWidth) / 2;
+        drawY = (targetHeight - drawHeight) / 2;
       } else {
-        // Imagen más alta, ajustar por ancho
-        drawWidth = targetWidth;
-        drawHeight = targetWidth / sourceRatio;
+        // Imagen más alta, ajustar por ancho sin padding horizontal
+        drawWidth = targetWidth * (1 - horizontalPad * 2); // horizontalPad=0 → ancho completo
+        drawHeight = drawWidth / sourceRatio;
+        drawX = (targetWidth - drawWidth) / 2;
         drawY = (targetHeight - drawHeight) / 2;
       }
 

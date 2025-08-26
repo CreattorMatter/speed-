@@ -8,10 +8,15 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "test": "echo \"No tests specified yet\"",
+    "test:ci": "echo \"No tests specified yet\"",
     "seed:admin": "node src/scripts/seedAdmin.mjs",
     "setup:thumbnails": "node src/scripts/runThumbnailSetup.cjs",
     "test:thumbnails": "node src/scripts/testThumbnails.js",
-    "clean:test-thumbnails": "node src/scripts/cleanTestThumbnails.js"
+    "clean:test-thumbnails": "node src/scripts/cleanTestThumbnails.js",
+    "deploy:dev": "npm run build && echo 'Deploy to dev triggered by push to develop branch'",
+    "deploy:test": "npm run build && echo 'Deploy to test triggered by push to test branch'",
+    "deploy:prod": "npm run build && echo 'Deploy to prod triggered by push to main branch'"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -34,6 +39,7 @@
     "crewai": "^1.0.1",
     "date-fns": "^4.1.0",
     "dom-to-image-improved": "^2.8.0",
+    "dom-to-image-more": "^3.7.1",
     "express": "^5.1.0",
     "framer-motion": "^10.18.0",
     "globals": "^15.13.0",

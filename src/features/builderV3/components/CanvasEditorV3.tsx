@@ -106,17 +106,20 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
         >
           {/* Enhanced Rulers - Positioned to align with canvas edges */}
           {canvasState.showRulers && template.canvas && template.canvas.width > 0 && template.canvas.height > 0 && (
-            <EnhancedRulers
-              width={template.canvas.width * canvasState.zoom}
-              height={template.canvas.height * canvasState.zoom}
-              zoom={canvasState.zoom}
-              visible={true}
-              rulerUnit={rulerUnit || 'mm'}
-            />
+            <div data-overlay="rulers">
+              <EnhancedRulers
+                width={template.canvas.width * canvasState.zoom}
+                height={template.canvas.height * canvasState.zoom}
+                zoom={canvasState.zoom}
+                visible={true}
+                rulerUnit={rulerUnit || 'mm'}
+              />
+            </div>
           )}
           {/* Enhanced Grid */}
           {canvasState.showGrid && (
             <div
+              data-overlay="grid"
               className="absolute inset-0 pointer-events-none"
               style={{
                 backgroundImage: `
@@ -132,6 +135,7 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
           {/* Smart Guides */}
           {canvasState.showGrid && canvasState.guides.map(guide => (
             <div
+              data-overlay="guides"
               key={guide.id}
               className="absolute pointer-events-none z-20"
               style={{
@@ -185,6 +189,7 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
           {/* Selection Box */}
           {isSelecting && selectionStart && selectionEnd && (
             <div
+              data-overlay="selection"
               className="absolute pointer-events-none z-40 border-2 border-blue-500 bg-blue-100 bg-opacity-20"
               style={{
                 left: `${Math.min(selectionStart.x, selectionEnd.x) * canvasState.zoom}px`,
@@ -197,6 +202,7 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
 
           {/* 🚀 Modularized Multi-Selection Overlay */}
           <MultiSelectionOverlay
+            data-overlay="selection"
             components={components.filter(c => selectedComponentIds.includes(c.id))}
             zoom={canvasState.zoom}
             selectionStyle={canvasState.selectionStyle}

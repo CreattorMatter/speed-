@@ -1,8 +1,55 @@
 import React, { useState } from 'react';
-import { Users, Plus, Edit2, Trash2, Search, UserPlus, UserMinus, MoreVertical } from 'lucide-react';
+import { Users, Plus, Edit2, Trash2, Search, UserPlus, UserMinus, MoreVertical, FileText, LayoutTemplate, Settings, Inbox, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import type { Group, User, Role } from '@/types';
+
+// Definir las cards disponibles
+export interface DashboardCard {
+  id: string;
+  name: string;
+  description: string;
+  icon: any;
+  color: string;
+}
+
+const AVAILABLE_CARDS: DashboardCard[] = [
+  {
+    id: 'cartel',
+    name: 'Cartel',
+    description: 'Crear carteles promocionales y informativos',
+    icon: FileText,
+    color: 'violet'
+  },
+  {
+    id: 'builder',
+    name: 'Builder',
+    description: 'Diseñar templates personalizados',
+    icon: LayoutTemplate,
+    color: 'emerald'
+  },
+  {
+    id: 'administracion',
+    name: 'Administración',
+    description: 'Gestión avanzada de usuarios y configuraciones',
+    icon: Settings,
+    color: 'blue'
+  },
+  {
+    id: 'recibidos',
+    name: 'Recibidos',
+    description: 'Visualizar elementos recibidos',
+    icon: Inbox,
+    color: 'cyan'
+  },
+  {
+    id: 'enviados',
+    name: 'Enviados',
+    description: 'Revisar elementos enviados',
+    icon: Send,
+    color: 'fuchsia'
+  }
+];
 
 interface GroupsManagementProps {
   groups: Group[];
@@ -30,6 +77,7 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showUsersModal, setShowUsersModal] = useState(false);
+  const [showCardsModal, setShowCardsModal] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
   // Filter groups based on search
@@ -52,6 +100,12 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({
   const handleManageUsers = (group: Group) => {
     setSelectedGroup(group);
     setShowUsersModal(true);
+    setActiveMenu(null);
+  };
+
+  const handleConfigureCards = (group: Group) => {
+    setSelectedGroup(group);
+    setShowCardsModal(true);
     setActiveMenu(null);
   };
 
@@ -166,6 +220,13 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({
                             >
                               <UserPlus className="w-4 h-4 mr-2" />
                               Gestionar Usuarios
+                            </button>
+                            <button
+                              onClick={() => handleConfigureCards(group)}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                            >
+                              <LayoutTemplate className="w-4 h-4 mr-2" />
+                              Configurar Cards
                             </button>
                             <button
                               onClick={() => handleDeleteGroup(group)}
@@ -293,6 +354,14 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({
         onClose={() => setShowUsersModal(false)}
         onAddUserToGroup={onAddUserToGroup}
         onRemoveUserFromGroup={onRemoveUserFromGroup}
+      />
+
+      <ConfigureCardsModal
+        isOpen={showCardsModal}
+        group={selectedGroup}
+        onClose={() => setShowCardsModal(false)}
+        onUpdateGroup={onUpdateGroup}
+        availableCards={AVAILABLE_CARDS}
       />
     </div>
   );
@@ -711,6 +780,234 @@ const ManageUsersModal: React.FC<ManageUsersModalProps> = ({
               Cerrar
             </button>
           </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+// Configure Cards Modal Component
+interface ConfigureCardsModalProps {
+  isOpen: boolean;
+  group: Group | null;
+  onClose: () => void;
+  onUpdateGroup: (groupId: string, groupData: Partial<Group>) => Promise<void>;
+  availableCards: DashboardCard[];
+}
+
+const ConfigureCardsModal: React.FC<ConfigureCardsModalProps> = ({
+  isOpen,
+  group,
+  onClose,
+  onUpdateGroup,
+  availableCards
+}) => {
+  const [selectedCards, setSelectedCards] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (group) {
+      // Si el grupo tiene cards configuradas, usarlas; si no, usar todas por defecto
+      const groupCards = group.enabledCards || availableCards.map(c => c.id);
+      setSelectedCards(groupCards);
+    }
+  }, [group, availableCards]);
+
+  const handleToggleCard = (cardId: string) => {
+    setSelectedCards(prev => 
+      prev.includes(cardId)
+        ? prev.filter(id => id !== cardId)
+        : [...prev, cardId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedCards.length === availableCards.length) {
+      setSelectedCards([]);
+    } else {
+      setSelectedCards(availableCards.map(c => c.id));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!group) return;
+
+    setIsLoading(true);
+    try {
+      await onUpdateGroup(group.id, {
+        ...group,
+        enabledCards: selectedCards
+      });
+      toast.success('Configuración de cards actualizada');
+      onClose();
+    } catch (error) {
+      toast.error('Error al actualizar la configuración');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getCardColorClasses = (color: string, isSelected: boolean) => {
+    const baseClasses = {
+      bg: isSelected ? 'border-2' : 'border-2',
+      icon: isSelected ? '' : 'text-gray-400'
+    };
+
+    switch (color) {
+      case 'violet':
+        return {
+          ...baseClasses,
+          bg: isSelected ? 'bg-violet-50 border-violet-500' : 'bg-gray-50 border-gray-200',
+          icon: isSelected ? 'text-violet-600' : 'text-gray-400',
+          checkbox: isSelected ? 'border-violet-500 bg-violet-500' : 'border-gray-300'
+        };
+      case 'emerald':
+        return {
+          ...baseClasses,
+          bg: isSelected ? 'bg-emerald-50 border-emerald-500' : 'bg-gray-50 border-gray-200',
+          icon: isSelected ? 'text-emerald-600' : 'text-gray-400',
+          checkbox: isSelected ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
+        };
+      case 'blue':
+        return {
+          ...baseClasses,
+          bg: isSelected ? 'bg-blue-50 border-blue-500' : 'bg-gray-50 border-gray-200',
+          icon: isSelected ? 'text-blue-600' : 'text-gray-400',
+          checkbox: isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+        };
+      case 'cyan':
+        return {
+          ...baseClasses,
+          bg: isSelected ? 'bg-cyan-50 border-cyan-500' : 'bg-gray-50 border-gray-200',
+          icon: isSelected ? 'text-cyan-600' : 'text-gray-400',
+          checkbox: isSelected ? 'border-cyan-500 bg-cyan-500' : 'border-gray-300'
+        };
+      case 'fuchsia':
+        return {
+          ...baseClasses,
+          bg: isSelected ? 'bg-fuchsia-50 border-fuchsia-500' : 'bg-gray-50 border-gray-200',
+          icon: isSelected ? 'text-fuchsia-600' : 'text-gray-400',
+          checkbox: isSelected ? 'border-fuchsia-500 bg-fuchsia-500' : 'border-gray-300'
+        };
+      default:
+        return {
+          ...baseClasses,
+          bg: isSelected ? 'bg-blue-50 border-blue-500' : 'bg-gray-50 border-gray-200',
+          icon: isSelected ? 'text-blue-600' : 'text-gray-400',
+          checkbox: isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+        };
+    }
+  };
+
+  if (!isOpen || !group) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+        >
+          <form onSubmit={handleSubmit}>
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900">
+                Configurar Cards - {group.name}
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Selecciona qué cards estarán disponibles para este grupo en el dashboard
+              </p>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {/* Select All Button */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="text-sm text-gray-600">
+                  {selectedCards.length} de {availableCards.length} cards seleccionadas
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSelectAll}
+                  className="px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                >
+                  {selectedCards.length === availableCards.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
+                </button>
+              </div>
+
+              {/* Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {availableCards.map((card) => {
+                  const isSelected = selectedCards.includes(card.id);
+                  const colorClasses = getCardColorClasses(card.color, isSelected);
+                  const Icon = card.icon;
+                  
+                  return (
+                    <motion.div
+                      key={card.id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${colorClasses.bg}`}
+                      onClick={() => handleToggleCard(card.id)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-lg ${colorClasses.icon}`}>
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900">
+                              {card.name}
+                            </h4>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {card.description}
+                            </p>
+                          </div>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${colorClasses.checkbox}`}>
+                          {isSelected && (
+                            <div className="w-2 h-2 bg-white rounded-full" />
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {selectedCards.length === 0 && (
+                <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ Al menos una card debe estar seleccionada para que los usuarios del grupo puedan acceder al dashboard.
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center justify-end space-x-3 px-6 py-4 bg-gray-50 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={selectedCards.length === 0 || isLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Guardando...' : 'Guardar Configuración'}
+              </button>
+            </div>
+          </form>
         </motion.div>
       </motion.div>
     </AnimatePresence>

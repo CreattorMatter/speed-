@@ -28,6 +28,8 @@ import { BuilderV3 } from './features/builderV3/components/BuilderV3';
 import { BranchDashboard } from './features/branchView/components/BranchDashboard';
 import Products from './features/products/Products';
 import DigitalCarouselEditor from './features/digital-carousel/components/DigitalCarouselEditor';
+import { Enviados } from './pages/Enviados';
+import { Recibidos } from './pages/Recibidos';
 
 
 export interface DashboardProps {
@@ -471,6 +473,34 @@ function AppContent() {
         <Route path="/playlist/:id" element={<CarouselView />} />
 
         <Route path="/enhanced-builder" element={<div>Enhanced Builder (ruta por definir)</div>} />
+
+        <Route
+          path="/enviados"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Enviados
+                onBack={handleBack}
+                onLogout={handleLogout}
+                userEmail={user?.email || ''}
+                userName={user?.name || ''}
+              />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/recibidos"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'sucursal']}>
+              <Recibidos
+                onBack={handleBack}
+                onLogout={handleLogout}
+                userEmail={user?.email || ''}
+                userName={user?.name || ''}
+              />
+            </ProtectedRoute>
+          }
+        />
 
         {/* 🆕 Error Pages */}
         <Route 

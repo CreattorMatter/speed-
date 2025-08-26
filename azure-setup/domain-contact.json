@@ -1,0 +1,17 @@
+{
+  "contactInfo": {
+    "email": "tu-email@ejemplo.com",
+    "nameFirst": "Tu Nombre",
+    "nameLast": "Tu Apellido",
+    "phone": "+1234567890",
+    "addressMailing": {
+      "address1": "Tu Dirección",
+      "city": "Tu Ciudad",
+      "country": "US",
+      "postalCode": "12345",
+      "state": "Tu Estado"
+    }
+  },
+  "privacy": true,
+  "autoRenew": true
+}

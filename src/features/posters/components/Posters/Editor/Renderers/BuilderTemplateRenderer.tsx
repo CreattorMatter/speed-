@@ -21,6 +21,7 @@ interface BuilderTemplateRendererProps {
   onFinancingImageClick?: (componentId: string) => void; // 🆕 Callback para clic en imagen de financiación
   financingCuotas?: number; // 🆕 Cuotas seleccionadas para cálculos
   discountPercent?: number; // 🆕 Descuento seleccionado para cálculos
+  isPdfCapture?: boolean; // 🆕 Modo captura PDF para ajustar estilos anti-recorte
 }
 
 /**
@@ -874,7 +875,8 @@ const renderComponent = (
   enableInlineEdit?: boolean,
   onFinancingImageClick?: (componentId: string) => void,
   financingCuotas?: number,  // 🆕 Cuotas para cálculos de financiación
-  discountPercent?: number   // 🆕 Descuento para cálculos de descuento
+  discountPercent?: number,   // 🆕 Descuento para cálculos de descuento
+  isPdfCapture: boolean = false
 ) => {
   const { type, content, style } = component;
   const baseStyles = getBaseComponentStyles(component);
@@ -924,7 +926,10 @@ const renderComponent = (
       const baseStyle: React.CSSProperties = {
         ...baseStyles,
         textAlign: textValidAlign,
-        whiteSpace: 'pre-wrap'
+        whiteSpace: 'pre-wrap',
+        // 🛡️ En modo captura PDF evitar recortes por métricas de fuente
+        overflow: isPdfCapture ? 'visible' : baseStyles.overflow,
+        padding: isPdfCapture ? 2 : (baseStyles as any).padding
       };
       
       const textContent = textValue?.toString() || 
@@ -1488,44 +1493,106 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
   enableInlineEdit = false,
   onFinancingImageClick,
   financingCuotas = 0,
-  discountPercent = 0
+  discountPercent = 0,
+  isPdfCapture = false
 }) => {
 
   // Filtrar componentes visibles y ordenarlos por z-index
-  const visibleComponents = components
+  const safeComponents = Array.isArray(components) ? components : [];
+  const visibleComponents = safeComponents
     .filter(c => c.isVisible !== false)
     .sort((a, b) => (a.position.z || 0) - (b.position.z || 0));
 
+  // Dimensiones seguras del template con fallbacks
+  const canvasWidth = template?.canvas?.width || (template as any)?.width || 1240;
+  const canvasHeight = template?.canvas?.height || (template as any)?.height || 1754;
+  const canvasBackground = template?.canvas?.backgroundColor || '#FFFFFF';
+  const canvasBackgroundImage = template?.canvas?.backgroundImage;
+
   const containerStyle: React.CSSProperties = {
     position: 'relative',
-    width: template.canvas.width,
-    height: template.canvas.height,
-    backgroundColor: template.canvas.backgroundColor || '#FFFFFF',
-    backgroundImage: template.canvas.backgroundImage ? `url(${template.canvas.backgroundImage})` : undefined,
+    width: canvasWidth,
+    height: canvasHeight,
+    backgroundColor: canvasBackground,
+    backgroundImage: canvasBackgroundImage ? `url(${canvasBackgroundImage})` : undefined,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
-    overflow: 'hidden',
+    overflow: isPdfCapture ? 'visible' : 'hidden',
   };
 
   return (
     <div style={containerStyle}>
       {visibleComponents.map(component => {
-        // 🎯 SOLO POSICIONAMIENTO: Como en CanvasEditorV3, solo aplicar transform y posición
-        const componentPositionStyle: React.CSSProperties = {
+        const rotation = component.position.rotation || 0;
+        const scaleX = component.position.scaleX || 1;
+        const scaleY = component.position.scaleY || 1;
+
+        // 🎯 Posicionamiento base
+        let componentPositionStyle: React.CSSProperties = {
           position: 'absolute',
           left: `${component.position.x}px`,
           top: `${component.position.y}px`,
           width: `${component.size.width}px`,
           height: `${component.size.height}px`,
-          transform: `rotate(${component.position.rotation || 0}deg) scale(${component.position.scaleX || 1}, ${component.position.scaleY || 1})`,
+          transform: `rotate(${rotation}deg) scale(${scaleX}, ${scaleY})`,
           visibility: component.isVisible ? 'visible' : 'hidden',
           zIndex: component.position.z,
         };
 
+        // 🧩 En modo captura PDF, evitar cortes por transform scale moviendo el scale a un contenedor interno
+        const useInnerScale = isPdfCapture && (scaleX !== 1 || scaleY !== 1);
+        if (useInnerScale) {
+          componentPositionStyle = {
+            position: 'absolute',
+            left: `${component.position.x}px`,
+            top: `${component.position.y}px`,
+            width: `${component.size.width * scaleX}px`,
+            height: `${component.size.height * scaleY}px`,
+            transform: `rotate(${rotation}deg)`,
+            visibility: component.isVisible ? 'visible' : 'hidden',
+            zIndex: component.position.z,
+          };
+        }
+
         return (
           <div key={component.id} style={componentPositionStyle}>
-            {renderComponent(component, product, isPreview, productChanges, onEditField, onPendingChange, enableInlineEdit, onFinancingImageClick, financingCuotas, discountPercent)}
+            {useInnerScale ? (
+              <div style={{
+                width: `${component.size.width}px`,
+                height: `${component.size.height}px`,
+                transform: `scale(${scaleX}, ${scaleY})`,
+                transformOrigin: 'top left'
+              }}>
+                {renderComponent(
+                  component,
+                  product,
+                  isPreview,
+                  productChanges,
+                  onEditField,
+                  onPendingChange,
+                  enableInlineEdit,
+                  onFinancingImageClick,
+                  financingCuotas,
+                  discountPercent,
+                  isPdfCapture
+                )}
+              </div>
+            ) : (
+              renderComponent(
+                component,
+                product,
+                isPreview,
+                productChanges,
+                onEditField,
+                onPendingChange,
+                enableInlineEdit,
+                onFinancingImageClick,
+                financingCuotas,
+                discountPercent,
+                isPdfCapture
+              )
+            )}
           </div>
         );
       })}

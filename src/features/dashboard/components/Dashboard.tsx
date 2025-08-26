@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { Package2, Tags, FileText, LayoutTemplate, Settings, BarChart3, Monitor, Sparkles, TrendingUp, Users, Calendar } from 'lucide-react';
+import { useState } from 'react';
+import { Package2, FileText, LayoutTemplate, Settings, Sparkles, TrendingUp, Users, Calendar, Inbox, Send } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Header } from '../../../components/shared/Header';
 
 import { NewsModal } from '../../../components/shared/NewsModal';
-import { useTheme } from '../../../hooks/useTheme';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -37,15 +37,12 @@ export default function Dashboard({
   onLogout, 
   onNewTemplate, 
   onNewPoster, 
-  onProducts, 
-  onPromotions, 
   onBack, 
   userEmail,
   onSettings,
-  userRole,
-  onAnalytics
+  userRole
 }: DashboardProps) {
-  const { theme } = useTheme();
+  const navigate = useNavigate();
   
   // Datos de ejemplo - Nuevas métricas
   const stats: DashboardStats = {
@@ -161,7 +158,7 @@ export default function Dashboard({
         </motion.div>
 
         {/* Main Action Cards Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-12">
           {/* Cartel Card */}
           {!isEasyPilarUser(userEmail) && (
             <motion.div
@@ -171,7 +168,7 @@ export default function Dashboard({
               whileHover={{ y: -5 }}
               className="group"
             >
-              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 dark:from-violet-600 dark:via-purple-700 dark:to-indigo-700 p-8 h-64 shadow-2xl hover:shadow-violet-500/25 transition-all duration-500">
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-600 dark:from-violet-600 dark:via-purple-700 dark:to-indigo-700 p-8 h-80 shadow-2xl hover:shadow-violet-500/25 transition-all duration-500">
                 <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <div className="relative z-10 h-full flex flex-col justify-between">
                   <div className="flex items-start justify-between">
@@ -204,7 +201,7 @@ export default function Dashboard({
               whileHover={{ y: -5 }}
               className="group"
             >
-              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 p-8 h-64 shadow-2xl hover:shadow-emerald-500/25 transition-all duration-500">
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 p-8 h-80 shadow-2xl hover:shadow-emerald-500/25 transition-all duration-500">
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <div className="relative z-10 h-full flex flex-col justify-between">
                   <div className="flex items-start justify-between">
@@ -237,7 +234,7 @@ export default function Dashboard({
               whileHover={{ y: -5 }}
               className="group"
             >
-              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-700 dark:from-blue-600 dark:via-indigo-700 dark:to-purple-800 p-8 h-64 shadow-2xl hover:shadow-blue-500/25 transition-all duration-500">
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-700 dark:from-blue-600 dark:via-indigo-700 dark:to-purple-800 p-8 h-80 shadow-2xl hover:shadow-blue-500/25 transition-all duration-500">
                 <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <div className="relative z-10 h-full flex flex-col justify-between">
                   <div className="flex items-start justify-between">
@@ -256,6 +253,68 @@ export default function Dashboard({
                       className="w-full py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl text-white font-semibold transition-all duration-300 border border-white/20 hover:border-white/40"
                     >
                       Panel Admin
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Recibidos - Solo ADMIN por ahora */}
+          {userRole === 'admin' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55 }}
+              whileHover={{ y: -5 }}
+              className="group"
+            >
+             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-500 via-teal-600 to-emerald-600 dark:from-cyan-600 dark:via-teal-700 dark:to-emerald-700 p-8 h-80 shadow-2xl hover:shadow-cyan-500/25 transition-all duration-500">   <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10 h-full flex flex-col justify-between">
+                  <div className="flex items-start justify-between">
+                    <div className="p-4 bg-gradient-to-br from-emerald-400/40 to-teal-500/40 rounded-2xl backdrop-blur-sm group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 ring-1 ring-white/20">
+                      <Inbox className="w-8 h-8 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Recibidos</h3>
+                    <p className="text-white/80 mb-4 text-sm leading-relaxed">Elementos recibidos</p>
+                    <button
+                      onClick={() => navigate('/recibidos')}
+                      className="w-full py-2.5 bg-white/20 hover:bg-white/30 rounded-xl text-white font-semibold transition-all duration-300 border border-white/20 hover:border-white/40"
+                    >
+                      Ver Recibidos
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Enviados - Solo ADMIN por ahora */}
+          {userRole === 'admin' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              whileHover={{ y: -5 }}
+              className="group"
+            >
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-500 via-pink-600 to-rose-600 dark:from-fuchsia-600 dark:via-pink-700 dark:to-rose-700 p-8 h-80 shadow-2xl hover:shadow-fuchsia-500/25 transition-all duration-500">    <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10 h-full flex flex-col justify-between">
+                  <div className="flex items-start justify-between">
+                    <div className="p-4 bg-gradient-to-br from-rose-400/40 to-pink-500/40 rounded-2xl backdrop-blur-sm group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 ring-1 ring-white/20">
+                      <Send className="w-8 h-8 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Enviados</h3>
+                    <p className="text-white/80 mb-4 text-sm leading-relaxed">Elementos enviados</p>
+                    <button
+                      onClick={() => navigate('/enviados')}
+                      className="w-full py-2.5 bg-white/20 hover:bg-white/30 rounded-xl text-white font-semibold transition-all duration-300 border border-white/20 hover:border-white/40"
+                    >
+                      Ver Enviados
                     </button>
                   </div>
                 </div>

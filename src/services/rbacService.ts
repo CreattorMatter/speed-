@@ -8,6 +8,32 @@ const isDbReady = (): boolean => {
   return !!(db as any)?.from;
 };
 
+// Local persistence for features not yet in DB schema (e.g., enabledCards per group)
+const getLocalEnabledCards = (groupId: string): string[] | undefined => {
+  try {
+    if (typeof window === 'undefined') return undefined;
+    const raw = window.localStorage.getItem(`spid:group:enabledCards:${groupId}`);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as string[]) : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const setLocalEnabledCards = (groupId: string, cards: string[] | undefined): void => {
+  try {
+    if (typeof window === 'undefined') return;
+    if (!cards || cards.length === 0) {
+      window.localStorage.removeItem(`spid:group:enabledCards:${groupId}`);
+    } else {
+      window.localStorage.setItem(`spid:group:enabledCards:${groupId}`, JSON.stringify(cards));
+    }
+  } catch {
+    // ignore
+  }
+};
+
 // Roles
 export async function getRoles(): Promise<Role[]> {
   if (!isDbReady()) {
@@ -310,7 +336,12 @@ export async function getGroups(): Promise<Group[]> {
     .from('groups')
     .select('id,name,description,created_at,created_by');
   if (error) throw error;
-  return (data || []) as Group[];
+  // Merge local enabledCards if present
+  const groups = (data || []) as Group[];
+  return groups.map((g: Group) => {
+    const enabledCards = getLocalEnabledCards(g.id);
+    return enabledCards ? { ...g, enabledCards } : g;
+  });
 }
 
 export async function createGroup(group: Omit<Group, 'id'|'created_at'|'created_by'> & { created_by?: string }): Promise<Group> {
@@ -328,8 +359,31 @@ export async function createGroup(group: Omit<Group, 'id'|'created_at'|'created_
 
 export async function updateGroupDb(groupId: string, updates: Partial<Group>): Promise<void> {
   if (!isDbReady()) return;
-  const { error } = await db.from('groups').update(updates).eq('id', groupId);
-  if (error) throw error;
+  // Persist enabledCards locally (DB column may not exist yet)
+  if (typeof (updates as any).enabledCards !== 'undefined') {
+    setLocalEnabledCards(groupId, (updates as any).enabledCards as string[]);
+  }
+  // Only send whitelisted columns to avoid schema mismatches across environments
+  const allowedKeys: Array<keyof Group> = ['name', 'description', 'created_by'];
+  const payload: Record<string, any> = {};
+  for (const key of allowedKeys) {
+    if (key in (updates || {})) {
+      payload[key] = (updates as any)[key];
+    }
+  }
+
+  // If nothing to update, silently succeed (e.g., only UI-only props like enabledCards)
+  if (Object.keys(payload).length === 0) return;
+
+  const { error } = await db.from('groups').update(payload).eq('id', groupId);
+  if (error) {
+    const msg = String(error.message || '').toLowerCase();
+    // Gracefully ignore unknown column errors (e.g., enabledCards not present in DB schema)
+    if (msg.includes('column') && (msg.includes('enabledcards') || msg.includes('does not exist'))) {
+      return;
+    }
+    throw error;
+  }
 }
 
 export async function deleteGroupDb(groupId: string): Promise<void> {

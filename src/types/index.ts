@@ -116,6 +116,7 @@ export interface Group {
   created_at?: string;
   created_by?: string; // User ID who created the group
   users?: string[]; // Array of user IDs
+  enabledCards?: string[]; // Array of enabled dashboard card IDs
 }
 
 // 🆕 Email Templates
