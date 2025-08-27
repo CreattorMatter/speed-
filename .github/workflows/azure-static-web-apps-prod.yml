@@ -56,7 +56,7 @@ jobs:
           app_location: "/" 
           api_location: ""
           output_location: "dist"
-          skip_app_build: true
+          skip_app_build: false
           # Para PRs hacia main, esto creará preview environments automáticamente
 
   close_pull_request_job:
