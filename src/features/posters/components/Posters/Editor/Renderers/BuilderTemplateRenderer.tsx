@@ -6,7 +6,7 @@ import { InlineEditableText } from './InlineEditableText';
 import { calcularDescuentoPorcentaje } from '../../../../../../data/products';
 import { formatValidityPeriod } from '../../../../../../utils/validityPeriodValidator';
 import { calculatePricePorCuota } from '../../../../../../utils/financingCalculator';
-import { getDynamicFieldValue } from '../../../../../../utils/productFieldsMap';
+import { getDynamicFieldValue, generateDynamicPlaceholder } from '../../../../../../utils/productFieldsMap';
 
 interface BuilderTemplateRendererProps {
   template: TemplateV3;
@@ -135,7 +135,11 @@ const getDynamicValue = (
   };
 
   // 🚀 SISTEMA UNIVERSAL DE CAMPOS DINÁMICOS
-  if (content?.fieldType === 'dynamic' && content?.dynamicTemplate && product) {
+  if (content?.fieldType === 'dynamic' && content?.dynamicTemplate) {
+    // 🆕 NUEVO: Si no hay producto, usar placeholders amigables
+    if (!product) {
+      return generateDynamicPlaceholder(content.dynamicTemplate);
+    }
     console.log(`🎯 Procesando campo dinámico: ${content.dynamicTemplate}`);
     
     // 🆕 NUEVO: Manejo especial para validity_period en dynamicTemplate
@@ -257,7 +261,7 @@ const getDynamicValue = (
   if (content?.fieldType === 'calculated' && content?.calculatedField?.expression) {
     if (!product) {
       console.log(`🧮 Campo calculado sin producto: mostrando placeholder`);
-      return 'Selecciona un producto';
+      return '0000';
     }
     console.log(`🧮 Procesando campo calculado:`, {
       expression: content.calculatedField.expression,

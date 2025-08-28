@@ -577,6 +577,101 @@ export const extractDynamicFields = (dynamicTemplate: string): string[] => {
 /**
  * Procesa un template reemplazando todos los campos dinámicos
  */
+/**
+ * 🆕 Genera placeholders amigables para campos dinámicos cuando no hay producto
+ * Reemplaza variables dinámicas con placeholders apropiados según el tipo de dato
+ */
+export const generateDynamicPlaceholder = (dynamicTemplate: string): string => {
+  if (!dynamicTemplate) {
+    return '';
+  }
+
+  let placeholderTemplate = dynamicTemplate;
+
+  // 🔢 Campos numéricos/monetarios → 000.000
+  const numericFields = [
+    'product_price', 'precio', 'basePrice', 'precioAnt', 'stockDisponible',
+    'precioSinImpuestos', 'precio_descuento', 'precio_cuota', 'cuota_valor',
+    'price_base', 'base_price', 'price_without_tax', 'price_with_tax'
+  ];
+  numericFields.forEach(field => {
+    const regex = new RegExp(`\\[${field}\\]`, 'g');
+    placeholderTemplate = placeholderTemplate.replace(regex, '000.000');
+  });
+
+  // 📊 Campos de porcentaje → 00%
+  const percentageFields = ['porcentaje', 'descuento', 'discount_percentage'];
+  percentageFields.forEach(field => {
+    const regex = new RegExp(`\\[${field}\\]`, 'g');
+    placeholderTemplate = placeholderTemplate.replace(regex, '00%');
+  });
+
+  // 🔢 Campos de cantidad → 00
+  const quantityFields = ['cuota', 'cuotas', 'stockDisponible', 'stock'];
+  quantityFields.forEach(field => {
+    const regex = new RegExp(`\\[${field}\\]`, 'g');
+    placeholderTemplate = placeholderTemplate.replace(regex, '00');
+  });
+
+  // 📅 Campos de fecha → DD/MM/AAAA
+  const dateFields = [
+    'fechasDesde', 'fechasHasta', 'validity_period', 'fecha_desde', 'fecha_hasta'
+  ];
+  dateFields.forEach(field => {
+    const regex = new RegExp(`\\[${field}\\]`, 'g');
+    placeholderTemplate = placeholderTemplate.replace(regex, 'DD/MM/AAAA');
+  });
+
+  // 📝 Campos de texto → XXXX
+  const textFields = [
+    'descripcion', 'marca', 'marcaTexto', 'sku', 'ean', 'origen', 'paisTexto',
+    'product_name', 'product_description', 'product_sku', 'product_ean', 
+    'product_origin', 'product_brand', 'product_marca'
+  ];
+  textFields.forEach(field => {
+    const regex = new RegExp(`\\[${field}\\]`, 'g');
+    placeholderTemplate = placeholderTemplate.replace(regex, 'XXXX');
+  });
+
+  // 💰 Símbolos especiales
+  placeholderTemplate = placeholderTemplate.replace(/\[currency_symbol\]/g, '$');
+
+  // 🔍 Fallback inteligente para campos no categorizados
+  // Buscar cualquier campo restante [field_name] y decidir por el nombre
+  placeholderTemplate = placeholderTemplate.replace(/\[([^\]]+)\]/g, (match, fieldName) => {
+    const field = fieldName.toLowerCase();
+    
+    // Si contiene "price", "cost", "value", "amount" → numérico
+    if (field.includes('price') || field.includes('cost') || field.includes('value') || 
+        field.includes('amount') || field.includes('precio') || field.includes('total')) {
+      return '000.000';
+    }
+    
+    // Si contiene "percent", "rate", "%" → porcentaje  
+    if (field.includes('percent') || field.includes('rate') || field.includes('%') || 
+        field.includes('porcentaje') || field.includes('tasa')) {
+      return '00%';
+    }
+    
+    // Si contiene "date", "fecha", "time" → fecha
+    if (field.includes('date') || field.includes('fecha') || field.includes('time') || 
+        field.includes('desde') || field.includes('hasta')) {
+      return 'DD/MM/AAAA';
+    }
+    
+    // Si contiene "count", "quantity", "stock", "cuota" → cantidad
+    if (field.includes('count') || field.includes('quantity') || field.includes('stock') || 
+        field.includes('cuota') || field.includes('cantidad')) {
+      return '00';
+    }
+    
+    // Por defecto, campos de texto → XXXX
+    return 'XXXX';
+  });
+
+  return placeholderTemplate;
+};
+
 export const processDynamicTemplate = (
   dynamicTemplate: string, 
   product: ProductoReal,
