@@ -89,22 +89,60 @@ const formatPrice = (price: number, outputFormat?: any): string => {
   // 🔧 CORREGIDO: Respetar la configuración de outputFormat
   const showCurrencySymbol = outputFormat?.showCurrencySymbol !== false; // Por defecto true para compatibilidad
   const showDecimals = outputFormat?.showDecimals === true;
+  const superscriptDecimals = outputFormat?.superscriptDecimals === true;
+  const precision = outputFormat?.precision || '0';
   
-  if (showCurrencySymbol) {
-    // Usar formato con símbolo de moneda
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: showDecimals ? 2 : 0,
-      maximumFractionDigits: showDecimals ? 2 : 0
-    }).format(price);
-  } else {
-    // Usar formato sin símbolo de moneda
-    return new Intl.NumberFormat('es-AR', {
-      minimumFractionDigits: showDecimals ? 2 : 0,
-      maximumFractionDigits: showDecimals ? 2 : 0,
+  // 🆕 Determinar número de decimales basado en precision
+  let decimalPlaces = 0;
+  if (precision.includes('1')) decimalPlaces = 1;
+  if (precision.includes('2')) decimalPlaces = 2;
+  if (showDecimals) decimalPlaces = 2; // Compatibilidad con showDecimals
+  
+  // 🆕 Detectar superíndice basado en precision o flag
+  const useSuperscript = superscriptDecimals || precision.includes('-small');
+  
+  if (useSuperscript && decimalPlaces > 0) {
+    // 🆕 MODO SUPERÍNDICE: separar parte entera de decimales
+    const integerPart = Math.floor(price);
+    const decimalPart = ((price - integerPart) * Math.pow(10, decimalPlaces)).toFixed(0).padStart(decimalPlaces, '0');
+    
+    // Formatear parte entera con separadores de miles
+    const formattedInteger = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
       useGrouping: true
-    }).format(price);
+    }).format(integerPart);
+    
+    // Convertir decimales a superíndice
+    const superscriptMap: Record<string, string> = {
+      '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+      '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
+    };
+    const superscriptDecimals = decimalPart.split('').map(d => superscriptMap[d] || d).join('');
+    
+    if (showCurrencySymbol) {
+      return `$ ${formattedInteger}${superscriptDecimals}`;
+    } else {
+      return `${formattedInteger}${superscriptDecimals}`;
+    }
+  } else {
+    // 🔄 MODO NORMAL: usar Intl.NumberFormat estándar
+    if (showCurrencySymbol) {
+      // Usar formato con símbolo de moneda
+      return new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces
+      }).format(price);
+    } else {
+      // Usar formato sin símbolo de moneda
+      return new Intl.NumberFormat('es-AR', {
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces,
+        useGrouping: true
+      }).format(price);
+    }
   }
 };
 

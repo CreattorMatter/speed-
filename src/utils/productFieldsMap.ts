@@ -31,21 +31,60 @@ export interface DynamicField {
 
 const formatPrice = (
   price: number,
-  options?: { prefix?: string | boolean; precision?: number | string; showCurrencySymbol?: boolean; showDecimals?: boolean }
+  options?: { 
+    prefix?: string | boolean; 
+    precision?: number | string; 
+    showCurrencySymbol?: boolean; 
+    showDecimals?: boolean;
+    superscriptDecimals?: boolean; // 🆕 Nueva opción para superíndice
+  }
 ): string => {
   // Compatibilidad y opciones modernas
   const showCurrencySymbol = options?.showCurrencySymbol !== false && options?.prefix !== false;
+  const superscriptDecimals = options?.superscriptDecimals === true;
 
   let precision: number;
   if (options?.precision !== undefined) {
-    const parsed = typeof options.precision === 'string' ? parseInt(options.precision, 10) : options.precision;
-    precision = Number.isFinite(parsed) ? (parsed as number) : 0;
+    const precisionStr = typeof options.precision === 'string' ? options.precision : options.precision.toString();
+    // 🆕 Detectar superíndice en el valor precision
+    const useSuperscript = superscriptDecimals || precisionStr.includes('-small');
+    
+    if (precisionStr.includes('1')) precision = 1;
+    else if (precisionStr.includes('2')) precision = 2;
+    else precision = parseInt(precisionStr, 10) || 0;
+    
+    // 🆕 MODO SUPERÍNDICE
+    if (useSuperscript && precision > 0) {
+      const integerPart = Math.floor(price);
+      const decimalPart = ((price - integerPart) * Math.pow(10, precision)).toFixed(0).padStart(precision, '0');
+      
+      // Formatear parte entera con separadores de miles
+      const formattedInteger = new Intl.NumberFormat('es-AR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+        useGrouping: true
+      }).format(integerPart);
+      
+      // Convertir decimales a superíndice
+      const superscriptMap: Record<string, string> = {
+        '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+        '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
+      };
+      const superscriptDecimalStr = decimalPart.split('').map(d => superscriptMap[d] || d).join('');
+      
+      if (showCurrencySymbol) {
+        return `$ ${formattedInteger}${superscriptDecimalStr}`;
+      } else {
+        return `${formattedInteger}${superscriptDecimalStr}`;
+      }
+    }
   } else if (options?.showDecimals === true) {
     precision = 2;
   } else {
     precision = 0;
   }
 
+  // 🔄 MODO NORMAL: usar Intl.NumberFormat estándar
   if (showCurrencySymbol) {
     // Con símbolo de moneda (peso)
     return new Intl.NumberFormat('es-AR', {

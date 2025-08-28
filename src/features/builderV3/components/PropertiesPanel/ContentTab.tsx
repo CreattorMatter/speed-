@@ -543,6 +543,26 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                               />
                               <span className="text-xs text-gray-700">Mostrar decimales (.00)</span>
                             </label>
+                            
+                            {/* Control para decimales en superíndice - solo si se muestran decimales */}
+                            {(selectedComponent.content as any)?.outputFormat?.showDecimals && (
+                              <label className="flex items-center space-x-2 ml-4">
+                                <input
+                                  type="checkbox"
+                                  checked={(selectedComponent.content as any)?.outputFormat?.superscriptDecimals === true}
+                                  onChange={(e) => {
+                                    const currentOutputFormat = (selectedComponent.content as any)?.outputFormat || {};
+                                    const newOutputFormat = {
+                                      ...currentOutputFormat,
+                                      superscriptDecimals: e.target.checked
+                                    };
+                                    handlers.handleContentChange('outputFormat', newOutputFormat);
+                                  }}
+                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-xs text-gray-700">Decimales pequeños y arriba (.⁰⁰)</span>
+                              </label>
+                            )}
                           </div>
                           
                           <p className="text-xs text-green-600">
@@ -654,7 +674,9 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                             ...currentContent,
                             outputFormat: {
                               ...outputFormat,
-                              precision: e.target.value
+                              precision: e.target.value,
+                              // 🆕 Detectar automáticamente superíndice basado en el valor
+                              superscriptDecimals: e.target.value.includes('-small')
                             }
                           };
                           
@@ -664,7 +686,9 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                       >
                         <option value="0">Sin decimales → 1234</option>
                         <option value="2">2 decimales → 1234.56</option>
-                        <option value="2-small">2 decimales pequeños → 1234.⁵⁶</option>
+                        <option value="2-small">2 decimales pequeños → 1234⁵⁶</option>
+                        <option value="1">1 decimal → 1234.5</option>
+                        <option value="1-small">1 decimal pequeño → 1234⁵</option>
                       </select>
                       <p className="text-xs text-gray-500 mt-1">
                         ⚠️ <strong>Importante:</strong> La cartelera usa estas opciones para el formato final
@@ -682,7 +706,9 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                           
                           let example = '1234';
                           if (precision === '2') example = '1234.56';
-                          if (precision === '2-small') example = '1234.⁵⁶';
+                          if (precision === '2-small') example = '1234⁵⁶';
+                          if (precision === '1') example = '1234.5';
+                          if (precision === '1-small') example = '1234⁵';
                           
                           return `${prefix}${example}`;
                         })()}

@@ -567,22 +567,53 @@ const applyOutputFormat = (value: any, format: any): string => {
 
     // 🔧 MEJORA: Determinar el número de decimales desde showDecimals o precision
     let decimalPlaces = 0;
+    const precisionStr = String(format.precision || '0');
     if (format.showDecimals === true || format.precision === '2') {
       decimalPlaces = 2;
     } else if (format.precision && format.precision !== '0') {
-      const precision = parseInt(String(format.precision), 10);
-      if (!isNaN(precision)) {
-        decimalPlaces = precision;
+      if (precisionStr.includes('1')) decimalPlaces = 1;
+      else if (precisionStr.includes('2')) decimalPlaces = 2;
+      else {
+        const precision = parseInt(precisionStr, 10);
+        if (!isNaN(precision)) {
+          decimalPlaces = precision;
+        }
       }
     }
 
+    // 🆕 Detectar si se debe usar superíndice
+    const useSuperscript = format.superscriptDecimals === true || precisionStr.includes('-small');
+
     // Formato de números con separador de miles y decimales configurables
     if (typeof value === 'number') {
-      formattedValue = value.toLocaleString('es-AR', {
-        minimumFractionDigits: decimalPlaces,
-        maximumFractionDigits: decimalPlaces,
-        useGrouping: true
-      });
+      if (useSuperscript && decimalPlaces > 0) {
+        // 🆕 MODO SUPERÍNDICE: separar parte entera de decimales
+        const integerPart = Math.floor(value);
+        const decimalPart = ((value - integerPart) * Math.pow(10, decimalPlaces)).toFixed(0).padStart(decimalPlaces, '0');
+        
+        // Formatear parte entera con separadores de miles
+        const formattedInteger = new Intl.NumberFormat('es-AR', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+          useGrouping: true
+        }).format(integerPart);
+        
+        // Convertir decimales a superíndice
+        const superscriptMap: Record<string, string> = {
+          '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+          '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
+        };
+        const superscriptDecimals = decimalPart.split('').map(d => superscriptMap[d] || d).join('');
+        
+        formattedValue = `${formattedInteger}${superscriptDecimals}`;
+      } else {
+        // 🔄 MODO NORMAL: usar toLocaleString estándar
+        formattedValue = value.toLocaleString('es-AR', {
+          minimumFractionDigits: decimalPlaces,
+          maximumFractionDigits: decimalPlaces,
+          useGrouping: true
+        });
+      }
     }
 
     // 🔧 MEJORA: Prefijo monetario solo si showCurrencySymbol es true
