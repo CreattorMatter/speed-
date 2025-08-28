@@ -211,7 +211,9 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
         </div>
       </div>
 
-      {/* Enhanced Zoom Controls */}
+      {/* Enhanced Zoom Controls - Ocultos para evitar duplicación con toolbar */}
+      {/* Los controles de zoom principales están en la toolbar superior */}
+      {/* 
       <div className="absolute bottom-4 right-4 flex items-center space-x-2 bg-white rounded-lg shadow-lg p-2 border">
         <button
           onClick={() => operations.zoomOut()}
@@ -245,6 +247,7 @@ export const CanvasEditorV3: React.FC<CanvasEditorV3Props> = ({
           Ajustar
         </button>
       </div>
+      */}
     </div>
   );
 }; 

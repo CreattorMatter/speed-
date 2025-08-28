@@ -15,7 +15,11 @@ import {
   Menu,
   FileText,
   Info,
-  Calendar
+  Calendar,
+  PanelLeft,
+  PanelRight,
+  PanelLeftClose,
+  PanelRightClose
 } from 'lucide-react';
 // import { CustomPaperFormatModal } from './CustomPaperFormatModal';
 import { ValidityPeriodModal } from './ValidityPeriodModal';
@@ -35,6 +39,8 @@ interface ToolbarV3Props {
   onTitleChange: (title: string) => void;
   onOrientationToggle: () => void;
   onValidityPeriodChange?: (validityPeriod: { startDate: string; endDate: string; enabled: boolean }) => void;
+  onToggleLeftPanel?: () => void;
+  onToggleRightPanel?: () => void;
   
   hasSelection?: boolean;
   gridVisible?: boolean;
@@ -49,6 +55,8 @@ interface ToolbarV3Props {
   hasUnsavedChanges?: boolean;
   orientation?: 'portrait' | 'landscape';
   validityPeriod?: { startDate: string; endDate: string; enabled: boolean };
+  leftPanelOpen?: boolean;
+  rightPanelOpen?: boolean;
   availablePaperFormats?: Array<{
     id: string;
     name: string;
@@ -73,6 +81,8 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   onTitleChange,
   onOrientationToggle,
   onValidityPeriodChange,
+  onToggleLeftPanel,
+  onToggleRightPanel,
   
   hasSelection = false,
   gridVisible = false,
@@ -87,6 +97,8 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   hasUnsavedChanges = false,
   orientation = 'portrait',
   validityPeriod,
+  leftPanelOpen = true,
+  rightPanelOpen = true,
   availablePaperFormats = [
     { id: 'A2', name: 'A2', width: 420, height: 594, description: '420 x 594 mm' },
     { id: 'A3', name: 'A3', width: 297, height: 420, description: '297 x 420 mm' },
@@ -199,9 +211,9 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 px-2 sm:px-4 py-2">
-      {/* Mobile/Compact view for high zoom levels */}
-      <div className="block xl:hidden">
+    <div className="bg-white border-b border-gray-200 px-2 sm:px-4 py-2 overflow-x-auto scrollbar-custom">
+      {/* Mobile view for very small screens */}
+      <div className="block sm:hidden">
         <div className="flex items-center justify-between">
           {/* Essential controls */}
           <div className="flex items-center space-x-1">
@@ -351,9 +363,143 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
         )}
       </div>
 
-      {/* Desktop view - hidden on high zoom */}
-      <div className="hidden xl:block">
-        <div className="flex items-center justify-between min-w-0">
+      {/* Compact view - Icons only (optimized for zoom and medium screens) */}
+      <div className="hidden sm:block 2xl:hidden">
+        <div className="flex items-center justify-between min-w-max gap-x-1 whitespace-nowrap">
+          {/* Ultra compact - Only essential buttons */}
+          <div className="flex items-center space-x-1 flex-shrink-0">
+            <ToolbarButton
+              onClick={onSave}
+              icon={<Save className="w-4 h-4" />}
+              title={isSaving ? "Guardando..." : "Guardar"}
+              disabled={isSaving}
+              variant="success"
+            />
+            <ToolbarButton
+              onClick={onPreview}
+              icon={<Eye className="w-4 h-4" />}
+              title="Vista previa"
+              variant="primary"
+            />
+            <ToolbarButton
+              onClick={onDelete}
+              icon={<Trash2 className="w-4 h-4" />}
+              title="Eliminar"
+              disabled={!hasSelection}
+              variant="warning"
+            />
+          </div>
+
+          {/* Template title - ultra minimal */}
+          <div className="flex-1 min-w-0 max-w-[150px] lg:max-w-[200px] mx-1">
+            <input
+              type="text"
+              value={localTitle}
+              onChange={(e) => setLocalTitle(e.target.value)}
+              onBlur={handleTitleBlur}
+              onKeyDown={handleTitleKeyDown}
+              placeholder="Título..."
+              className="w-full px-1 py-1 text-xs lg:text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 truncate"
+              title={`Nombre: ${localTitle}`}
+              maxLength={100}
+            />
+          </div>
+
+          {/* Essential controls only */}
+          <div className="flex items-center space-x-1 flex-shrink-0">
+            {/* Paper format - solo ícono */}
+            <div className="flex items-center bg-gray-50 px-1 py-0.5 rounded border">
+              <FileText className="w-4 h-4 text-gray-600 mr-1" />
+              <select
+                value={paperFormat}
+                onChange={(e) => handlePaperFormatChange(e.target.value)}
+                className="bg-transparent text-xs focus:outline-none max-w-[50px]"
+                title={`Formato de papel: ${currentPaperFormat.name} (${currentPaperFormat.description})`}
+              >
+                {availablePaperFormats.map(format => (
+                  <option key={format.id} value={format.id}>
+                    {format.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Vigencia - solo ícono */}
+            <div className="flex items-center bg-gray-50 px-1 py-0.5 rounded border">
+              <Calendar className="w-4 h-4 text-gray-600" />
+              <button
+                onClick={() => setShowValidityModal(true)}
+                className="ml-1 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+                title={validityPeriod?.enabled 
+                  ? `Vigencia configurada: ${validityPeriod.startDate} - ${validityPeriod.endDate}` 
+                  : "Configurar fecha de vigencia"}
+              >
+                {validityPeriod?.enabled ? (
+                  <span className="text-green-600 font-medium">✓</span>
+                ) : (
+                  <span className="text-gray-500">--</span>
+                )}
+              </button>
+            </div>
+
+            {/* Zoom - ultra compact */}
+            <div className="flex items-center bg-gray-50 px-0.5 py-0.5 rounded border">
+              <ToolbarButton
+                onClick={onZoomOut}
+                icon={<ZoomOut className="w-3 h-3" />}
+                title="Zoom -"
+                disabled={zoomLevel <= 25}
+                className="p-0.5"
+              />
+              <span className="text-xs px-0.5 min-w-[30px] lg:min-w-[35px] text-center">{Math.round(zoomLevel)}%</span>
+              <ToolbarButton
+                onClick={onZoomIn}
+                icon={<ZoomIn className="w-3 h-3" />}
+                title="Zoom +"
+                disabled={zoomLevel >= 400}
+                className="p-0.5"
+              />
+            </div>
+
+            {/* Panel toggles - ultra compact */}
+            {onToggleLeftPanel && (
+              <ToolbarButton
+                onClick={onToggleLeftPanel}
+                icon={leftPanelOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
+                title={leftPanelOpen ? "Ocultar panel componentes" : "Mostrar panel componentes"}
+                active={leftPanelOpen}
+              />
+            )}
+            
+            {onToggleRightPanel && (
+              <ToolbarButton
+                onClick={onToggleRightPanel}
+                icon={rightPanelOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRight className="w-4 h-4" />}
+                title={rightPanelOpen ? "Ocultar panel propiedades" : "Mostrar panel propiedades"}
+                active={rightPanelOpen}
+              />
+            )}
+
+            {/* View controls - icons only */}
+            <ToolbarButton
+              onClick={onToggleGrid}
+              icon={<Grid3X3 className="w-4 h-4" />}
+              title="Grilla"
+              active={gridVisible}
+            />
+            <ToolbarButton
+              onClick={onToggleRulers}
+              icon={<Ruler className="w-4 h-4" />}
+              title="Reglas"
+              active={rulersVisible}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Full desktop view - Only for very large screens without zoom */}
+      <div className="hidden 2xl:block">
+        <div className="flex items-center justify-between min-w-max gap-x-2 whitespace-nowrap">
           {/* Left side - File operations */}
           <div className="flex items-center space-x-2 min-w-0 flex-shrink-0">
             <ToolbarButton
@@ -364,9 +510,9 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
               variant="success"
             />
 
-            {/* Template Title Editor */}
-            <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors min-w-0 max-w-[250px] 2xl:max-w-[300px]">
-              <span className="text-xs text-gray-500 font-medium flex-shrink-0">Título:</span>
+            {/* Template Title Editor - Responsive */}
+            <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors min-w-0 max-w-[200px] xl:max-w-[280px] 2xl:max-w-[320px]">
+              <span className="text-xs text-gray-500 font-medium flex-shrink-0 hidden xl:inline">Título:</span>
               <input
                 type="text"
                 value={localTitle}
@@ -389,31 +535,31 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
               title="Vista previa"
               variant="primary"
             />
-            
-            {/* Botón de exportar eliminado por solicitud del usuario */}
+          </div>
 
+          {/* Center-Left - Element operations */}
+          <div className="flex items-center space-x-2 flex-shrink-0">
             <Separator />
-
-            {/* Element operations */}
             <ToolbarButton
               onClick={onDelete}
               icon={<Trash2 className="w-4 h-4" />}
-              title="Eliminar elemento"
+              title="Eliminar elemento seleccionado"
               disabled={!hasSelection}
               variant="warning"
             />
+            <Separator />
           </div>
 
-          {/* Center - Paper Format and Zoom controls */}
-          <div className="flex items-center space-x-3 min-w-0 flex-shrink">
-            {/* Paper Format Selector */}
-            <div className="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg border min-w-0">
+          {/* Center - Paper Format and Validity - Siempre visible */}
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            {/* Paper Format Selector - Compacto pero siempre visible */}
+            <div className="flex items-center bg-gray-50 px-1.5 py-1.5 rounded-lg border min-w-0">
               <FileText className="w-4 h-4 text-gray-600 flex-shrink-0" />
               <select
                 value={paperFormat}
                 onChange={(e) => handlePaperFormatChange(e.target.value)}
-                className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none min-w-0"
-                title="Formato de papel"
+                className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none ml-1 max-w-[50px]"
+                title={`Formato de papel: ${currentPaperFormat.name} (${currentPaperFormat.description})`}
               >
                 {availablePaperFormats.map(format => (
                   <option key={format.id} value={format.id}>
@@ -421,55 +567,52 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
                   </option>
                 ))}
               </select>
-              <span className="text-xs text-gray-500 hidden 2xl:inline flex-shrink-0">
-                {getFormatDescription()}
-              </span>
               
-              {/* Orientation Toggle - Desktop */}
-              <div className="w-px h-4 bg-gray-300 mx-2" />
+              {/* Orientation Toggle */}
+              <div className="w-px h-3 bg-gray-300 mx-1.5 flex-shrink-0" />
               <button
                 onClick={onOrientationToggle}
                 title={orientation === 'portrait' ? "Cambiar a horizontal" : "Cambiar a vertical"}
-                className="p-1.5 rounded-lg transition-colors duration-200 hover:bg-gray-200 flex-shrink-0"
+                className="p-0.5 rounded transition-colors duration-200 hover:bg-gray-200 flex-shrink-0"
               >
-                <RotateCw className="w-4 h-4 text-gray-600" />
+                <RotateCw className="w-3.5 h-3.5 text-gray-600" />
               </button>
             </div>
 
-            {/* Validity Period Selector */}
-            <div className="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg border min-w-0">
+            {/* Validity Period Selector - Compacto pero siempre visible */}
+            <div className="flex items-center bg-gray-50 px-1.5 py-1.5 rounded-lg border flex-shrink-0">
               <Calendar className="w-4 h-4 text-gray-600 flex-shrink-0" />
-              <span className="text-sm font-medium text-gray-700">Vigencia:</span>
               <button
                 onClick={() => setShowValidityModal(true)}
-                className="text-sm text-gray-600 hover:text-gray-800 transition-colors flex items-center space-x-1"
-                title="Configurar fecha de vigencia para impresión"
+                className="ml-1 text-xs text-gray-600 hover:text-gray-800 transition-colors flex-shrink-0"
+                title={validityPeriod?.enabled 
+                  ? `Vigencia configurada: ${validityPeriod.startDate} - ${validityPeriod.endDate}` 
+                  : "Configurar fecha de vigencia"}
               >
                 {validityPeriod?.enabled ? (
-                  <span className="text-green-600 font-medium">
-                    {validityPeriod.startDate} - {validityPeriod.endDate}
-                  </span>
+                  <span className="text-green-600 font-medium">✓</span>
                 ) : (
-                  <span className="text-gray-500">Sin restricción</span>
+                  <span className="text-gray-500">--</span>
                 )}
               </button>
             </div>
+          </div>
 
+          {/* Center-Right - Zoom Controls - Compacto */}
+          <div className="flex items-center space-x-1.5 flex-shrink-0">
             <Separator />
-
-            {/* Zoom Controls */}
-            <div className="flex items-center space-x-1 bg-gray-50 px-2 py-2 rounded-lg border">
+            <div className="flex items-center space-x-0.5 bg-gray-50 px-1.5 py-1.5 rounded-lg border">
               <ToolbarButton
                 onClick={onZoomOut}
-                icon={<ZoomOut className="w-4 h-4" />}
+                icon={<ZoomOut className="w-3.5 h-3.5" />}
                 title="Reducir zoom"
                 disabled={zoomLevel <= 25}
-                className="p-1.5"
+                className="p-1"
               />
               
               <button
                 onClick={onZoomReset}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors min-w-[60px]"
+                className="px-1.5 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs font-medium transition-colors min-w-[40px] flex-shrink-0"
                 title="Restablecer zoom"
               >
                 {Math.round(zoomLevel)}%
@@ -477,22 +620,47 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
               
               <ToolbarButton
                 onClick={onZoomIn}
-                icon={<ZoomIn className="w-4 h-4" />}
+                icon={<ZoomIn className="w-3.5 h-3.5" />}
                 title="Aumentar zoom"
                 disabled={zoomLevel >= 400}
-                className="p-1.5"
+                className="p-1"
               />
             </div>
+            <Separator />
           </div>
 
-          {/* Right side - View and connectivity */}
-          <div className="flex items-center space-x-2 flex-shrink-0">
+          {/* Right side - Panel and View controls - Compacto */}
+          <div className="flex items-center space-x-1.5 flex-shrink-0">
+            {/* Panel toggles */}
+            {onToggleLeftPanel && (
+              <ToolbarButton
+                onClick={onToggleLeftPanel}
+                icon={leftPanelOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
+                title={leftPanelOpen ? "Ocultar panel de componentes" : "Mostrar panel de componentes"}
+                active={leftPanelOpen}
+                className="p-1.5"
+              />
+            )}
+            
+            {onToggleRightPanel && (
+              <ToolbarButton
+                onClick={onToggleRightPanel}
+                icon={rightPanelOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRight className="w-4 h-4" />}
+                title={rightPanelOpen ? "Ocultar panel de propiedades" : "Mostrar panel de propiedades"}
+                active={rightPanelOpen}
+                className="p-1.5"
+              />
+            )}
+
+            <Separator />
+
             {/* View controls */}
             <ToolbarButton
               onClick={onToggleGrid}
               icon={<Grid3X3 className="w-4 h-4" />}
               title={gridVisible ? "Ocultar grilla" : "Mostrar grilla"}
               active={gridVisible}
+              className="p-1.5"
             />
             
             <ToolbarButton
@@ -500,6 +668,7 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
               icon={<Ruler className="w-4 h-4" />}
               title={rulersVisible ? "Ocultar reglas" : "Mostrar reglas"}
               active={rulersVisible}
+              className="p-1.5"
             />
 
             {onToggleCanvasInfo && (
@@ -510,8 +679,6 @@ export const ToolbarV3: React.FC<ToolbarV3Props> = ({
                 active={showCanvasInfo}
               />
             )}
-
-
           </div>
         </div>
       </div>

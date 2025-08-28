@@ -101,14 +101,18 @@ export const BuilderV3ContentRenderer: React.FC<ContentRendererProps> = ({
       if (!state.currentTemplate) return <LoadingSpinner />;
       return (
         <div className="flex h-full bg-gray-200 overflow-hidden">
-          {/* Components Panel */}
-          <ComponentsPanelV3 
-            componentsLibrary={componentsLibrary} 
-            onComponentDragStart={() => {}} 
-          />
+          {/* Components Panel - Conditionally rendered */}
+          {state.ui.leftPanelOpen && (
+            <div className="w-80 flex-shrink-0">
+              <ComponentsPanelV3 
+                componentsLibrary={componentsLibrary} 
+                onComponentDragStart={() => {}} 
+              />
+            </div>
+          )}
           
           {/* Main Canvas Area */}
-          <div className="flex-1 flex flex-col h-full overflow-hidden">
+          <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
             {/* Toolbar */}
             <ToolbarV3
               onSave={handleSaveWithRefresh}
@@ -123,6 +127,8 @@ export const BuilderV3ContentRenderer: React.FC<ContentRendererProps> = ({
               onTitleChange={templateActions.handleTitleChange}
               onOrientationToggle={canvasActions.handleOrientationToggle}
               onValidityPeriodChange={canvasActions.handleValidityPeriodChange}
+              onToggleLeftPanel={() => operations.updateUIState({ leftPanelOpen: !state.ui.leftPanelOpen })}
+              onToggleRightPanel={() => operations.updateUIState({ rightPanelOpen: !state.ui.rightPanelOpen })}
               templateTitle={state.currentTemplate.name}
               validityPeriod={state.currentTemplate.canvas.validityPeriod}
               hasUnsavedChanges={state.hasUnsavedChanges}
@@ -133,6 +139,8 @@ export const BuilderV3ContentRenderer: React.FC<ContentRendererProps> = ({
               isSaving={state.isSaving}
               paperFormat={paperFormat}
               orientation={orientation}
+              leftPanelOpen={state.ui.leftPanelOpen}
+              rightPanelOpen={state.ui.rightPanelOpen}
               availablePaperFormats={availablePaperFormats}
             />
             
@@ -151,34 +159,36 @@ export const BuilderV3ContentRenderer: React.FC<ContentRendererProps> = ({
             />
           </div>
           
-          {/* Properties Panel */}
-          <div className="w-80 bg-white border-l border-gray-300 flex flex-col">
-            <PropertiesPanelV3
-              state={state}
-              activeTab={state.ui.activeRightTab}
-              onTabChange={(tab) => {
-                console.log('🔄 BuilderV3 - onTabChange called with:', tab);
-                console.log('🔄 Current activeRightTab:', state.ui.activeRightTab);
-                operations.updateUIState({ activeRightTab: tab });
-              }}
-              onComponentUpdate={operations.updateComponent}
-              onComponentDelete={(id: string) => operations.removeComponents([id])}
-              onComponentDuplicate={(id: string) => {
-                const duplicated = operations.duplicateComponent(id);
-                if (duplicated) operations.addComponent(duplicated);
-              }}
-              onComponentToggleVisibility={(id: string) => 
-                operations.updateComponent(id, { 
-                  isVisible: !state.components.find((c: DraggableComponentV3) => c.id === id)?.isVisible 
-                })
-              }
-              onComponentToggleLock={(id: string) => 
-                operations.updateComponent(id, { 
-                  isLocked: !state.components.find((c: DraggableComponentV3) => c.id === id)?.isLocked 
-                })
-              }
-            />
-          </div>
+          {/* Properties Panel - Conditionally rendered */}
+          {state.ui.rightPanelOpen && (
+            <div className="w-80 bg-white border-l border-gray-300 flex flex-col flex-shrink-0">
+              <PropertiesPanelV3
+                state={state}
+                activeTab={state.ui.activeRightTab}
+                onTabChange={(tab) => {
+                  console.log('🔄 BuilderV3 - onTabChange called with:', tab);
+                  console.log('🔄 Current activeRightTab:', state.ui.activeRightTab);
+                  operations.updateUIState({ activeRightTab: tab });
+                }}
+                onComponentUpdate={operations.updateComponent}
+                onComponentDelete={(id: string) => operations.removeComponents([id])}
+                onComponentDuplicate={(id: string) => {
+                  const duplicated = operations.duplicateComponent(id);
+                  if (duplicated) operations.addComponent(duplicated);
+                }}
+                onComponentToggleVisibility={(id: string) => 
+                  operations.updateComponent(id, { 
+                    isVisible: !state.components.find((c: DraggableComponentV3) => c.id === id)?.isVisible 
+                  })
+                }
+                onComponentToggleLock={(id: string) => 
+                  operations.updateComponent(id, { 
+                    isLocked: !state.components.find((c: DraggableComponentV3) => c.id === id)?.isLocked 
+                  })
+                }
+              />
+            </div>
+          )}
         </div>
       );
       
