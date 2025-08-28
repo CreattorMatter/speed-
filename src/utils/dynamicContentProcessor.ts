@@ -63,9 +63,9 @@ const createMockProduct = (): ProductoReal => ({
 
 export const defaultMockData: MockDataV3 = {
   fecha_actual: new Date().toLocaleDateString('es-AR'),
-  fecha_promocion_fin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-AR'),
-  fecha_vigencia_desde: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-AR'),
-  fecha_vigencia_hasta: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-AR'),
+  fecha_promocion_fin: new Date().toLocaleDateString('es-AR'),
+  fecha_vigencia_desde: new Date().toLocaleDateString('es-AR'),
+  fecha_vigencia_hasta: new Date().toLocaleDateString('es-AR'),
   descuento_calculado: 18, // 18% de descuento
   producto: createMockProduct(), // AHORA INCLUYE PRODUCTO MOCK REALISTA
   tienda: {
@@ -598,7 +598,7 @@ export const processDynamicContent = (
           return `${formatDate(content.dateConfig.startDate)} - ${formatDate(content.dateConfig.endDate)}`;
         }
         // Fallback si no hay fechas configuradas
-        return '21/07/2025 - 04/08/2025';
+        return new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
       default:
         return mockData.fecha_actual;
     }

@@ -103,10 +103,10 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
         return formatValidityPeriod({
           startDate: content.dateConfig.startDate,
           endDate: content.dateConfig.endDate
-        });
+        }, false); // false = no es para impresión, siempre mostrar rango completo
       }
       // Fallback si no hay fechas configuradas
-      return '21/07/2025 - 04/08/2025';
+      return new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
     
     const shouldShowMockData = component.showMockData !== false; // Por defecto true

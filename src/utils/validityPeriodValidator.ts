@@ -63,7 +63,7 @@ export const validateValidityPeriod = (config: ValidityPeriodConfig): ValidityVa
 /**
  * Formatea una fecha de vigencia para mostrar en la cartelera
  */
-export const formatValidityPeriod = (config: ValidityPeriodConfig): string => {
+export const formatValidityPeriod = (config: ValidityPeriodConfig, forPrint: boolean = false): string => {
   const formatDate = (dateStr: string) => {
     const [year, month, day] = dateStr.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -74,7 +74,16 @@ export const formatValidityPeriod = (config: ValidityPeriodConfig): string => {
     });
   };
   
-  return `${formatDate(config.startDate)} - ${formatDate(config.endDate)}`;
+  const startFormatted = formatDate(config.startDate);
+  const endFormatted = formatDate(config.endDate);
+  
+  // 🆕 Solo mostrar una fecha si es para impresión Y las fechas son iguales
+  if (forPrint && startFormatted === endFormatted) {
+    return startFormatted;
+  }
+  
+  // En todos los demás casos, mostrar el rango completo
+  return `${startFormatted} - ${endFormatted}`;
 };
 
 /**

@@ -105,7 +105,7 @@ export const getFieldTechnicalNames = (component: DraggableComponentV3): string 
         };
         return `${formatDate(content.dateConfig.startDate)} - ${formatDate(content.dateConfig.endDate)}`;
       }
-      return '21/07/2025 - 04/08/2025'; // Fallback
+      return new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }); // Fallback
     }
     
     const dateTypeMap: Record<string, string> = {

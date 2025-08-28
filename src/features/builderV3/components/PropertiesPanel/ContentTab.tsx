@@ -399,11 +399,13 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                         // Al seleccionar 'date', configuramos todo lo necesario
                         newContent.fieldType = 'dynamic'; // Sigue siendo un tipo dinámico
                         newContent.dynamicTemplate = '[validity_period]'; // Template visual
+                        // 🆕 Obtener fecha de hoy en formato YYYY-MM-DD
+                        const today = new Date().toISOString().split('T')[0];
                         newContent.dateConfig = { 
                           type: 'validity-period', 
                           format: 'DD/MM/YYYY',
-                          startDate: '2025-07-21',
-                          endDate: '2025-08-04'
+                          startDate: today,
+                          endDate: today
                         };
                         break;
                     }
@@ -712,7 +714,7 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                         </label>
                         <input
                           type="date"
-                          value={(selectedComponent.content as any)?.dateConfig?.startDate || '2025-07-21'}
+                          value={(selectedComponent.content as any)?.dateConfig?.startDate || new Date().toISOString().split('T')[0]}
                           onChange={(e) => {
                             const newDateConfig = {
                               ...(selectedComponent.content as any)?.dateConfig,
@@ -731,7 +733,7 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                         </label>
                         <input
                           type="date"
-                          value={(selectedComponent.content as any)?.dateConfig?.endDate || '2025-08-04'}
+                          value={(selectedComponent.content as any)?.dateConfig?.endDate || new Date().toISOString().split('T')[0]}
                           onChange={(e) => {
                             const newDateConfig = {
                               ...(selectedComponent.content as any)?.dateConfig,

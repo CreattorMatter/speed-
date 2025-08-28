@@ -60,6 +60,7 @@ export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerPro
                 enableInlineEdit={false}
                 financingCuotas={financingCuotas}
                 discountPercent={discountPercent}
+                isPdfCapture={true} // 🆕 Modo impresión - unificar fechas iguales
               />
             </div>
           </div>

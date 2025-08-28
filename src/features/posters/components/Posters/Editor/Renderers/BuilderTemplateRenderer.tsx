@@ -36,7 +36,8 @@ const getDynamicValue = (
   componentId?: string, // 🆕 ID del componente para campos estáticos únicos
   showMockData: boolean = true, // 🆕 Flag para mostrar datos mock o nombres de campo
   financingCuotas?: number, // 🆕 Cuotas para cálculos de financiación
-  discountPercent?: number // 🆕 Descuento para cálculos de descuento
+  discountPercent?: number, // 🆕 Descuento para cálculos de descuento
+  isPdfCapture: boolean = false // 🆕 Para saber si es impresión
 ): string => {
   if (!content) return '';
   
@@ -108,7 +109,6 @@ const getDynamicValue = (
     if (!product) return null;
     
     const now = new Date();
-    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     
     const fieldMapping: Record<string, any> = {
       // Mapeo directo desde el producto (usando ProductoReal)
@@ -126,7 +126,7 @@ const getDynamicValue = (
       // Valores calculados o por defecto
       porcentaje: 20, // Descuento por defecto del 20%
       fechasDesde: now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-      fechasHasta: nextWeek.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+      fechasHasta: now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
       precioSinImpuestos: product.precio ? Math.round(product.precio * 0.83) : 0
     };
     
@@ -174,7 +174,7 @@ const getDynamicValue = (
           const formattedDate = formatValidityPeriod({
             startDate: content.dateConfig.startDate as string,
             endDate: content.dateConfig.endDate as string
-          });
+          }, isPdfCapture);
           console.log(`📅 Fecha de vigencia formateada desde dateConfig: ${formattedDate}`);
           return formattedDate;
         } catch (error) {
@@ -183,7 +183,7 @@ const getDynamicValue = (
       }
       // Fallback si no hay dateConfig configurado
       console.log(`📅 Usando fallback para validity_period`);
-      return '21/07/2025 - 04/08/2025';
+      return new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
     
     // Primero verificar cambios del usuario para el template completo
@@ -244,16 +244,16 @@ const getDynamicValue = (
         const formattedDate = formatValidityPeriod({
           startDate: content.dateConfig.startDate as string,
           endDate: content.dateConfig.endDate as string
-        });
+        }, isPdfCapture);
         console.log(`📅 Fecha de vigencia formateada: ${formattedDate}`);
         return formattedDate;
       } catch (error) {
         console.error(`📅 Error formateando fecha de vigencia:`, error);
-        return '21/07/2025 - 04/08/2025'; // Fallback
+        return new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }); // Fallback
       }
     } else {
       console.log(`📅 No hay fechas configuradas, usando fallback`);
-      return '21/07/2025 - 04/08/2025'; // Fallback
+      return new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }); // Fallback
     }
   }
 
@@ -407,7 +407,7 @@ const getDynamicValue = (
         value = getProductValue('fechasDesde', new Date().toLocaleDateString('es-AR'));
         break;
       case 'promotion-end-date':
-        value = getProductValue('fechasHasta', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-AR'));
+        value = getProductValue('fechasHasta', new Date().toLocaleDateString('es-AR'));
         break;
       default:
         value = content.textConfig.fallbackText || '';
@@ -887,7 +887,7 @@ const renderComponent = (
   
   switch (type) {
     case 'field-dynamic-text':
-      const textValue = getDynamicValue(content, product, isPreview, productChanges, component.id, component.showMockData !== false, financingCuotas, discountPercent);
+      const textValue = getDynamicValue(content, product, isPreview, productChanges, component.id, component.showMockData !== false, financingCuotas, discountPercent, isPdfCapture);
       const fieldType = getFieldType(content);
       
       // 🔥 DEBUG: Log especial para campos de cuotas
@@ -1270,9 +1270,9 @@ const renderComponent = (
             dateValue = formatValidityPeriod({
               startDate: content.dateConfig!.startDate!,
               endDate: content.dateConfig!.endDate!
-            });
+            }, isPdfCapture);
           } else {
-            dateValue = '21/07/2025 - 04/08/2025'; // Fallback
+            dateValue = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }); // Fallback
           }
         } catch (error) {
           dateValue = '21/07/2025 - 04/08/2025'; // Fallback en caso de error
