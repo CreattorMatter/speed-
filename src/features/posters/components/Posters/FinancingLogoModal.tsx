@@ -69,7 +69,7 @@ export const FinancingLogoModal: React.FC<FinancingLogoModalProps> = ({
             className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden flex flex-col">
               {/* Header */}
               <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-50 to-blue-50">
                 <div>
@@ -89,7 +89,7 @@ export const FinancingLogoModal: React.FC<FinancingLogoModalProps> = ({
               </div>
 
               {/* Content */}
-              <div className="p-6 max-h-[70vh] overflow-y-auto">
+              <div className="p-6 flex-1 overflow-y-auto">
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {FINANCING_OPTIONS.map((option) => (
                     <div 
@@ -139,7 +139,7 @@ export const FinancingLogoModal: React.FC<FinancingLogoModalProps> = ({
               </div>
 
               {/* Footer */}
-              <div className="p-6 border-t border-gray-200 flex justify-end gap-3 bg-gray-50">
+              <div className="p-6 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 flex-shrink-0">
                 <button
                   onClick={handleCancel}
                   className="px-6 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors font-medium"
