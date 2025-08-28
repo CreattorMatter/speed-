@@ -24,6 +24,7 @@ const getFontFamilyWithFallbacks = (fontFamily?: string): string => {
     'Roboto': "'Roboto', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     'Open Sans': "'Open Sans', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     'Poppins': "'Poppins', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Mark Pro': "'Mark Pro', 'DM Sans', Inter, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     'Arial': "Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     'Helvetica': "'Helvetica Neue', Helvetica, Arial, sans-serif"
   };

@@ -66,6 +66,7 @@ export const StylesTab: React.FC<StylesTabProps> = ({
               <option value="Roboto">Roboto</option>
               <option value="Open Sans">Open Sans</option>
               <option value="Poppins">Poppins</option>
+              <option value="Mark Pro">Mark Pro</option>
               <option value="'Calibri', Arial, sans-serif">Calibri</option>
               <option value="Arial">Arial</option>
               <option value="Helvetica">Helvetica</option>
