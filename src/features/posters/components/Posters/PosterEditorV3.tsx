@@ -36,6 +36,7 @@ import { LoadingModal } from "../../../../components/ui/LoadingModal";
 import { ProductSelectionModal } from "./Editor/ProductSelectionModal";
 import { FamilySelect } from "./Editor/Selectors/FamilySelect";
 import { TemplateSelect } from "./Editor/Selectors/TemplateSelect";
+import { templateRequiresProducts } from '../../../../utils/templateValidator';
 
 // Datos
 import { COMPANIES } from "../../../../data/companies";
@@ -443,15 +444,26 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
                         </svg>
                         Productos ({selectedProducts.length})
                       </h3>
-                      <button
-                        onClick={() => dispatch(setIsProductSelectorOpen(true))}
-                        className="px-3 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        {selectedProducts.length === 0 ? 'Agregar' : 'Gestionar'}
-                      </button>
+                      {(() => {
+                        const requiresProducts = selectedTemplate ? templateRequiresProducts(selectedTemplate.template).requiresProducts : true;
+                        return (
+                          <button
+                            onClick={() => requiresProducts && dispatch(setIsProductSelectorOpen(true))}
+                            disabled={!requiresProducts}
+                            className={`px-3 py-2 text-sm rounded-lg transition-colors flex items-center gap-2 ${
+                              requiresProducts
+                                ? 'bg-green-500 text-white hover:bg-green-600'
+                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            }`}
+                            title={requiresProducts ? 'Agregar productos' : 'Esta plantilla no requiere productos'}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            {selectedProducts.length === 0 ? (requiresProducts ? 'Agregar' : 'No requiere') : 'Gestionar'}
+                          </button>
+                        );
+                      })()}
                     </div>
                     
                     {selectedProducts.length === 0 ? (

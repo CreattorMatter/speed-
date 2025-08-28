@@ -11,6 +11,7 @@ import { type TemplateV3 } from '../../../../builderV3/types';
 import { TemplateGrid } from './Selectors/TemplateGrid';
 import { BuilderTemplateRenderer } from './Renderers/BuilderTemplateRenderer';
 import { getEditableFieldsStats } from '../../../../../utils/templateFieldDetector';
+import { templateRequiresProducts, logTemplateAnalysis } from '../../../../../utils/templateValidator';
 import { ProductChangesModal } from './ProductChangesModal';
 import { ValidityPeriodModal } from './ValidityPeriodModal';
 import { PrintContainer } from './PrintContainer';
@@ -439,15 +440,21 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   const handlePrintClick = () => {
     console.log('🖨️ handlePrintClick iniciado');
     
-    // Verificar si hay productos seleccionados
-    if (selectedProducts.length === 0) {
-      alert('Debes seleccionar al menos un producto para imprimir.');
-      return;
-    }
-
     // Verificar si hay una plantilla seleccionada
     if (!selectedTemplate) {
       alert('Debes seleccionar una plantilla para imprimir.');
+      return;
+    }
+
+    // Análisis dinámico: determinar si la plantilla requiere productos
+    const analysis = templateRequiresProducts(selectedTemplate.template);
+    if (process.env.NODE_ENV === 'development') {
+      logTemplateAnalysis(selectedTemplate.template, selectedTemplate.name);
+    }
+
+    // Solo exigir productos si la plantilla lo requiere
+    if (analysis.requiresProducts && selectedProducts.length === 0) {
+      alert(`Esta plantilla requiere productos para imprimir.\n\nRazón: ${analysis.reason}\n\nSelecciona al menos un producto para continuar.`);
       return;
     }
 
@@ -876,107 +883,125 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
               {/* ✅ CUOTAS INLINE: Ahora se edita directamente en el cartel haciendo click en los campos [cuota] y [precio_cuota] */}
 
               {/* Controles de edición inline estilo SPID viejo */}
-              {selectedProducts.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleToggleEditMode}
-                    className={`px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                      isEditModeActive
-                        ? 'bg-yellow-500 text-white shadow-md'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                    title={isEditModeActive ? 'Desactivar edición inline' : 'Activar edición inline'}
-                  >
-                    ✏️ {isEditModeActive ? 'Editando' : 'Editar Inline'}
-                  </button>
+              {(() => {
+                const requiresProducts = selectedTemplate ? templateRequiresProducts(selectedTemplate.template).requiresProducts : true;
+                const showControls = selectedProducts.length > 0 || !requiresProducts;
+                return showControls && (
+                  <div className="flex items-center gap-2">
+                    {selectedProducts.length > 0 && (
+                      <>
+                        <button
+                          onClick={handleToggleEditMode}
+                          className={`px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                            isEditModeActive
+                              ? 'bg-yellow-500 text-white shadow-md'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                          title={isEditModeActive ? 'Desactivar edición inline' : 'Activar edición inline'}
+                        >
+                          ✏️ {isEditModeActive ? 'Editando' : 'Editar Inline'}
+                        </button>
 
-                  {/* Botones de confirmación/cancelación cuando hay cambios pendientes */}
-                  {hasUnsavedChanges && (
-                    <>
-                      <button
-                        onClick={handleConfirmAllChanges}
-                        className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm text-sm font-medium"
-                        title="Confirmar todos los cambios (Ctrl+S)"
-                      >
-                        <Save className="w-4 h-4 mr-1 inline" />
-                        Confirmar
-                      </button>
-                      
-                      <button
-                        onClick={handleCancelAllChanges}
-                        className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-sm text-sm font-medium"
-                        title="Cancelar todos los cambios (Escape)"
-                      >
-                        <X className="w-4 h-4 mr-1 inline" />
-                        Cancelar
-                      </button>
-                    </>
-                  )}
-                  
-                  {/* Indicador de atajos de teclado */}
-                  {isEditModeActive && (
-                    <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded border">
-                      <span className="font-mono">Ctrl+E</span>: Edición | 
-                      <span className="font-mono">Ctrl+S</span>: Guardar | 
-                      <span className="font-mono">Esc</span>: Cancelar
-                    </div>
-                  )}
+                        {/* Botones de confirmación/cancelación cuando hay cambios pendientes */}
+                        {hasUnsavedChanges && (
+                          <>
+                            <button
+                              onClick={handleConfirmAllChanges}
+                              className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm text-sm font-medium"
+                              title="Confirmar todos los cambios (Ctrl+S)"
+                            >
+                              <Save className="w-4 h-4 mr-1 inline" />
+                              Confirmar
+                            </button>
+                            
+                            <button
+                              onClick={handleCancelAllChanges}
+                              className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-sm text-sm font-medium"
+                              title="Cancelar todos los cambios (Escape)"
+                            >
+                              <X className="w-4 h-4 mr-1 inline" />
+                              Cancelar
+                            </button>
+                          </>
+                        )}
+                        
+                        {/* Indicador de atajos de teclado */}
+                        {isEditModeActive && (
+                          <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded border">
+                            <span className="font-mono">Ctrl+E</span>: Edición | 
+                            <span className="font-mono">Ctrl+S</span>: Guardar | 
+                            <span className="font-mono">Esc</span>: Cancelar
+                          </div>
+                        )}
+                      </>
+                    )}
 
-                  {/* Botones de acción */}
-                  <div className="flex gap-3">
+                    {/* Botones de acción */}
+                    <div className="flex gap-3">
                     {/* Botón de imprimir */}
-                    <button
-                      onClick={handlePrintClick}
-                      disabled={selectedProducts.length === 0 || !selectedTemplate || isPrinting}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                        selectedProducts.length === 0 || !selectedTemplate || isPrinting
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : hasAnyChanges
-                            ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-md'
-                            : 'bg-purple-500 text-white hover:bg-purple-600 shadow-md'
-                      }`}
-                      title={
-                        selectedProducts.length === 0 
+                    {(() => {
+                      const requiresProducts = selectedTemplate ? templateRequiresProducts(selectedTemplate.template).requiresProducts : true;
+                      const disabled = (!selectedTemplate) || (requiresProducts && selectedProducts.length === 0) || isPrinting;
+                      const title = !selectedTemplate
+                        ? 'Selecciona una plantilla para imprimir'
+                        : requiresProducts && selectedProducts.length === 0
                           ? 'Selecciona productos para imprimir'
-                          : !selectedTemplate
-                            ? 'Selecciona una plantilla para imprimir'
-                            : hasAnyChanges
-                              ? 'Imprimir con reporte de cambios'
-                              : 'Imprimir plantillas'
-                      }
-                    >
-                      <Printer className="w-4 h-4" />
-                      {isPrinting ? 'Imprimiendo...' : hasAnyChanges ? 'Imprimir con Cambios' : 'Imprimir'}
-                      {hasAnyChanges && (
-                        <span className="bg-orange-600 text-white text-xs px-2 py-1 rounded-full ml-1">
-                          {Object.keys(productChanges).length}
-                        </span>
-                      )}
-                    </button>
+                          : hasAnyChanges
+                            ? 'Imprimir con reporte de cambios'
+                            : 'Imprimir plantillas';
+                      return (
+                        <button
+                          onClick={handlePrintClick}
+                          disabled={disabled}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                            disabled
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              : hasAnyChanges
+                                ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-md'
+                                : 'bg-purple-500 text-white hover:bg-purple-600 shadow-md'
+                          }`}
+                          title={title}
+                        >
+                          <Printer className="w-4 h-4" />
+                          {isPrinting ? 'Imprimiendo...' : hasAnyChanges ? 'Imprimir con Cambios' : 'Imprimir'}
+                          {hasAnyChanges && (
+                            <span className="bg-orange-600 text-white text-xs px-2 py-1 rounded-full ml-1">
+                              {Object.keys(productChanges).length}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })()}
 
                     {/* Botón de enviar a sucursal */}
-                    <button
-                      onClick={handleSendToSucursales}
-                      disabled={selectedProducts.length === 0 || !selectedTemplate}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                        selectedProducts.length === 0 || !selectedTemplate
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-md'
-                      }`}
-                      title={
-                        selectedProducts.length === 0 
+                    {(() => {
+                      const requiresProducts = selectedTemplate ? templateRequiresProducts(selectedTemplate.template).requiresProducts : true;
+                      const disabled = (!selectedTemplate) || (requiresProducts && selectedProducts.length === 0);
+                      const title = !selectedTemplate
+                        ? 'Selecciona una plantilla para enviar'
+                        : requiresProducts && selectedProducts.length === 0
                           ? 'Selecciona productos para enviar'
-                          : !selectedTemplate
-                            ? 'Selecciona una plantilla para enviar'
-                            : 'Enviar cartel a sucursales'
-                      }
-                    >
-                      <Send className="w-4 h-4" />
-                      Enviar a Sucursal
-                    </button>
+                          : 'Enviar cartel a sucursales';
+                      return (
+                        <button
+                          onClick={handleSendToSucursales}
+                          disabled={disabled}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                            disabled
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-md'
+                          }`}
+                          title={title}
+                        >
+                          <Send className="w-4 h-4" />
+                          Enviar a Sucursal
+                        </button>
+                      );
+                    })()}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
 
@@ -1137,13 +1162,29 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       <div className="print-container-wrapper">
         <PrintContainer
           ref={printContainerRef}
-          templates={selectedProducts.map(productId => {
-            const product = productos.find(p => p.id === productId);
-            return product && selectedTemplate ? {
-              product,
-              template: selectedTemplate.template
-            } : null;
-          }).filter(Boolean) as Array<{ product: ProductoReal; template: TemplateV3 }>}
+          templates={(() => {
+            if (!selectedTemplate) return [];
+            
+            // Verificar si la plantilla requiere productos
+            const requiresProducts = templateRequiresProducts(selectedTemplate.template).requiresProducts;
+            
+            if (requiresProducts) {
+              // Plantilla con productos: comportamiento normal
+              return selectedProducts.map(productId => {
+                const product = productos.find(p => p.id === productId);
+                return product ? {
+                  product,
+                  template: selectedTemplate.template
+                } : null;
+              }).filter(Boolean) as Array<{ product: ProductoReal; template: TemplateV3 }>;
+            } else {
+              // Plantilla sin productos: enviar solo la plantilla
+              return [{
+                template: selectedTemplate.template
+                // product es opcional, no se incluye
+              }];
+            }
+          })()}
           productChanges={productChanges}
           financingCuotas={selectedCuotas}
           discountPercent={selectedDescuento}

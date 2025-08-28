@@ -5,7 +5,7 @@ import { type EditedProduct } from '../../../../../store/features/poster/posterS
 import { BuilderTemplateRenderer } from './Renderers/BuilderTemplateRenderer';
 
 interface PrintContainerProps {
-  templates: { product: ProductoReal; template: TemplateV3 }[];
+  templates: { product?: ProductoReal; template: TemplateV3 }[]; // 🆕 Product ahora es opcional
   productChanges: Record<string, EditedProduct>;
   financingCuotas?: number; // 🆕 Para cálculos de financiación en impresión
   discountPercent?: number; // 🆕 Para cálculos de descuento en impresión
@@ -34,8 +34,11 @@ export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerPro
         const scaleY = (isLandscape ? A4_WIDTH_MM : A4_HEIGHT_MM) / templateHeightMM;
         const scale = Math.min(scaleX, scaleY, 1); // Sin factor de margen extra
 
+        // 🆕 Generar key único que funcione con o sin producto
+        const itemKey = product ? `${product.id}-${index}` : `template-${index}`;
+
         return (
-          <div key={`${product.id}-${index}`} className="page-break">
+          <div key={itemKey} className="page-break">
             <div 
               className="renderer-print-container" 
               style={{ 
@@ -52,7 +55,7 @@ export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerPro
               <BuilderTemplateRenderer
                 template={template}
                 components={template.defaultComponents}
-                product={product}
+                product={product} // 🆕 Ahora puede ser undefined para plantillas sin productos
                 productChanges={productChanges}
                 enableInlineEdit={false}
                 financingCuotas={financingCuotas}
