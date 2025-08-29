@@ -134,7 +134,7 @@ export const createFormatContext = (
     formatPreferences.useSuperscript ||
     formatPreferences.isPercentage ||
     originalFormat.superscriptDecimals ||
-    originalFormat.precision?.includes('-small')
+    (typeof originalFormat.precision === 'string' && originalFormat.precision.includes('-small'))
   );
 
   console.log(`🏗️ EVALUACIÓN FORMATO ESPECIAL:`, {
@@ -142,7 +142,7 @@ export const createFormatContext = (
     'formatPreferences.isPercentage': formatPreferences.isPercentage,
     'originalFormat.superscriptDecimals': originalFormat.superscriptDecimals,
     'originalFormat.precision': originalFormat.precision,
-    'precision includes -small': originalFormat.precision?.includes('-small'),
+    'precision includes -small': typeof originalFormat.precision === 'string' && originalFormat.precision.includes('-small'),
     hasSpecialFormat
   });
 
