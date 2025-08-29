@@ -1,5 +1,5 @@
 import { supabase, supabaseAdmin } from '@/lib/supabaseClient';
-import type { User, Group, Role } from '@/types/index';
+import type { User, Group, Role, Permission, UserPermissions } from '@/types/index';
 
 const db = supabaseAdmin || supabase;
 
@@ -8,31 +8,7 @@ const isDbReady = (): boolean => {
   return !!(db as any)?.from;
 };
 
-// Local persistence for features not yet in DB schema (e.g., enabledCards per group)
-const getLocalEnabledCards = (groupId: string): string[] | undefined => {
-  try {
-    if (typeof window === 'undefined') return undefined;
-    const raw = window.localStorage.getItem(`spid:group:enabledCards:${groupId}`);
-    if (!raw) return undefined;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as string[]) : undefined;
-  } catch {
-    return undefined;
-  }
-};
-
-const setLocalEnabledCards = (groupId: string, cards: string[] | undefined): void => {
-  try {
-    if (typeof window === 'undefined') return;
-    if (!cards || cards.length === 0) {
-      window.localStorage.removeItem(`spid:group:enabledCards:${groupId}`);
-    } else {
-      window.localStorage.setItem(`spid:group:enabledCards:${groupId}`, JSON.stringify(cards));
-    }
-  } catch {
-    // ignore
-  }
-};
+// 🗑️ enabledCards system removed - now using role-based permissions
 
 // Roles
 export async function getRoles(): Promise<Role[]> {
@@ -62,12 +38,55 @@ export async function createRole(role: Omit<Role, 'id'>): Promise<Role> {
   return data as Role;
 }
 
-// Permissions
-export async function getPermissions(): Promise<{ id: string; name: string; description?: string }[]> {
+// ================================================
+// PERMISSIONS MANAGEMENT
+// ================================================
+
+export async function getPermissions(): Promise<Permission[]> {
   if (!isDbReady()) return [];
-  const { data, error } = await db.from('permissions').select('id,name,description');
+  const { data, error } = await db.from('permissions').select('id,name,category,description');
   if (error) throw error;
-  return (data || []) as any;
+  return (data || []) as Permission[];
+}
+
+export async function getPermissionsByCategory(): Promise<Record<string, Permission[]>> {
+  const permissions = await getPermissions();
+  return permissions.reduce((acc, permission) => {
+    if (!acc[permission.category]) {
+      acc[permission.category] = [];
+    }
+    acc[permission.category].push(permission);
+    return acc;
+  }, {} as Record<string, Permission[]>);
+}
+
+export async function createPermission(permission: Omit<Permission, 'id'>): Promise<Permission> {
+  if (!isDbReady()) {
+    return { id: `perm_${Date.now()}`, ...permission };
+  }
+  const { data, error } = await db
+    .from('permissions')
+    .insert({ 
+      name: permission.name, 
+      category: permission.category, 
+      description: permission.description 
+    })
+    .select('id,name,category,description')
+    .single();
+  if (error) throw error;
+  return data as Permission;
+}
+
+export async function updatePermission(permissionId: string, updates: Partial<Omit<Permission, 'id'>>): Promise<void> {
+  if (!isDbReady()) return;
+  const { error } = await db.from('permissions').update(updates).eq('id', permissionId);
+  if (error) throw error;
+}
+
+export async function deletePermission(permissionId: string): Promise<void> {
+  if (!isDbReady()) return;
+  const { error } = await db.from('permissions').delete().eq('id', permissionId);
+  if (error) throw error;
 }
 
 export async function getRolesWithPermissions(): Promise<Array<{ id: string; name: string; description?: string; permissions: string[]; userCount: number }>> {
@@ -132,10 +151,82 @@ export async function upsertPermissions(perms: Array<{ name: string; description
   if (error) throw error;
 }
 
-// Permission checks (uses SQL function public.has_permission)
+// ================================================
+// PERMISSION CHECKS AND USER PERMISSIONS
+// ================================================
+
+// Get current user's permissions
+export async function getCurrentUserPermissions(): Promise<UserPermissions> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { permissions: [], groups: [], hasPermission: () => false };
+    }
+
+    // Get user from database
+    const { data: dbUser } = await db
+      .from('users')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (!dbUser) {
+      return { permissions: [], groups: [], hasPermission: () => false };
+    }
+
+    return getUserPermissions(dbUser.id);
+  } catch {
+    return { permissions: [], groups: [], hasPermission: () => false };
+  }
+}
+
+// Get user permissions by user ID
+export async function getUserPermissions(userId: string): Promise<UserPermissions> {
+  try {
+    const [permissionsResult, groupsResult] = await Promise.all([
+      db.rpc('get_user_permissions', { user_uuid: userId }),
+      db.rpc('get_user_groups', { user_uuid: userId })
+    ]);
+
+    const permissions = (permissionsResult.data || []).map((p: any) => ({
+      name: p.permission_name,
+      category: p.category,
+      description: p.description
+    }));
+
+    const groups = (groupsResult.data || []).map((g: any) => ({
+      id: g.group_id,
+      name: g.group_name
+    }));
+
+    const hasPermission = (permissionName: string): boolean => {
+      return permissions.some((p: any) => p.name === permissionName);
+    };
+
+    return { permissions, groups, hasPermission };
+  } catch (error) {
+    console.error('Error getting user permissions:', error);
+    return { permissions: [], groups: [], hasPermission: () => false };
+  }
+}
+
+// Check if current user has specific permission
 export async function hasPermission(permissionName: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase.rpc('has_permission', { perm_name: permissionName });
+    const userPerms = await getCurrentUserPermissions();
+    return userPerms.hasPermission(permissionName);
+  } catch {
+    return false;
+  }
+}
+
+// Check if user has specific permission by user ID
+export async function userHasPermission(userId: string, permissionName: string): Promise<boolean> {
+  try {
+    const { data, error } = await db.rpc('user_has_permission', { 
+      user_uuid: userId, 
+      permission_name: permissionName 
+    });
     if (error) return false;
     return Boolean(data);
   } catch {
@@ -145,8 +236,15 @@ export async function hasPermission(permissionName: string): Promise<boolean> {
 
 export async function hasAllPermissions(permissionNames: string[]): Promise<boolean> {
   if (!permissionNames || permissionNames.length === 0) return true;
-  const checks = await Promise.all(permissionNames.map((p) => hasPermission(p)));
-  return checks.every(Boolean);
+  const userPerms = await getCurrentUserPermissions();
+  return permissionNames.every(perm => userPerms.hasPermission(perm));
+}
+
+// Check if user has any of the specified permissions
+export async function hasAnyPermission(permissionNames: string[]): Promise<boolean> {
+  if (!permissionNames || permissionNames.length === 0) return false;
+  const userPerms = await getCurrentUserPermissions();
+  return permissionNames.some(perm => userPerms.hasPermission(perm));
 }
 
 // Users
@@ -336,12 +434,7 @@ export async function getGroups(): Promise<Group[]> {
     .from('groups')
     .select('id,name,description,created_at,created_by');
   if (error) throw error;
-  // Merge local enabledCards if present
-  const groups = (data || []) as Group[];
-  return groups.map((g: Group) => {
-    const enabledCards = getLocalEnabledCards(g.id);
-    return enabledCards ? { ...g, enabledCards } : g;
-  });
+  return (data || []) as Group[];
 }
 
 export async function createGroup(group: Omit<Group, 'id'|'created_at'|'created_by'> & { created_by?: string }): Promise<Group> {
@@ -359,10 +452,7 @@ export async function createGroup(group: Omit<Group, 'id'|'created_at'|'created_
 
 export async function updateGroupDb(groupId: string, updates: Partial<Group>): Promise<void> {
   if (!isDbReady()) return;
-  // Persist enabledCards locally (DB column may not exist yet)
-  if (typeof (updates as any).enabledCards !== 'undefined') {
-    setLocalEnabledCards(groupId, (updates as any).enabledCards as string[]);
-  }
+  
   // Only send whitelisted columns to avoid schema mismatches across environments
   const allowedKeys: Array<keyof Group> = ['name', 'description', 'created_by'];
   const payload: Record<string, any> = {};
@@ -372,18 +462,11 @@ export async function updateGroupDb(groupId: string, updates: Partial<Group>): P
     }
   }
 
-  // If nothing to update, silently succeed (e.g., only UI-only props like enabledCards)
+  // If nothing to update, silently succeed
   if (Object.keys(payload).length === 0) return;
 
   const { error } = await db.from('groups').update(payload).eq('id', groupId);
-  if (error) {
-    const msg = String(error.message || '').toLowerCase();
-    // Gracefully ignore unknown column errors (e.g., enabledCards not present in DB schema)
-    if (msg.includes('column') && (msg.includes('enabledcards') || msg.includes('does not exist'))) {
-      return;
-    }
-    throw error;
-  }
+  if (error) throw error;
 }
 
 export async function deleteGroupDb(groupId: string): Promise<void> {

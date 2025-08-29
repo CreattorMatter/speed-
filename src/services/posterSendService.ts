@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabaseClient';
 import { DirectPdfService } from './directPdfService';
 import { VisiblePdfService } from './visiblePdfService';
+import { getCurrentUserPermissions } from './rbacService';
 
 export interface PosterSend {
   id: string;
@@ -223,26 +224,46 @@ export class PosterSendService {
 
   /**
    * Obtiene los carteles recibidos para el usuario actual (según sus grupos)
+   * Filtra por grupos del usuario si no tiene permisos para ver todos
    */
   static async getReceivedPosters(): Promise<PosterSendItem[]> {
     try {
-      const { data: items, error: itemsError } = await supabase
+      // Obtener permisos del usuario actual
+      const userPermissions = await getCurrentUserPermissions();
+      const canViewAll = userPermissions.hasPermission('group:view_all') || 
+                        userPermissions.hasPermission('admin:system');
+
+      let query = supabase
         .from('poster_send_items')
         .select(`
           *,
           poster_sends!inner (
             template_name,
             products_count,
-            created_at
+            created_at,
+            target_groups
           )
-        `)
-        .order('created_at', { ascending: false });
+        `);
+
+      // Si no puede ver todos, filtrar por grupos del usuario
+      if (!canViewAll && userPermissions.groups.length > 0) {
+        const userGroupIds = userPermissions.groups.map(g => g.id);
+        console.log('🔒 Filtrando por grupos del usuario:', userGroupIds);
+        // Filtrar elementos que fueron enviados a alguno de los grupos del usuario
+        query = query.overlaps('poster_sends.target_groups', userGroupIds);
+      } else if (!canViewAll) {
+        console.log('🔒 Usuario sin grupos - sin elementos recibidos');
+        return []; // Usuario sin grupos no puede ver nada
+      }
+
+      const { data: items, error: itemsError } = await query.order('created_at', { ascending: false });
 
       if (itemsError) {
         console.error('❌ Error obteniendo recibidos:', itemsError);
         throw new Error(`Error obteniendo recibidos: ${itemsError.message}`);
       }
 
+      console.log(`📥 Elementos recibidos obtenidos: ${(items || []).length}`);
       return items || [];
 
     } catch (error) {

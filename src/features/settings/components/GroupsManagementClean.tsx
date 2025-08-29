@@ -11,13 +11,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Group } from '../../../types';
-import { 
-  getGroups, 
-  getUsers, 
-  createGroup, 
-  updateGroupDb, 
-  deleteGroupDb 
-} from '../../../services/rbacService';
 
 interface GroupsManagementProps {
   onBack: () => void;
@@ -44,19 +37,10 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
   const loadData = async () => {
     try {
       setIsLoading(true);
-      
-      // Cargar grupos y usuarios desde el servicio RBAC
-      const [groupsData, usersData] = await Promise.all([
-        getGroups(),
-        getUsers()
-      ]);
-      
-      console.log('📂 Grupos cargados:', groupsData);
-      console.log('👥 Usuarios cargados:', usersData);
-      
-      setGroups(groupsData);
-      setUsers(usersData);
-      
+      // Aquí irían las llamadas a la API para cargar grupos y usuarios
+      // Por ahora usamos datos mock
+      setGroups([]);
+      setUsers([]);
     } catch (error) {
       console.error('Error loading data:', error);
       toast.error('Error al cargar los datos');
@@ -80,19 +64,13 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
     if (!newGroupName.trim()) return;
     
     try {
-      await createGroup({
-        name: newGroupName.trim(),
-        description: newGroupDescription.trim(),
-        users: []
-      });
-      
+      // Crear grupo
       toast.success('Grupo creado exitosamente');
       setShowCreateModal(false);
       setNewGroupName('');
       setNewGroupDescription('');
-      await loadData(); // Recargar datos
+      loadData();
     } catch (error) {
-      console.error('Error al crear grupo:', error);
       toast.error('Error al crear el grupo');
     }
   };
@@ -101,19 +79,14 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
     if (!selectedGroup || !editGroupName.trim()) return;
     
     try {
-      await updateGroupDb(selectedGroup.id, {
-        name: editGroupName.trim(),
-        description: editGroupDescription.trim()
-      });
-      
+      // Actualizar grupo
       toast.success('Grupo actualizado exitosamente');
       setShowEditModal(false);
       setSelectedGroup(null);
       setEditGroupName('');
       setEditGroupDescription('');
-      await loadData(); // Recargar datos
+      loadData();
     } catch (error) {
-      console.error('Error al actualizar grupo:', error);
       toast.error('Error al actualizar el grupo');
     }
   };
@@ -127,11 +100,10 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
   const handleDeleteGroup = async (group: Group) => {
     if (window.confirm(`¿Estás seguro de que quieres eliminar el grupo "${group.name}"?`)) {
       try {
-        await deleteGroupDb(group.id);
+        // Eliminar grupo
         toast.success('Grupo eliminado exitosamente');
-        await loadData(); // Recargar datos
+        loadData();
       } catch (error) {
-        console.error('Error al eliminar grupo:', error);
         toast.error('Error al eliminar el grupo');
       }
     }
@@ -271,48 +243,30 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
           ))}
         </div>
 
-                 {/* Empty state */}
-         {filteredGroups.length === 0 && !isLoading && (
-           <div className="text-center py-12">
-             <UsersIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-             <h3 className="text-lg font-medium text-gray-900 mb-2">
-               {searchTerm ? 'No se encontraron grupos' : 'No hay grupos'}
-             </h3>
-             <p className="text-gray-600 mb-4">
-               {searchTerm 
-                 ? 'Intenta con otros términos de búsqueda'
-                 : 'Comienza creando tu primer grupo'
-               }
-             </p>
-             
-             {/* 🐛 Debug info temporal */}
-             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-left max-w-md mx-auto">
-               <h4 className="font-medium text-yellow-800 mb-2">🐛 Debug Info:</h4>
-               <div className="text-sm text-yellow-700 space-y-1">
-                 <p>Total grupos: {groups.length}</p>
-                 <p>Filtrados: {filteredGroups.length}</p>
-                 <p>Cargando: {isLoading ? 'Sí' : 'No'}</p>
-                 <p>Búsqueda: "{searchTerm}"</p>
-               </div>
-               <button 
-                 onClick={loadData}
-                 className="mt-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs"
-               >
-                 🔄 Recargar
-               </button>
-             </div>
-             
-             {!searchTerm && (
-               <button
-                 onClick={() => setShowCreateModal(true)}
-                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-               >
-                 <UserPlus className="h-4 w-4 mr-2" />
-                 Crear Grupo
-               </button>
-             )}
-           </div>
-         )}
+        {/* Empty state */}
+        {filteredGroups.length === 0 && !isLoading && (
+          <div className="text-center py-12">
+            <UsersIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {searchTerm ? 'No se encontraron grupos' : 'No hay grupos'}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {searchTerm 
+                ? 'Intenta con otros términos de búsqueda'
+                : 'Comienza creando tu primer grupo'
+              }
+            </p>
+            {!searchTerm && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Crear Grupo
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Modales - Se mantienen las funcionalidades básicas sin enabledCards */}

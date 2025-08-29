@@ -108,6 +108,32 @@ export interface Role {
   description: string;
 }
 
+// 🆕 Permission System
+export interface Permission {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+}
+
+export interface UserPermissions {
+  permissions: Array<{
+    name: string;
+    category: string;
+    description: string;
+  }>;
+  groups: Array<{
+    id: string;
+    name: string;
+  }>;
+  hasPermission: (permissionName: string) => boolean;
+}
+
+export interface RoleWithPermissions extends Role {
+  permissions: string[];
+  userCount: number;
+}
+
 // 🆕 Groups Management System
 export interface Group {
   id: string;
@@ -116,7 +142,7 @@ export interface Group {
   created_at?: string;
   created_by?: string; // User ID who created the group
   users?: string[]; // Array of user IDs
-  enabledCards?: string[]; // Array of enabled dashboard card IDs
+  // 🗑️ enabledCards removed - now using role-based permissions
 }
 
 // 🆕 Email Templates

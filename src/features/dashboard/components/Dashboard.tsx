@@ -3,6 +3,7 @@ import { Package2, FileText, LayoutTemplate, Settings, Sparkles, TrendingUp, Use
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Header } from '../../../components/shared/Header';
+import { PermissionGuard } from '../../../components/auth/PermissionGuard';
 
 import { NewsModal } from '../../../components/shared/NewsModal';
 
@@ -225,8 +226,8 @@ export default function Dashboard({
             </motion.div>
           )}
 
-          {/* Admin Card - Solo para ADMIN */}
-          {userRole === 'admin' && (
+          {/* Admin Card - Solo para usuarios con permisos de administración */}
+          <PermissionGuard permission="admin:system">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -258,10 +259,10 @@ export default function Dashboard({
                 </div>
               </div>
             </motion.div>
-          )}
+          </PermissionGuard>
 
-          {/* Recibidos - Solo ADMIN por ahora */}
-          {userRole === 'admin' && (
+          {/* Recibidos - Solo para usuarios con permisos */}
+          <PermissionGuard permission="dashboard:recibidos">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -289,10 +290,10 @@ export default function Dashboard({
                 </div>
               </div>
             </motion.div>
-          )}
+          </PermissionGuard>
 
-          {/* Enviados - Solo ADMIN por ahora */}
-          {userRole === 'admin' && (
+          {/* Enviados - Solo para usuarios con permisos */}
+          <PermissionGuard permission="dashboard:enviados">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -320,7 +321,7 @@ export default function Dashboard({
                 </div>
               </div>
             </motion.div>
-          )}
+          </PermissionGuard>
         </div>
 
         {/* Enhanced Stats Section */}

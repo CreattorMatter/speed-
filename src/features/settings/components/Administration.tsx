@@ -3,7 +3,7 @@ import { Users, Shield, Key, ArrowLeft, Activity, UserPlus } from 'lucide-react'
 import { UsersTable } from './UsersTable';
 import { EditUserModal } from './EditUserModal';
 import { AddUserModal, type NewUserData } from './AddUserModal';
-import { RolesAndPermissions } from './RolesAndPermissions';
+import { RolePermissionsManagement } from './RolePermissionsManagement';
 // import { SecuritySettings } from './SecuritySettings';
 import { SecurityDashboard } from './SecurityDashboard';
 import { GroupsManagement } from './GroupsManagement';
@@ -42,7 +42,7 @@ const initialGroups: Group[] = [
     created_at: '2024-01-15T10:00:00Z',
     created_by: 'usr_1',
     users: ['usr_2'],
-    enabledCards: ['cartel', 'recibidos'] // Solo cartel y recibidos para sucursales
+    // 🗑️ enabledCards removed - now using role-based permissions
   },
   { 
     id: 'grp_2', 
@@ -51,7 +51,7 @@ const initialGroups: Group[] = [
     created_at: '2024-02-01T10:00:00Z',
     created_by: 'usr_1',
     users: ['usr_2'],
-    enabledCards: ['cartel', 'builder', 'enviados'] // Editorial puede crear y enviar
+    // 🗑️ enabledCards removed - now using role-based permissions
   }
 ];
 
@@ -299,7 +299,7 @@ export const Administration: React.FC<AdministrationProps> = ({
                   onRemoveUserFromGroup={handleRemoveUserFromGroup}
                 />;
       case 'roles':
-        return <RolesAndPermissions />;
+        return <RolePermissionsManagement onBack={() => setCurrentView('dashboard')} />;
       // 'security' tab removed
       default:
         return null;

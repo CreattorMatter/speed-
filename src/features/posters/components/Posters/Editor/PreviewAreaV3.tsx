@@ -15,6 +15,7 @@ import { templateRequiresProducts, logTemplateAnalysis } from '../../../../../ut
 import { ProductChangesModal } from './ProductChangesModal';
 import { ValidityPeriodModal } from './ValidityPeriodModal';
 import { PrintContainer } from './PrintContainer';
+import { usePermissions } from '../../../../../hooks/usePermissions';
 
 import { sendChangeReport } from '../../../../../services/supabaseEmailSMTP';
 // import { CuotasSelector } from './Selectors/CuotasSelector'; // ❌ REMOVIDO: Ahora se edita inline
@@ -42,10 +43,14 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   onTemplateSelect,
   isLoadingTemplates
 }) => {
+  // Redux state
   const selectedProducts = useSelector(selectSelectedProducts);
   const productChanges = useSelector(selectProductChanges);
   const hasAnyChanges = useSelector(selectHasAnyChanges);
   const dispatch = useDispatch();
+  
+  // Permisos del usuario
+  const { hasPermission } = usePermissions();
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const printContainerRef = useRef<HTMLDivElement>(null);
 
@@ -446,6 +451,15 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       return;
     }
 
+    // Verificar permisos de impresión
+    const canPrintDirect = hasPermission('poster:print_direct');
+    const canPrintWithAudit = hasPermission('poster:print_audit');
+    
+    if (!canPrintDirect && !canPrintWithAudit) {
+      toast.error('No tienes permisos para imprimir');
+      return;
+    }
+
     // Análisis dinámico: determinar si la plantilla requiere productos
     const analysis = templateRequiresProducts(selectedTemplate.template);
     if (process.env.NODE_ENV === 'development') {
@@ -456,6 +470,19 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     if (analysis.requiresProducts && selectedProducts.length === 0) {
       alert(`Esta plantilla requiere productos para imprimir.\n\nRazón: ${analysis.reason}\n\nSelecciona al menos un producto para continuar.`);
       return;
+    }
+
+    // Lógica de permisos para impresión
+    if (canPrintDirect) {
+      // Puede imprimir directamente sin auditoría
+      console.log('✅ Usuario con permiso de impresión directa');
+    } else if (canPrintWithAudit) {
+      // Debe pasar por auditoría obligatoria
+      console.log('⚠️ Usuario requiere auditoría para imprimir');
+      if (!hasAnyChanges) {
+        toast.error('Debe realizar cambios en los productos antes de imprimir (auditoría requerida)');
+        return;
+      }
     }
 
     // 🆕 NUEVO: Validar fecha de vigencia desde configuración de plantilla
@@ -527,12 +554,17 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       }
     }
 
-    // Si hay cambios guardados, mostrar modal de confirmación
-    if (hasAnyChanges) {
-      setShowChangesModal(true);
-    } else {
-      // Imprimir directamente si no hay cambios
-      handleDirectPrint();
+    // Lógica basada en permisos y cambios
+    if (canPrintDirect) {
+      // Impresión directa: puede imprimir con o sin cambios
+      if (hasAnyChanges) {
+        setShowChangesModal(true); // Mostrar modal para confirmar cambios (opcional)
+      } else {
+        handleDirectPrint(); // Imprimir directamente
+      }
+    } else if (canPrintWithAudit && hasAnyChanges) {
+      // Auditoría obligatoria: solo puede imprimir si hay cambios
+      setShowChangesModal(true); // Mostrar modal de auditoría obligatoria
     }
   };
 

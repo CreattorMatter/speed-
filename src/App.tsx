@@ -18,6 +18,7 @@ import { supabase, supabaseAdmin } from './lib/supabaseClient';
 import { signInWithPassword, signOut as authSignOut, getCurrentProfile } from './services/authService';
 import { HeaderProvider } from './components/shared/HeaderProvider';
 import { Toaster } from 'react-hot-toast';
+import { PermissionsProvider } from './contexts/PermissionsContext';
 
 import { CameraCapture } from './components/shared/CameraCapture';
 import { toast } from 'react-hot-toast';
@@ -541,35 +542,37 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <Suspense fallback={null}>
-        <AppContent />
-        <Toaster 
-          position="bottom-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
+    <PermissionsProvider>
+      <Router>
+        <Suspense fallback={null}>
+          <AppContent />
+          <Toaster 
+            position="bottom-right"
+            toastOptions={{
               duration: 3000,
-              iconTheme: {
-                primary: '#4CAF50',
-                secondary: '#FFF',
+              style: {
+                background: '#363636',
+                color: '#fff',
               },
-            },
-            error: {
-              duration: 3000,
-              iconTheme: {
-                primary: '#F44336',
-                secondary: '#FFF',
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#4CAF50',
+                  secondary: '#FFF',
+                },
               },
-            },
-          }}
-        />
-      </Suspense>
-    </Router>
+              error: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#F44336',
+                  secondary: '#FFF',
+                },
+              },
+            }}
+          />
+        </Suspense>
+      </Router>
+    </PermissionsProvider>
   );
 }
 
