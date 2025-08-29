@@ -7,7 +7,8 @@ import { calcularDescuentoPorcentaje } from '../../../../../../data/products';
 import { formatValidityPeriod } from '../../../../../../utils/validityPeriodValidator';
 import { calculatePricePorCuota } from '../../../../../../utils/financingCalculator';
 import { FormatContext, createFormatContext, reconstructOutputFormat } from '../../../../../../types/formatContext';
-import { getDynamicFieldValue, generateDynamicPlaceholder } from '../../../../../../utils/productFieldsMap';
+import { getDynamicFieldValue } from '../../../../../../utils/productFieldsMap';
+import { generateDynamicPlaceholder } from '../../../../../../lib/formatters';
 
 interface BuilderTemplateRendererProps {
   template: TemplateV3;

@@ -5,7 +5,6 @@
 
 import { PriceFormatOptions } from './types';
 import { NUMBER_FORMAT } from '../../constants/formatting';
-import { formatLog } from '../logger';
 
 export class PriceFormatter {
   private static defaultOptions: Required<PriceFormatOptions> = {
@@ -25,15 +24,12 @@ export class PriceFormatter {
   static format(value: number | string, options: Partial<PriceFormatOptions> = {}): string {
     const opts = { ...this.defaultOptions, ...options };
     
-    formatLog('Formateando precio', { value, options: opts }, 'PriceFormatter');
-    
     // Validar y convertir valor
     const numericValue = typeof value === 'string' 
       ? parseFloat(value.replace(NUMBER_FORMAT.PATTERNS.NUMERIC_ONLY, '').replace(',', '.'))
       : value;
     
     if (isNaN(numericValue)) {
-      formatLog('Valor inválido, usando fallback', { value, fallback: opts.fallback }, 'PriceFormatter');
       return opts.fallback;
     }
 
@@ -53,14 +49,8 @@ export class PriceFormatter {
         formattedValue = `${formattedValue} ${opts.currency}`;
       }
 
-      formatLog('Precio formateado', { 
-        input: numericValue, 
-        output: formattedValue 
-      }, 'PriceFormatter');
-
       return formattedValue;
     } catch (error) {
-      formatLog('Error formateando precio', { error, value }, 'PriceFormatter');
       return opts.fallback;
     }
   }

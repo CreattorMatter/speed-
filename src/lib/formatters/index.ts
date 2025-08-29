@@ -15,14 +15,43 @@ export type {
   FormatOptions,
   PriceFormatOptions,
   DateFormatOptions,
-  NumberFormatOptions
+  NumberFormatOptions,
+  TextFormatOptions
 } from './types';
 
 // Export funciones de conveniencia
 export {
+  // Price formatters
   formatPrice,
-  formatDate,
+  formatCurrency,
+  formatPriceWithSuperscript,
+  formatPriceNoDecimals,
+  
+  // Number formatters
   formatNumber,
   formatPercentage,
-  formatCurrency
+  
+  // Date formatters
+  formatDate,
+  formatDateRange,
+  formatDateISO,
+  formatDateLong,
+  todayFormatted,
+  todayISO,
+  
+  // Text formatters
+  formatText,
+  formatSKU,
+  formatProductName,
+  formatDescription,
+  sanitizeText,
+  generatePlaceholder,
+  generateDynamicPlaceholder,
+  
+  // Utility functions
+  parseNumericValue,
+  isNumericField,
+  isPriceField,
+  isDateField,
+  isTextField
 } from './convenience';

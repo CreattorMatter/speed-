@@ -4,6 +4,9 @@
  */
 
 import { PriceFormatter } from './priceFormatter';
+import { DateFormatter } from './dateFormatter';
+import { NumberFormatter } from './numberFormatter';
+import { TextFormatter } from './textFormatter';
 import { PriceFormatOptions, DateFormatOptions, NumberFormatOptions } from './types';
 
 // =====================
@@ -54,60 +57,55 @@ export const formatPercentage = (value: number | string) => {
 // DATE FORMATTERS
 // =====================
 
-export const formatDate = (value: string | Date, options?: Partial<DateFormatOptions>) => {
-  const opts = {
-    format: 'short' as const,
-    locale: 'es-AR',
-    fallback: 'Fecha inválida',
-    ...options
-  };
-  
-  try {
-    const date = typeof value === 'string' ? new Date(value) : value;
-    
-    if (isNaN(date.getTime())) {
-      return opts.fallback;
-    }
-    
-    switch (opts.format) {
-      case 'iso':
-        return date.toISOString().split('T')[0];
-      case 'long':
-        return date.toLocaleDateString(opts.locale, { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        });
-      case 'short':
-      default:
-        return date.toLocaleDateString(opts.locale);
-    }
-  } catch (error) {
-    return opts.fallback;
-  }
-};
+export const formatDate = (value: string | Date, options?: Partial<DateFormatOptions>) => 
+  DateFormatter.format(value, options);
 
-export const formatDateRange = (startDate: string | Date, endDate: string | Date, forPrint = false) => {
-  const start = formatDate(startDate);
-  const end = formatDate(endDate);
-  
-  // Si es para impresión y las fechas son iguales, mostrar solo una
-  if (forPrint && start === end) {
-    return start;
-  }
-  
-  return `${start} - ${end}`;
-};
+export const formatDateRange = (startDate: string | Date, endDate: string | Date, forPrint = false) => 
+  DateFormatter.formatRange(startDate, endDate, { forPrint });
+
+export const formatDateISO = (value: string | Date) => 
+  DateFormatter.format(value, { format: 'iso' });
+
+export const formatDateLong = (value: string | Date) => 
+  DateFormatter.format(value, { format: 'long' });
+
+export const todayFormatted = () => 
+  DateFormatter.today();
+
+export const todayISO = () => 
+  DateFormatter.todayISO();
+
+// =====================
+// TEXT FORMATTERS
+// =====================
+
+export const formatText = (value: string, maxLength?: number) => 
+  TextFormatter.format(value, { maxLength });
+
+export const formatSKU = (value: string) => 
+  TextFormatter.formatSKU(value);
+
+export const formatProductName = (value: string) => 
+  TextFormatter.formatProductName(value);
+
+export const formatDescription = (value: string, maxLength = 100) => 
+  TextFormatter.formatDescription(value, maxLength);
+
+export const sanitizeText = (value: string) => 
+  TextFormatter.sanitize(value);
+
+export const generatePlaceholder = (fieldType: string) => 
+  TextFormatter.generatePlaceholder(fieldType);
+
+export const generateDynamicPlaceholder = (dynamicTemplate: string) => 
+  TextFormatter.generateDynamicPlaceholder(dynamicTemplate);
 
 // =====================
 // UTILITY FUNCTIONS
 // =====================
 
-export const parseNumericValue = (value: string): number => {
-  const cleaned = value.replace(/[^\d.,]/g, '').replace(',', '.');
-  const parsed = parseFloat(cleaned);
-  return isNaN(parsed) ? 0 : parsed;
-};
+export const parseNumericValue = (value: string): number => 
+  NumberFormatter.parse(value);
 
 export const isNumericField = (fieldType: string): boolean => {
   return ['price', 'precio', 'percentage', 'porcentaje', 'number', 'calculated'].some(
@@ -117,4 +115,12 @@ export const isNumericField = (fieldType: string): boolean => {
 
 export const isPriceField = (fieldType: string): boolean => {
   return ['price', 'precio'].some(type => fieldType.includes(type));
+};
+
+export const isDateField = (fieldType: string): boolean => {
+  return ['date', 'fecha', 'validity', 'vigencia'].some(type => fieldType.includes(type));
+};
+
+export const isTextField = (fieldType: string): boolean => {
+  return ['text', 'description', 'name', 'sku'].some(type => fieldType.includes(type));
 };
