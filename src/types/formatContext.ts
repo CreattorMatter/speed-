@@ -3,6 +3,8 @@
  * Sistema para preservar configuraciones de formato durante la edición inline
  */
 
+import { formatLog } from '../lib/logger';
+
 export interface FormatPreferences {
   /** Usar decimales en superíndice (ej: 349.999⁰⁰) */
   useSuperscript?: boolean;
@@ -63,7 +65,7 @@ export const detectFormatFromRendered = (
   numericValue: number,
   fieldType: string
 ): FormatPreferences => {
-  console.log(`🔍 DETECTANDO FORMATO:`, { renderedValue, numericValue, fieldType });
+  formatLog('Detectando formato', { renderedValue, numericValue, fieldType }, 'detectFormatFromRendered');
   
   const hasSuperscript = /[⁰¹²³⁴⁵⁶⁷⁸⁹]/.test(renderedValue);
   const hasNormalDecimals = renderedValue.includes(',');
@@ -71,13 +73,13 @@ export const detectFormatFromRendered = (
   const hasPercentage = renderedValue.includes('%');
   const hasGrouping = /\d{1,3}(\.\d{3})+/.test(renderedValue);
 
-  console.log(`🔍 ANÁLISIS:`, { 
+  formatLog('Análisis de formato', { 
     hasSuperscript, 
     hasNormalDecimals, 
     hasCurrency, 
     hasPercentage, 
     hasGrouping 
-  });
+  }, 'detectFormatFromRendered');
 
   // Detectar número de decimales
   let decimalPlaces = 0;
@@ -85,13 +87,13 @@ export const detectFormatFromRendered = (
     // Contar caracteres de superíndice
     const superscriptChars = renderedValue.match(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g);
     decimalPlaces = superscriptChars ? superscriptChars.length : 0;
-    console.log(`🔍 SUPERÍNDICE DETECTADO:`, { superscriptChars, decimalPlaces });
+    formatLog('Superíndice detectado', { superscriptChars, decimalPlaces }, 'detectFormatFromRendered');
   } else if (hasNormalDecimals) {
     const afterComma = renderedValue.split(',')[1];
     if (afterComma) {
       decimalPlaces = afterComma.replace(/[^\d]/g, '').length;
     }
-    console.log(`🔍 DECIMALES NORMALES:`, { afterComma, decimalPlaces });
+    formatLog('Decimales normales', { afterComma, decimalPlaces }, 'detectFormatFromRendered');
   }
 
   const result = {
@@ -102,7 +104,7 @@ export const detectFormatFromRendered = (
     isPercentage: hasPercentage
   };
   
-  console.log(`🔍 RESULTADO DETECCIÓN:`, result);
+  formatLog('Resultado detección', result, 'detectFormatFromRendered');
   return result;
 };
 
@@ -114,19 +116,19 @@ export const createFormatContext = (
   renderedValue: string,
   fieldType: string
 ): FormatContext => {
-  console.log(`🏗️ CREANDO FORMAT CONTEXT:`, { 
+  formatLog('Creando FormatContext', { 
     componentId: component?.id,
     renderedValue, 
     fieldType,
     componentContent: component?.content 
-  });
+  }, 'createFormatContext');
   
   const originalFormat = component?.content?.outputFormat || {};
   const numericValue = typeof component?.content?.value === 'number' 
     ? component.content.value 
     : parseFloat(renderedValue.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
 
-  console.log(`🏗️ FORMATO ORIGINAL:`, originalFormat);
+  formatLog('Formato original encontrado', originalFormat, 'createFormatContext');
 
   const formatPreferences = detectFormatFromRendered(renderedValue, numericValue, fieldType);
   
@@ -137,14 +139,14 @@ export const createFormatContext = (
     originalFormat.precision?.includes('-small')
   );
 
-  console.log(`🏗️ EVALUACIÓN FORMATO ESPECIAL:`, {
+  formatLog('Evaluación formato especial', {
     'formatPreferences.useSuperscript': formatPreferences.useSuperscript,
     'formatPreferences.isPercentage': formatPreferences.isPercentage,
     'originalFormat.superscriptDecimals': originalFormat.superscriptDecimals,
     'originalFormat.precision': originalFormat.precision,
     'precision includes -small': originalFormat.precision?.includes('-small'),
     hasSpecialFormat
-  });
+  }, 'createFormatContext');
 
   const result = {
     originalFormat,
@@ -162,7 +164,7 @@ export const createFormatContext = (
     }
   };
   
-  console.log(`🏗️ FORMAT CONTEXT CREADO:`, result);
+  formatLog('FormatContext creado', result, 'createFormatContext');
   return result;
 };
 
@@ -170,7 +172,7 @@ export const createFormatContext = (
  * 🔄 Función para reconstruir outputFormat desde FormatContext
  */
 export const reconstructOutputFormat = (formatContext: FormatContext): any => {
-  console.log(`🔄 RECONSTRUYENDO OUTPUT FORMAT:`, formatContext);
+  formatLog('Reconstruyendo OutputFormat', formatContext, 'reconstructOutputFormat');
   
   const { formatPreferences, originalFormat } = formatContext;
   
@@ -181,11 +183,11 @@ export const reconstructOutputFormat = (formatContext: FormatContext): any => {
     precision = formatPreferences.useSuperscript ? '2-small' : '2';
   }
 
-  console.log(`🔄 PRECISION CALCULADA:`, { 
+  formatLog('Precisión calculada', { 
     decimalPlaces: formatPreferences.decimalPlaces,
     useSuperscript: formatPreferences.useSuperscript,
     precision 
-  });
+  }, 'reconstructOutputFormat');
 
   const result = {
     ...originalFormat,
@@ -197,6 +199,6 @@ export const reconstructOutputFormat = (formatContext: FormatContext): any => {
     useGrouping: formatPreferences.useGrouping !== false
   };
   
-  console.log(`🔄 OUTPUT FORMAT RECONSTRUIDO:`, result);
+  formatLog('OutputFormat reconstruido', result, 'reconstructOutputFormat');
   return result;
 };
