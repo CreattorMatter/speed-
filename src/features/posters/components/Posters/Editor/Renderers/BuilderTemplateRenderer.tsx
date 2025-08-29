@@ -9,6 +9,8 @@ import { calculatePricePorCuota } from '../../../../../../utils/financingCalcula
 import { FormatContext, createFormatContext, reconstructOutputFormat } from '../../../../../../types/formatContext';
 import { getDynamicFieldValue } from '../../../../../../utils/productFieldsMap';
 import { generateDynamicPlaceholder } from '../../../../../../lib/formatters';
+import { COLORS, SIZES } from '../../../../../../constants/theme';
+import { COMPONENT_CONFIG } from '../../../../../../constants/components';
 
 interface BuilderTemplateRendererProps {
   template: TemplateV3;
@@ -895,7 +897,7 @@ const getBaseComponentStyles = (component: DraggableComponentV3): React.CSSPrope
     fontFamily: getFontFamilyWithFallbacks(style?.typography?.fontFamily),
     fontSize: style?.typography?.fontSize ? `${style.typography.fontSize}px` : '16px',
     fontWeight: style?.typography?.fontWeight || 'normal',
-    color: style?.color?.color || '#000000',
+    color: style?.color?.color || COLORS.BUILDER.TEXT_DEFAULT,
     textAlign: (style?.typography?.textAlign as any) || 'left',
     lineHeight: style?.typography?.lineHeight || 1.2,
     letterSpacing: style?.typography?.letterSpacing || 'normal',
@@ -910,7 +912,7 @@ const getBaseComponentStyles = (component: DraggableComponentV3): React.CSSPrope
 
   // 🎯 APLICAR BORDES SOLO SI ESTÁN DEFINIDOS
   if (style?.border && style.border.width > 0) {
-    baseStyles.border = `${style.border.width}px ${style.border.style || 'solid'} ${style.border.color || '#000000'}`;
+    baseStyles.border = `${style.border.width}px ${style.border.style || 'solid'} ${style.border.color || COLORS.BUILDER.BORDER_DEFAULT}`;
   }
 
   // 🎯 APLICAR BORDER RADIUS SOLO SI ESTÁ DEFINIDO  
@@ -1417,7 +1419,7 @@ const renderComponent = (
       const dateBaseStyle: React.CSSProperties = {
         ...baseStyles,
         fontSize: '14px',
-        color: '#666666',
+        color: COLORS.BUILDER.TEXT_MUTED,
         display: 'flex',
         alignItems: 'center',
         justifyContent: dateValidAlign === 'center' ? 'center' : 
@@ -1475,7 +1477,7 @@ const renderComponent = (
       const shapeType = content?.shapeConfig?.type || 'rectangle';
       const borderConfig = style?.border;
       const hasBorder = borderConfig && borderConfig.width > 0;
-      const backgroundColor = style?.color?.backgroundColor || '#007bff';
+      const backgroundColor = style?.color?.backgroundColor || COLORS.BUILDER.BUTTON_BACKGROUND;
       const borderRadius = borderConfig?.radius?.topLeft || (shapeType === 'circle' ? '50%' : 0);
       
       const baseShapeStyle: React.CSSProperties = {
@@ -1483,7 +1485,7 @@ const renderComponent = (
         height: '100%',
         backgroundColor,
         border: hasBorder 
-          ? `${borderConfig.width}px ${borderConfig.style || 'solid'} ${borderConfig.color || '#000000'}`
+          ? `${borderConfig.width}px ${borderConfig.style || 'solid'} ${borderConfig.color || COLORS.BUILDER.BORDER_DEFAULT}`
           : 'none',
         borderRadius: typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius,
         boxSizing: 'border-box', // Importante para que el borde no afecte el tamaño
@@ -1499,7 +1501,7 @@ const renderComponent = (
             height: 0,
             borderLeft: `${component.size.width/2}px solid transparent`,
             borderRight: `${component.size.width/2}px solid transparent`,
-            borderBottom: `${component.size.height}px solid ${style?.color?.backgroundColor || '#007bff'}`
+            borderBottom: `${component.size.height}px solid ${style?.color?.backgroundColor || COLORS.BUILDER.BUTTON_BACKGROUND}`
           }} />
         );
       }
@@ -1528,7 +1530,7 @@ const renderComponent = (
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: Math.min(component.size.width, component.size.height) * 0.8,
-        color: '#000000',
+        color: COLORS.BUILDER.TEXT_DEFAULT,
         ...baseStyles,
         whiteSpace: 'pre-wrap'
       };
@@ -1596,7 +1598,7 @@ const renderComponent = (
           whiteSpace: 'pre-wrap'
         }}>
           <span style={{ 
-            color: '#999', 
+            color: COLORS.BUILDER.TEXT_PLACEHOLDER, 
             fontSize: 12, 
             textAlign: 'center' 
           }}>
@@ -1610,15 +1612,15 @@ const renderComponent = (
         <div style={{
           width: '100%',
           height: '100%',
-          border: '2px dashed #ff6b6b',
-          backgroundColor: '#ffe6e6',
+          border: `2px dashed ${COLORS.BUILDER.ERROR_BORDER}`,
+          backgroundColor: COLORS.BUILDER.ERROR_BACKGROUND,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#d63031',
-          fontSize: 12,
+          color: COLORS.BUILDER.ERROR_TEXT,
+          fontSize: SIZES.ICON.XS,
           textAlign: 'center',
-          padding: 4,
+          padding: COMPONENT_CONFIG.DEFAULT_STYLES.BORDER_RADIUS,
           whiteSpace: 'pre-wrap'
         }}>
           Tipo no soportado:<br/>{type}
@@ -1656,7 +1658,7 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
   // Dimensiones seguras del template con fallbacks
   const canvasWidth = template?.canvas?.width || (template as any)?.width || 1240;
   const canvasHeight = template?.canvas?.height || (template as any)?.height || 1754;
-  const canvasBackground = template?.canvas?.backgroundColor || '#FFFFFF';
+  const canvasBackground = template?.canvas?.backgroundColor || COLORS.BUILDER.CANVAS_DEFAULT;
   const canvasBackgroundImage = template?.canvas?.backgroundImage;
 
   const containerStyle: React.CSSProperties = {
@@ -1754,7 +1756,7 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          color: '#999',
+          color: COLORS.BUILDER.TEXT_PLACEHOLDER,
           textAlign: 'center',
           fontSize: 14,
           padding: 20
