@@ -1,16 +1,16 @@
 // Utilidades para validación y formateo de campos editables
+// 🔄 MIGRADO: Importar nueva librería de formatters y validators
+import { formatPrice as newFormatPrice, formatDate as newFormatDate } from '../lib/formatters';
+import { 
+  validatePrice as newValidatePrice,
+  validatePercentage as newValidatePercentage,
+  validateDate as newValidateDate,
+  validateRequired as newValidateRequired
+} from '../lib/validators/convenience';
 
+// 🔄 MIGRADO: Usar nueva librería de formatters
 export const formatPrice = (value: string | number): string => {
-  // Convertir a número y formatear con separador de miles y decimales
-  const numValue = typeof value === 'string' ? parseFloat(value.replace(/[^\d.,]/g, '').replace(',', '.')) : value;
-  
-  if (isNaN(numValue)) return '';
-  
-  return new Intl.NumberFormat('es-AR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-    useGrouping: true
-  }).format(numValue);
+  return newFormatPrice(value, { showCurrency: false, precision: 2 });
 };
 
 export const parsePrice = (formattedValue: string): number => {
@@ -20,32 +20,22 @@ export const parsePrice = (formattedValue: string): number => {
   return isNaN(parsed) ? 0 : parsed;
 };
 
+// 🔄 MIGRADO: Usar nueva librería de validators (con adaptador para compatibilidad)
 export const validatePrice = (value: string | number): { isValid: boolean; error?: string } => {
-  const numValue = typeof value === 'string' ? parsePrice(value) : value;
-  
-  if (isNaN(numValue) || numValue < 0) {
-    return { isValid: false, error: 'El precio debe ser un número positivo' };
-  }
-  
-  if (numValue === 0) {
-    return { isValid: false, error: 'El precio no puede ser cero' };
-  }
-  
-  return { isValid: true };
+  const result = newValidatePrice(value);
+  return {
+    isValid: result.isValid,
+    error: result.message
+  };
 };
 
+// 🔄 MIGRADO: Usar nueva librería de validators
 export const validatePercentage = (value: string | number): { isValid: boolean; error?: string } => {
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  
-  if (isNaN(numValue)) {
-    return { isValid: false, error: 'Debe ser un número válido' };
-  }
-  
-  if (numValue < 0 || numValue > 100) {
-    return { isValid: false, error: 'El porcentaje debe estar entre 0 y 100' };
-  }
-  
-  return { isValid: true };
+  const result = newValidatePercentage(value);
+  return {
+    isValid: result.isValid,
+    error: result.message
+  };
 };
 
 export const validateDate = (dateString: string): { isValid: boolean; error?: string } => {
