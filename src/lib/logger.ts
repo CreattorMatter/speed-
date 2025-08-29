@@ -226,6 +226,3 @@ export const uiLog = (message: string, data?: any, component?: string) =>
 
 export const performanceLog = (message: string, data?: any, component?: string) => 
   logger.performanceLog(message, data, component);
-
-// Export para casos especiales
-export { logger };
