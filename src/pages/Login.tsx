@@ -3,24 +3,37 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { useToast } from "../components/ui/use-toast";
+import { signInWithPassword } from "../services/authService";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    if (email === "admin@admin.com" && password === "admin") {
+    try {
+      const user = await signInWithPassword(email, password);
+      console.log('✅ Login exitoso:', user);
       navigate("/dashboard");
-    } else {
       toast({
-        variant: "destructive",
+        variant: "default",
+        title: "Bienvenido",
+        description: `Hola ${user.name}!`,
+      });
+    } catch (error) {
+      console.error('❌ Login failed:', error);
+      toast({
+        variant: "destructive", 
         title: "Error de autenticación",
         description: "Credenciales inválidas",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -80,9 +93,10 @@ function Login() {
 
           <Button
             type="submit"
-            className="w-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm transition-colors"
+            disabled={isLoading}
+            className="w-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm transition-colors disabled:opacity-50"
           >
-            Iniciar Sesión
+            {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
           </Button>
         </form>
       </div>
