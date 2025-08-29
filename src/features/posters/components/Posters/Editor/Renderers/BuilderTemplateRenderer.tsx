@@ -6,6 +6,7 @@ import { InlineEditableText } from './InlineEditableText';
 import { calcularDescuentoPorcentaje } from '../../../../../../data/products';
 import { formatValidityPeriod } from '../../../../../../utils/validityPeriodValidator';
 import { calculatePricePorCuota } from '../../../../../../utils/financingCalculator';
+import { FormatContext, createFormatContext, reconstructOutputFormat } from '../../../../../../types/formatContext';
 import { getDynamicFieldValue, generateDynamicPlaceholder } from '../../../../../../utils/productFieldsMap';
 
 interface BuilderTemplateRendererProps {
@@ -15,8 +16,8 @@ interface BuilderTemplateRendererProps {
   isPreview?: boolean; // Si es vista previa, usar datos de ejemplo
   scale?: number; // Escala para la vista previa
   productChanges?: any; // Cambios del usuario desde Redux
-  onEditField?: (fieldType: string, newValue: string | number) => void; // 🆕 Callback para edición inline
-  onPendingChange?: (fieldType: string, newValue: string | number) => void; // 🆕 Callback para cambios pendientes
+  onEditField?: (fieldType: string, newValue: string | number, preservedFormat?: any) => void; // 🆕 Callback para edición inline
+  onPendingChange?: (fieldType: string, newValue: string | number, formatContext?: FormatContext) => void; // 🆕 Callback para cambios pendientes
   enableInlineEdit?: boolean; // 🆕 Habilitar edición inline directa
   onFinancingImageClick?: (componentId: string) => void; // 🆕 Callback para clic en imagen de financiación
   financingCuotas?: number; // 🆕 Cuotas seleccionadas para cálculos
@@ -202,7 +203,21 @@ const getDynamicValue = (
       
       if (change) {
         console.log(`📝 ✅ CAMBIO ENCONTRADO para campo dinámico ${fieldType}: ${change.newValue} (ID único: ${uniqueFieldId})`);
-        // El input del usuario es la fuente de verdad. No reformatear.
+        
+        // 🎭 APLICAR FORMATO PRESERVADO SI EXISTE
+        if (change.preservedFormat) {
+          console.log(`🎭 APLICANDO FORMATO PRESERVADO AL VALOR:`, {
+            originalValue: change.newValue,
+            preservedFormat: change.preservedFormat
+          });
+          
+          // Aplicar el formato preservado al valor del cambio
+          const formattedValue = applyOutputFormat(Number(change.newValue), change.preservedFormat);
+          console.log(`🎭 VALOR CON FORMATO APLICADO: ${change.newValue} → ${formattedValue}`);
+          return formattedValue;
+        }
+        
+        // Si no hay formato preservado, devolver el valor directo
         return String(change.newValue);
       } else {
         console.log(`📝 ❌ NO se encontró cambio para campo dinámico "${fieldType}" (ID único: ${uniqueFieldId})`);
@@ -465,7 +480,21 @@ const getDynamicValue = (
       
       if (change) {
         console.log(`📝 ✅ CAMBIO ENCONTRADO para campo estático ${fieldType}: ${change.newValue} (ID único: ${uniqueFieldId})`);
-        // El input del usuario es la fuente de verdad. No reformatear.
+        
+        // 🎭 APLICAR FORMATO PRESERVADO SI EXISTE
+        if (change.preservedFormat) {
+          console.log(`🎭 APLICANDO FORMATO PRESERVADO AL CAMPO ESTÁTICO:`, {
+            originalValue: change.newValue,
+            preservedFormat: change.preservedFormat
+          });
+          
+          // Aplicar el formato preservado al valor del cambio
+          const formattedValue = applyOutputFormat(Number(change.newValue), change.preservedFormat);
+          console.log(`🎭 CAMPO ESTÁTICO CON FORMATO APLICADO: ${change.newValue} → ${formattedValue}`);
+          return formattedValue;
+        }
+        
+        // Si no hay formato preservado, devolver el valor directo
         return String(change.newValue);
       } else {
         console.log(`📝 ❌ NO se encontró cambio para campo estático "${fieldType}" (ID único: ${uniqueFieldId})`);
@@ -905,8 +934,8 @@ const renderComponent = (
   product?: ProductoReal, 
   isPreview?: boolean, 
   productChanges?: any,
-  onEditField?: (fieldType: string, newValue: string | number) => void,
-  onPendingChange?: (fieldType: string, newValue: string | number) => void,
+  onEditField?: (fieldType: string, newValue: string | number, preservedFormat?: any) => void,
+  onPendingChange?: (fieldType: string, newValue: string | number, formatContext?: FormatContext) => void,
   enableInlineEdit?: boolean,
   onFinancingImageClick?: (componentId: string) => void,
   financingCuotas?: number,  // 🆕 Cuotas para cálculos de financiación
@@ -1158,22 +1187,85 @@ const renderComponent = (
           whiteSpace: 'pre-wrap' as const
         };
 
+        // 🎭 VERIFICAR SI HAY FORMATO PRESERVADO EN PRODUCTCHANGES
+        let preservedFormatFromChanges = null;
+        if (productChanges && product && productChanges[product.id]) {
+          const changes = productChanges[product.id].changes || [];
+          const changeWithFormat = changes.find((change: any) => 
+            change.field === uniqueFieldId && change.preservedFormat
+          );
+          preservedFormatFromChanges = changeWithFormat?.preservedFormat;
+          
+          console.log(`🎭 BUSCANDO FORMATO PRESERVADO:`, {
+            uniqueFieldId,
+            foundChange: !!changeWithFormat,
+            preservedFormat: preservedFormatFromChanges,
+            totalChanges: changes.length
+          });
+        }
+        
+        // 🎭 APLICAR FORMATO PRESERVADO AL COMPONENTE SI EXISTE
+        let componentWithPreservedFormat = component;
+        if (preservedFormatFromChanges) {
+          console.log(`🎭 APLICANDO FORMATO PRESERVADO AL COMPONENTE:`, { 
+            fieldType, 
+            preservedFormat: preservedFormatFromChanges 
+          });
+          
+          componentWithPreservedFormat = {
+            ...component,
+            content: {
+              ...component.content,
+              outputFormat: {
+                ...component.content?.outputFormat,
+                ...preservedFormatFromChanges
+              }
+            }
+          };
+        }
+        
+        // 🎭 CREAR FORMATO CONTEXT para preservar máscaras
+        const formatContext = createFormatContext(componentWithPreservedFormat, textValue, fieldType);
+        
         return (
           <InlineEditableText
             value={textValue}
-            onSave={(newValue) => {
-              console.log(`📝 Guardando edición inline: ${uniqueFieldId} = ${newValue}`, { isComplex, isStaticField, componentId: component.id });
-              onEditField(uniqueFieldId, String(newValue));
+            onSave={(newValue, preservedFormatContext) => {
+              console.log(`📝 Guardando edición inline: ${uniqueFieldId} = ${newValue}`, { 
+                isComplex, 
+                isStaticField, 
+                componentId: component.id,
+                hasPreservedFormat: !!preservedFormatContext 
+              });
+              
+              // 🎭 Si hay formato preservado, aplicarlo al componente
+              if (preservedFormatContext && preservedFormatContext.hasSpecialFormat) {
+                const reconstructedFormat = reconstructOutputFormat(preservedFormatContext);
+                console.log(`🎭 Aplicando formato preservado:`, reconstructedFormat);
+                
+                // Actualizar tanto el valor como el formato
+                onEditField(uniqueFieldId, String(newValue), reconstructedFormat);
+              } else {
+                onEditField(uniqueFieldId, String(newValue));
+              }
             }}
-            onPendingChange={onPendingChange ? (_fieldType, newValue) => onPendingChange(uniqueFieldId, newValue) : undefined}
+            onPendingChange={onPendingChange ? (_fieldType, newValue, pendingFormatContext) => {
+              // 🎭 Incluir formato en cambios pendientes
+              if (pendingFormatContext && pendingFormatContext.hasSpecialFormat) {
+                onPendingChange(uniqueFieldId, newValue, pendingFormatContext);
+              } else {
+                onPendingChange(uniqueFieldId, newValue);
+              }
+            } : undefined}
             fieldType={enhancedFieldType}
             style={editableStyle}
             inputType={getInputType(fieldType, !!isComplex, !!isStaticField)}
             placeholder={getPlaceholder(fieldType, !!isComplex, !!isStaticField)}
             maxLength={fieldType.includes('descripcion') ? 100 : (isComplex || isStaticField) ? 200 : undefined}
-            isComplexTemplate={true} // FORZAR MODO TEXTO SIEMPRE
+            isComplexTemplate={!!isComplex} // 🎭 Usar valor real para preservar formato
             originalTemplate={textValue}
-            multiline={textValue.length > 30 || textValue.includes('\n')} // 🔧 Auto-detectar si necesita múltiples líneas
+            multiline={textValue.length > 30 || textValue.includes('\n')}
+            formatContext={formatContext} // 🆕 Pasar contexto de formato
           >
             <div title={`${fieldType}: ${textValue}${isComplex ? ' (Editar texto completo)' : isStaticField ? ' (Campo estático editable)' : ''} [ID: ${component.id}]`}>
               {textContent}
@@ -1337,12 +1429,22 @@ const renderComponent = (
       if (enableInlineEdit && onEditField && !isPreview) {
         console.log(`📅 Habilitando edición inline para fecha: ${dateValue}`);
         
+        // 🎭 CREAR FORMATO CONTEXT para fechas
+        const dateFormatContext = createFormatContext(component, dateValue, dateFieldType);
+        
         return (
           <InlineEditableText
             value={dateValue}
-            onSave={(newValue) => {
+            onSave={(newValue, preservedFormatContext) => {
               console.log(`📝 Guardando fecha editada: ${newValue}`);
-              onEditField?.(dateFieldType, String(newValue));
+              
+              // 🎭 Si hay formato preservado para fechas, aplicarlo
+              if (preservedFormatContext && preservedFormatContext.hasSpecialFormat) {
+                const reconstructedFormat = reconstructOutputFormat(preservedFormatContext);
+                onEditField?.(dateFieldType, String(newValue), reconstructedFormat);
+              } else {
+                onEditField?.(dateFieldType, String(newValue));
+              }
             }}
             onPendingChange={onPendingChange}
             fieldType={dateFieldType}
@@ -1352,6 +1454,7 @@ const renderComponent = (
             maxLength={15}
             isComplexTemplate={false}
             originalTemplate={dateValue}
+            formatContext={dateFormatContext} // 🆕 Pasar contexto de formato
           >
             <div title={`Fecha: ${dateValue}`}>
               {dateValue}
@@ -1433,12 +1536,22 @@ const renderComponent = (
       if (enableInlineEdit && onEditField && !isPreview) {
         console.log(`🎨 Habilitando edición inline para icono: ${iconName}`);
         
+        // 🎭 CREAR FORMATO CONTEXT para iconos
+        const iconFormatContext = createFormatContext(component, iconName, iconFieldType);
+        
         return (
           <InlineEditableText
             value={iconName}
-            onSave={(newValue) => {
+            onSave={(newValue, preservedFormatContext) => {
               console.log(`📝 Guardando icono editado: ${newValue}`);
-              onEditField(iconFieldType, String(newValue));
+              
+              // 🎭 Si hay formato preservado para iconos, aplicarlo
+              if (preservedFormatContext && preservedFormatContext.hasSpecialFormat) {
+                const reconstructedFormat = reconstructOutputFormat(preservedFormatContext);
+                onEditField(iconFieldType, String(newValue), reconstructedFormat);
+              } else {
+                onEditField(iconFieldType, String(newValue));
+              }
             }}
             onPendingChange={onPendingChange}
             fieldType={iconFieldType}
@@ -1448,6 +1561,7 @@ const renderComponent = (
             maxLength={10}
             isComplexTemplate={false}
             originalTemplate={iconName}
+            formatContext={iconFormatContext} // 🆕 Pasar contexto de formato
           >
             <div title={`Icono: ${iconName}`}>
               {iconName}

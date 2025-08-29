@@ -15,6 +15,7 @@ export interface ProductChange {
   originalValue: string | number;
   newValue: string | number;
   timestamp: Date;
+  preservedFormat?: any; // 🎭 Formato preservado para campos con máscaras especiales
 }
 
 export interface EditedProduct {
@@ -349,8 +350,9 @@ export const posterSlice = createSlice({
       field: string;
       originalValue: string | number;
       newValue: string | number;
+      preservedFormat?: any; // 🎭 Formato preservado para campos con máscaras especiales
     }>) => {
-      const { productId, productName, field, originalValue, newValue } = action.payload;
+      const { productId, productName, field, originalValue, newValue, preservedFormat } = action.payload;
       
       // Crear el registro del producto editado si no existe
       if (!state.productChanges[productId]) {
@@ -379,7 +381,10 @@ export const posterSlice = createSlice({
           // Actualizar solo el nuevo valor, manteniendo el valor original
           existingChange.newValue = newValue;
           existingChange.timestamp = new Date();
-          console.log(`✏️ Campo '${field}' actualizado: ${existingChange.originalValue} → ${newValue}`);
+          existingChange.preservedFormat = preservedFormat; // 🎭 Actualizar formato preservado
+          console.log(`✏️ Campo '${field}' actualizado: ${existingChange.originalValue} → ${newValue}`, {
+            hasPreservedFormat: !!preservedFormat
+          });
         }
       } else {
         // Si el nuevo valor es diferente al original, crear un nuevo cambio
@@ -389,9 +394,12 @@ export const posterSlice = createSlice({
             field,
             originalValue,
             newValue,
-            timestamp: new Date()
+            timestamp: new Date(),
+            preservedFormat // 🎭 Incluir formato preservado
           });
-          console.log(`➕ Nuevo cambio registrado en '${field}': ${originalValue} → ${newValue}`);
+          console.log(`➕ Nuevo cambio registrado en '${field}': ${originalValue} → ${newValue}`, {
+            hasPreservedFormat: !!preservedFormat
+          });
         }
       }
       
