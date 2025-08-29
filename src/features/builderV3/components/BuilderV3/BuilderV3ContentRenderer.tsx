@@ -13,6 +13,7 @@ import { PropertiesPanelV3 } from '../PropertiesPanelV3';
 import { ToolbarV3 } from '../ToolbarV3';
 import { DraggableComponentV3 } from '../../types';
 import { ContentRendererProps } from './types';
+import { PermissionGuard } from '../../../../components/auth/PermissionGuard';
 
 export const BuilderV3ContentRenderer: React.FC<ContentRendererProps> = ({
   currentStep,

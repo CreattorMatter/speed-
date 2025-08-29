@@ -1,0 +1,26 @@
+# Global ownership - requires review from code owners
+* @CreatorMatter
+
+# Critical files require specific review
+/src/services/ @CreatorMatter
+/supabase/ @CreatorMatter  
+/scripts/ @CreatorMatter
+/.github/ @CreatorMatter
+
+# Configuration files
+*.config.js @CreatorMatter
+*.config.ts @CreatorMatter
+package.json @CreatorMatter
+package-lock.json @CreatorMatter
+
+# Deployment and infrastructure
+/netlify.toml @CreatorMatter
+/vite.config.ts @CreatorMatter
+
+# Documentation can be reviewed by anyone
+*.md
+
+# Allow trainee to modify these areas with less restriction
+/src/components/
+/src/features/
+/src/pages/
