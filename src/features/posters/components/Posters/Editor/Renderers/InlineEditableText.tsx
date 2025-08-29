@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Edit3 } from 'lucide-react';
+import { FormatContext, reconstructOutputFormat } from '../../../../../../types/formatContext';
 
 interface InlineEditableTextProps {
   value: string | number;
-  onSave: (newValue: string | number) => void;
+  onSave: (newValue: string | number, formatContext?: FormatContext) => void;
   fieldType: string;
   className?: string;
   style?: React.CSSProperties;
@@ -13,9 +14,11 @@ interface InlineEditableTextProps {
   disabled?: boolean;
   multiline?: boolean;
   maxLength?: number;
-  onPendingChange?: (fieldType: string, newValue: string | number) => void;
+  onPendingChange?: (fieldType: string, newValue: string | number, formatContext?: FormatContext) => void;
   isComplexTemplate?: boolean;
   originalTemplate?: string;
+  // 🆕 Format Context para preservar máscaras
+  formatContext?: FormatContext;
 }
 
 export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
@@ -32,7 +35,8 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
   maxLength,
   onPendingChange,
   isComplexTemplate = false,
-  originalTemplate = ''
+  originalTemplate = '',
+  formatContext
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value.toString());
@@ -133,7 +137,12 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       return;
     }
     
-    console.log(`💾 🚀 INICIO handleSave InlineEditableText:`, { fieldType, editValue, originalValue });
+    console.log(`💾 🚀 INICIO handleSave InlineEditableText:`, { 
+      fieldType, 
+      editValue, 
+      originalValue,
+      hasFormatContext: !!formatContext 
+    });
     
     let processedValue: string | number = editValue;
     
@@ -161,9 +170,20 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       }
     }
     
-    console.log(`💾 📤 ENVIANDO A onSave:`, { fieldType, processedValue });
+    // 🎭 PRESERVAR FORMATO: Si hay contexto de formato, incluirlo en el callback
+    if (formatContext && formatContext.hasSpecialFormat) {
+      console.log(`🎭 Preservando formato especial:`, {
+        useSuperscript: formatContext.formatPreferences.useSuperscript,
+        decimalPlaces: formatContext.formatPreferences.decimalPlaces,
+        originalFormat: formatContext.originalFormat
+      });
+      
+      onSave(processedValue, formatContext);
+    } else {
+      console.log(`💾 📤 ENVIANDO A onSave (sin formato especial):`, { fieldType, processedValue });
+      onSave(processedValue);
+    }
     
-    onSave(processedValue);
     setIsEditing(false);
     setHasBeenManuallyEdited(false);
     setHasPendingChange(false);
@@ -301,7 +321,8 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
             }
           }
           
-          onPendingChange(fieldType, processedValue);
+          // 🎭 SIEMPRE incluir formatContext en cambios pendientes (incluso si no es especial)
+          onPendingChange(fieldType, processedValue, formatContext);
         }
       } else {
         console.log(`👆 Click fuera sin cambios reales para campo: ${fieldType}`);

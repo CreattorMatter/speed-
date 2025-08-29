@@ -241,18 +241,39 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     setPendingChanges({});
   };
 
-  const handlePendingChange = (fieldType: string, newValue: string | number) => {
-    console.log(`📝 Cambio pendiente: ${fieldType} = ${newValue}`);
+  const handlePendingChange = (fieldType: string, newValue: string | number, formatContext?: any) => {
+    console.log(`📝 Cambio pendiente: ${fieldType} = ${newValue}`, { 
+      hasFormatContext: !!formatContext 
+    });
+    
+    // 🎭 LOG FORMATO CONTEXT en cambios pendientes
+    if (formatContext) {
+      console.log(`🎭 FormatContext en cambio pendiente:`, formatContext);
+    }
+    
     setPendingChanges(prev => ({
       ...prev,
-      [fieldType]: newValue
+      [fieldType]: {
+        value: newValue,
+        formatContext // 🎭 Preservar formato en cambios pendientes
+      }
     }));
   };
 
-  const handleFieldEdit = (fieldType: string, newValue: string | number) => {
+  const handleFieldEdit = (fieldType: string, newValue: string | number, preservedFormat?: any) => {
     if (!currentProduct) return;
     
-    console.log(`📝 🚀 INICIO handleFieldEdit:`, { fieldType, newValue, productId: currentProduct.id });
+    console.log(`📝 🚀 INICIO handleFieldEdit:`, { 
+      fieldType, 
+      newValue, 
+      productId: currentProduct.id,
+      hasPreservedFormat: !!preservedFormat 
+    });
+    
+    // 🎭 LOG FORMATO PRESERVADO
+    if (preservedFormat) {
+      console.log(`🎭 Formato preservado recibido:`, preservedFormat);
+    }
     
     // 🆕 EXTRAER TIPO BASE DEL CAMPO (remover ID del componente)
     let originalValue: string | number;
@@ -338,7 +359,8 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       productName: currentProduct.descripcion,
       field: fieldType, // Usar el fieldType completo con ID único
       originalValue,
-      newValue
+      newValue,
+      preservedFormat // 🎭 Incluir formato preservado si está disponible
     }));
     
     console.log(`📝 ✅ CAMBIO REGISTRADO EN REDUX`);
@@ -350,7 +372,19 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     console.log('💾 Confirmando todos los cambios:', pendingChanges);
     
     // Aplicar cambios pendientes a Redux
-    Object.entries(pendingChanges).forEach(([fieldType, newValue]) => {
+    Object.entries(pendingChanges).forEach(([fieldType, changeData]) => {
+      // 🎭 Extraer valor y formato del changeData
+      const newValue = typeof changeData === 'object' && changeData !== null && 'value' in changeData 
+        ? changeData.value 
+        : changeData;
+      const preservedFormat = typeof changeData === 'object' && changeData !== null && 'formatContext' in changeData 
+        ? changeData.formatContext 
+        : undefined;
+      
+      console.log(`💾 Procesando cambio pendiente: ${fieldType}`, { 
+        newValue, 
+        hasPreservedFormat: !!preservedFormat 
+      });
       // 🆕 EXTRAER TIPO BASE DEL CAMPO (remover ID del componente)
       let baseFieldType = fieldType;
       
@@ -383,7 +417,8 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
         productName: currentProduct.descripcion,
         field: fieldType, // Usar el fieldType completo con ID único
         originalValue,
-        newValue
+        newValue,
+        preservedFormat // 🎭 Incluir formato preservado si está disponible
       }));
     });
     
