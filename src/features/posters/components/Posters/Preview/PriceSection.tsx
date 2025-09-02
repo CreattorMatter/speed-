@@ -1,4 +1,5 @@
 import React from 'react';
+import AutoFitText from '../../../../../components/shared/AutoFitText';
 
 interface Product {
   id: string;
@@ -46,22 +47,61 @@ export const PriceSection: React.FC<PriceSectionProps> = ({
 
   return (
     <div className="absolute bottom-32 left-8 right-8">
-      {/* Precio original */}
+      {/* Precio original con AutoFitText */}
       {promotion && discountAmount > 0 && (
         <div 
-          className="text-red-500 line-through text-2xl font-bold mb-2"
-          style={roundedFontStyle}
+          className="text-red-500 line-through font-bold mb-2"
+          style={{
+            ...roundedFontStyle,
+            height: '60px', // Altura más pequeña para precio tachado
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
         >
-          {formatARS(originalPrice)}
+          <AutoFitText
+            text={formatARS(originalPrice)}
+            style={{
+              width: '100%',
+              height: '100%',
+              textAlign: 'center',
+              fontWeight: 'bold',
+              color: '#ef4444', // text-red-500
+              textDecoration: 'line-through',
+              ...roundedFontStyle
+            }}
+            baseFontSize={24} // Tamaño base equivalente a text-2xl
+            minFontSize={16}
+            maxFontSize={48}
+          />
         </div>
       )}
 
-      {/* Precio final */}
+      {/* Precio final con AutoFitText */}
       <div 
-        className="text-green-600 text-5xl font-black"
-        style={roundedFontStyle}
+        className="text-green-600 font-black"
+        style={{ 
+          ...roundedFontStyle,
+          height: '120px', // Altura fija para que AutoFitText tenga referencia
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
       >
-        {formatARS(finalPrice)}
+        <AutoFitText
+          text={formatARS(finalPrice)}
+          style={{
+            width: '100%',
+            height: '100%',
+            textAlign: 'center',
+            fontWeight: 'black',
+            color: '#16a34a', // text-green-600
+            ...roundedFontStyle
+          }}
+          baseFontSize={48} // Tamaño base equivalente a text-5xl
+          minFontSize={24}
+          maxFontSize={120}
+        />
       </div>
 
       {/* Información de promoción */}

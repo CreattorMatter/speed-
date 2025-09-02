@@ -1,8 +1,9 @@
 import React from 'react';
-import { PosterHeader } from './Export/PosterHeader';
-import { ProductTitle } from './Export/ProductTitle';
-import { PriceDisplay } from './Export/PriceDisplay';
-import { PosterFooter } from './Export/PosterFooter';
+// TODO: Fix broken imports - Export components don't exist
+// import { PosterHeader } from './Export/PosterHeader';
+// import { ProductTitle } from './Export/ProductTitle';
+// import { PriceDisplay } from './Export/PriceDisplay';
+// import { PosterFooter } from './Export/PosterFooter';
 
 interface ExportPosterProps {
   product: {
@@ -71,11 +72,12 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({
         />
       )}
 
-      {/* Header con logos */}
+      {/* TODO: Restore when PosterHeader component is created
       <PosterHeader
         company={company}
         financing={financing}
       />
+      */}
 
       {/* Condiciones y vigencia */}
       {promotion && (promotion.conditions || promotion.startDate || promotion.endDate) && (
@@ -126,23 +128,20 @@ export const ExportPoster: React.FC<ExportPosterProps> = ({
         </div>
       )}
 
-      {/* Título del producto */}
+      {/* TODO: Restore when Export components are created
       <ProductTitle productName={product.name} />
-
-      {/* Display de precios */}
       <PriceDisplay
         originalPrice={product.price}
         promotion={promotion}
         financing={financing}
       />
-
-      {/* Footer con información adicional */}
       <PosterFooter
         product={product}
         origin={origin}
         points={points}
         barcode={barcode}
       />
+      */}
     </div>
   );
 }; 

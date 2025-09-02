@@ -106,8 +106,8 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     
     if (!validateForm()) {
       toast.error('Por favor corrige los errores en el formulario');
@@ -228,10 +228,10 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
             <div className="flex items-center">
               <Users className="w-6 h-6 text-blue-600 mr-3" />
               <h2 className="text-xl font-semibold text-gray-900">Agregar Nuevo Usuario</h2>
@@ -245,7 +245,8 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
           </div>
 
           {/* Content */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto">
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Domain Type Indicator */}
             <div className={`p-4 rounded-lg border-l-4 bg-${domainInfo.color}-50 border-${domainInfo.color}-400`}>
               <div className="flex items-center">
@@ -459,8 +460,12 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
               </div>
             </div>
 
-            {/* Footer Actions */}
-            <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+            </form>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="p-6 border-t border-gray-200 flex-shrink-0">
+            <div className="flex items-center justify-end space-x-3">
               <button
                 type="button"
                 onClick={handleClose}
@@ -469,7 +474,8 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                 Cancelar
               </button>
               <button
-                type="submit"
+                type="button"
+                onClick={handleSubmit}
                 disabled={isLoading}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
@@ -486,7 +492,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                 )}
               </button>
             </div>
-          </form>
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>

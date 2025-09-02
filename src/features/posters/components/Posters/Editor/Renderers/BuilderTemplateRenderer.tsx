@@ -8,6 +8,7 @@ import { formatValidityPeriod } from '../../../../../../utils/validityPeriodVali
 import { calculatePricePorCuota } from '../../../../../../utils/financingCalculator';
 import { FormatContext, createFormatContext, reconstructOutputFormat } from '../../../../../../types/formatContext';
 import { getDynamicFieldValue, generateDynamicPlaceholder } from '../../../../../../utils/productFieldsMap';
+import AutoFitText from '../../../../../../components/shared/AutoFitText';
 
 interface BuilderTemplateRendererProps {
   template: TemplateV3;
@@ -143,31 +144,47 @@ const getDynamicValue = (
     }
     console.log(`🎯 Procesando campo dinámico: ${content.dynamicTemplate}`);
     
+    // 🆕 VERIFICAR CAMBIOS MANUALES PRIMERO para TODOS los campos dinámicos
+    const fieldType = getFieldType(content);
+    const uniqueFieldId = `${fieldType}_${componentId}`;
+    
+    if (productChanges && productChanges[product.id]) {
+      const changes = productChanges[product.id].changes || [];
+      
+      // Buscar cambio con ID único primero
+      let change = changes.find((c: any) => c.field === uniqueFieldId);
+      
+      // Si no se encuentra con ID único, buscar con el fieldType original
+      if (!change) {
+        change = changes.find((c: any) => c.field === fieldType);
+      }
+      
+      if (change) {
+        console.log(`📝 ✅ CAMBIO MANUAL ENCONTRADO para campo dinámico ${fieldType}: ${change.newValue} (ID único: ${uniqueFieldId})`);
+        
+        // 🎭 APLICAR FORMATO PRESERVADO SI EXISTE
+        if (change.preservedFormat) {
+          console.log(`🎭 APLICANDO FORMATO PRESERVADO AL VALOR:`, {
+            originalValue: change.newValue,
+            preservedFormat: change.preservedFormat
+          });
+          
+          // Aplicar el formato preservado al valor del cambio
+          const formattedValue = applyOutputFormat(Number(change.newValue), change.preservedFormat);
+          console.log(`🎭 VALOR CON FORMATO APLICADO: ${change.newValue} → ${formattedValue}`);
+          return formattedValue;
+        }
+        
+        // Si no hay formato preservado, devolver el valor directo (VERDAD ABSOLUTA)
+        return String(change.newValue);
+      } else {
+        console.log(`📝 ❌ NO se encontró cambio manual para campo dinámico "${fieldType}" (ID único: ${uniqueFieldId})`);
+      }
+    }
+    
     // 🆕 NUEVO: Manejo especial para validity_period en dynamicTemplate
     if (content.dynamicTemplate.includes('[validity_period]')) {
-      console.log(`📅 Detectado validity_period en dynamicTemplate, verificando cambios del usuario primero`);
-      
-      // 🆕 VERIFICAR CAMBIOS DEL USUARIO PRIMERO para campos de fecha
-      const fieldType = getFieldType(content);
-      if (productChanges && productChanges[product.id]) {
-        const changes = productChanges[product.id].changes || [];
-        
-        // Buscar cambio con ID único primero (fieldType_componentId)
-        const uniqueFieldId = `${fieldType}_${componentId}`;
-        let change = changes.find((c: any) => c.field === uniqueFieldId);
-        
-        // Si no se encuentra con ID único, buscar con el fieldType original
-        if (!change) {
-          change = changes.find((c: any) => c.field === fieldType);
-        }
-        
-        if (change) {
-          console.log(`📅 ✅ CAMBIO DE FECHA ENCONTRADO: ${change.newValue} (ID único: ${uniqueFieldId})`);
-          return String(change.newValue);
-        } else {
-          console.log(`📅 ❌ NO se encontró cambio para campo de fecha "${fieldType}" (ID único: ${uniqueFieldId})`);
-        }
-      }
+      console.log(`📅 Detectado validity_period en dynamicTemplate, usando configuración automática`);
       
       // Si no hay cambios del usuario, usar la configuración original del dateConfig
       if (content?.dateConfig?.type === 'validity-period' && content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
@@ -187,44 +204,7 @@ const getDynamicValue = (
       return new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
     
-    // Primero verificar cambios del usuario para el template completo
-    const fieldType = getFieldType(content);
-    if (productChanges && productChanges[product.id]) {
-      const changes = productChanges[product.id].changes || [];
-      
-      // 🔧 BUSCAR CAMBIO CON ID ÚNICO PRIMERO (fieldType_componentId)
-      const uniqueFieldId = `${fieldType}_${componentId}`;
-      let change = changes.find((c: any) => c.field === uniqueFieldId);
-      
-      // Si no se encuentra con ID único, buscar con el fieldType original (para compatibilidad)
-      if (!change) {
-        change = changes.find((c: any) => c.field === fieldType);
-      }
-      
-      if (change) {
-        console.log(`📝 ✅ CAMBIO ENCONTRADO para campo dinámico ${fieldType}: ${change.newValue} (ID único: ${uniqueFieldId})`);
-        
-        // 🎭 APLICAR FORMATO PRESERVADO SI EXISTE
-        if (change.preservedFormat) {
-          console.log(`🎭 APLICANDO FORMATO PRESERVADO AL VALOR:`, {
-            originalValue: change.newValue,
-            preservedFormat: change.preservedFormat
-          });
-          
-          // Aplicar el formato preservado al valor del cambio
-          const formattedValue = applyOutputFormat(Number(change.newValue), change.preservedFormat);
-          console.log(`🎭 VALOR CON FORMATO APLICADO: ${change.newValue} → ${formattedValue}`);
-          return formattedValue;
-        }
-        
-        // Si no hay formato preservado, devolver el valor directo
-        return String(change.newValue);
-      } else {
-        console.log(`📝 ❌ NO se encontró cambio para campo dinámico "${fieldType}" (ID único: ${uniqueFieldId})`);
-      }
-    }
-    
-    // Si no hay cambios, procesar el template dinámico usando la configuración del componente
+    // Si no hay cambios manuales, procesar el template dinámico usando la configuración del componente
     const outputFormat = { ...(content.outputFormat || {}) } as any;
     // Compatibilidad: mapear "prefix" → "showCurrencySymbol" si fuera necesario
     if (outputFormat.showCurrencySymbol === undefined && typeof outputFormat.prefix === 'boolean') {
@@ -901,7 +881,7 @@ const getBaseComponentStyles = (component: DraggableComponentV3): React.CSSPrope
     textDecoration: style?.typography?.textDecoration || 'none',
     opacity: style?.effects?.opacity ?? 1,
     boxSizing: 'border-box' as const,
-    overflow: 'hidden',
+    overflow: 'hidden', // Mantener hidden por defecto, se maneja específicamente en cada caso
     wordWrap: 'break-word' as const,
     // 🔧 Solo aplicar backgroundColor para componentes no-imagen
     backgroundColor: component.type.startsWith('image-') ? 'transparent' : (style?.color?.backgroundColor || 'transparent'),
@@ -1274,13 +1254,37 @@ const renderComponent = (
         );
       }
       
-      // 📋 RENDERIZADO NORMAL: Sin edición inline
+      // 📋 RENDERIZADO NORMAL: Sin edición inline con AutoFitText
       return (
         <div 
-          style={baseStyle}
+          style={{
+            ...baseStyle,
+            overflow: 'hidden', // Restaurar overflow hidden para el contenedor padre
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: textValidAlign === 'center' ? 'center' : textValidAlign === 'right' ? 'flex-end' : 'flex-start'
+          }}
           title={textValue}
         >
-          {textContent}
+          <AutoFitText
+            text={textContent}
+            style={{
+              width: '100%',
+              height: '100%',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              textAlign: textValidAlign,
+              fontFamily: baseStyle.fontFamily,
+              fontWeight: baseStyle.fontWeight as any,
+              lineHeight: baseStyle.lineHeight as any,
+              letterSpacing: baseStyle.letterSpacing as any,
+              color: baseStyle.color as any,
+              overflow: 'visible' // AutoFitText interno puede ser visible
+            }}
+            baseFontSize={typeof baseStyle.fontSize === 'string' ? parseFloat(baseStyle.fontSize) : (baseStyle.fontSize as number)}
+            minFontSize={6}
+            maxFontSize={200}
+          />
         </div>
       );
       

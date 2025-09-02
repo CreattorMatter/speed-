@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { 
   UserPlus, 
@@ -11,28 +11,21 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Group } from '../../../types';
-import { 
-  getGroups, 
-  getUsers, 
-  createGroup, 
-  updateGroupDb, 
-  deleteGroupDb 
-} from '../../../services/rbacService';
+import { useAdministrationData } from '../../../hooks/useAdministrationData';
 
 interface GroupsManagementProps {
   onBack: () => void;
 }
 
 export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) => {
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showUsersModal, setShowUsersModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ [key: string]: 'bottom' | 'top' }>({});
+  const buttonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
   // Estados para formularios
   const [newGroupName, setNewGroupName] = useState('');
@@ -40,34 +33,17 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
   const [editGroupName, setEditGroupName] = useState('');
   const [editGroupDescription, setEditGroupDescription] = useState('');
 
-  // Cargar datos
-  const loadData = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Cargar grupos y usuarios desde el servicio RBAC
-      const [groupsData, usersData] = await Promise.all([
-        getGroups(),
-        getUsers()
-      ]);
-      
-      console.log('📂 Grupos cargados:', groupsData);
-      console.log('👥 Usuarios cargados:', usersData);
-      
-      setGroups(groupsData);
-      setUsers(usersData);
-      
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast.error('Error al cargar los datos');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Usar hook centralizado para datos
+  const {
+    groups,
+    users,
+    isLoading,
+    createGroup,
+    updateGroup,
+    deleteGroup,
+    addUserToGroup,
+    removeUserFromGroup
+  } = useAdministrationData();
 
   // Filtrar grupos
   const filteredGroups = groups.filter(group =>
@@ -86,14 +62,11 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
         users: []
       });
       
-      toast.success('Grupo creado exitosamente');
       setShowCreateModal(false);
       setNewGroupName('');
       setNewGroupDescription('');
-      await loadData(); // Recargar datos
     } catch (error) {
       console.error('Error al crear grupo:', error);
-      toast.error('Error al crear el grupo');
     }
   };
 
@@ -101,20 +74,17 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
     if (!selectedGroup || !editGroupName.trim()) return;
     
     try {
-      await updateGroupDb(selectedGroup.id, {
+      await updateGroup(selectedGroup.id, {
         name: editGroupName.trim(),
         description: editGroupDescription.trim()
       });
       
-      toast.success('Grupo actualizado exitosamente');
       setShowEditModal(false);
       setSelectedGroup(null);
       setEditGroupName('');
       setEditGroupDescription('');
-      await loadData(); // Recargar datos
     } catch (error) {
       console.error('Error al actualizar grupo:', error);
-      toast.error('Error al actualizar el grupo');
     }
   };
 
@@ -127,12 +97,9 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
   const handleDeleteGroup = async (group: Group) => {
     if (window.confirm(`¿Estás seguro de que quieres eliminar el grupo "${group.name}"?`)) {
       try {
-        await deleteGroupDb(group.id);
-        toast.success('Grupo eliminado exitosamente');
-        await loadData(); // Recargar datos
+        await deleteGroup(group.id);
       } catch (error) {
         console.error('Error al eliminar grupo:', error);
-        toast.error('Error al eliminar el grupo');
       }
     }
     setActiveMenu(null);
@@ -145,6 +112,69 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
     setShowEditModal(true);
     setActiveMenu(null);
   };
+
+  const handleAddUserToGroup = async (userId: string) => {
+    if (!selectedGroup) return;
+    
+    try {
+      await addUserToGroup(selectedGroup.id, userId);
+    } catch (error) {
+      console.error('Error al agregar usuario al grupo:', error);
+    }
+  };
+
+  const handleRemoveUserFromGroup = async (userId: string) => {
+    if (!selectedGroup) return;
+    
+    try {
+      await removeUserFromGroup(selectedGroup.id, userId);
+    } catch (error) {
+      console.error('Error al remover usuario del grupo:', error);
+    }
+  };
+
+  // Función para calcular posición del menú
+  const calculateMenuPosition = (groupId: string) => {
+    const button = buttonRefs.current[groupId];
+    if (!button) return 'bottom';
+
+    const rect = button.getBoundingClientRect();
+    const menuHeight = 150; // Altura aproximada del menú
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    if (spaceBelow < menuHeight && spaceAbove > menuHeight) {
+      return 'top';
+    }
+    
+    return 'bottom';
+  };
+
+  const handleMenuToggle = (groupId: string) => {
+    if (activeMenu === groupId) {
+      setActiveMenu(null);
+    } else {
+      const position = calculateMenuPosition(groupId);
+      setMenuPosition(prev => ({ ...prev, [groupId]: position }));
+      setActiveMenu(groupId);
+    }
+  };
+
+  // Cerrar menú cuando se hace clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (activeMenu && !Object.values(buttonRefs.current).some(button => 
+        button?.contains(event.target as Node)
+      )) {
+        setActiveMenu(null);
+      }
+    };
+
+    if (activeMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [activeMenu]);
 
   if (isLoading) {
     return (
@@ -214,25 +244,32 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
               {/* Menu desplegable */}
               <div className="absolute top-4 right-4">
                 <button
-                  onClick={() => setActiveMenu(activeMenu === group.id ? null : group.id)}
+                  ref={(el) => buttonRefs.current[group.id] = el}
+                  onClick={() => handleMenuToggle(group.id)}
                   className="p-1 hover:bg-gray-100 rounded"
                 >
                   <MoreVertical className="h-4 w-4 text-gray-400" />
                 </button>
                 
                 {activeMenu === group.id && (
-                  <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                  <div className={`
+                    absolute right-0 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50
+                    ${menuPosition[group.id] === 'top' 
+                      ? 'bottom-full mb-1' 
+                      : 'top-full mt-1'
+                    }
+                  `}>
                     <div className="py-1">
                       <button
                         onClick={() => openEditModal(group)}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center transition-colors"
                       >
                         <Edit className="w-4 h-4 mr-2" />
                         Editar
                       </button>
                       <button
                         onClick={() => handleManageUsers(group)}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center transition-colors"
                       >
                         <UserPlus className="w-4 h-4 mr-2" />
                         Gestionar Usuarios
@@ -240,7 +277,7 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
 
                       <button
                         onClick={() => handleDeleteGroup(group)}
-                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 flex items-center"
+                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 flex items-center transition-colors"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Eliminar
@@ -285,22 +322,7 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
                }
              </p>
              
-             {/* 🐛 Debug info temporal */}
-             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-left max-w-md mx-auto">
-               <h4 className="font-medium text-yellow-800 mb-2">🐛 Debug Info:</h4>
-               <div className="text-sm text-yellow-700 space-y-1">
-                 <p>Total grupos: {groups.length}</p>
-                 <p>Filtrados: {filteredGroups.length}</p>
-                 <p>Cargando: {isLoading ? 'Sí' : 'No'}</p>
-                 <p>Búsqueda: "{searchTerm}"</p>
-               </div>
-               <button 
-                 onClick={loadData}
-                 className="mt-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs"
-               >
-                 🔄 Recargar
-               </button>
-             </div>
+             
              
              {!searchTerm && (
                <button
@@ -442,6 +464,118 @@ export const GroupsManagement: React.FC<GroupsManagementProps> = ({ onBack }) =>
                   >
                     <Save className="h-4 w-4 mr-2 inline" />
                     Guardar Cambios
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Modal Gestionar Usuarios */}
+        {showUsersModal && selectedGroup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden"
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Gestionar Usuarios - {selectedGroup.name}
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setShowUsersModal(false);
+                      setSelectedGroup(null);
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-lg"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Usuarios actuales del grupo */}
+                  <div>
+                    <h4 className="text-md font-medium text-gray-900 mb-3">
+                      Usuarios en el grupo ({selectedGroup.users?.length || 0})
+                    </h4>
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {selectedGroup.users && selectedGroup.users.length > 0 ? (
+                        selectedGroup.users.map((userId) => {
+                          const user = users.find(u => u.id === userId);
+                          if (!user) return null;
+                          
+                          return (
+                            <div key={userId} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                              <div>
+                                <p className="font-medium text-gray-900">{user.name}</p>
+                                <p className="text-sm text-gray-600">{user.email}</p>
+                              </div>
+                              <button
+                                onClick={() => handleRemoveUserFromGroup(userId)}
+                                className="px-3 py-1 text-sm text-red-600 hover:bg-red-100 rounded-md border border-red-200"
+                              >
+                                Remover
+                              </button>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-gray-500 text-center py-4">
+                          No hay usuarios en este grupo
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Usuarios disponibles para agregar */}
+                  <div>
+                    <h4 className="text-md font-medium text-gray-900 mb-3">
+                      Usuarios disponibles
+                    </h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {users.filter(user => !selectedGroup.users?.includes(user.id)).map((user) => (
+                        <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div>
+                            <p className="font-medium text-gray-900">{user.name}</p>
+                            <p className="text-sm text-gray-600">{user.email}</p>
+                            <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+                          </div>
+                          <button
+                            onClick={() => handleAddUserToGroup(user.id)}
+                            className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-100 rounded-md border border-blue-200"
+                          >
+                            Agregar
+                          </button>
+                        </div>
+                      ))}
+                      
+                      {users.filter(user => !selectedGroup.users?.includes(user.id)).length === 0 && (
+                        <p className="text-gray-500 text-center py-4">
+                          Todos los usuarios ya están en este grupo
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end mt-6">
+                  <button
+                    onClick={() => {
+                      setShowUsersModal(false);
+                      setSelectedGroup(null);
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cerrar
                   </button>
                 </div>
               </div>

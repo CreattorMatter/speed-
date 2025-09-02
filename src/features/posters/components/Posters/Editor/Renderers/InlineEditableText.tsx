@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Edit3 } from 'lucide-react';
 import { FormatContext, reconstructOutputFormat } from '../../../../../../types/formatContext';
+import AutoFitText from '../../../../../../components/shared/AutoFitText';
 
 interface InlineEditableTextProps {
   value: string | number;
@@ -162,11 +163,10 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
         console.log(`💳 Procesando cuotas: "${editValue}" → ${processedValue}`);
       } else if (fieldType.includes('descuento') || fieldType === 'descuento' || 
                  fieldType.includes('discount') || fieldType === 'discount_percentage') {
-        // 🆕 DESCUENTO ENTERO (0-100)
+        // 🆕 DESCUENTO SIN RESTRICCIONES - El usuario puede poner lo que quiera
         const numericValue = parseInt(editValue.replace(/[^\d]/g, ''), 10);
-        const bounded = isNaN(numericValue) ? 0 : Math.max(0, Math.min(100, numericValue));
-        processedValue = bounded;
-        console.log(`🏷️ Procesando descuento: "${editValue}" → ${processedValue}`);
+        processedValue = isNaN(numericValue) ? 0 : numericValue;
+        console.log(`🏷️ Procesando descuento (sin límites): "${editValue}" → ${processedValue}`);
       }
     }
     
@@ -217,9 +217,7 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       if (isNaN(numericValue)) {
         return { isValid: false, message: 'El porcentaje debe ser un número válido' };
       }
-      if (numericValue < 0 || numericValue > 100) {
-        return { isValid: false, message: 'El porcentaje debe estar entre 0% y 100%' };
-      }
+      // Removido: restricción de rango 0-100 para permitir edición libre
     }
     
     // 🆕 VALIDACIÓN PARA CAMPOS DE CUOTAS
@@ -236,16 +234,14 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       }
     }
 
-    // 🆕 VALIDACIÓN PARA DESCUENTO (0-100)
+    // 🆕 VALIDACIÓN RELAJADA PARA DESCUENTO - Solo verificar que sea número
     if (fieldType.includes('descuento') || fieldType === 'descuento' || 
         fieldType.includes('discount') || fieldType === 'discount_percentage') {
       const numericValue = parseInt(value.replace(/[^\d]/g, ''), 10);
       if (isNaN(numericValue)) {
         return { isValid: false, message: 'El descuento debe ser un número entero' };
       }
-      if (numericValue < 0 || numericValue > 100) {
-        return { isValid: false, message: 'El descuento debe estar entre 0 y 100' };
-      }
+      // Removido: restricción de rango 0-100 para permitir edición libre
     }
 
     // 🆕 VALIDACIÓN SIMPLE PARA CAMPOS DE FECHA
@@ -458,7 +454,25 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
               ? `Click para editar texto completo: "${value}"`
               : `Click para editar ${fieldType}`      }
     >
-      {children}
+      {/* Usar AutoFitText para el contenido no editable */}
+      <AutoFitText
+        text={value.toString()}
+        style={{
+          width: '100%',
+          height: '100%',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          textAlign: style.textAlign as any || 'left',
+          fontFamily: style.fontFamily as any,
+          fontWeight: style.fontWeight as any,
+          lineHeight: style.lineHeight as any,
+          letterSpacing: style.letterSpacing as any,
+          color: style.color as any
+        }}
+        baseFontSize={typeof style.fontSize === 'string' ? parseFloat(style.fontSize) : (style.fontSize as number) || 16}
+        minFontSize={6}
+        maxFontSize={200}
+      />
       
       {isHovered && !disabled && (
         <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 text-white rounded-full flex items-center justify-center shadow-md pointer-events-none text-xs transition-all duration-200">

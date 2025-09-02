@@ -7,6 +7,7 @@ import { DraggableComponentV3 } from '../../../builderV3/types';
 import { ProductoReal } from '../../../../types/product';
 import { getDynamicValue, isComponentEditable } from '../../utils/dynamicContentUtils';
 import { InlineEditableText } from '../Posters/Editor/Renderers/InlineEditableText';
+import AutoFitText from '../../../../components/shared/AutoFitText';
 
 /**
  * 🆕 FUNCIÓN HELPER: Obtener font-family con fallbacks apropiados
@@ -178,14 +179,21 @@ export const TextFieldRenderer: React.FC<TextFieldRendererProps> = ({
                          'center',
         }}
       >
-        <span style={{ 
-          maxWidth: '100%',
-          maxHeight: '100%',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis'
-        }}>
-          {content || 'Sin contenido'}
-        </span>
+        <AutoFitText
+          text={content || 'Sin contenido'}
+          style={{
+            width: '100%',
+            height: '100%',
+            textAlign: component.style?.typography?.textAlign as any || 'left',
+            fontFamily: componentStyle.fontFamily as any,
+            fontWeight: component.style?.typography?.fontWeight as any,
+            lineHeight: component.style?.typography?.lineHeight as any,
+            letterSpacing: component.style?.typography?.letterSpacing as any,
+            color: component.style?.color?.color || '#000000'
+          }}
+          baseFontSize={parseFloat(String(componentStyle.fontSize).replace('px',''))}
+          minFontSize={6}
+        />
       </div>
     </div>
   );

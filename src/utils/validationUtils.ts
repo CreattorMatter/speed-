@@ -41,9 +41,10 @@ export const validatePercentage = (value: string | number): { isValid: boolean; 
     return { isValid: false, error: 'Debe ser un número válido' };
   }
   
-  if (numValue < 0 || numValue > 100) {
-    return { isValid: false, error: 'El porcentaje debe estar entre 0 y 100' };
-  }
+  // Removido: restricción de rango para permitir edición libre
+  // if (numValue < 0 || numValue > 100) {
+  //   return { isValid: false, error: 'El porcentaje debe estar entre 0 y 100' };
+  // }
   
   return { isValid: true };
 };

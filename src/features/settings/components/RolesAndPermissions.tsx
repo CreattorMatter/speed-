@@ -1,11 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Users, Shield, Plus, Edit, Trash2, Copy, Settings, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit, Trash2, Copy, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  getPermissions, getRolesWithPermissions, createRole as createRoleDb,
-  updateRole as updateRoleDb, deleteRole as deleteRoleDb, updateRolePermissions, upsertPermissions
-} from '@/services/rbacService';
-import { toast } from 'react-hot-toast';
+import { useAdministrationData } from '../../../hooks/useAdministrationData';
 
 // Tipos de datos para roles y permisos
 interface Permission {
@@ -71,69 +67,7 @@ const PERMISSIONS: Permission[] = [
 ];
 
 // Datos mock de roles
-const INITIAL_ROLES: Role[] = [
-  {
-    id: 'admin',
-    name: 'admin',
-    displayName: 'Administrador',
-    description: 'Acceso total a todas las funciones del sistema',
-    permissions: PERMISSIONS.map(p => p.id),
-    isCustom: false,
-    userCount: 2,
-    createdAt: '2024-01-01',
-    color: '#EF4444'
-  },
-  {
-    id: 'editor',
-    name: 'editor',
-    displayName: 'Editor',
-    description: 'Puede crear y editar plantillas y carteles',
-    permissions: [
-      'dashboard.view',
-      'products.view', 'products.export',
-      'promotions.view', 'promotions.create', 'promotions.edit',
-      'posters.view', 'posters.create', 'posters.edit', 'posters.print',
-      'templates.view', 'templates.create', 'templates.edit'
-    ],
-    isCustom: false,
-    userCount: 5,
-    createdAt: '2024-01-01',
-    color: '#3B82F6'
-  },
-  {
-    id: 'viewer',
-    name: 'viewer',
-    displayName: 'Visualizador',
-    description: 'Solo puede ver carteles y plantillas',
-    permissions: [
-      'dashboard.view',
-      'products.view',
-      'promotions.view',
-      'posters.view',
-      'templates.view'
-    ],
-    isCustom: false,
-    userCount: 8,
-    createdAt: '2024-01-01',
-    color: '#10B981'
-  },
-  {
-    id: 'sucursal',
-    name: 'sucursal',
-    displayName: 'Sucursal',
-    description: 'Gestión limitada para sucursales específicas',
-    permissions: [
-      'dashboard.view',
-      'products.view',
-      'promotions.view',
-      'posters.view', 'posters.print'
-    ],
-    isCustom: false,
-    userCount: 12,
-    createdAt: '2024-01-01',
-    color: '#F59E0B'
-  }
-];
+// (Catálogo inicial sólo para referencia visual; datos provienen del hook)
 
 interface CreateRoleModalProps {
   isOpen: boolean;
@@ -143,6 +77,13 @@ interface CreateRoleModalProps {
 }
 
 const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onSave, existingRole }) => {
+  // Lock background scroll while modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [isOpen]);
   const [formData, setFormData] = useState({
     name: existingRole?.name || '',
     displayName: existingRole?.displayName || '',
@@ -150,6 +91,18 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onSa
     permissions: existingRole?.permissions || [],
     color: existingRole?.color || '#6366F1'
   });
+
+  // Prevent background scroll while modal is open
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    const prevTouch = (document.body.style as any).touchAction;
+    document.body.style.overflow = 'hidden';
+    (document.body.style as any).touchAction = 'none';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      (document.body.style as any).touchAction = prevTouch;
+    };
+  }, []);
 
   const groupedPermissions = PERMISSIONS.reduce((acc, permission) => {
     if (!acc[permission.module]) {
@@ -180,8 +133,8 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onSa
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     onSave({
       ...formData,
       isCustom: true
@@ -192,15 +145,16 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onSa
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto overscroll-contain" role="dialog" aria-modal="true">
+      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full h-[95vh] min-h-0 flex flex-col">
+        <div className="p-6 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-xl font-bold text-gray-900">
             {existingRole ? 'Editar Rol' : 'Crear Nuevo Rol'}
           </h2>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" style={{ minHeight: 0 }}>
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -257,7 +211,25 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onSa
           </div>
 
           <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Permisos</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">
+                Permisos ({formData.permissions.length} seleccionados)
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  const allPermissionIds = PERMISSIONS.map(p => p.id);
+                  const allSelected = allPermissionIds.every(id => formData.permissions.includes(id));
+                  setFormData(prev => ({
+                    ...prev,
+                    permissions: allSelected ? [] : allPermissionIds
+                  }));
+                }}
+                className="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-500 flex items-center"
+              >
+                + Seleccionar todos
+              </button>
+            </div>
             <div className="space-y-6">
               {Object.entries(groupedPermissions).map(([module, modulePermissions]) => {
                 const allSelected = modulePermissions.every(p => formData.permissions.includes(p.id));
@@ -308,7 +280,11 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onSa
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-6 border-t">
+          </form>
+        </div>
+        
+        <div className="p-6 border-t border-gray-200 flex-shrink-0">
+          <div className="flex justify-end space-x-3">
             <button
               type="button"
               onClick={onClose}
@@ -317,85 +293,57 @@ const CreateRoleModal: React.FC<CreateRoleModalProps> = ({ isOpen, onClose, onSa
               Cancelar
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
             >
               {existingRole ? 'Guardar Cambios' : 'Crear Rol'}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
 };
 
 export const RolesAndPermissions: React.FC = () => {
-  const [roles, setRoles] = useState<Role[]>(INITIAL_ROLES);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editingRole, setEditingRole] = useState<Role | undefined>();
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [editingRole, setEditingRole] = useState<any | undefined>();
+  const [selectedRole, setSelectedRole] = useState<any | null>(null);
   const [showPermissionsMatrix, setShowPermissionsMatrix] = useState(false);
 
-  // Cargar desde DB y sembrar permisos si faltan
-  useEffect(() => {
-    (async () => {
-      try {
-        // Upsert catálogo de permisos por nombre
-        await upsertPermissions(PERMISSIONS.map(p => ({ name: p.id, description: `${p.module}:${p.action}` })));
-        const [dbPerms, dbRoles] = await Promise.all([
-          getPermissions(),
-          getRolesWithPermissions()
-        ]);
-        if (dbRoles?.length) {
-          // Mapear a estructura de UI
-          const mapped: Role[] = dbRoles.map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            displayName: r.name,
-            description: r.description || '',
-            permissions: r.permissions || [],
-            isCustom: r.name !== 'admin' && r.name !== 'editor' && r.name !== 'viewer' && r.name !== 'sucursal',
-            userCount: r.userCount || 0,
-            createdAt: new Date().toISOString(),
-            color: '#6366F1'
-          }));
-          setRoles(mapped);
-        }
-      } catch (e) {
-        console.warn('Roles/permissions DB not reachable, staying on mock');
-      }
-    })();
-  }, []);
+  // Usar hook centralizado para datos
+  const { roles, createRole, updateRole, deleteRole } = useAdministrationData();
+  const rolesAny = roles as any[];
 
   const handleCreateRole = async (roleData: Omit<Role, 'id' | 'userCount' | 'createdAt'>) => {
     try {
-      const created = await createRoleDb({ name: roleData.name, description: roleData.description });
-      await updateRolePermissions(created.id, roleData.permissions);
-      setRoles(prev => [...prev, { ...roleData, id: created.id, userCount: 0, createdAt: new Date().toISOString() }]);
-      toast.success('Rol creado');
+      await createRole({
+        name: roleData.name,
+        description: roleData.description,
+        permissions: roleData.permissions
+      });
     } catch (e) {
       console.error(e);
-      toast.error('No se pudo crear el rol');
     }
   };
 
   const handleEditRole = async (roleData: Omit<Role, 'id' | 'userCount' | 'createdAt'>) => {
     if (!editingRole) return;
     try {
-      await updateRoleDb(editingRole.id, { name: roleData.name, description: roleData.description });
-      await updateRolePermissions(editingRole.id, roleData.permissions);
-      setRoles(prev => prev.map(r => r.id === editingRole.id ? { ...r, ...roleData } : r));
-      toast.success('Rol actualizado');
+      await updateRole(editingRole.id, {
+        name: roleData.name,
+        description: roleData.description,
+        permissions: roleData.permissions
+      });
+      setEditingRole(undefined);
     } catch (e) {
       console.error(e);
-      toast.error('No se pudo actualizar el rol');
-    } finally {
-      setEditingRole(undefined);
     }
   };
 
   const handleDeleteRole = async (roleId: string) => {
-    const role = roles.find(r => r.id === roleId);
+    const role = rolesAny?.find((r) => r.id === roleId);
     if (!role) return;
     if (role.userCount > 0) {
       alert(`No se puede eliminar el rol "${role.displayName}" porque tiene ${role.userCount} usuarios asignados.`);
@@ -403,37 +351,25 @@ export const RolesAndPermissions: React.FC = () => {
     }
     if (!window.confirm(`¿Eliminar el rol "${role.displayName}"?`)) return;
     try {
-      await deleteRoleDb(roleId);
-      setRoles(prev => prev.filter(r => r.id !== roleId));
-      toast.success('Rol eliminado');
+      await deleteRole(roleId);
     } catch (e) {
       console.error(e);
-      toast.error('No se pudo eliminar el rol');
     }
   };
 
   const handleDuplicateRole = (roleId: string) => {
-    const role = roles.find(r => r.id === roleId);
+    const role = rolesAny?.find((r) => r.id === roleId);
     if (!role) return;
-
-    const duplicatedRole: Role = {
-      ...role,
-      id: `copy_${Date.now()}`,
-      name: `${role.name}_copy`,
-      displayName: `${role.displayName} (Copia)`,
-      isCustom: true,
-      userCount: 0,
-      createdAt: new Date().toISOString()
-    };
-    setRoles([...roles, duplicatedRole]);
+    // TODO: Duplicación UI pendiente de integración con backend
+    console.log('Duplicar rol', role);
   };
 
   const getModulePermissions = (roleId: string, module: string) => {
-    const role = roles.find(r => r.id === roleId);
+    const role = rolesAny?.find((r) => r.id === roleId);
     if (!role) return [];
     
     return PERMISSIONS
-      .filter(p => p.module === module && role.permissions.includes(p.id))
+      .filter(p => p.module === module && (role.permissions || []).includes(p.id))
       .map(p => p.action);
   };
 
@@ -483,7 +419,7 @@ export const RolesAndPermissions: React.FC = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="text-left p-3 font-medium text-gray-900">Módulo</th>
-                    {roles.map(role => (
+                    {rolesAny.map(role => (
                       <th key={role.id} className="text-center p-3 font-medium text-gray-900 min-w-32">
                         <div className="flex flex-col items-center gap-1">
                           <div 
@@ -500,7 +436,7 @@ export const RolesAndPermissions: React.FC = () => {
                   {modules.map((module, index) => (
                     <tr key={module} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="p-3 font-medium text-gray-900">{module}</td>
-                      {roles.map(role => {
+                      {rolesAny.map(role => {
                         const permissions = getModulePermissions(role.id, module);
                         return (
                           <td key={role.id} className="p-3 text-center">
@@ -532,7 +468,7 @@ export const RolesAndPermissions: React.FC = () => {
 
       {/* Lista de Roles */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {roles.map((role) => (
+        {rolesAny.map((role) => (
           <motion.div
             key={role.id}
             layout

@@ -73,11 +73,69 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   // 🆕 Estado para financiación y descuentos (manejados via inline edit)
   const [selectedCuotas, setSelectedCuotas] = useState<number>(0);
   const [selectedDescuento, setSelectedDescuento] = useState<number>(0);
+  
+  // 🆕 Helper para obtener descuento efectivo (manual o automático)
+  const getEffectiveDescuento = (productId: string): number => {
+    if (!productChanges || !productChanges[productId]) {
+      console.log(`🎯 No hay cambios para producto ${productId}, usando selectedDescuento: ${selectedDescuento}`);
+      return selectedDescuento;
+    }
+    
+    const changes = productChanges[productId].changes || [];
+    
+    // Buscar cambio manual de descuento - buscar todas las variantes posibles
+    const manualDescuentoChange = changes.find((c: any) => {
+      const field = c.field;
+      return field.includes('descuento') || field.includes('discount') || 
+             field === 'descuento' || field === 'discount_percentage' ||
+             field.startsWith('descuento_') || field.startsWith('discount_percentage_');
+    });
+    
+    if (manualDescuentoChange) {
+      const manualValue = Number(manualDescuentoChange.newValue) || 0;
+      console.log(`🎯 Usando descuento manual encontrado: ${manualValue}% (campo: ${manualDescuentoChange.field})`);
+      return manualValue;
+    }
+    
+    console.log(`🎯 No hay cambio manual de descuento, usando selectedDescuento: ${selectedDescuento}`);
+    return selectedDescuento;
+  };
   const [showFinancingModal, setShowFinancingModal] = useState(false);
   const [financingComponentId, setFinancingComponentId] = useState<string | null>(null);
 
   // 🆕 Estado para envío a sucursales
   const [showSucursalModal, setShowSucursalModal] = useState(false);
+  
+  // 🆕 Sincronizar selectedDescuento con cambios manuales cuando cambia el producto
+  useEffect(() => {
+    if (!selectedProducts.length) {
+      setSelectedDescuento(0);
+      return;
+    }
+    
+    const currentProductId = selectedProducts[0];
+    if (currentProductId && productChanges && productChanges[currentProductId]) {
+      const changes = productChanges[currentProductId].changes || [];
+      
+      // Buscar si hay un cambio manual de descuento
+      const manualDescuentoChange = changes.find((c: any) => {
+        const field = c.field;
+        return field.includes('descuento') || field.includes('discount') || 
+               field === 'descuento' || field === 'discount_percentage' ||
+               field.startsWith('descuento_') || field.startsWith('discount_percentage_');
+      });
+      
+      if (manualDescuentoChange) {
+        const manualValue = Number(manualDescuentoChange.newValue) || 0;
+        console.log(`🔄 Sincronizando selectedDescuento con cambio manual: ${manualValue}%`);
+        setSelectedDescuento(manualValue);
+      } else {
+        // Si no hay cambio manual, resetear a 0 para cálculos automáticos
+        console.log(`🔄 No hay cambio manual, reseteando selectedDescuento a 0`);
+        setSelectedDescuento(0);
+      }
+    }
+  }, [selectedProducts, productChanges]);
   const [availableGroups, setAvailableGroups] = useState<Sucursal[]>([]);
 
   // Observer para el tamaño del contenedor
@@ -316,22 +374,45 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       return;
     }
 
-    // 🆕 MANEJO ESPECIAL PARA CAMPOS DE DESCUENTO (igual que cuotas)
-    if (baseFieldType === 'descuento' || baseFieldType.includes('descuento') || 
-        baseFieldType === 'discount_percentage' || baseFieldType.includes('discount')) {
+    // 🆕 MANEJO ESPECIAL PARA CAMPOS DE DESCUENTO - SINCRONIZAR estado local Y Redux
+    if (baseFieldType === 'descuento' || baseFieldType === 'discount_percentage') {
       const descuentoValue = parseInt(String(newValue).replace(/[^\d]/g, ''), 10) || 0;
-      // Actualizar el estado local de descuento inmediatamente
+      // Actualizar AMBOS: estado local Y continuar para guardar en Redux
       setSelectedDescuento(descuentoValue);
-      
-      // 🚫 CAMPOS DE DESCUENTO NO SE REPORTAN: 
-      // Los campos de descuento y precio_descuento son calculados dinámicamente y no deben reportarse como modificaciones
-      return;
+      console.log(`🏷️ [DESCUENTO MANUAL] Actualizando estado local a ${descuentoValue}% Y guardando en Redux`);
+      // NO hacer return aquí - continuar para que se guarde también en Redux
     }
     
-    // Para precio_descuento, no hacer nada especial (se actualiza automáticamente)
+    // 🆕 MANEJO ESPECIAL PARA PRECIO_DESCUENTO - Resetear descuento a 0 cuando se edita manualmente
     if (baseFieldType === 'precio_descuento') {
-      console.log(`💰 [PRECIO_DESCUENTO] Campo calculado automáticamente, ignorando edición manual`);
-      return;
+      console.log(`💰 [PRECIO_DESCUENTO MANUAL] Guardando precio manual y reseteando descuento a 0`);
+      // 🔑 RESETEAR descuento a 0 para indicar que el precio es manual (no calculado)
+      setSelectedDescuento(0);
+      
+      // También limpiar cualquier cambio manual previo del campo descuento para este producto
+      if (productChanges && productChanges[currentProduct.id]) {
+        const changes = productChanges[currentProduct.id].changes || [];
+        const descuentoChanges = changes.filter((c: any) => {
+          const field = c.field;
+          return field.includes('descuento') || field.includes('discount') || 
+                 field === 'descuento' || field === 'discount_percentage' ||
+                 field.startsWith('descuento_') || field.startsWith('discount_percentage_');
+        });
+        
+        if (descuentoChanges.length > 0) {
+          console.log(`🧹 Limpiando ${descuentoChanges.length} cambios previos de descuento para permitir reset a 0`);
+          // Despachar acción para limpiar cambios de descuento
+          descuentoChanges.forEach(change => {
+            dispatch(trackProductChange({
+              productId: currentProduct.id,
+              productName: currentProduct.descripcion,
+              field: change.field,
+              originalValue: change.originalValue,
+              newValue: 0 // Resetear a 0
+            }));
+          });
+        }
+      }
     }
     
     // Obtener valor original usando el tipo base
@@ -1173,7 +1254,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                 onPendingChange={handlePendingChange}
                 onFinancingImageClick={handleFinancingImageClick}
                 financingCuotas={selectedCuotas}
-                discountPercent={selectedDescuento}
+                discountPercent={currentProduct ? getEffectiveDescuento(currentProduct.id) : selectedDescuento}
               />
             </div>
           </div>
