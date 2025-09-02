@@ -120,7 +120,8 @@ const formatDate = (date: Date): string => {
 
 const calculateDiscountPercentage = (producto: ProductoReal): number => {
   if (!producto.precio || !producto.precioAnt) return 0;
-  return Math.round(((producto.precioAnt - producto.precio) / producto.precioAnt) * 100);
+  // 🔧 CÁLCULO EXACTO: Mantener 2 decimales en porcentajes
+  return Number((((producto.precioAnt - producto.precio) / producto.precioAnt) * 100).toFixed(2));
 };
 
 // =====================
@@ -340,7 +341,8 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
           // 🔧 CAMBIO CRÍTICO: Solo aplicar descuento si discountPercent > 0 (CÁLCULO EXACTO)
           // Si discountPercent es 0 o undefined, mostrar precio original SIN descuento
           if (discountPercent !== undefined && discountPercent !== null && discountPercent > 0) {
-            const finalPrice = Math.round(product.precio * (1 - discountPercent / 100));
+            // 🔧 CÁLCULO EXACTO: Mantener 2 decimales sin redondear a enteros
+            const finalPrice = Number((product.precio * (1 - discountPercent / 100)).toFixed(2));
             return formatPrice(finalPrice, outputFormat);
           }
           
@@ -581,8 +583,8 @@ export const getDynamicFieldValue = (
       } else if (fieldId === 'precio_descuento') {
         const precio = product.precio || 0;
         const dto = discountPercent || 0;
-        // 🔧 CÁLCULO EXACTO: usar Math.round para evitar decimales flotantes
-        const finalPrice = dto > 0 ? Math.round(precio * (1 - dto / 100)) : precio;
+        // 🔧 CÁLCULO EXACTO: Mantener 2 decimales sin redondear a enteros
+        const finalPrice = dto > 0 ? Number((precio * (1 - dto / 100)).toFixed(2)) : precio;
         return formatPrice(finalPrice, outputFormat);
       }
       // @ts-ignore - Los formatters pueden aceptar diferentes números de parámetros
@@ -734,7 +736,8 @@ export const processDynamicTemplate = (
       const precio = product.precio || 0;
       const dto = discountPercent || 0;
       // 🔧 CÁLCULO EXACTO: usar Math.round para evitar decimales flotantes
-      const finalPrice = dto > 0 ? Math.round(precio * (1 - dto / 100)) : precio;
+      // 🔧 CÁLCULO EXACTO: Mantener 2 decimales sin redondear a enteros
+      const finalPrice = dto > 0 ? Number((precio * (1 - dto / 100)).toFixed(2)) : precio;
       value = formatPrice(finalPrice, outputFormat);
     } else {
       value = getDynamicFieldValue(fieldId, product, outputFormat, financingCuotas, discountPercent);

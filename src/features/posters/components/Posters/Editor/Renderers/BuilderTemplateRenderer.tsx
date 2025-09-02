@@ -129,7 +129,8 @@ const getDynamicValue = (
       porcentaje: 20, // Descuento por defecto del 20%
       fechasDesde: now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
       fechasHasta: now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-      precioSinImpuestos: product.precio ? Math.round(product.precio * 0.83) : 0
+      // 🔧 CÁLCULO EXACTO: Mantener 2 decimales en precio sin impuestos
+      precioSinImpuestos: product.precio ? Number((product.precio * 0.83).toFixed(2)) : 0
     };
     
     const mappedValue = fieldMapping[field];
@@ -316,7 +317,8 @@ const getDynamicValue = (
       expression = expression.replace(/\[cuota\]/g, String(financingCuotas || 0));
       // precio_descuento calculado en base a product_price y discountPercent
       const dto = (typeof discountPercent === 'number' ? discountPercent : discountPercentage) || 0;
-      const precioDesc = dto > 0 ? Math.round((product?.precio || 0) * (1 - dto / 100)) : (product?.precio || 0);
+      // 🔧 CÁLCULO EXACTO: Mantener 2 decimales sin redondear a enteros
+      const precioDesc = dto > 0 ? Number(((product?.precio || 0) * (1 - dto / 100)).toFixed(2)) : (product?.precio || 0);
       expression = expression.replace(/\[precio_descuento\]/g, String(precioDesc));
       
       console.log(`🔢 Expresión con reemplazos: "${expression}"`);
@@ -396,7 +398,8 @@ const getDynamicValue = (
         value = getProductValue('porcentaje', 20);
         break;
       case 'price-without-taxes':
-        value = getProductValue('precioSinImpuestos', product?.precio ? Math.round(product.precio * 0.83) : 0);
+        // 🔧 CÁLCULO EXACTO: Mantener 2 decimales en precio sin impuestos
+        value = getProductValue('precioSinImpuestos', product?.precio ? Number((product.precio * 0.83).toFixed(2)) : 0);
         break;
       case 'promotion-start-date':
         value = getProductValue('fechasDesde', new Date().toLocaleDateString('es-AR'));
@@ -519,8 +522,8 @@ const processDynamicTemplate = (
     } else if (fieldId === 'precio_descuento') {
       const precio = product?.precio || 0;
       const dto = discountPercent || 0;
-      // 🔧 CAMBIO CRÍTICO: Si descuento es 0, mostrar precio original (CÁLCULO EXACTO)
-      const finalPrice = dto > 0 ? Math.round(precio * (1 - dto / 100)) : precio;
+      // 🔧 CÁLCULO EXACTO: Mantener 2 decimales sin redondear a enteros
+      const finalPrice = dto > 0 ? Number((precio * (1 - dto / 100)).toFixed(2)) : precio;
       value = finalPrice;
     } else if (fieldId === 'discount_percentage') {
       // 🔧 MAPEAR discount_percentage a descuento

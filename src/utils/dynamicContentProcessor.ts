@@ -597,7 +597,8 @@ export const processDynamicContent = (
         case 'discount-percentage':
           const precioAnt = producto.precioAnt || 849999;
           const precio = producto.precio || 699999;
-          return `${Math.round(((precioAnt - precio) / precioAnt) * 100)}%`;
+          // 🔧 CÁLCULO EXACTO: Mantener 2 decimales en porcentajes
+          return `${Number((((precioAnt - precio) / precioAnt) * 100).toFixed(2))}%`;
         case 'financing-text':
           return 'Financiación disponible';
         case 'promotion-title':
@@ -757,7 +758,8 @@ export const createMockDataWithProduct = (producto: ProductoReal): MockDataV3 =>
     ...defaultMockData,
     producto,
     descuento_calculado: producto.precioAnt && producto.precio 
-      ? Math.round(((producto.precioAnt - producto.precio) / producto.precioAnt) * 100)
+      // 🔧 CÁLCULO EXACTO: Mantener 2 decimales en porcentajes
+      ? Number((((producto.precioAnt - producto.precio) / producto.precioAnt) * 100).toFixed(2))
       : 0
   };
 };
@@ -778,7 +780,8 @@ export const createMockDataWithContext = (
     seccion: seccion || defaultMockData.seccion,
     promocion,
     descuento_calculado: producto?.precioAnt && producto?.precio 
-      ? Math.round(((producto.precioAnt - producto.precio) / producto.precioAnt) * 100)
+      // 🔧 CÁLCULO EXACTO: Mantener 2 decimales en porcentajes
+      ? Number((((producto.precioAnt - producto.precio) / producto.precioAnt) * 100).toFixed(2))
       : 18 // Descuento por defecto del mock
   };
 }; 

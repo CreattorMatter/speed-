@@ -366,7 +366,8 @@ export const getProductosConDescuento = (): ProductoReal[] => {
 
 export const calcularDescuentoPorcentaje = (producto: ProductoReal): number => {
   if (!producto.precio || !producto.precioAnt) return 0;
-  return Math.round(((producto.precioAnt - producto.precio) / producto.precioAnt) * 100);
+  // 🔧 CÁLCULO EXACTO: Mantener 2 decimales en porcentajes
+  return Number((((producto.precioAnt - producto.precio) / producto.precioAnt) * 100).toFixed(2));
 };
 
 export const getProductosConStock = (minimo: number = 1): ProductoReal[] => {
