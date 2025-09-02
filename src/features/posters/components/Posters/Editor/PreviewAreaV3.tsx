@@ -7,7 +7,7 @@ import { PosterTemplateData, PosterFamilyData } from '../../../../../services/po
 import { Product } from '../../../../../data/products';
 import { type ProductoReal } from '../../../../../types/product';
 import { productos } from '../../../../../data/products';
-import { type TemplateV3 } from '../../../../builderV3/types';
+import { type TemplateV3, type DraggableComponentV3 } from '../../../../builderV3/types';
 import { TemplateGrid } from './Selectors/TemplateGrid';
 import { BuilderTemplateRenderer } from './Renderers/BuilderTemplateRenderer';
 import { getEditableFieldsStats } from '../../../../../utils/templateFieldDetector';
@@ -62,6 +62,9 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   // Estados para edición inline estilo SPID viejo
   const [isEditModeActive, setIsEditModeActive] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<Record<string, any>>({});
+  
+  // Estado para modificaciones de componentes (imágenes dinámicas, etc.)
+  const [componentModifications, setComponentModifications] = useState<Record<string, Partial<DraggableComponentV3>>>({});
   
   // Estados para sistema de impresión
   const [showChangesModal, setShowChangesModal] = useState(false);
@@ -316,6 +319,37 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
         formatContext // 🎭 Preservar formato en cambios pendientes
       }
     }));
+  };
+
+  // Función para manejar actualizaciones de componentes (imágenes dinámicas, etc.)
+  const handleUpdateComponent = (componentId: string, updates: Partial<DraggableComponentV3>) => {
+    console.log('🖼️ Actualizando componente:', componentId, updates);
+    
+    setComponentModifications(prev => ({
+      ...prev,
+      [componentId]: {
+        ...prev[componentId],
+        ...updates
+      }
+    }));
+  };
+
+  // Función para aplicar modificaciones a los componentes
+  const getModifiedComponents = (components: DraggableComponentV3[]): DraggableComponentV3[] => {
+    return components.map(component => {
+      const modifications = componentModifications[component.id];
+      if (modifications) {
+        return {
+          ...component,
+          ...modifications,
+          content: {
+            ...component.content,
+            ...modifications.content
+          }
+        };
+      }
+      return component;
+    });
   };
 
   const handleFieldEdit = (fieldType: string, newValue: string | number, preservedFormat?: any) => {
@@ -947,6 +981,11 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedProducts.length, hasUnsavedChanges]);
 
+  // Efecto para limpiar modificaciones de componentes cuando cambia la plantilla
+  useEffect(() => {
+    setComponentModifications({});
+  }, [selectedTemplate]);
+
   // Detectar campos editables automáticamente
   const editableFieldsStats = useMemo(() => {
     if (!selectedTemplate?.template?.defaultComponents) return null;
@@ -1244,7 +1283,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
               <BuilderTemplateRenderer 
                 key={`template-${selectedTemplate.id}-cuotas-${selectedCuotas}-descuento-${selectedDescuento}-${currentProduct?.id || 'no-product'}`}
                 template={selectedTemplate.template}
-                components={selectedTemplate.template.defaultComponents || []}
+                components={getModifiedComponents(selectedTemplate.template.defaultComponents || [])}
                 product={currentProduct}
                 isPreview={!isEditModeActive}
                 scale={1}
@@ -1252,6 +1291,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                 enableInlineEdit={isEditModeActive}
                 onEditField={handleFieldEdit}
                 onPendingChange={handlePendingChange}
+                onUpdateComponent={handleUpdateComponent}
                 onFinancingImageClick={handleFinancingImageClick}
                 financingCuotas={selectedCuotas}
                 discountPercent={currentProduct ? getEffectiveDescuento(currentProduct.id) : selectedDescuento}
@@ -1336,6 +1376,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
           productChanges={productChanges}
           financingCuotas={selectedCuotas}
           discountPercent={selectedDescuento}
+          componentModifications={componentModifications}
         />
         
         {/* Estilos adicionales para impresión */}

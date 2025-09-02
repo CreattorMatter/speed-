@@ -1,5 +1,5 @@
 import React from 'react';
-import { type TemplateV3 } from '../../../../../features/builderV3/types';
+import { type TemplateV3, type DraggableComponentV3 } from '../../../../../features/builderV3/types';
 import { type ProductoReal } from '../../../../../types/product';
 import { type EditedProduct } from '../../../../../store/features/poster/posterSlice';
 import { BuilderTemplateRenderer } from './Renderers/BuilderTemplateRenderer';
@@ -9,12 +9,31 @@ interface PrintContainerProps {
   productChanges: Record<string, EditedProduct>;
   financingCuotas?: number; // 🆕 Para cálculos de financiación en impresión
   discountPercent?: number; // 🆕 Para cálculos de descuento en impresión
+  componentModifications?: Record<string, Partial<DraggableComponentV3>>; // 🆕 Modificaciones de componentes (imágenes dinámicas)
 }
 
-export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerProps>(({ templates, productChanges, financingCuotas = 0, discountPercent = 0 }, ref) => {
+export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerProps>(({ templates, productChanges, financingCuotas = 0, discountPercent = 0, componentModifications = {} }, ref) => {
   if (!templates || templates.length === 0) {
     return null;
   }
+
+  // Función para aplicar modificaciones a los componentes (igual que en PreviewAreaV3)
+  const getModifiedComponents = (components: DraggableComponentV3[]): DraggableComponentV3[] => {
+    return components.map(component => {
+      const modifications = componentModifications[component.id];
+      if (modifications) {
+        return {
+          ...component,
+          ...modifications,
+          content: {
+            ...component.content,
+            ...modifications.content
+          }
+        };
+      }
+      return component;
+    });
+  };
 
   // Dimensiones de A4 en mm para el cálculo de la escala
   const A4_WIDTH_MM = 210;
@@ -54,7 +73,7 @@ export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerPro
             >
               <BuilderTemplateRenderer
                 template={template}
-                components={template.defaultComponents}
+                components={getModifiedComponents(template.defaultComponents || [])}
                 product={product} // 🆕 Ahora puede ser undefined para plantillas sin productos
                 productChanges={productChanges}
                 enableInlineEdit={false}

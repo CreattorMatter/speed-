@@ -311,6 +311,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
       case 'image-brand-logo':
       case 'image-financing':
       case 'image-decorative':
+      case 'image-dynamic':
         // Si no hay URL de imagen, mostrar contenedor vacío (sin placeholder)
         if (!component.content?.imageUrl) {
           const label = component.type === 'image-header' 
@@ -319,7 +320,9 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
               ? 'Footer (sin imagen)'
               : component.type === 'image-financing'
                 ? 'Logo financiación (sin imagen)'
-                : 'Imagen (sin imagen)';
+                : component.type === 'image-dynamic'
+                  ? 'Imagen dinámica (sin imagen)'
+                  : 'Imagen (sin imagen)';
 
           return (
             <div

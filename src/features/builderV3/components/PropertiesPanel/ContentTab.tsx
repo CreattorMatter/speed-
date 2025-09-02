@@ -66,7 +66,7 @@ export const ContentTab: React.FC<ContentTabProps> = ({
   // =====================
 
   const renderImageContent = () => {
-    if (!['image-header', 'image-footer', 'image-background', 'image-brand-logo', 'image-promotional', 'image-product', 'image-decorative'].includes(selectedComponent.type)) {
+    if (!['image-header', 'image-footer', 'image-background', 'image-brand-logo', 'image-promotional', 'image-product', 'image-decorative', 'image-dynamic'].includes(selectedComponent.type)) {
       return null;
     }
 

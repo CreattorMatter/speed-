@@ -112,6 +112,23 @@ const imageComponents: ComponentDefinitionV3[] = [
       imageUrl: '',
       fieldType: 'static'
     }
+  },
+  {
+    type: 'image-dynamic',
+    name: 'Imagen Dinámica',
+    description: 'Imagen que se puede subir desde la carpeta local y se expande respetando las dimensiones del componente.',
+    icon: '📁',
+    category: 'Imágenes y Media',
+    tags: ['imagen', 'dinámica', 'subir', 'local', 'personalizada', 'upload'],
+    defaultSize: { width: 200, height: 150, isProportional: true },
+    defaultStyle: {
+      color: { backgroundColor: 'transparent', color: '#333333' }
+    },
+    defaultContent: {
+      imageAlt: 'Imagen dinámica',
+      imageUrl: '',
+      fieldType: 'dynamic-upload'
+    }
   }
 ];
 

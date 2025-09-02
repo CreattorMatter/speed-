@@ -49,6 +49,7 @@ export const LayersPanelV3: React.FC<LayersPanelV3Props> = ({
       case 'image-product':
       case 'image-brand-logo':
       case 'image-decorative':
+      case 'image-dynamic':
         return <Image className="w-4 h-4 text-purple-600" />;
 
       // field-dynamic-date eliminado - usar validity-period en su lugar

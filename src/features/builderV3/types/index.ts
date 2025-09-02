@@ -36,7 +36,7 @@ export type ComponentTypeV3 =
   // 📝 Campo de texto dinámico (CONSOLIDADO - reemplaza 25+ componentes de texto)
   | 'field-dynamic-text'
   
-  // 🖼️ Imágenes especializadas (7 tipos únicos)
+  // 🖼️ Imágenes especializadas (8 tipos únicos)
   | 'image-header'           // Header promocional
   | 'image-footer'           // Footer promocional
   | 'image-background'       // Imagen de fondo del cartel
@@ -44,6 +44,7 @@ export type ComponentTypeV3 =
   | 'image-brand-logo'       // Logo de marca
   | 'image-decorative'       // Imagen decorativa
   | 'image-financing'        // Imagen de financiación (no editable manualmente)
+  | 'image-dynamic'          // Imagen dinámica (subida desde carpeta local)
   
   // 🎨 Elementos decorativos únicos (1 tipo)
   | 'shape-geometric'        // Formas geométricas únicamente

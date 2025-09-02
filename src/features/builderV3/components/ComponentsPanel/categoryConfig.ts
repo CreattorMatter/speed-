@@ -57,6 +57,7 @@ export const getComponentIcon = (componentType: string): string => {
   if (componentType === 'image-header') return '🏷️';
   if (componentType === 'image-footer') return '📋';
   if (componentType === 'image-background') return '🌄';
+  if (componentType === 'image-dynamic') return '📁';
   if (componentType.includes('image')) return '🖼️';
   if (componentType.includes('qr')) return '📱';
   if (componentType.includes('date')) return '📅';

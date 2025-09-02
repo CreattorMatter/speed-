@@ -3,6 +3,7 @@ import { TemplateV3, DraggableComponentV3 } from '../../../../../../features/bui
 import { ProductoReal } from '../../../../../../types/product';
 
 import { InlineEditableText } from './InlineEditableText';
+import { DynamicImageRenderer } from '../../../Renderers/DynamicImageRenderer';
 import { calcularDescuentoPorcentaje } from '../../../../../../data/products';
 import { formatValidityPeriod } from '../../../../../../utils/validityPeriodValidator';
 import { calculatePricePorCuota } from '../../../../../../utils/financingCalculator';
@@ -24,6 +25,7 @@ interface BuilderTemplateRendererProps {
   financingCuotas?: number; // 🆕 Cuotas seleccionadas para cálculos
   discountPercent?: number; // 🆕 Descuento seleccionado para cálculos
   isPdfCapture?: boolean; // 🆕 Modo captura PDF para ajustar estilos anti-recorte
+  onUpdateComponent?: (componentId: string, updates: Partial<DraggableComponentV3>) => void; // 🆕 Callback para actualizar componentes
 }
 
 /**
@@ -923,6 +925,7 @@ const renderComponent = (
   onFinancingImageClick?: (componentId: string) => void,
   financingCuotas?: number,  // 🆕 Cuotas para cálculos de financiación
   discountPercent?: number,   // 🆕 Descuento para cálculos de descuento
+  onUpdateComponent?: (componentId: string, updates: Partial<DraggableComponentV3>) => void,
   isPdfCapture: boolean = false
 ) => {
   const { type, content, style } = component;
@@ -1321,6 +1324,7 @@ const renderComponent = (
               {component.type === 'image-product' && '📦'}
               {component.type === 'image-brand-logo' && '🏪'}
               {component.type === 'image-decorative' && '🎨'}
+              {component.type === 'image-dynamic' && '📁'}
             </div>
           )}
         </div>
@@ -1475,6 +1479,17 @@ const renderComponent = (
         <div style={dateBaseStyle}>
           {dateValue}
         </div>
+      );
+
+    // 📁 IMAGEN DINÁMICA (CON FUNCIONALIDAD DE UPLOAD)
+    case 'image-dynamic':
+      return (
+        <DynamicImageRenderer
+          component={component}
+          isEditMode={true} // ✅ SIEMPRE EDITABLE - No depende del modo inline
+          scale={1}
+          onUpdateComponent={onUpdateComponent || ((id, updates) => console.log('No onUpdateComponent handler:', id, updates))}
+        />
       );
       
     case 'shape-geometric':
@@ -1650,7 +1665,8 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
   onFinancingImageClick,
   financingCuotas = 0,
   discountPercent = 0,
-  isPdfCapture = false
+  isPdfCapture = false,
+  onUpdateComponent
 }) => {
 
   // Filtrar componentes visibles y ordenarlos por z-index
@@ -1731,6 +1747,7 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
                   onFinancingImageClick,
                   financingCuotas,
                   discountPercent,
+                  onUpdateComponent,
                   isPdfCapture
                 )}
               </div>
@@ -1746,6 +1763,7 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
                 onFinancingImageClick,
                 financingCuotas,
                 discountPercent,
+                onUpdateComponent,
                 isPdfCapture
               )
             )}

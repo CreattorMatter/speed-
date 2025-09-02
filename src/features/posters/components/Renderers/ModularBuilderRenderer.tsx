@@ -7,6 +7,7 @@ import { TemplateV3, DraggableComponentV3 } from '../../../builderV3/types';
 import { ProductoReal } from '../../../../types/product';
 import { TextFieldRenderer } from './TextFieldRenderer';
 import { ImageRenderer } from './ImageRenderer';
+import { DynamicImageRenderer } from './DynamicImageRenderer';
 
 interface ModularBuilderRendererProps {
   template: TemplateV3;
@@ -76,6 +77,21 @@ export const ModularBuilderRenderer: React.FC<ModularBuilderRendererProps> = ({
             product={product}
             isPreview={isPreview}
             scale={scale}
+          />
+        );
+
+      // 📁 IMAGEN DINÁMICA (CON UPLOAD)
+      case 'image-dynamic':
+        return (
+          <DynamicImageRenderer
+            key={component.id}
+            component={component}
+            isEditMode={true} // ✅ SIEMPRE EDITABLE - Sin restricciones
+            scale={scale}
+            onUpdateComponent={(componentId, updates) => {
+              // TODO: Implementar actualización de componente
+              console.log('Actualizando componente imagen dinámica:', componentId, updates);
+            }}
           />
         );
 
