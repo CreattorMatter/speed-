@@ -24,6 +24,7 @@ interface BuilderTemplateRendererProps {
   onFinancingImageClick?: (componentId: string) => void; // 🆕 Callback para clic en imagen de financiación
   financingCuotas?: number; // 🆕 Cuotas seleccionadas para cálculos
   discountPercent?: number; // 🆕 Descuento seleccionado para cálculos
+  promoValue?: string; // 🆕 Valor de promoción para cálculos (ej: "3x2")
   isPdfCapture?: boolean; // 🆕 Modo captura PDF para ajustar estilos anti-recorte
   onUpdateComponent?: (componentId: string, updates: Partial<DraggableComponentV3>) => void; // 🆕 Callback para actualizar componentes
 }
@@ -41,6 +42,7 @@ const getDynamicValue = (
   showMockData: boolean = true, // 🆕 Flag para mostrar datos mock o nombres de campo
   financingCuotas?: number, // 🆕 Cuotas para cálculos de financiación
   discountPercent?: number, // 🆕 Descuento para cálculos de descuento
+  promoValue?: string, // 🆕 Valor de promoción para cálculos
   isPdfCapture: boolean = false // 🆕 Para saber si es impresión
 ): string => {
   if (!content) return '';
@@ -237,7 +239,7 @@ const getDynamicValue = (
       const templateHasSymbol = /\$/.test(content.dynamicTemplate) || content.dynamicTemplate.includes('[currency_symbol]');
       outputFormat.showCurrencySymbol = templateHasSymbol;
     }
-    const processedValue = processDynamicTemplate(content.dynamicTemplate, product, outputFormat, financingCuotas, discountPercent);
+    const processedValue = processDynamicTemplate(content.dynamicTemplate, product, outputFormat, financingCuotas, discountPercent, promoValue || '0x0');
     console.log(`📊 Valor procesado del template: ${processedValue}`, { outputFormat, financingCuotas });
     return processedValue;
   }
@@ -334,6 +336,34 @@ const getDynamicValue = (
       expression = expression.replace(/\[discount_percentage\]/g, String(discountPercentage));
       // 🆕 soportar campos de financiación y descuento en expresiones
       expression = expression.replace(/\[cuota\]/g, String(financingCuotas || 0));
+      // 🆕 soportar campo promo en expresiones - PRIORIZAR cambios manuales sobre selectedPromo
+      let promoNum = 0;
+      
+      // 🔑 CLAVE: Buscar cambios manuales de promo PRIMERO (igual que con descuentos)
+      if (productChanges && product?.id) {
+        const changes = productChanges[product.id]?.changes || [];
+        // 🔧 BUSCAR POR FIELD NAME, NO POR ID ÚNICO
+        const promoChange = changes.find((c: any) => {
+          // Buscar tanto 'promo' como cualquier field que termine en 'promo'
+          return c.field === 'promo' || c.field.includes('promo');
+        });
+        
+        if (promoChange) {
+          const manualPromoValue = String(promoChange.newValue);
+          promoNum = parseInt(manualPromoValue.split('x')[0], 10) || 0;
+          console.log(`🎯 DEBUG PROMO MANUAL: Encontrado cambio "${promoChange.field}" = "${manualPromoValue}", promoNum=${promoNum}`);
+        } else {
+          // Si no hay cambio manual, usar selectedPromo
+          promoNum = promoValue ? parseInt(promoValue.split('x')[0], 10) || 0 : 0;
+          console.log(`🎯 DEBUG PROMO AUTOMÁTICO: No hay cambios manuales, usando selectedPromo "${promoValue}", promoNum=${promoNum}`);
+          console.log(`🔍 DEBUG: Cambios disponibles:`, changes.map((c: any) => c.field));
+        }
+      } else {
+        promoNum = promoValue ? parseInt(promoValue.split('x')[0], 10) || 0 : 0;
+        console.log(`🎯 DEBUG PROMO DEFAULT: Sin productChanges, usando promoValue "${promoValue}", promoNum=${promoNum}`);
+      }
+      
+      expression = expression.replace(/\[promo\]/g, String(promoNum));
       // precio_descuento calculado en base a product_price y discountPercent
       const dto = (typeof discountPercent === 'number' ? discountPercent : discountPercentage) || 0;
       // 🔧 CÁLCULO EXACTO: Mantener 2 decimales sin redondear a enteros
@@ -536,7 +566,8 @@ const processDynamicTemplate = (
   product: ProductoReal,
   outputFormat: any = {}, // 🔧 CORRECCIÓN: Aceptar y usar outputFormat
   financingCuotas?: number,
-  discountPercent?: number
+  discountPercent?: number,
+  promoValue?: string // 🆕 Valor de promoción
 ): string => {
   if (!template) return '';
   let processed = template;
@@ -564,9 +595,12 @@ const processDynamicTemplate = (
     } else if (fieldId === 'discount_percentage') {
       // 🔧 MAPEAR discount_percentage a descuento
       value = discountPercent || 0;
+    } else if (fieldId === 'promo') {
+      // 🆕 MAPEAR promo al valor configurado
+      value = promoValue || '0x0';
     } else {
       // Usar getDynamicFieldValue para obtener valores del producto (ej: product_price -> product.precio)
-      value = getDynamicFieldValue(fieldId, product, outputFormat, financingCuotas, discountPercent);
+      value = getDynamicFieldValue(fieldId, product, outputFormat, financingCuotas, discountPercent, promoValue);
     }
     
     // 🔧 SOLUCIÓN MEJORADA: Aplicar formato solo cuando corresponde según el tipo de campo
@@ -959,6 +993,7 @@ const renderComponent = (
   onFinancingImageClick?: (componentId: string) => void,
   financingCuotas?: number,  // 🆕 Cuotas para cálculos de financiación
   discountPercent?: number,   // 🆕 Descuento para cálculos de descuento
+  promoValue?: string,        // 🆕 Valor de promoción para cálculos
   onUpdateComponent?: (componentId: string, updates: Partial<DraggableComponentV3>) => void,
   isPdfCapture: boolean = false
 ) => {
@@ -967,7 +1002,7 @@ const renderComponent = (
   
   switch (type) {
     case 'field-dynamic-text':
-      const textValue = getDynamicValue(content, product, isPreview, productChanges, component.id, component.showMockData !== false, financingCuotas, discountPercent, isPdfCapture);
+      const textValue = getDynamicValue(content, product, isPreview, productChanges, component.id, component.showMockData !== false, financingCuotas, discountPercent, promoValue, isPdfCapture);
       const fieldType = getFieldType(content);
       
       // 🔥 DEBUG: Log especial para campos de cuotas
@@ -1059,6 +1094,13 @@ const renderComponent = (
         textContent.includes('/') && textContent.includes('2025') || // Pattern like DD/MM/YYYY
         textContent.match(/\d{2}\/\d{2}\/\d{4}/) || // Date format XX/XX/XXXX
         textContent.includes(' - ') && textContent.match(/\d{2}\/\d{2}\/\d{4}/); // Date range
+
+      // 🆕 DETECCIÓN DE CAMPOS PROMO -> SIEMPRE EDITABLE (sin restricciones)
+      const isPromoField = 
+        templateContent.includes('[promo]') ||
+        fieldType === 'promo' ||
+        fieldType.includes('promo') ||
+        textContent.match(/\d+x\d+/); // Pattern like 3x2, 5x4
       
       // 🔥 Debug ACTIVO: Mostrar TODO componente de texto dinámico
       if (type === 'field-dynamic-text' || textContent.includes('CUOTAS') || isDateField || isDiscountField) {
@@ -1081,7 +1123,7 @@ const renderComponent = (
       // 3. Campos de descuento - SIEMPRE editables (incluso en preview)
       // 4. Campos de fecha - SIEMPRE editables (incluso en preview)
       const canEdit = onEditField && (product || isStaticField) && 
-                     ((enableInlineEdit && !isPreview) || isFinancingField || isDiscountField || isDateField);
+                     ((enableInlineEdit && !isPreview) || isFinancingField || isDiscountField || isDateField || isPromoField);
       
       // 🆕 MEJORAR FIELDTYPE PARA CUOTAS, DESCUENTOS Y FECHAS
       let enhancedFieldType = fieldType;
@@ -1133,6 +1175,18 @@ const renderComponent = (
           isPreview,
           textContent,
           dateConfig: (content as any)?.dateConfig
+        });
+      }
+
+      if (isPromoField) {
+        console.log(`🎯 [PROMO] CanEdit resultado:`, {
+          isPromoField,
+          enableInlineEdit,
+          canEdit,
+          onEditField: !!onEditField,
+          isPreview,
+          fieldType,
+          templateContent: templateContent.substring(0, 50)
         });
       }
       
@@ -1699,6 +1753,7 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
   onFinancingImageClick,
   financingCuotas = 0,
   discountPercent = 0,
+  promoValue = '0x0',
   isPdfCapture = false,
   onUpdateComponent
 }) => {
@@ -1781,6 +1836,7 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
                   onFinancingImageClick,
                   financingCuotas,
                   discountPercent,
+                  promoValue,
                   onUpdateComponent,
                   isPdfCapture
                 )}
@@ -1797,6 +1853,7 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
                 onFinancingImageClick,
                 financingCuotas,
                 discountPercent,
+                promoValue,
                 onUpdateComponent,
                 isPdfCapture
               )

@@ -488,6 +488,17 @@ export const DYNAMIC_FIELD_CATEGORIES: DynamicFieldCategory[] = [
         fieldKey: 'static',
         example: 'Black Friday',
         formatter: () => 'Oferta Especial'
+      },
+      {
+        id: 'promo',
+        name: 'Promoción NxN',
+        description: 'Campo de promoción con formato numeroxnumero (ej: 3x2, 5x4) para cálculos automáticos',
+        fieldKey: 'static',
+        example: '3x2',
+        formatter: (_: any, product?: ProductoReal, outputFormat?: any, discountPercent?: number, promoValue?: string) => {
+          // Retornar el valor de promo tal como está configurado
+          return promoValue || '0x0';
+        }
       }
     ]
   },
@@ -557,7 +568,8 @@ export const getDynamicFieldValue = (
   product: ProductoReal,
   outputFormat?: any,
   financingCuotas?: number,  // 🆕 Parámetro de cuotas para cálculos de financiación
-  discountPercent?: number   // 🆕 Parámetro de descuento para cálculos de descuento
+  discountPercent?: number,  // 🆕 Parámetro de descuento para cálculos de descuento
+  promoValue?: string        // 🆕 Parámetro de promoción para campos promo
 ): string => {
   const field = ALL_DYNAMIC_FIELDS[fieldId];
   if (!field) {
@@ -586,6 +598,9 @@ export const getDynamicFieldValue = (
         // 🔧 CÁLCULO EXACTO: Mantener 2 decimales sin redondear a enteros
         const finalPrice = dto > 0 ? Number((precio * (1 - dto / 100)).toFixed(2)) : precio;
         return formatPrice(finalPrice, outputFormat);
+      } else if (fieldId === 'promo') {
+        // 🆕 MANEJO ESPECIAL PARA CAMPO PROMO
+        return promoValue || '0x0';
       }
       // @ts-ignore - Los formatters pueden aceptar diferentes números de parámetros
       return field.formatter(baseValue, product, outputFormat, discountPercent);

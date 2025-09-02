@@ -76,6 +76,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   // 🆕 Estado para financiación y descuentos (manejados via inline edit)
   const [selectedCuotas, setSelectedCuotas] = useState<number>(0);
   const [selectedDescuento, setSelectedDescuento] = useState<number>(0);
+  const [selectedPromo, setSelectedPromo] = useState<string>('0x0'); // 🆕 Estado para campo promo
   
   // 🆕 Helper para obtener descuento efectivo (manual o automático)
   const getEffectiveDescuento = (productId: string): number => {
@@ -414,6 +415,16 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       // Actualizar AMBOS: estado local Y continuar para guardar en Redux
       setSelectedDescuento(descuentoValue);
       console.log(`🏷️ [DESCUENTO MANUAL] Actualizando estado local a ${descuentoValue}% Y guardando en Redux`);
+      // NO hacer return aquí - continuar para que se guarde también en Redux
+    }
+
+    // 🆕 MANEJO ESPECIAL PARA CAMPO PROMO - SINCRONIZAR estado local Y Redux
+    if (baseFieldType === 'promo') {
+      const promoValue = String(newValue);
+      // Actualizar AMBOS: estado local Y continuar para que se guarde también en Redux
+      setSelectedPromo(promoValue);
+      console.log(`🎯 [PROMO MANUAL] Actualizando estado local a ${promoValue} Y guardando en Redux`);
+      console.log(`🔄 [PROMO DEBUG] selectedPromo actualizado de ${selectedPromo} a ${promoValue}`);
       // NO hacer return aquí - continuar para que se guarde también en Redux
     }
     
@@ -986,6 +997,16 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     setComponentModifications({});
   }, [selectedTemplate]);
 
+  // Efecto para resetear promo cuando cambia el producto
+  useEffect(() => {
+    setSelectedPromo('0x0');
+  }, [selectedProducts]);
+
+  // Debug: Log cuando cambia selectedPromo
+  useEffect(() => {
+    console.log(`🚀 [RENDER] selectedPromo cambió a: "${selectedPromo}"`);
+  }, [selectedPromo]);
+
   // Detectar campos editables automáticamente
   const editableFieldsStats = useMemo(() => {
     if (!selectedTemplate?.template?.defaultComponents) return null;
@@ -1281,7 +1302,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
             >
 
               <BuilderTemplateRenderer 
-                key={`template-${selectedTemplate.id}-cuotas-${selectedCuotas}-descuento-${selectedDescuento}-${currentProduct?.id || 'no-product'}`}
+                key={`template-${selectedTemplate.id}-cuotas-${selectedCuotas}-descuento-${selectedDescuento}-promo-${selectedPromo}-${currentProduct?.id || 'no-product'}`}
                 template={selectedTemplate.template}
                 components={getModifiedComponents(selectedTemplate.template.defaultComponents || [])}
                 product={currentProduct}
@@ -1295,6 +1316,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                 onFinancingImageClick={handleFinancingImageClick}
                 financingCuotas={selectedCuotas}
                 discountPercent={currentProduct ? getEffectiveDescuento(currentProduct.id) : selectedDescuento}
+                promoValue={selectedPromo}
               />
             </div>
           </div>

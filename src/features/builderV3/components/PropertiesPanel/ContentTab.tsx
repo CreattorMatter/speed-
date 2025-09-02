@@ -604,7 +604,7 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                     <label className="block text-xs font-medium text-gray-700 mb-1">Campos numéricos disponibles</label>
                     <div className="max-h-28 overflow-y-auto border border-gray-200 rounded-md divide-y">
                       {productFieldOptions
-                        .filter(opt => /price|precio|discount|descuento|stock|cuota/i.test(opt.value))
+                        .filter(opt => /price|precio|discount|descuento|stock|cuota|promo/i.test(opt.value))
                         .map((opt, idx) => (
                           <button
                             key={`${opt.value}-${idx}`}

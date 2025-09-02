@@ -103,6 +103,47 @@ export const formatDate = (dateString: string): string => {
   return cleaned;
 };
 
+// 🆕 VALIDACIÓN Y FORMATEO PARA CAMPO PROMO
+export const validatePromo = (value: string): { isValid: boolean; message?: string } => {
+  if (!value.trim()) {
+    return { isValid: false, message: 'El campo promoción no puede estar vacío' };
+  }
+  
+  // Verificar formato numeroxnumero
+  const promoRegex = /^\d+x\d+$/;
+  if (!promoRegex.test(value)) {
+    return { isValid: false, message: 'El formato debe ser numeroxnumero (ej: 3x2, 5x4)' };
+  }
+  
+  // Verificar que no sean 0x0 (debe tener al menos un número > 0)
+  const [left, right] = value.split('x').map(n => parseInt(n, 10));
+  if (left === 0 && right === 0) {
+    return { isValid: false, message: 'La promoción debe tener al menos un número mayor a 0' };
+  }
+  
+  return { isValid: true };
+};
+
+export const formatPromo = (value: string): string => {
+  // Limpiar y formatear valor de promo
+  const cleanValue = value.replace(/[^\dx]/gi, '').toLowerCase();
+  
+  // Si no tiene 'x', agregar uno por defecto
+  if (!cleanValue.includes('x')) {
+    return '0x0';
+  }
+  
+  const parts = cleanValue.split('x');
+  if (parts.length !== 2) {
+    return '0x0';
+  }
+  
+  const left = parseInt(parts[0], 10) || 0;
+  const right = parseInt(parts[1], 10) || 0;
+  
+  return `${left}x${right}`;
+};
+
 export const getFieldDisplayName = (fieldName: string): string => {
   const fieldNames: Record<string, string> = {
     'nombre': 'Nombre del producto',
@@ -112,7 +153,8 @@ export const getFieldDisplayName = (fieldName: string): string => {
     'fechasDesde': 'Fecha desde',
     'fechasHasta': 'Fecha hasta',
     'origen': 'Origen',
-    'precioSinImpuestos': 'Precio sin impuestos'
+    'precioSinImpuestos': 'Precio sin impuestos',
+    'promo': 'Promoción'
   };
   
   return fieldNames[fieldName] || fieldName;

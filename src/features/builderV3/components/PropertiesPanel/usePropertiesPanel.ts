@@ -42,6 +42,9 @@ export const usePropertiesPanel = ({
       // Campos de financiación (cuotas)
       'cuota', 'precio_cuota',
       
+      // Campos de promociones
+      'promo', // 🆕 Campo de promoción NxN
+      
       // Origen y ubicación
       'product_origin', 'product_origin_code', 'store_code',
       
@@ -68,7 +71,7 @@ export const usePropertiesPanel = ({
   // Helper: detectar si un campo es numérico (heurística por id)
   const isNumericFieldId = (id: string): boolean => {
     const key = id.toLowerCase();
-    return /price|precio|discount|descuento|stock|cuota/.test(key);
+    return /price|precio|discount|descuento|stock|cuota|promo/.test(key);
   };
 
   // =====================
@@ -184,6 +187,7 @@ export const usePropertiesPanel = ({
         if (/precio_descuento/.test(k)) return '89999';
         if (/cuota|precio_cuota/.test(k)) return '6';
         if (/discount|descuento/.test(k)) return '10';
+        if (/promo/.test(k)) return '3'; // 🆕 Valor numérico para promo (primer número de "3x2")
         if (/stock/.test(k)) return '25';
         return '0';
       };

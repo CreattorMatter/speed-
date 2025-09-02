@@ -216,6 +216,20 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
         const numericValue = parseInt(editValue.replace(/[^\d]/g, ''), 10);
         processedValue = isNaN(numericValue) ? 0 : numericValue;
         console.log(`🏷️ Procesando descuento (sin límites): "${editValue}" → ${processedValue}`);
+      } else if (fieldType.includes('promo') || fieldType === 'promo') {
+        // 🆕 PROCESAMIENTO ESPECIAL PARA CAMPO PROMO (numeroxnumero)
+        const cleanValue = editValue.replace(/[^\dx]/gi, '').toLowerCase();
+        
+        // Formatear automáticamente mientras escribe
+        if (!cleanValue.includes('x')) {
+          processedValue = cleanValue + 'x0';
+        } else {
+          const parts = cleanValue.split('x');
+          const left = parseInt(parts[0], 10) || 0;
+          const right = parseInt(parts[1], 10) || 0;
+          processedValue = `${left}x${right}`;
+        }
+        console.log(`🎯 Procesando promo: "${editValue}" → ${processedValue}`);
       }
     }
     
@@ -280,6 +294,19 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
       }
       if (numericValue > 60) {
         return { isValid: false, message: 'Máximo 60 cuotas permitidas' };
+      }
+    }
+    
+    // 🆕 VALIDACIÓN PARA CAMPO PROMO
+    if (fieldType.includes('promo') || fieldType === 'promo') {
+      const promoRegex = /^\d+x\d+$/;
+      if (!promoRegex.test(value)) {
+        return { isValid: false, message: 'El formato debe ser numeroxnumero (ej: 3x2, 5x4)' };
+      }
+      
+      const [left, right] = value.split('x').map(n => parseInt(n, 10));
+      if (left === 0 && right === 0) {
+        return { isValid: false, message: 'La promoción debe tener al menos un número mayor a 0' };
       }
     }
 
