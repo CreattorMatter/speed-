@@ -152,6 +152,55 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
         const numericValue = parseFloat(editValue.replace(/\./g, '').replace(',', '.'));
         processedValue = isNaN(numericValue) ? 0 : numericValue;
         console.log(`💰 Procesando precio: "${editValue}" → ${processedValue}`);
+        
+        // 🔧 PRESERVAR FORMATO: SIEMPRE aplicar formato para TODOS los precios
+        const originalValueStr = value.toString();
+        const hasSuperscriptDecimals = /[⁰¹²³⁴⁵⁶⁷⁸⁹]/.test(originalValueStr);
+        const hasNormalDecimals = /,\d+/.test(originalValueStr);
+        const hasCurrencySymbol = originalValueStr.includes('$');
+        
+        // Determinar configuración de formato
+        let decimalPlaces = 0; // Por defecto sin decimales
+        let useSuperscript = false;
+        
+        if (hasSuperscriptDecimals) {
+          useSuperscript = true;
+          decimalPlaces = 2; // Asumir 2 decimales para superíndice
+        } else if (hasNormalDecimals) {
+          useSuperscript = false;
+          decimalPlaces = 2; // Decimales normales
+        }
+        
+        const priceFormatContext: FormatContext = {
+          hasSpecialFormat: true, // SIEMPRE true para precios
+          originalFormat: {
+            showCurrencySymbol: hasCurrencySymbol,
+            showDecimals: decimalPlaces > 0,
+            precision: decimalPlaces.toString(),
+            superscriptDecimals: useSuperscript
+          },
+          formatPreferences: {
+            useSuperscript,
+            decimalPlaces,
+            showCurrency: hasCurrencySymbol,
+            useGrouping: true // SIEMPRE separadores de miles para precios
+          }
+        };
+        
+        console.log(`🎭 FORMATO FORZADO PARA PRECIO:`, {
+          originalValue: originalValueStr,
+          hasSuperscriptDecimals,
+          hasNormalDecimals,
+          hasCurrencySymbol,
+          formatContext: priceFormatContext
+        });
+        
+        console.log(`💾 📤 ENVIANDO A onSave CON FORMATO FORZADO:`, { fieldType, processedValue, hasFormatContext: true });
+        onSave(processedValue, priceFormatContext);
+        setIsEditing(false);
+        setHasBeenManuallyEdited(false);
+        setHasPendingChange(false);
+        return;
       } else if (fieldType.includes('porcentaje') || fieldType.includes('percentage')) {
         const numericValue = parseFloat(editValue.replace('%', ''));
         processedValue = isNaN(numericValue) ? 0 : numericValue;

@@ -168,14 +168,31 @@ const getDynamicValue = (
         // 🎭 APLICAR FORMATO PRESERVADO SI EXISTE
         if (change.preservedFormat) {
           console.log(`🎭 APLICANDO FORMATO PRESERVADO AL VALOR:`, {
+            fieldType,
             originalValue: change.newValue,
-            preservedFormat: change.preservedFormat
+            preservedFormat: change.preservedFormat,
+            valueType: typeof change.newValue
           });
           
           // Aplicar el formato preservado al valor del cambio
           const formattedValue = applyOutputFormat(Number(change.newValue), change.preservedFormat);
           console.log(`🎭 VALOR CON FORMATO APLICADO: ${change.newValue} → ${formattedValue}`);
           return formattedValue;
+        } else {
+          // Sin formato preservado, aplicar formato básico de miles para precios
+          if (fieldType.includes('precio') || fieldType.includes('price') || fieldType.includes('basePrice')) {
+            const numericValue = Number(change.newValue);
+            if (!isNaN(numericValue)) {
+              const formattedValue = numericValue.toLocaleString('es-AR', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+                useGrouping: true
+              });
+              console.log(`💰 APLICANDO FORMATO BÁSICO DE MILES: ${change.newValue} → ${formattedValue}`);
+              return formattedValue;
+            }
+          }
+          console.log(`⚠️ NO HAY FORMATO PRESERVADO para campo ${fieldType}, valor: ${change.newValue}`);
         }
         
         // Si no hay formato preservado, devolver el valor directo (VERDAD ABSOLUTA)
@@ -469,14 +486,31 @@ const getDynamicValue = (
         // 🎭 APLICAR FORMATO PRESERVADO SI EXISTE
         if (change.preservedFormat) {
           console.log(`🎭 APLICANDO FORMATO PRESERVADO AL CAMPO ESTÁTICO:`, {
+            fieldType,
             originalValue: change.newValue,
-            preservedFormat: change.preservedFormat
+            preservedFormat: change.preservedFormat,
+            valueType: typeof change.newValue
           });
           
           // Aplicar el formato preservado al valor del cambio
           const formattedValue = applyOutputFormat(Number(change.newValue), change.preservedFormat);
           console.log(`🎭 CAMPO ESTÁTICO CON FORMATO APLICADO: ${change.newValue} → ${formattedValue}`);
           return formattedValue;
+        } else {
+          // Sin formato preservado, aplicar formato básico de miles para precios
+          if (fieldType.includes('precio') || fieldType.includes('price') || fieldType.includes('basePrice')) {
+            const numericValue = Number(change.newValue);
+            if (!isNaN(numericValue)) {
+              const formattedValue = numericValue.toLocaleString('es-AR', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+                useGrouping: true
+              });
+              console.log(`💰 APLICANDO FORMATO BÁSICO DE MILES A CAMPO ESTÁTICO: ${change.newValue} → ${formattedValue}`);
+              return formattedValue;
+            }
+          }
+          console.log(`⚠️ NO HAY FORMATO PRESERVADO para campo estático ${fieldType}, valor: ${change.newValue}`);
         }
         
         // Si no hay formato preservado, devolver el valor directo
