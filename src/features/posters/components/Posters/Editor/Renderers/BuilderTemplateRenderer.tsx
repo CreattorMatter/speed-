@@ -337,9 +337,10 @@ const getDynamicValue = (
       // 🆕 soportar campos de financiación y descuento en expresiones
       expression = expression.replace(/\[cuota\]/g, String(financingCuotas || 0));
       // 🆕 soportar campo promo en expresiones - PRIORIZAR cambios manuales sobre selectedPromo
-      let promoNum = 0;
-      
       // 🔑 CLAVE: Buscar cambios manuales de promo PRIMERO (igual que con descuentos)
+      let promoLlevas = 0; // Primer número (cuántos llevás)
+      let promoPagas = 0;  // Segundo número (cuántos pagás)
+      
       if (productChanges && product?.id) {
         const changes = productChanges[product.id]?.changes || [];
         // 🔧 BUSCAR POR FIELD NAME, NO POR ID ÚNICO
@@ -350,20 +351,36 @@ const getDynamicValue = (
         
         if (promoChange) {
           const manualPromoValue = String(promoChange.newValue);
-          promoNum = parseInt(manualPromoValue.split('x')[0], 10) || 0;
-          console.log(`🎯 DEBUG PROMO MANUAL: Encontrado cambio "${promoChange.field}" = "${manualPromoValue}", promoNum=${promoNum}`);
+          const promoParts = manualPromoValue.split('x');
+          promoLlevas = parseInt(promoParts[0], 10) || 0;
+          promoPagas = parseInt(promoParts[1], 10) || 0;
+          console.log(`🎯 DEBUG PROMO MANUAL: Encontrado "${manualPromoValue}" → Llevás ${promoLlevas}, Pagás ${promoPagas}`);
         } else {
           // Si no hay cambio manual, usar selectedPromo
-          promoNum = promoValue ? parseInt(promoValue.split('x')[0], 10) || 0 : 0;
-          console.log(`🎯 DEBUG PROMO AUTOMÁTICO: No hay cambios manuales, usando selectedPromo "${promoValue}", promoNum=${promoNum}`);
-          console.log(`🔍 DEBUG: Cambios disponibles:`, changes.map((c: any) => c.field));
+          const promoParts = (promoValue || '0x0').split('x');
+          promoLlevas = parseInt(promoParts[0], 10) || 0;
+          promoPagas = parseInt(promoParts[1], 10) || 0;
+          console.log(`🎯 DEBUG PROMO AUTOMÁTICO: selectedPromo "${promoValue}" → Llevás ${promoLlevas}, Pagás ${promoPagas}`);
         }
       } else {
-        promoNum = promoValue ? parseInt(promoValue.split('x')[0], 10) || 0 : 0;
-        console.log(`🎯 DEBUG PROMO DEFAULT: Sin productChanges, usando promoValue "${promoValue}", promoNum=${promoNum}`);
+        const promoParts = (promoValue || '0x0').split('x');
+        promoLlevas = parseInt(promoParts[0], 10) || 0;
+        promoPagas = parseInt(promoParts[1], 10) || 0;
+        console.log(`🎯 DEBUG PROMO DEFAULT: "${promoValue}" → Llevás ${promoLlevas}, Pagás ${promoPagas}`);
       }
       
-      expression = expression.replace(/\[promo\]/g, String(promoNum));
+      // 🔧 LÓGICA CORRECTA DE PROMOCIÓN: 3x2 = (precio * 2) / 3
+      // Para expresión [product_price]/[promo] queremos que dé el precio correcto del combo
+      // Si es 3x2: llevás 3, pagás 2 → precio_combo = (precio_unitario * 2) / 3
+      // Pero la expresión es [product_price]/[promo], entonces necesitamos que [promo] = 3/2 = 1.5
+      // Así: 699.999 / 1.5 = 466.666 ✅
+      
+      const promoDivisor = promoLlevas > 0 && promoPagas > 0 ? promoLlevas / promoPagas : 1;
+      console.log(`🧮 LÓGICA PROMO: "${promoLlevas}x${promoPagas}" → Factor divisor = ${promoLlevas}/${promoPagas} = ${promoDivisor}`);
+      console.log(`🧮 CÁLCULO: [product_price]/${promoDivisor} = ${product?.precio || 0}/${promoDivisor} = ${promoDivisor > 0 ? (product?.precio || 0) / promoDivisor : 0}`);
+      
+      // Reemplazar [promo] con el divisor correcto para obtener el precio del combo
+      expression = expression.replace(/\[promo\]/g, String(promoDivisor));
       // precio_descuento calculado en base a product_price y discountPercent
       const dto = (typeof discountPercent === 'number' ? discountPercent : discountPercentage) || 0;
       // 🔧 CÁLCULO EXACTO: Mantener 2 decimales sin redondear a enteros
