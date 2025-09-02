@@ -495,9 +495,9 @@ const RoleModal: React.FC<{
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
         exit={{ scale: 0.95 }}
-        className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden"
+        className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <h3 className="text-lg font-medium text-gray-900">
             {role ? 'Editar Rol' : 'Crear Rol'}
           </h3>
@@ -509,7 +509,7 @@ const RoleModal: React.FC<{
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 overflow-y-auto p-6">
             {/* Información básica del rol */}
             <div className="space-y-4 mb-6">
@@ -622,7 +622,7 @@ const RoleModal: React.FC<{
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-200 px-6 py-4 flex justify-end space-x-3">
+          <div className="border-t border-gray-200 px-6 py-4 flex justify-end space-x-3 flex-shrink-0">
             <button
               type="button"
               onClick={onClose}
