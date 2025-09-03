@@ -280,16 +280,7 @@ const getDynamicValue = (
       console.log(`🧮 Campo calculado sin producto: mostrando placeholder`);
       return '0000';
     }
-    console.log(`🧮 Procesando campo calculado:`, {
-      expression: content.calculatedField.expression,
-      product: {
-        precio: product.precio,
-        precioAnt: product.precioAnt,
-        basePrice: product.basePrice,
-        stockDisponible: product.stockDisponible
-      },
-      outputFormat: content.outputFormat
-    });
+    
     
     // Primero verificar cambios del usuario para el campo calculado
     const fieldType = 'calculated';
@@ -317,14 +308,11 @@ const getDynamicValue = (
     // Si no hay cambios, procesar la expresión calculada
     try {
       let expression = content.calculatedField.expression;
-      console.log(`🔢 Expresión original: "${expression}"`);
-      
       // Obtener el porcentaje de descuento de manera segura
       let discountPercentage = 0;
       try {
         discountPercentage = calcularDescuentoPorcentaje(product);
       } catch (error) {
-        console.warn('⚠️ Error calculando descuento:', error);
         discountPercentage = 0;
       }
       
@@ -354,30 +342,19 @@ const getDynamicValue = (
           const promoParts = manualPromoValue.split('x');
           promoLlevas = parseInt(promoParts[0], 10) || 0;
           promoPagas = parseInt(promoParts[1], 10) || 0;
-          console.log(`🎯 DEBUG PROMO MANUAL: Encontrado "${manualPromoValue}" → Llevás ${promoLlevas}, Pagás ${promoPagas}`);
         } else {
           // Si no hay cambio manual, usar selectedPromo
           const promoParts = (promoValue || '0x0').split('x');
           promoLlevas = parseInt(promoParts[0], 10) || 0;
           promoPagas = parseInt(promoParts[1], 10) || 0;
-          console.log(`🎯 DEBUG PROMO AUTOMÁTICO: selectedPromo "${promoValue}" → Llevás ${promoLlevas}, Pagás ${promoPagas}`);
         }
       } else {
         const promoParts = (promoValue || '0x0').split('x');
         promoLlevas = parseInt(promoParts[0], 10) || 0;
         promoPagas = parseInt(promoParts[1], 10) || 0;
-        console.log(`🎯 DEBUG PROMO DEFAULT: "${promoValue}" → Llevás ${promoLlevas}, Pagás ${promoPagas}`);
       }
       
-      // 🔧 LÓGICA CORRECTA DE PROMOCIÓN: 3x2 = (precio * 2) / 3
-      // Para expresión [product_price]/[promo] queremos que dé el precio correcto del combo
-      // Si es 3x2: llevás 3, pagás 2 → precio_combo = (precio_unitario * 2) / 3
-      // Pero la expresión es [product_price]/[promo], entonces necesitamos que [promo] = 3/2 = 1.5
-      // Así: 699.999 / 1.5 = 466.666 ✅
-      
       const promoDivisor = promoLlevas > 0 && promoPagas > 0 ? promoLlevas / promoPagas : 1;
-      console.log(`🧮 LÓGICA PROMO: "${promoLlevas}x${promoPagas}" → Factor divisor = ${promoLlevas}/${promoPagas} = ${promoDivisor}`);
-      console.log(`🧮 CÁLCULO: [product_price]/${promoDivisor} = ${product?.precio || 0}/${promoDivisor} = ${promoDivisor > 0 ? (product?.precio || 0) / promoDivisor : 0}`);
       
       // Reemplazar [promo] con el divisor correcto para obtener el precio del combo
       expression = expression.replace(/\[promo\]/g, String(promoDivisor));
@@ -1119,18 +1096,11 @@ const renderComponent = (
         fieldType.includes('promo') ||
         textContent.match(/\d+x\d+/); // Pattern like 3x2, 5x4
       
-      // 🔥 Debug ACTIVO: Mostrar TODO componente de texto dinámico
-      if (type === 'field-dynamic-text' || textContent.includes('CUOTAS') || isDateField || isDiscountField) {
-        console.log(`🔥 [COMPONENTE TEXTO] Analizando:`, {
-          type,
-          fieldType,
-          dynamicTemplate: templateContent,
-          textContent: textContent.substring(0, 100),
-          isFinancingField,
-          isDiscountField,
-          isDateField,
-          contentFieldType: content?.fieldType,
-          dateConfig: (content as any)?.dateConfig
+      // Debug solo para modo PDF
+      if (isPdfCapture && textContent.includes('10.')) {
+        console.log(`📄 [PDF DEBUG] Texto grande detectado:`, {
+          text: textContent.substring(0, 30),
+          fieldType
         });
       }
       
@@ -1163,50 +1133,11 @@ const renderComponent = (
       }
       
       // 🔥 Debug SIMPLIFICADO para campos de financiación, descuento y fecha
-      if (isFinancingField) {
-        console.log(`🟢 [FINANCIACIÓN] CanEdit resultado:`, {
-          isFinancingField,
-          enableInlineEdit,
-          canEdit,
-          onEditField: !!onEditField,
-          isPreview
-        });
-      }
 
-      if (isDiscountField) {
-        console.log(`🟢 [DESCUENTO] CanEdit resultado:`, {
-          isDiscountField,
-          enableInlineEdit,
-          canEdit,
-          onEditField: !!onEditField,
-          isPreview
-        });
-      }
       
-      if (isDateField) {
-        console.log(`📅 [FECHA] CanEdit resultado:`, {
-          isDateField,
-          enableInlineEdit,
-          canEdit,
-          onEditField: !!onEditField,
-          isPreview,
-          textContent,
-          dateConfig: (content as any)?.dateConfig
-        });
-      }
+      // 🔧 MODO IMPRESIÓN: Usar el mismo sistema que la cartelera (InlineEditableText con AutoFitText interno)
+      // NO forzar AutoFitText directo - usar el flujo normal para que se vea igual
 
-      if (isPromoField) {
-        console.log(`🎯 [PROMO] CanEdit resultado:`, {
-          isPromoField,
-          enableInlineEdit,
-          canEdit,
-          onEditField: !!onEditField,
-          isPreview,
-          fieldType,
-          templateContent: templateContent.substring(0, 50)
-        });
-      }
-      
       if (canEdit) {
         // 🆕 DETECTAR SI ES TEMPLATE COMPLEJO (solo para campos dinámicos)
         const isComplex = !isStaticField && isComplexTemplate(content);
@@ -1357,6 +1288,7 @@ const renderComponent = (
             originalTemplate={textValue}
             multiline={textValue.length > 30 || textValue.includes('\n')}
             formatContext={formatContext} // 🆕 Pasar contexto de formato
+
           >
             <div title={`${fieldType}: ${textValue}${isComplex ? ' (Editar texto completo)' : isStaticField ? ' (Campo estático editable)' : ''} [ID: ${component.id}]`}>
               {textContent}
@@ -1571,6 +1503,7 @@ const renderComponent = (
             isComplexTemplate={false}
             originalTemplate={dateValue}
             formatContext={dateFormatContext} // 🆕 Pasar contexto de formato
+
           >
             <div title={`Fecha: ${dateValue}`}>
               {dateValue}
@@ -1689,6 +1622,7 @@ const renderComponent = (
             isComplexTemplate={false}
             originalTemplate={iconName}
             formatContext={iconFormatContext} // 🆕 Pasar contexto de formato
+
           >
             <div title={`Icono: ${iconName}`}>
               {iconName}
@@ -1803,77 +1737,43 @@ export const BuilderTemplateRenderer: React.FC<BuilderTemplateRendererProps> = (
     <div style={containerStyle}>
       {visibleComponents.map(component => {
         const rotation = component.position.rotation || 0;
-        const scaleX = component.position.scaleX || 1;
-        const scaleY = component.position.scaleY || 1;
+        const rawScaleX = component.position.scaleX || 1;
+        const rawScaleY = component.position.scaleY || 1;
+
+        // En modo impresión, evitar transform: scale para que AutoFit mida el tamaño real visible
+        const effectiveWidth = isPdfCapture ? (component.size.width * rawScaleX) : component.size.width;
+        const effectiveHeight = isPdfCapture ? (component.size.height * rawScaleY) : component.size.height;
+        const scaleX = isPdfCapture ? 1 : rawScaleX;
+        const scaleY = isPdfCapture ? 1 : rawScaleY;
 
         // 🎯 Posicionamiento base
-        let componentPositionStyle: React.CSSProperties = {
+        const componentPositionStyle: React.CSSProperties = {
           position: 'absolute',
           left: `${component.position.x}px`,
           top: `${component.position.y}px`,
-          width: `${component.size.width}px`,
-          height: `${component.size.height}px`,
+          width: `${effectiveWidth}px`,
+          height: `${effectiveHeight}px`,
           transform: `rotate(${rotation}deg) scale(${scaleX}, ${scaleY})`,
           visibility: component.isVisible ? 'visible' : 'hidden',
           zIndex: component.position.z,
         };
 
-        // 🧩 En modo captura PDF, evitar cortes por transform scale moviendo el scale a un contenedor interno
-        const useInnerScale = isPdfCapture && (scaleX !== 1 || scaleY !== 1);
-        if (useInnerScale) {
-          componentPositionStyle = {
-            position: 'absolute',
-            left: `${component.position.x}px`,
-            top: `${component.position.y}px`,
-            width: `${component.size.width * scaleX}px`,
-            height: `${component.size.height * scaleY}px`,
-            transform: `rotate(${rotation}deg)`,
-            visibility: component.isVisible ? 'visible' : 'hidden',
-            zIndex: component.position.z,
-          };
-        }
-
         return (
           <div key={component.id} style={componentPositionStyle}>
-            {useInnerScale ? (
-              <div style={{
-                width: `${component.size.width}px`,
-                height: `${component.size.height}px`,
-                transform: `scale(${scaleX}, ${scaleY})`,
-                transformOrigin: 'top left'
-              }}>
-                {renderComponent(
-                  component,
-                  product,
-                  isPreview,
-                  productChanges,
-                  onEditField,
-                  onPendingChange,
-                  enableInlineEdit,
-                  onFinancingImageClick,
-                  financingCuotas,
-                  discountPercent,
-                  promoValue,
-                  onUpdateComponent,
-                  isPdfCapture
-                )}
-              </div>
-            ) : (
-              renderComponent(
-                component,
-                product,
-                isPreview,
-                productChanges,
-                onEditField,
-                onPendingChange,
-                enableInlineEdit,
-                onFinancingImageClick,
-                financingCuotas,
-                discountPercent,
-                promoValue,
-                onUpdateComponent,
-                isPdfCapture
-              )
+            {renderComponent(
+              component,
+              product,
+              isPreview,
+              productChanges,
+              onEditField,
+              onPendingChange,
+              enableInlineEdit,
+              onFinancingImageClick,
+              financingCuotas,
+              discountPercent,
+              promoValue,
+              onUpdateComponent,
+              isPdfCapture
             )}
           </div>
         );

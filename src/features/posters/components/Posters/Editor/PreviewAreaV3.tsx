@@ -91,7 +91,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     const manualDescuentoChange = changes.find((c: any) => {
       const field = c.field;
       return field.includes('descuento') || field.includes('discount') || 
-             field === 'descuento' || field === 'discount_percentage' ||
+             field === 'descuento' || field.includes('discount_percentage') ||
              field.startsWith('descuento_') || field.startsWith('discount_percentage_');
     });
     
@@ -125,7 +125,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       const manualDescuentoChange = changes.find((c: any) => {
         const field = c.field;
         return field.includes('descuento') || field.includes('discount') || 
-               field === 'descuento' || field === 'discount_percentage' ||
+               field === 'descuento' || field.includes('discount_percentage') ||
                field.startsWith('descuento_') || field.startsWith('discount_percentage_');
       });
       
@@ -1398,6 +1398,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
           productChanges={productChanges}
           financingCuotas={selectedCuotas}
           discountPercent={selectedDescuento}
+          promoValue={selectedPromo}
           componentModifications={componentModifications}
         />
         
@@ -1406,7 +1407,11 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
           {`
             @media screen {
               .print-container-wrapper {
-                display: none !important;
+                position: fixed;
+                left: -10000px;
+                top: -10000px;
+                opacity: 0;
+                pointer-events: none;
               }
             }
             

@@ -9,10 +9,11 @@ interface PrintContainerProps {
   productChanges: Record<string, EditedProduct>;
   financingCuotas?: number; // 🆕 Para cálculos de financiación en impresión
   discountPercent?: number; // 🆕 Para cálculos de descuento en impresión
+  promoValue?: string; // 🆕 Para cálculos de promoción en impresión
   componentModifications?: Record<string, Partial<DraggableComponentV3>>; // 🆕 Modificaciones de componentes (imágenes dinámicas)
 }
 
-export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerProps>(({ templates, productChanges, financingCuotas = 0, discountPercent = 0, componentModifications = {} }, ref) => {
+export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerProps>(({ templates, productChanges, financingCuotas = 0, discountPercent = 0, promoValue = '0x0', componentModifications = {} }, ref) => {
   if (!templates || templates.length === 0) {
     return null;
   }
@@ -79,6 +80,7 @@ export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerPro
                 enableInlineEdit={false}
                 financingCuotas={financingCuotas}
                 discountPercent={discountPercent}
+                promoValue={promoValue}
                 isPdfCapture={true} // 🆕 Modo impresión - unificar fechas iguales
               />
             </div>
@@ -101,11 +103,6 @@ export const PrintContainer = React.forwardRef<HTMLDivElement, PrintContainerPro
             }
             .page-break:last-child {
               page-break-after: avoid;
-            }
-          }
-          @media screen {
-            .print-only {
-              display: none;
             }
           }
         `}
