@@ -23,7 +23,7 @@ export const AutoFitText: React.FC<AutoFitTextProps> = ({
 	baseFontSize,
 	minFontSize = 6,
 	maxIterations = 40,
-	maxFontSize
+	maxFontSize: _maxFontSize // Renombrado para evitar warning
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const measurerRef = useRef<HTMLDivElement>(null);
@@ -64,23 +64,15 @@ export const AutoFitText: React.FC<AutoFitTextProps> = ({
 		
 		const fits = measurer.scrollWidth <= containerWidth && measurer.scrollHeight <= containerHeight;
 		
-		// 🔍 DEBUG para números específicos
-		const shouldDebug = text.includes('349') || text.includes('999') || font > 200;
-		if (shouldDebug) {
+		// Debug solo para casos problemáticos
+		if (text.length > 100 && font > 200) {
 			console.log(`🔍 [FITSLN] "${text}" @ ${font}px:`, {
 				font,
 				scrollWidth: measurer.scrollWidth,
 				scrollHeight: measurer.scrollHeight,
 				containerWidth,
 				containerHeight,
-				widthFits: measurer.scrollWidth <= containerWidth,
-				heightFits: measurer.scrollHeight <= containerHeight,
-				fits,
-				measurerStyles: {
-					fontSize: measurer.style.fontSize,
-					fontFamily: measurer.style.fontFamily,
-					lineHeight: measurer.style.lineHeight
-				}
+				fits
 			});
 		}
 		
@@ -96,23 +88,7 @@ export const AutoFitText: React.FC<AutoFitTextProps> = ({
 		const containerHeight = container.clientHeight;
 		if (containerWidth <= 0 || containerHeight <= 0) return;
 
-		// 🔍 DEBUG: Log para entender el comportamiento
-		const isLongText = text.length > 50;
-		const isNumberText = /^\d+[\d.,]*$/.test(text.trim()); // Detectar números como precios
-		const shouldDebug = isLongText || isNumberText || text.includes('349') || text.includes('999'); // Debug específico para este caso
-		
-		if (shouldDebug) {
-			console.log(`🔍 [AUTOFIT RECALC] "${text}":`, {
-				textLength: text.length,
-				isNumberText,
-				containerWidth,
-				containerHeight,
-				baseFontSize,
-				currentFitted: fittedFontSize,
-				containerElement: container,
-				measuringElement: measurer
-			});
-		}
+		// Debug solo para textos muy largos que puedan tener problemas
 
 		// Establish initial guess and bounds
 		const startFont = typeof baseFontSize === 'number'
@@ -130,34 +106,15 @@ export const AutoFitText: React.FC<AutoFitTextProps> = ({
 		if (!fitsIn(high, containerWidth, containerHeight, measurer)) {
 			// Text is too big, we need to shrink
 			// Keep high as startFont and low as minFontSize for binary search
-			if (shouldDebug) {
-				console.log(`🔍 [AUTOFIT] "${text}" - SHRINKING from ${high}px`);
-			}
+			// Texto no cabe, necesita achicarse
 		} else {
-			// Text fits, try to expand upwards to find an upper bound
-			// 🎯 MEJORAR: Ser más agresivo en la expansión
-			const hardCap = Math.max(
-				maxFontSize || 0,
-				Math.floor(containerHeight * 0.9) // Usar 90% de la altura como límite más realista
-			) || Math.floor(containerHeight * 0.9);
-
-			if (shouldDebug) {
-				console.log(`🔍 [AUTOFIT] "${text}" - EXPANDING from ${high}px, hardCap: ${hardCap}px`);
-			}
-
-			// 🎯 ESTRATEGIA MÁS AGRESIVA: Intentar primero con el tamaño original
-			let expansionAttempts = 0;
-			while (high < hardCap && fitsIn(high, containerWidth, containerHeight, measurer) && expansionAttempts < 20) {
-				low = high; // we know it fits at least this
-				high = Math.min(hardCap, Math.floor(high * 1.15) + 1); // Incremento más gradual
-				expansionAttempts++;
-				
-				if (shouldDebug) {
-					console.log(`🔍 [AUTOFIT] Expansion attempt ${expansionAttempts}: trying ${high}px`);
-				}
-				
-				if (high === low) break;
-			}
+			// 🎯 NUEVO: Si el texto cabe con el tamaño original, NO expandir
+			// Solo usar el tamaño original como resultado final
+			// Texto cabe perfectamente, usar tamaño original
+			
+			// Establecer low = high para que el resultado final sea el tamaño original
+			low = high;
+			// No hacer expansión - mantener el tamaño original si cabe
 		}
 
 		let best = low;
@@ -173,15 +130,8 @@ export const AutoFitText: React.FC<AutoFitTextProps> = ({
 			}
 		}
 
-		if (shouldDebug) {
-			console.log(`✅ [AUTOFIT RESULT] "${text}": ${best}px (was ${fittedFontSize}px)`, {
-				originalBaseFontSize: baseFontSize,
-				finalFontSize: best,
-				containerDimensions: `${containerWidth}x${containerHeight}`,
-				textFits: fitsIn(best, containerWidth, containerHeight, measurer),
-				couldBeBigger: fitsIn(best + 10, containerWidth, containerHeight, measurer),
-				couldBeMuchBigger: fitsIn(best + 50, containerWidth, containerHeight, measurer)
-			});
+		if (text.length > 100) {
+			console.log(`✅ [AUTOFIT RESULT] "${text}": ${best}px (was ${fittedFontSize}px)`);
 		}
 		setFittedFontSize(best);
 	};

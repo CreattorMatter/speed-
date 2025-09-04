@@ -1337,20 +1337,7 @@ const renderComponent = (
               color: baseStyle.color as any,
               overflow: 'visible' // AutoFitText interno puede ser visible
             }}
-            baseFontSize={(() => {
-              // 🎯 CALCULAR BASEFONTSIZE CORRECTAMENTE
-              const originalFontSize = component.style?.typography?.fontSize || 16;
-              console.log(`🔍 [AUTOFIT DEBUG] ${textContent.substring(0, 20)}... - baseFontSize:`, {
-                componentId: component.id,
-                textLength: textContent.length,
-                originalFontSize,
-                baseStyleFontSize: baseStyle.fontSize,
-                finalBaseFontSize: originalFontSize,
-                componentWidth: component.size.width,
-                componentHeight: component.size.height
-              });
-              return originalFontSize;
-            })()}
+            baseFontSize={component.style?.typography?.fontSize || 16}
             minFontSize={6}
             maxFontSize={(() => {
               const originalFontSize = component.style?.typography?.fontSize || 16;
