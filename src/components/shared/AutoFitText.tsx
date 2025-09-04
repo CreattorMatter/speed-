@@ -50,6 +50,8 @@ export const AutoFitText: React.FC<AutoFitTextProps> = ({
 		wordBreak: 'break-word',
 		boxSizing: 'border-box',
 		...style,
+		// 🎯 FORZAR LINEHEIGHT OPTIMIZADO PARA MEDICIÓN
+		lineHeight: '1.0', // Forzar lineHeight compacto para medición precisa
 		// fontSize is set dynamically during fitting
 	}), [style]);
 
@@ -61,6 +63,27 @@ export const AutoFitText: React.FC<AutoFitTextProps> = ({
 		measurer.offsetHeight;
 		
 		const fits = measurer.scrollWidth <= containerWidth && measurer.scrollHeight <= containerHeight;
+		
+		// 🔍 DEBUG para números específicos
+		const shouldDebug = text.includes('349') || text.includes('999') || font > 200;
+		if (shouldDebug) {
+			console.log(`🔍 [FITSLN] "${text}" @ ${font}px:`, {
+				font,
+				scrollWidth: measurer.scrollWidth,
+				scrollHeight: measurer.scrollHeight,
+				containerWidth,
+				containerHeight,
+				widthFits: measurer.scrollWidth <= containerWidth,
+				heightFits: measurer.scrollHeight <= containerHeight,
+				fits,
+				measurerStyles: {
+					fontSize: measurer.style.fontSize,
+					fontFamily: measurer.style.fontFamily,
+					lineHeight: measurer.style.lineHeight
+				}
+			});
+		}
+		
 		return fits;
 	};
 
@@ -73,14 +96,21 @@ export const AutoFitText: React.FC<AutoFitTextProps> = ({
 		const containerHeight = container.clientHeight;
 		if (containerWidth <= 0 || containerHeight <= 0) return;
 
-		// Debug logging for long texts
-		if (text.length > 50) {
-			console.log(`🔍 AutoFitText recalc (LONG TEXT):`, {
-				text: text.substring(0, 30) + '...',
+		// 🔍 DEBUG: Log para entender el comportamiento
+		const isLongText = text.length > 50;
+		const isNumberText = /^\d+[\d.,]*$/.test(text.trim()); // Detectar números como precios
+		const shouldDebug = isLongText || isNumberText || text.includes('349') || text.includes('999'); // Debug específico para este caso
+		
+		if (shouldDebug) {
+			console.log(`🔍 [AUTOFIT RECALC] "${text}":`, {
+				textLength: text.length,
+				isNumberText,
 				containerWidth,
 				containerHeight,
 				baseFontSize,
-				currentFitted: fittedFontSize
+				currentFitted: fittedFontSize,
+				containerElement: container,
+				measuringElement: measurer
 			});
 		}
 
@@ -100,16 +130,32 @@ export const AutoFitText: React.FC<AutoFitTextProps> = ({
 		if (!fitsIn(high, containerWidth, containerHeight, measurer)) {
 			// Text is too big, we need to shrink
 			// Keep high as startFont and low as minFontSize for binary search
+			if (shouldDebug) {
+				console.log(`🔍 [AUTOFIT] "${text}" - SHRINKING from ${high}px`);
+			}
 		} else {
 			// Text fits, try to expand upwards to find an upper bound
+			// 🎯 MEJORAR: Ser más agresivo en la expansión
 			const hardCap = Math.max(
 				maxFontSize || 0,
-				Math.floor(containerHeight * 1.2) // reasonable cap based on height
-			) || Math.floor(containerHeight * 1.2);
+				Math.floor(containerHeight * 0.9) // Usar 90% de la altura como límite más realista
+			) || Math.floor(containerHeight * 0.9);
 
-			while (high < hardCap && fitsIn(high, containerWidth, containerHeight, measurer)) {
+			if (shouldDebug) {
+				console.log(`🔍 [AUTOFIT] "${text}" - EXPANDING from ${high}px, hardCap: ${hardCap}px`);
+			}
+
+			// 🎯 ESTRATEGIA MÁS AGRESIVA: Intentar primero con el tamaño original
+			let expansionAttempts = 0;
+			while (high < hardCap && fitsIn(high, containerWidth, containerHeight, measurer) && expansionAttempts < 20) {
 				low = high; // we know it fits at least this
-				high = Math.min(hardCap, Math.floor(high * 1.2) + 1);
+				high = Math.min(hardCap, Math.floor(high * 1.15) + 1); // Incremento más gradual
+				expansionAttempts++;
+				
+				if (shouldDebug) {
+					console.log(`🔍 [AUTOFIT] Expansion attempt ${expansionAttempts}: trying ${high}px`);
+				}
+				
 				if (high === low) break;
 			}
 		}
@@ -127,8 +173,15 @@ export const AutoFitText: React.FC<AutoFitTextProps> = ({
 			}
 		}
 
-		if (text.length > 50) {
-			console.log(`✅ AutoFitText result (LONG TEXT): ${best}px (was ${fittedFontSize}px)`);
+		if (shouldDebug) {
+			console.log(`✅ [AUTOFIT RESULT] "${text}": ${best}px (was ${fittedFontSize}px)`, {
+				originalBaseFontSize: baseFontSize,
+				finalFontSize: best,
+				containerDimensions: `${containerWidth}x${containerHeight}`,
+				textFits: fitsIn(best, containerWidth, containerHeight, measurer),
+				couldBeBigger: fitsIn(best + 10, containerWidth, containerHeight, measurer),
+				couldBeMuchBigger: fitsIn(best + 50, containerWidth, containerHeight, measurer)
+			});
 		}
 		setFittedFontSize(best);
 	};
@@ -159,7 +212,9 @@ export const AutoFitText: React.FC<AutoFitTextProps> = ({
 				width: '100%', 
 				height: '100%', 
 				whiteSpace: 'pre-wrap', 
-				wordBreak: 'break-word' 
+				wordBreak: 'break-word',
+				// 🎯 USAR EL MISMO LINEHEIGHT OPTIMIZADO QUE EL MEASURER
+				lineHeight: '1.0' // Consistente con el measurer
 			}}>
 				{text}
 			</div>

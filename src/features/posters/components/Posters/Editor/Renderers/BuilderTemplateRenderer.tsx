@@ -952,6 +952,10 @@ const getBaseComponentStyles = (component: DraggableComponentV3): React.CSSPrope
     wordWrap: 'break-word' as const,
     // 🔧 Solo aplicar backgroundColor para componentes no-imagen
     backgroundColor: component.type.startsWith('image-') ? 'transparent' : (style?.color?.backgroundColor || 'transparent'),
+    // 🎯 AGREGAR PADDING CONSISTENTE CON BUILDER V3
+    padding: typeof style?.spacing?.padding === 'object' 
+      ? `${style.spacing.padding.top}px ${style.spacing.padding.right}px ${style.spacing.padding.bottom}px ${style.spacing.padding.left}px`
+      : style?.spacing?.padding || 0,
   };
 
   // 🎯 APLICAR BORDES SOLO SI ESTÁN DEFINIDOS
@@ -1036,13 +1040,17 @@ const renderComponent = (
       
       const textValidAlign = getValidTextAlign(baseStyles.textAlign);
 
+      // 🎯 SEPARAR PADDING DEL ÁREA DE MEDICIÓN DE AUTOFITTEXT
+      const componentPadding = baseStyles.padding;
+      
       const baseStyle: React.CSSProperties = {
         ...baseStyles,
         textAlign: textValidAlign,
         whiteSpace: 'pre-wrap',
         // 🛡️ En modo captura PDF evitar recortes por métricas de fuente
         overflow: isPdfCapture ? 'visible' : baseStyles.overflow,
-        padding: isPdfCapture ? 2 : (baseStyles as any).padding
+        // 🚫 NO aplicar padding aquí - se aplicará en el contenedor exterior
+        padding: 0
       };
       
       const textContent = textValue?.toString() || 
@@ -1197,6 +1205,8 @@ const renderComponent = (
         // 🔧 MEJORADO: Estilos optimizados para edición inline
         const editableStyle = {
           ...baseStyle,
+          // 🎯 APLICAR PADDING EN EL CONTENEDOR DE EDICIÓN
+          padding: componentPadding,
           // 🔧 Asegurar dimensiones mínimas para edición
           minWidth: baseStyle.width || '100px',
           minHeight: baseStyle.height || '24px',
@@ -1302,6 +1312,8 @@ const renderComponent = (
         <div 
           style={{
             ...baseStyle,
+            // 🎯 APLICAR PADDING EN EL CONTENEDOR EXTERIOR
+            padding: componentPadding,
             overflow: 'hidden', // Restaurar overflow hidden para el contenedor padre
             display: 'flex',
             alignItems: 'center',
@@ -1312,6 +1324,7 @@ const renderComponent = (
           <AutoFitText
             text={textContent}
             style={{
+              // 🎯 ÁREA COMPLETA PARA AUTOFITTEXT (sin padding)
               width: '100%',
               height: '100%',
               whiteSpace: 'pre-wrap',
@@ -1324,9 +1337,25 @@ const renderComponent = (
               color: baseStyle.color as any,
               overflow: 'visible' // AutoFitText interno puede ser visible
             }}
-            baseFontSize={typeof baseStyle.fontSize === 'string' ? parseFloat(baseStyle.fontSize) : (baseStyle.fontSize as number)}
+            baseFontSize={(() => {
+              // 🎯 CALCULAR BASEFONTSIZE CORRECTAMENTE
+              const originalFontSize = component.style?.typography?.fontSize || 16;
+              console.log(`🔍 [AUTOFIT DEBUG] ${textContent.substring(0, 20)}... - baseFontSize:`, {
+                componentId: component.id,
+                textLength: textContent.length,
+                originalFontSize,
+                baseStyleFontSize: baseStyle.fontSize,
+                finalBaseFontSize: originalFontSize,
+                componentWidth: component.size.width,
+                componentHeight: component.size.height
+              });
+              return originalFontSize;
+            })()}
             minFontSize={6}
-            maxFontSize={200}
+            maxFontSize={(() => {
+              const originalFontSize = component.style?.typography?.fontSize || 16;
+              return Math.max(originalFontSize * 2, 200);
+            })()}
           />
         </div>
       );
