@@ -165,7 +165,7 @@ const getDynamicValue = (
       }
       
       if (change) {
-        console.log(`📝 ✅ CAMBIO MANUAL ENCONTRADO para campo dinámico ${fieldType}: ${change.newValue} (ID único: ${uniqueFieldId})`);
+        // Cambio manual encontrado para campo dinámico
         
         // 🎭 APLICAR FORMATO PRESERVADO SI EXISTE
         if (change.preservedFormat) {
@@ -200,7 +200,7 @@ const getDynamicValue = (
         // Si no hay formato preservado, devolver el valor directo (VERDAD ABSOLUTA)
         return String(change.newValue);
       } else {
-        console.log(`📝 ❌ NO se encontró cambio manual para campo dinámico "${fieldType}" (ID único: ${uniqueFieldId})`);
+        // No se encontró cambio manual para campo dinámico
       }
     }
     
