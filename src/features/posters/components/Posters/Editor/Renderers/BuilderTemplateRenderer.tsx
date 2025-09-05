@@ -625,24 +625,25 @@ const formatPriceForDisplay = (value: string): string => {
   const hasCommaDecimals = cleanValue.includes(',');
   
   if (hasCommaDecimals) {
-    // Formato con decimales: "1234567,50" → "1.234.567,50"
+    // Formato con decimales: "1234567,50" → "$ 1.234.567,50"
     const parts = cleanValue.split(',');
     const integerPart = parts[0];
     const decimalPart = parts[1] || '';
     
     // Formatear solo la parte entera con separadores de miles
     const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return `${formattedInteger},${decimalPart}`;
+    return `$ ${formattedInteger},${decimalPart}`;
   } else {
-    // Solo números enteros: "6999999" → "6.999.999"
+    // Solo números enteros: "6999999" → "$ 6.999.999"
     // Verificar si es un número válido
     if (!/^\d+$/.test(cleanValue)) {
       // Si no es solo números, devolverlo tal como está
       return cleanValue;
     }
     
-    // Aplicar separadores de miles
-    return cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    // Aplicar separadores de miles y símbolo de pesos
+    const formattedNumber = cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `$ ${formattedNumber}`;
   }
 };
 
