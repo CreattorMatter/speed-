@@ -693,30 +693,62 @@
   }
 }
 
-/* ===== SOLUCIÓN ESPECÍFICA PARA RESOLUCIÓN 1440x900 ===== */
+/* ===== SOLUCIÓN RESPONSIVIDAD INTELIGENTE POR RESOLUCIÓN ===== */
 
-/* Detectar resolución 1440x900 específicamente */
-@media screen and (width: 1440px) and (height: 900px) {
-  /* 🎯 SOLUCIÓN INTELIGENTE: Scale solo el contenedor, no el texto */
+/* 🎯 ALGORITMO INTELIGENTE: Escalar según densidad de pantalla */
+
+/* Resoluciones muy pequeñas (netbooks, tablets landscape) */
+@media screen and (max-width: 1366px) and (max-height: 768px) {
   .template-container {
-    transform: scale(1.1);
+    transform: scale(1.2);
     transform-origin: center;
   }
   
-  /* 🔧 Compensar el viewport reducido por el scaling */
+  .poster-editor-preview {
+    overflow: auto;
+    max-height: calc(100vh - 120px);
+  }
+}
+
+/* Resoluciones medianas problemáticas (1440x900, 1680x1050) */
+@media screen and (min-width: 1367px) and (max-width: 1680px) and (max-height: 1050px) {
+  .template-container {
+    transform: scale(1.15);
+    transform-origin: center;
+  }
+  
   .poster-editor-preview {
     overflow: auto;
     max-height: calc(100vh - 100px);
   }
 }
 
-/* Resoluciones similares que también pueden necesitar ajuste */
-@media screen and (width: 1440px) and (height: 1080px),
-       screen and (width: 1366px) and (height: 768px),
-       screen and (width: 1280px) and (height: 720px) {
+/* Resoluciones estándar (1920x1080 y similares) */
+@media screen and (min-width: 1681px) and (min-height: 1051px) and (max-width: 1920px) {
   .template-container {
     transform: scale(1.05);
     transform-origin: center;
+  }
+}
+
+/* Resoluciones altas (2K, 4K) - no necesitan escalado */
+@media screen and (min-width: 1921px) {
+  .template-container {
+    transform: scale(1.0);
+    transform-origin: center;
+  }
+}
+
+/* 🔧 OVERRIDE para zoom del navegador detectado */
+@media screen and (max-resolution: 1.2dppx) {
+  .template-container {
+    transform: scale(calc(var(--scale-factor, 1.1) * 1.1)) !important;
+  }
+}
+
+@media screen and (max-resolution: 1dppx) {
+  .template-container {
+    transform: scale(calc(var(--scale-factor, 1.1) * 1.2)) !important;
   }
 }
 
