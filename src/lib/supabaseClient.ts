@@ -9,9 +9,16 @@ const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY || 'placeho
 const isSupabaseConfigured = supabaseUrl !== 'https://placeholder.supabase.co' && 
                             supabaseAnonKey !== 'placeholder-anon-key';
 
-// Cliente normal para uso general
+// Cliente normal para uso general con persistencia de sesión
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        storage: window.localStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false
+      }
+    })
   : {} as SupabaseClient;
 
 // Cliente admin para operaciones que requieren permisos elevados  

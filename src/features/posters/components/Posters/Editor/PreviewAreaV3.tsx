@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { LayoutDashboard, Grid, ChevronLeft, ChevronRight, Save, X, Printer, Send } from 'lucide-react';
+import { LayoutDashboard, Grid, ChevronLeft, ChevronRight, Printer, Send } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectSelectedProducts, selectProductChanges, trackProductChange, selectHasAnyChanges } from '../../../../../store/features/poster/posterSlice';
@@ -131,15 +131,25 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       
       if (manualDescuentoChange) {
         const manualValue = Number(manualDescuentoChange.newValue) || 0;
-        console.log(`🔄 Sincronizando selectedDescuento con cambio manual: ${manualValue}%`);
-        setSelectedDescuento(manualValue);
+        // Solo actualizar si el valor es diferente para evitar re-renders innecesarios
+        if (selectedDescuento !== manualValue) {
+          console.log(`🔄 Sincronizando selectedDescuento con cambio manual: ${manualValue}%`);
+          setSelectedDescuento(manualValue);
+        }
       } else {
-        // Si no hay cambio manual, resetear a 0 para cálculos automáticos
-        console.log(`🔄 No hay cambio manual, reseteando selectedDescuento a 0`);
+        // Si no hay cambio manual, resetear a 0 para cálculos automáticos solo si es necesario
+        if (selectedDescuento !== 0) {
+          console.log(`🔄 No hay cambio manual, reseteando selectedDescuento a 0`);
+          setSelectedDescuento(0);
+        }
+      }
+    } else {
+      // Si no hay cambios, resetear solo si es necesario
+      if (selectedDescuento !== 0) {
         setSelectedDescuento(0);
       }
     }
-  }, [selectedProducts, productChanges]);
+  }, [selectedProducts, productChanges, selectedDescuento]);
   const [availableGroups, setAvailableGroups] = useState<Sucursal[]>([]);
 
   // Observer para el tamaño del contenedor
@@ -304,22 +314,12 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   };
 
   const handlePendingChange = (fieldType: string, newValue: string | number, formatContext?: any) => {
-    console.log(`📝 Cambio pendiente: ${fieldType} = ${newValue}`, { 
+    console.log(`⚡ GUARDADO AUTOMÁTICO: ${fieldType} = ${newValue}`, { 
       hasFormatContext: !!formatContext 
     });
     
-    // 🎭 LOG FORMATO CONTEXT en cambios pendientes
-    if (formatContext) {
-      console.log(`🎭 FormatContext en cambio pendiente:`, formatContext);
-    }
-    
-    setPendingChanges(prev => ({
-      ...prev,
-      [fieldType]: {
-        value: newValue,
-        formatContext // 🎭 Preservar formato en cambios pendientes
-      }
-    }));
+    // 🚀 CAMBIO: En lugar de guardar como pendiente, guardar inmediatamente
+    handleFieldEdit(fieldType, newValue, formatContext);
   };
 
   // Función para manejar actualizaciones de componentes (imágenes dinámicas, etc.)
@@ -715,17 +715,18 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       }
     }
 
-    // Lógica basada en permisos y cambios
+    // 🚀 IMPRESIÓN AUTOMÁTICA: Sin modal de confirmación
     if (canPrintDirect) {
       // Impresión directa: puede imprimir con o sin cambios
       if (hasAnyChanges) {
-        setShowChangesModal(true); // Mostrar modal para confirmar cambios (opcional)
+        // Imprimir automáticamente con cambios (sin modal)
+        handleConfirmPrintWithChanges('Cambios aplicados automáticamente');
       } else {
         handleDirectPrint(); // Imprimir directamente
       }
     } else if (canPrintWithAudit && hasAnyChanges) {
-      // Auditoría obligatoria: solo puede imprimir si hay cambios
-      setShowChangesModal(true); // Mostrar modal de auditoría obligatoria
+      // Auditoría obligatoria: imprimir automáticamente con cambios
+      handleConfirmPrintWithChanges('Cambios aplicados automáticamente con auditoría');
     }
   };
 
@@ -1110,28 +1111,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                           ✏️ {isEditModeActive ? 'Editando' : 'Editar Inline'}
                         </button>
 
-                        {/* Botones de confirmación/cancelación cuando hay cambios pendientes */}
-                        {hasUnsavedChanges && (
-                          <>
-                            <button
-                              onClick={handleConfirmAllChanges}
-                              className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm text-sm font-medium"
-                              title="Confirmar todos los cambios (Ctrl+S)"
-                            >
-                              <Save className="w-4 h-4 mr-1 inline" />
-                              Confirmar
-                            </button>
-                            
-                            <button
-                              onClick={handleCancelAllChanges}
-                              className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-sm text-sm font-medium"
-                              title="Cancelar todos los cambios (Escape)"
-                            >
-                              <X className="w-4 h-4 mr-1 inline" />
-                              Cancelar
-                            </button>
-                          </>
-                        )}
+                        {/* 🚀 BOTONES ELIMINADOS: Todo es automático ahora */}
                         
                         {/* Indicador de atajos de teclado */}
                         {isEditModeActive && (
@@ -1302,7 +1282,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
             >
 
               <BuilderTemplateRenderer 
-                key={`template-${selectedTemplate.id}-cuotas-${selectedCuotas}-descuento-${selectedDescuento}-promo-${selectedPromo}-${currentProduct?.id || 'no-product'}`}
+                key={`template-${selectedTemplate.id}-${currentProduct?.id || 'no-product'}`}
                 template={selectedTemplate.template}
                 components={getModifiedComponents(selectedTemplate.template.defaultComponents || [])}
                 product={currentProduct}

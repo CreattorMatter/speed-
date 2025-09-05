@@ -211,25 +211,7 @@ export const EditableField: React.FC<EditableFieldProps> = ({
       <div className={`inline-flex flex-col ${className}`}>
         <div className="flex items-center gap-2">
           <input {...getInputProps()} />
-          <button
-            onClick={handleSave}
-            disabled={!!error}
-            className={`px-2 py-1 rounded transition-colors ${
-              error 
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                : 'bg-green-500 text-white hover:bg-green-600'
-            }`}
-            title="Guardar (Enter)"
-          >
-            <Check className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleCancel}
-            className="px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-            title="Cancelar (Escape)"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {/* 🚀 BOTONES ELIMINADOS: Guardado automático con Enter */}
         </div>
         {error && (
           <span className="text-xs text-red-500 mt-1">{error}</span>

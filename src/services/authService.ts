@@ -12,10 +12,11 @@ export async function getCurrentProfile(): Promise<User | null> {
   if (!session) return null;
 
   const authUserId = session.user.id;
+  
   // Fetch base profile from users (use status, not is_active)
   const { data: baseProfile, error: baseErr } = await supabase
     .from('users')
-    .select('id, name, email, created_at, auth_user_id, status, first_login')
+    .select('id, name, email, created_at, auth_user_id, status, first_login, role')
     .eq('auth_user_id', authUserId)
     .single();
 
@@ -32,12 +33,14 @@ export async function getCurrentProfile(): Promise<User | null> {
   }
 
   // Derive role from user_roles -> roles
-  let roleName = 'viewer';
+  let roleName = baseProfile.role || 'viewer'; // Usar role directo de users como fallback
+  
   const { data: roleRow } = await supabase
     .from('user_roles')
     .select('roles(name)')
     .eq('user_id', baseProfile.id)
     .maybeSingle();
+  
   if (roleRow && (roleRow as any).roles?.name) {
     roleName = (roleRow as any).roles.name as string;
   }

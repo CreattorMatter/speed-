@@ -14,7 +14,7 @@ import { ErrorPage } from './pages/ErrorPage';
 import { PosterPreviewPage } from './pages/PosterPreview';
 import Welcome from './pages/Welcome';
 import { Analytics } from './features/analytics/components/Analytics';
-import { supabase, supabaseAdmin } from './lib/supabaseClient';
+import { supabase } from './lib/supabaseClient';
 import { signInWithPassword, signOut as authSignOut, getCurrentProfile } from './services/authService';
 import { HeaderProvider } from './components/shared/HeaderProvider';
 import { Toaster } from 'react-hot-toast';
@@ -77,11 +77,40 @@ function AppContent() {
 
   const checkUser = async () => {
     try {
+      // 🔐 PASO 1: Verificar si hay sesión activa de Supabase
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Error obteniendo sesión:', sessionError);
+        localStorage.removeItem('user');
+        return;
+      }
+
+      // 🔐 PASO 2: Si hay sesión de Supabase, obtener perfil fresco
+      if (session) {
+        console.log('✅ Sesión de Supabase encontrada, obteniendo perfil...');
+        try {
+          const freshProfile = await getCurrentProfile();
+          if (freshProfile) {
+            localStorage.setItem('user', JSON.stringify(freshProfile));
+            setUser(freshProfile);
+            setIsAuthenticated(true);
+            setUserRole((freshProfile.role as any) || 'viewer');
+            console.log('✅ Usuario autenticado desde sesión:', freshProfile.email);
+            return;
+          }
+        } catch (profileError) {
+          console.error('Error obteniendo perfil fresco:', profileError);
+        }
+      }
+
+      // 🔐 PASO 3: Fallback - verificar localStorage como último recurso
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
+        console.log('⚠️ No hay sesión de Supabase, usando localStorage como fallback');
 
-        // Verificar activo y refrescar perfil desde DB/Auth
+        // Verificar que el usuario sigue activo en la DB
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('*')
@@ -90,22 +119,23 @@ function AppContent() {
           .single();
 
         if (userError || !userData) {
-          console.error('Usuario no encontrado o inactivo');
+          console.error('Usuario no encontrado o inactivo, limpiando localStorage');
           localStorage.removeItem('user');
           return;
         }
 
-        const freshProfile = await getCurrentProfile();
-        const profileToUse = freshProfile || parsedUser;
-        localStorage.setItem('user', JSON.stringify(profileToUse));
-        setUser(profileToUse);
+        // Usuario válido desde localStorage
+        setUser(parsedUser);
         setIsAuthenticated(true);
-        setUserRole((profileToUse.role as any) || 'viewer');
-
-
+        setUserRole((parsedUser.role as any) || 'viewer');
+        console.log('✅ Usuario autenticado desde localStorage:', parsedUser.email);
+      } else {
+        console.log('❌ No hay sesión ni usuario en localStorage');
       }
+
     } catch (error) {
       console.error('Error durante la verificación del usuario:', error);
+      localStorage.removeItem('user');
     } finally {
       setLoading(false);
     }
@@ -225,7 +255,7 @@ function AppContent() {
           onLogout={handleLogout}
           onProducts={() => navigate('/products')}
           onPromotions={() => navigate('/promotions')}
-          onBack={undefined} // 🔧 NO mostrar botón "Volver" en dashboard Easy Pilar
+          onBack={() => {}} // 🔧 NO mostrar botón "Volver" en dashboard Easy Pilar
           userEmail={user?.email || ''}
           userName={user?.name || ''}
           onSettings={handleSettings}
@@ -241,7 +271,7 @@ function AppContent() {
         onNewPoster={handleNewPoster}
         onProducts={() => navigate('/products')}
         onPromotions={() => navigate('/promotions')}
-        onBack={undefined} // 🔧 NO mostrar botón "Volver" en dashboard principal
+        onBack={() => {}} // 🔧 NO mostrar botón "Volver" en dashboard principal
         userEmail={user?.email || ''}
         onSettings={handleSettings}
         userRole={userRole}

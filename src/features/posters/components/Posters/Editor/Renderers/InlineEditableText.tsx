@@ -149,9 +149,27 @@ export const InlineEditableText: React.FC<InlineEditableTextProps> = ({
     
     if (!isComplexTemplate) {
       if (fieldType.includes('precio') || fieldType.includes('price')) {
-        const numericValue = parseFloat(editValue.replace(/\./g, '').replace(',', '.'));
-        processedValue = isNaN(numericValue) ? 0 : numericValue;
-        console.log(`💰 Procesando precio: "${editValue}" → ${processedValue}`);
+        // 🚀 SOLUCIÓN SIMPLE: Normalizar input del usuario para almacenamiento
+        let normalizedValue = editValue.toString().trim();
+        
+        // Normalizar formato argentino: quitar puntos de miles, mantener comas decimales
+        // "6.999.999" → "6999999"
+        // "1.234.567,50" → "1234567,50"
+        const hasCommaDecimals = normalizedValue.includes(',');
+        
+        if (hasCommaDecimals) {
+          // Tiene decimales: remover solo puntos antes de la coma
+          const parts = normalizedValue.split(',');
+          const integerPart = parts[0].replace(/\./g, '');
+          const decimalPart = parts[1] || '';
+          normalizedValue = `${integerPart},${decimalPart}`;
+        } else {
+          // Solo enteros: remover todos los puntos
+          normalizedValue = normalizedValue.replace(/\./g, '');
+        }
+        
+        processedValue = normalizedValue;
+        console.log(`💰 NORMALIZANDO PARA ALMACENAMIENTO: "${editValue}" → "${processedValue}"`);
         
         // 🔧 PRESERVAR FORMATO: SIEMPRE aplicar formato para TODOS los precios
         const originalValueStr = value.toString();

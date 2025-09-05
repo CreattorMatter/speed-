@@ -175,7 +175,8 @@ export async function getCurrentUserPermissions(): Promise<UserPermissions> {
     }
 
     return getUserPermissions(dbUser.id);
-  } catch {
+  } catch (error) {
+    console.error('Error getting current user permissions:', error);
     return { permissions: [], groups: [], hasPermission: () => false };
   }
 }

@@ -165,40 +165,18 @@ const getDynamicValue = (
       }
       
       if (change) {
-        // Cambio manual encontrado para campo dinámico
+        // 🚀 SOLUCIÓN SIMPLE: Preservar valor exacto + formateo visual correcto
+        const rawValue = String(change.newValue);
+        console.log(`🎯 APLICANDO FORMATO VISUAL A VALOR PRESERVADO: "${rawValue}" para campo: ${fieldType}`);
         
-        // 🎭 APLICAR FORMATO PRESERVADO SI EXISTE
-        if (change.preservedFormat) {
-          console.log(`🎭 APLICANDO FORMATO PRESERVADO AL VALOR:`, {
-            fieldType,
-            originalValue: change.newValue,
-            preservedFormat: change.preservedFormat,
-            valueType: typeof change.newValue
-          });
-          
-          // Aplicar el formato preservado al valor del cambio
-          const formattedValue = applyOutputFormat(Number(change.newValue), change.preservedFormat);
-          console.log(`🎭 VALOR CON FORMATO APLICADO: ${change.newValue} → ${formattedValue}`);
+        // Si es un campo de precio, aplicar formato de miles argentino
+        if (fieldType.includes('precio') || fieldType.includes('price') || fieldType.includes('basePrice')) {
+          const formattedValue = formatPriceForDisplay(rawValue);
+          console.log(`💰 FORMATO APLICADO: "${rawValue}" → "${formattedValue}"`);
           return formattedValue;
-        } else {
-          // Sin formato preservado, aplicar formato básico de miles para precios
-          if (fieldType.includes('precio') || fieldType.includes('price') || fieldType.includes('basePrice')) {
-            const numericValue = Number(change.newValue);
-            if (!isNaN(numericValue)) {
-              const formattedValue = numericValue.toLocaleString('es-AR', {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-                useGrouping: true
-              });
-              console.log(`💰 APLICANDO FORMATO BÁSICO DE MILES: ${change.newValue} → ${formattedValue}`);
-              return formattedValue;
-            }
-          }
-          console.log(`⚠️ NO HAY FORMATO PRESERVADO para campo ${fieldType}, valor: ${change.newValue}`);
         }
         
-        // Si no hay formato preservado, devolver el valor directo (VERDAD ABSOLUTA)
-        return String(change.newValue);
+        return rawValue;
       } else {
         // No se encontró cambio manual para campo dinámico
       }
@@ -632,6 +610,40 @@ const processDynamicTemplate = (
   }
   
   return processed;
+};
+
+// ===============================================
+// FORMATEADOR VISUAL PARA PRECIOS (PRESERVA VALOR EXACTO)
+// ===============================================
+const formatPriceForDisplay = (value: string): string => {
+  const cleanValue = value.toString().trim();
+  
+  // Si está vacío, devolver vacío
+  if (!cleanValue) return cleanValue;
+  
+  // Detectar si tiene decimales (formato argentino: coma para decimales)
+  const hasCommaDecimals = cleanValue.includes(',');
+  
+  if (hasCommaDecimals) {
+    // Formato con decimales: "1234567,50" → "1.234.567,50"
+    const parts = cleanValue.split(',');
+    const integerPart = parts[0];
+    const decimalPart = parts[1] || '';
+    
+    // Formatear solo la parte entera con separadores de miles
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${formattedInteger},${decimalPart}`;
+  } else {
+    // Solo números enteros: "6999999" → "6.999.999"
+    // Verificar si es un número válido
+    if (!/^\d+$/.test(cleanValue)) {
+      // Si no es solo números, devolverlo tal como está
+      return cleanValue;
+    }
+    
+    // Aplicar separadores de miles
+    return cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
 };
 
 // ===============================================
