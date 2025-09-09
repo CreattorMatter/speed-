@@ -28,6 +28,10 @@ const textComponents: ComponentDefinitionV3[] = [
         letterSpacing: 0,
         textTransform: 'none',
         textDecoration: 'none'
+      },
+      color: {
+        color: '#000000', // color del texto
+        backgroundColor: 'transparent'
       }
     },
     defaultContent: {
