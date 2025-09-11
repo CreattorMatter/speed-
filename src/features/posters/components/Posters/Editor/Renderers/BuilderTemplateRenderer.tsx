@@ -621,29 +621,32 @@ const formatPriceForDisplay = (value: string): string => {
   // Si está vacío, devolver vacío
   if (!cleanValue) return cleanValue;
   
+  // Si el valor ya tiene un símbolo de dólar, quitarlo
+  const cleanFromDollar = cleanValue.replace(/^\s*\$\s*/, '');
+  
   // Detectar si tiene decimales (formato argentino: coma para decimales)
-  const hasCommaDecimals = cleanValue.includes(',');
+  const hasCommaDecimals = cleanFromDollar.includes(',');
   
   if (hasCommaDecimals) {
-    // Formato con decimales: "1234567,50" → "$ 1.234.567,50"
-    const parts = cleanValue.split(',');
+    // Formato con decimales: "1234567,50" → "1.234.567,50"
+    const parts = cleanFromDollar.split(',');
     const integerPart = parts[0];
     const decimalPart = parts[1] || '';
     
     // Formatear solo la parte entera con separadores de miles
     const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return `$ ${formattedInteger},${decimalPart}`;
+    return `${formattedInteger},${decimalPart}`;
   } else {
-    // Solo números enteros: "6999999" → "$ 6.999.999"
+    // Solo números enteros: "6999999" → "6.999.999"
     // Verificar si es un número válido
-    if (!/^\d+$/.test(cleanValue)) {
-      // Si no es solo números, devolverlo tal como está
-      return cleanValue;
+    if (!/^\d+$/.test(cleanFromDollar)) {
+      // Si no es solo números, devolverlo tal como está (sin el símbolo de dólar)
+      return cleanFromDollar;
     }
     
-    // Aplicar separadores de miles y símbolo de pesos
-    const formattedNumber = cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return `$ ${formattedNumber}`;
+    // Aplicar solo separadores de miles sin símbolo de moneda
+    const formattedNumber = cleanFromDollar.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return formattedNumber;
   }
 };
 
