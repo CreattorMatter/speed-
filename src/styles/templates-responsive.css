@@ -80,6 +80,13 @@
   }
 }
 
+/* Ajustes para pantallas grandes (1440px o más) prueba */
+@media (min-width: 1440px) {
+  .template-wrapper {
+    max-width: 900px;
+  }
+}
+
 /* Mejoras específicas para el editor de carteles */
 .poster-editor-preview {
   overflow: auto;

@@ -110,7 +110,7 @@ export const FamilySelectorV3: React.FC<FamilySelectorV3Props> = ({
           <img 
             src={family.headerImage} 
             alt={family.displayName}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
           />
         ) : (
           <div 
