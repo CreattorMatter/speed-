@@ -1,0 +1,7 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["./functions/**/*"],
+  "compilerOptions": {
+    "lib": ["deno.core", "deno.unstable", "dom"]
+  }
+}

@@ -203,7 +203,7 @@ export interface StyleV3 {
 
 export interface DynamicContentV3 {
   // Tipo de campo dinámico
-  fieldType: 'static' | 'dynamic' | 'calculated' | 'sap-product' | 'promotion-data' | 'custom-formula' | 'user-input' | 'financing-logo';
+  fieldType: 'static' | 'dynamic' | 'calculated' | 'sap-product' | 'promotion-data' | 'custom-formula' | 'user-input' | 'financing-logo' | 'dynamic-upload';
   
   // Configuración de conexión con SAP
   sapConnection?: {

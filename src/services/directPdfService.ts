@@ -6,6 +6,7 @@ import { BuilderTemplateRenderer } from '../features/posters/components/Posters/
 import { type TemplateV3 } from '../features/builderV3/types';
 import { type ProductoReal } from '../types/product';
 import { type EditedProduct } from '../store/features/poster/posterSlice';
+import { TemplateV3Schema, ProductSchema } from '../lib/validationSchemas';
 
 /**
  * Servicio de PDF que renderiza directamente cada template sin transformaciones CSS
@@ -25,19 +26,37 @@ export class DirectPdfService {
     size: number;
     filename: string;
   }> {
-    console.log('🎯 Iniciando generación PDF directa...');
     
     if (!templates || templates.length === 0) {
       throw new Error('No hay templates para generar PDF');
     }
     
     try {
-      let pdf: jsPDF | null = null;
+      // 📐 Definir dimensiones A4 en píxeles (a 96 DPI, que es el estándar de jsPDF para 'px')
+      const A4_WIDTH_PX = 1123; // Landscape width
+      const A4_HEIGHT_PX = 794; // Landscape height
+
+      // Crear PDF en formato A4 estándar
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: 'a4',
+      });
       
       // Procesar cada template individualmente
       for (let i = 0; i < templates.length; i++) {
         const { product, template } = templates[i];
-        console.log(`🖼️ Procesando template ${i + 1}/${templates.length} para producto: ${product.name}`);
+
+        // Validate each template and product
+        const templateValidation = TemplateV3Schema.safeParse(template);
+        const productValidation = ProductSchema.safeParse(product);
+
+        if (!templateValidation.success) {
+          throw new Error(`Fallback: El formato del template ${i + 1} es inválido.`);
+        }
+        if (!productValidation.success) {
+          throw new Error(`Fallback: Los datos del producto para el template ${i + 1} son inválidos.`);
+        }
         
         // Crear un canvas temporal para renderizar el template
         const canvas = await this.renderTemplateToCanvas(
@@ -48,45 +67,36 @@ export class DirectPdfService {
           discountPercent
         );
         
-        console.log(`📐 Canvas generado: ${canvas.width}x${canvas.height}px`);
-        
         // Convertir canvas a imagen
         const imgData = canvas.toDataURL('image/jpeg', 0.95);
         
-        // Usar EXACTAMENTE el tamaño y orientación del canvas renderizado
-        const pageWidthPx = canvas.width;
-        const pageHeightPx = canvas.height;
-        const isLandscape = pageWidthPx > pageHeightPx;
-        const orientation = isLandscape ? 'landscape' : 'portrait';
+        // 📐 Calcular el factor de escala para ajustar el template al A4 preservando el aspect ratio
+        const templateWidth = canvas.width;
+        const templateHeight = canvas.height;
+        const widthRatio = A4_WIDTH_PX / templateWidth;
+        const heightRatio = A4_HEIGHT_PX / templateHeight;
+        const scaleFactor = Math.min(widthRatio, heightRatio) * 1.01; // 放大到 101% 以更好地填充页面
 
-        if (!pdf) {
-          // Crear PDF A4 con la primera página
-          pdf = new jsPDF({
-            orientation,
-            unit: 'px',
-            format: [pageWidthPx, pageHeightPx]
-          });
-          console.log(`📄 PDF inicializado (${orientation}) con formato ${pageWidthPx}x${pageHeightPx}px`);
-        } else {
-          // Agregar nueva página con el mismo tamaño exacto
-          pdf.addPage([pageWidthPx, pageHeightPx], orientation as any);
-          console.log(`📄 Página agregada (${orientation}) con formato ${pageWidthPx}x${pageHeightPx}px`);
+        const scaledWidth = templateWidth * scaleFactor;
+        const scaledHeight = templateHeight * scaleFactor;
+
+        // Centrar la imagen en la página A4
+        const x = ((A4_WIDTH_PX - scaledWidth) / 2) + 1; // +1px 偏移以完美居中
+        const y = (A4_HEIGHT_PX - scaledHeight) / 2;
+
+        // Añadir página al PDF (excepto la primera)
+        if (i > 0) {
+          pdf.addPage();
         }
 
-        // Agregar imagen 1:1 al PDF (sin reescalar ni márgenes)
-        pdf.addImage(imgData, 'JPEG', 0, 0, pageWidthPx, pageHeightPx);
-        console.log(`✅ Template ${i + 1} agregado al PDF`);
+        // Agregar imagen escalada y centrada al PDF
+        pdf.addImage(imgData, 'JPEG', x, y, scaledWidth, scaledHeight);
       }
       
-      if (!pdf) {
-        throw new Error('No se pudo generar el PDF');
-      }
       
       // Generar blob final
       const blob = pdf.output('blob');
       const filename = `cartel-${Date.now()}.pdf`;
-      
-      console.log(`🎉 PDF generado exitosamente: ${filename} (${blob.size} bytes)`);
       
       return {
         blob,
@@ -126,7 +136,7 @@ export class DirectPdfService {
       outerContainer.style.height = `${templateHeight + overscan * 2}px`;
       outerContainer.style.padding = `${overscan}px`;
       outerContainer.style.boxSizing = 'content-box';
-      outerContainer.style.backgroundColor = 'white';
+      outerContainer.style.backgroundColor = 'transparent';
       outerContainer.style.overflow = 'visible';
       outerContainer.style.zIndex = '-1000';
 
@@ -134,7 +144,7 @@ export class DirectPdfService {
       tempContainer.style.width = `${templateWidth}px`;
       tempContainer.style.height = `${templateHeight}px`;
       tempContainer.style.overflow = 'visible';
-      tempContainer.style.backgroundColor = 'white';
+      tempContainer.style.backgroundColor = 'transparent';
 
       outerContainer.appendChild(tempContainer);
       document.body.appendChild(outerContainer);
@@ -156,21 +166,23 @@ export class DirectPdfService {
       
       root.render(templateElement);
       
-      // Esperar a que se renderice y luego capturar (más tiempo para debugging)
-      setTimeout(async () => {
+      // Esperar a que las fuentes estén listas y el layout se estabilice
+      const ensureStableRender = async () => {
         try {
-          console.log(`🎨 Capturando template de ${templateWidth}x${templateHeight}px`);
-          
-          // Asegurar que las fuentes estén listas para evitar reflow y recortes de texto
-          try {
-            if ((document as any).fonts && typeof (document as any).fonts.ready?.then === 'function') {
-              await (document as any).fonts.ready;
-              // Esperar un frame extra para layout estable
-              await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-            }
-          } catch {
-            // Si no hay soporte para document.fonts, continuar de todas formas
+          if (document.fonts && typeof document.fonts.ready?.then === 'function') {
+            await document.fonts.ready;
+            // Esperar dos frames para asegurar que el navegador ha pintado los cambios
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
           }
+        } catch (fontError) {
+          // Silently ignore font errors and continue
+        }
+      };
+
+      // Ejecutar la captura después de asegurar el renderizado estable
+      ensureStableRender().then(async () => {
+        try {
+          
           
           // Verificación básica del contenedor
           if (outerContainer.children.length === 0) {
@@ -183,7 +195,7 @@ export class DirectPdfService {
             scale: scaleFactor,
             useCORS: true,
             allowTaint: true,
-            backgroundColor: 'white',
+            backgroundColor: '#ffffff', // 🎨 Forzar fondo blanco para eliminar artefactos
             logging: false,
             width: templateWidth + overscan * 2,
             height: templateHeight + overscan * 2,
@@ -208,8 +220,6 @@ export class DirectPdfService {
           const ctx = canvas.getContext('2d');
           if (!ctx) throw new Error('No se pudo obtener contexto 2D para recorte');
           ctx.drawImage(fullCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-
-          console.log(`✅ Canvas capturado: ${canvas.width}x${canvas.height}px (recortado de ${fullCanvas.width}x${fullCanvas.height})`);
           
           // Limpiar
           root.unmount();
@@ -227,12 +237,12 @@ export class DirectPdfService {
               document.body.removeChild(outerContainer);
             }
           } catch (cleanupError) {
-            console.warn('⚠️ Error en cleanup:', cleanupError);
+            // Silently ignore cleanup errors
           }
           
           reject(error);
         }
-      }, 1000); // Tiempo optimizado para producción
+      });
     });
   }
 }

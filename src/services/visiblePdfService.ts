@@ -2,8 +2,11 @@ import { jsPDF } from 'jspdf';
 import domtoimage from 'dom-to-image-more';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { TemplateV3, ProductoReal, EditedProduct } from '../types';
+import { type TemplateV3 } from '../features/builderV3/types';
+import { type ProductoReal } from '../types/product';
+import { type EditedProduct } from '../store/features/poster/posterSlice';
 import { BuilderTemplateRenderer } from '../features/posters/components/Posters/Editor/Renderers/BuilderTemplateRenderer';
+import { TemplateV3Schema, ProductSchema } from '../lib/validationSchemas';
 
 /**
  * 🚀 NUEVO SERVICIO PDF CON RENDERIZADO VISIBLE
@@ -23,23 +26,26 @@ export class VisiblePdfService {
     financingCuotas: number = 0,
     discountPercent: number = 0
   ): Promise<Blob> {
-    console.log('🚀 [NUEVO PDF] Iniciando generación con renderizado visible...');
-    
     if (templates.length === 0) {
       throw new Error('No hay templates para generar PDF');
     }
 
-    // Usar dimensiones del primer template para el PDF
-    const templateWidth = templates[0]?.canvas?.width || (templates[0] as any)?.width || 1240;
-    const templateHeight = templates[0]?.canvas?.height || (templates[0] as any)?.height || 1754;
-    
-    console.log(`📐 Dimensiones PDF: ${templateWidth}x${templateHeight}px`);
+    // Validate the first template to get dimensions
+    const firstTemplateValidation = TemplateV3Schema.safeParse(templates[0]);
+    if (!firstTemplateValidation.success) {
+      console.error('Validation error for first template:', firstTemplateValidation.error);
+      throw new Error('El formato del primer template es inválido.');
+    }
 
-    // Crear PDF con dimensiones exactas
+    // 📐 Definir dimensiones A4 en píxeles (a 96 DPI, que es el estándar de jsPDF para 'px')
+    const A4_WIDTH_PX = 1123; // Landscape width
+    const A4_HEIGHT_PX = 794; // Landscape height
+
+    // Crear PDF en formato A4 estándar
     const pdf = new jsPDF({
-      orientation: templateWidth > templateHeight ? 'landscape' : 'portrait',
+      orientation: 'landscape',
       unit: 'px',
-      format: [templateWidth, templateHeight]
+      format: 'a4'
     });
 
     // Procesar cada template
@@ -47,7 +53,16 @@ export class VisiblePdfService {
       const template = templates[i];
       const product = products[i % products.length];
       
-      console.log(`🖼️ [${i + 1}/${templates.length}] Procesando: ${product?.name || 'Producto'}`);
+      // Validate each template and product
+      const templateValidation = TemplateV3Schema.safeParse(template);
+      const productValidation = ProductSchema.safeParse(product);
+
+      if (!templateValidation.success) {
+        throw new Error(`El formato del template ${i + 1} es inválido.`);
+      }
+      if (!productValidation.success) {
+        throw new Error(`Los datos del producto para el template ${i + 1} son inválidos.`);
+      }
       
       try {
         // Capturar template con renderizado visible
@@ -59,16 +74,28 @@ export class VisiblePdfService {
           discountPercent
         );
         
+        // 📐 Calcular el factor de escala para ajustar el template al A4 preservando el aspect ratio
+        const templateWidth = template.canvas.width;
+        const templateHeight = template.canvas.height;
+        const widthRatio = A4_WIDTH_PX / templateWidth;
+        const heightRatio = A4_HEIGHT_PX / templateHeight;
+        const scaleFactor = Math.min(widthRatio, heightRatio) * 1.01; // 放大到 101% 以更好地填充页面
+
+        const scaledWidth = templateWidth * scaleFactor;
+        const scaledHeight = templateHeight * scaleFactor;
+
+        // Centrar la imagen en la página A4
+        const x = ((A4_WIDTH_PX - scaledWidth) / 2) + 1; // +1px 偏移以完美居中
+        const y = (A4_HEIGHT_PX - scaledHeight) / 2;
+
         // Añadir página al PDF (excepto la primera)
         if (i > 0) {
-          pdf.addPage([templateWidth, templateHeight], templateWidth > templateHeight ? 'landscape' : 'portrait');
+          pdf.addPage();
         }
         
         // Convertir canvas a imagen y agregar al PDF
         const imgData = canvas.toDataURL('image/png', 1.0);
-        pdf.addImage(imgData, 'PNG', 0, 0, templateWidth, templateHeight);
-        
-        console.log(`✅ Template ${i + 1} agregado al PDF`);
+        pdf.addImage(imgData, 'PNG', x, y, scaledWidth, scaledHeight);
         
       } catch (error) {
         console.error(`❌ Error procesando template ${i + 1}:`, error);
@@ -78,8 +105,6 @@ export class VisiblePdfService {
 
     // Generar PDF final
     const pdfBlob = pdf.output('blob');
-    const pdfSize = Math.round(pdfBlob.size / 1024);
-    console.log(`🎉 PDF generado exitosamente: ${pdfSize}KB`);
     
     return pdfBlob;
   }
@@ -95,8 +120,6 @@ export class VisiblePdfService {
     return new Promise((resolve, reject) => {
       const templateWidth = template?.canvas?.width || (template as any)?.width || 1240;
       const templateHeight = template?.canvas?.height || (template as any)?.height || 1754;
-      
-      console.log(`🎨 Renderizando visible: ${templateWidth}x${templateHeight}px`);
 
       // Crear overlay temporal no intrusivo
       const overlay = this.createRenderOverlay(templateWidth, templateHeight);
@@ -111,21 +134,33 @@ export class VisiblePdfService {
       // Renderizar template
       const templateElement = React.createElement(BuilderTemplateRenderer, {
         template,
-        components: template?.defaultComponents || template?.components || [],
+        components: template?.defaultComponents || [],
         product,
         productChanges,
-        enableInlineEdit: false,
         financingCuotas,
         discountPercent,
+        enableInlineEdit: false,
         isPdfCapture: true // Modo especial para PDF
       });
 
       root.render(templateElement);
 
-      // Esperar renderizado y capturar
-      setTimeout(async () => {
+      // Esperar a que las fuentes estén listas y el layout se estabilice
+      const ensureStableRender = async () => {
         try {
-          console.log('📸 Capturando con dom-to-image...');
+          if (document.fonts && typeof document.fonts.ready?.then === 'function') {
+            await document.fonts.ready;
+            // Esperar dos frames para asegurar que el navegador ha pintado los cambios
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+          }
+        } catch (fontError) {
+          // Silently ignore font errors and continue
+        }
+      };
+
+      // Ejecutar la captura después de asegurar el renderizado estable
+      ensureStableRender().then(async () => {
+        try {
           
           // Capturar con dom-to-image (más confiable que html2canvas)
           const dataUrl = await domtoimage.toPng(container, {
@@ -136,7 +171,8 @@ export class VisiblePdfService {
               transformOrigin: 'top left'
             },
             quality: 1.0,
-            pixelRatio: 2 // Alta calidad
+            pixelRatio: 2, // Alta calidad
+            bgcolor: '#ffffff' // 🎨 Forzar fondo blanco para eliminar artefactos
           });
 
           // Convertir a canvas
@@ -166,8 +202,6 @@ export class VisiblePdfService {
             // Limpiar
             root.unmount();
             document.body.removeChild(overlay);
-            
-            console.log('✅ Captura completada exitosamente');
             resolve(finalCanvas);
           };
           
@@ -190,49 +224,33 @@ export class VisiblePdfService {
           
           reject(error);
         }
-      }, 1500); // Dar tiempo suficiente para renderizado
+      });
     });
   }
 
   private static createRenderOverlay(width: number, height: number): HTMLElement {
+    // Crear un contenedor padre invisible y fuera de la pantalla.
     const overlay = document.createElement('div');
     overlay.id = 'pdf-render-overlay';
     overlay.style.cssText = `
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 10000;
-      background: rgba(0, 0, 0, 0.8);
-      padding: 20px;
-      border-radius: 8px;
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+      width: ${width}px;
+      height: ${height}px;
+      opacity: 0;
       pointer-events: none;
-      opacity: 0.9;
+      z-index: -1;
     `;
 
-    // Mensaje de estado
-    const message = document.createElement('div');
-    message.style.cssText = `
-      color: white;
-      text-align: center;
-      margin-bottom: 10px;
-      font-family: system-ui, sans-serif;
-      font-size: 14px;
-    `;
-    message.textContent = '📄 Generando PDF...';
-    overlay.appendChild(message);
-
-    // Contenedor del template
+    // El contenedor del template es ahora el propio overlay.
     const container = document.createElement('div');
     container.id = 'pdf-render-container';
     container.style.cssText = `
-      width: ${width}px;
-      height: ${height}px;
-      background: white;
+      width: 100%;
+      height: 100%;
+      background: transparent;
       overflow: visible;
-      transform: scale(0.3);
-      transform-origin: top left;
-      border: 1px solid #ccc;
     `;
     overlay.appendChild(container);
 
@@ -250,7 +268,6 @@ export class VisiblePdfService {
     financingCuotas: number = 0,
     discountPercent: number = 0
   ): Promise<void> {
-    console.log('🖨️ [FALLBACK] Usando Print API nativa...');
     
     // Crear ventana temporal para impresión
     const printWindow = window.open('', '_blank', 'width=800,height=600');

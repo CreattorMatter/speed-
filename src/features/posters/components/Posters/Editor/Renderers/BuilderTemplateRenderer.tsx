@@ -70,12 +70,6 @@ const getDynamicValue = (
     if (productChanges && productChanges[product.id]) {
       const changes = productChanges[product.id].changes || [];
       
-      // 🔧 DEBUGGING: Log para entender qué está pasando
-      console.log(`🔍 Buscando cambios para campo "${field}" (componentId: ${componentId}):`, {
-        productId: product.id,
-        totalChanges: changes.length,
-        changes: changes.map((c: any) => ({ field: c.field, newValue: c.newValue }))
-      });
       
       // 🔧 BUSCAR CAMBIO CON ID ÚNICO PRIMERO (field_componentId)
       let change = changes.find((c: any) => c.field === `${field}_${componentId}`);
@@ -86,14 +80,9 @@ const getDynamicValue = (
       }
       
       if (change) {
-        console.log(`📝 ✅ CAMBIO ENCONTRADO para ${field}: ${change.newValue} (ID: ${componentId})`);
         // Devolver el valor tal cual lo guardó el usuario.
         return change.newValue;
-      } else {
-        console.log(`📝 ❌ NO se encontró cambio para campo "${field}" (componentId: ${componentId})`);
       }
-    } else {
-      console.log(`📝 ⚠️ No hay productChanges para producto ${product?.id || 'undefined'}`);
     }
     
     // Si no hay cambio, usar valor del producto original
@@ -147,7 +136,6 @@ const getDynamicValue = (
     if (!product) {
       return generateDynamicPlaceholder(content.dynamicTemplate);
     }
-    console.log(`🎯 Procesando campo dinámico: ${content.dynamicTemplate}`);
     
     // 🆕 VERIFICAR CAMBIOS MANUALES PRIMERO para TODOS los campos dinámicos
     const fieldType = getFieldType(content);
@@ -167,12 +155,10 @@ const getDynamicValue = (
       if (change) {
         // 🚀 SOLUCIÓN SIMPLE: Preservar valor exacto + formateo visual correcto
         const rawValue = String(change.newValue);
-        console.log(`🎯 APLICANDO FORMATO VISUAL A VALOR PRESERVADO: "${rawValue}" para campo: ${fieldType}`);
         
         // Si es un campo de precio, aplicar formato de miles argentino
         if (fieldType.includes('precio') || fieldType.includes('price') || fieldType.includes('basePrice')) {
           const formattedValue = formatPriceForDisplay(rawValue);
-          console.log(`💰 FORMATO APLICADO: "${rawValue}" → "${formattedValue}"`);
           return formattedValue;
         }
         
@@ -184,7 +170,6 @@ const getDynamicValue = (
     
     // 🆕 NUEVO: Manejo especial para validity_period en dynamicTemplate
     if (content.dynamicTemplate.includes('[validity_period]')) {
-      console.log(`📅 Detectado validity_period en dynamicTemplate, usando configuración automática`);
       
       // Si no hay cambios del usuario, usar la configuración original del dateConfig
       if (content?.dateConfig?.type === 'validity-period' && content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
@@ -193,14 +178,12 @@ const getDynamicValue = (
             startDate: content.dateConfig.startDate as string,
             endDate: content.dateConfig.endDate as string
           }, isPdfCapture);
-          console.log(`📅 Fecha de vigencia formateada desde dateConfig: ${formattedDate}`);
           return formattedDate;
         } catch (error) {
           console.error(`📅 Error formateando fecha de vigencia:`, error);
         }
       }
       // Fallback si no hay dateConfig configurado
-      console.log(`📅 Usando fallback para validity_period`);
       return new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
     
@@ -218,20 +201,12 @@ const getDynamicValue = (
       outputFormat.showCurrencySymbol = templateHasSymbol;
     }
     const processedValue = processDynamicTemplate(content.dynamicTemplate, product, outputFormat, financingCuotas, discountPercent, promoValue || '0x0');
-    console.log(`📊 Valor procesado del template: ${processedValue}`, { outputFormat, financingCuotas });
     return processedValue;
   }
 
   // 🆕 NUEVO: SISTEMA PARA CAMPOS DE FECHA DE VIGENCIA (validity-period)
-  console.log(`🔍 DEBUG: Verificando content para validity-period:`, {
-    hasContent: !!content,
-    hasDateConfig: !!content?.dateConfig,
-    dateConfigType: content?.dateConfig?.type,
-    dateConfig: content?.dateConfig
-  });
   
   if (content?.dateConfig?.type === 'validity-period') {
-    console.log(`📅 Procesando fecha de vigencia desde la plantilla:`, content.dateConfig);
     
     // Usar el validador de fechas de vigencia
     if (content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
@@ -240,14 +215,12 @@ const getDynamicValue = (
           startDate: content.dateConfig.startDate as string,
           endDate: content.dateConfig.endDate as string
         }, isPdfCapture);
-        console.log(`📅 Fecha de vigencia formateada: ${formattedDate}`);
         return formattedDate;
       } catch (error) {
         console.error(`📅 Error formateando fecha de vigencia:`, error);
         return new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }); // Fallback
       }
     } else {
-      console.log(`📅 No hay fechas configuradas, usando fallback`);
       return new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }); // Fallback
     }
   }
@@ -255,7 +228,6 @@ const getDynamicValue = (
   // 🆕 NUEVO: SISTEMA DE CAMPOS CALCULADOS
   if (content?.fieldType === 'calculated' && content?.calculatedField?.expression) {
     if (!product) {
-      console.log(`🧮 Campo calculado sin producto: mostrando placeholder`);
       return '0000';
     }
     
@@ -275,11 +247,8 @@ const getDynamicValue = (
       }
       
       if (change) {
-        console.log(`📝 ✅ CAMBIO ENCONTRADO para campo calculado ${fieldType}: ${change.newValue} (ID único: ${uniqueFieldId})`);
         // El input del usuario es la fuente de verdad. No reformatear.
         return String(change.newValue);
-      } else {
-        console.log(`📝 ❌ NO se encontró cambio para campo calculado "${fieldType}" (ID único: ${uniqueFieldId})`);
       }
     }
     
@@ -342,7 +311,6 @@ const getDynamicValue = (
       const precioDesc = dto > 0 ? Number(((product?.precio || 0) * (1 - dto / 100)).toFixed(2)) : (product?.precio || 0);
       expression = expression.replace(/\[precio_descuento\]/g, String(precioDesc));
       
-      console.log(`🔢 Expresión con reemplazos: "${expression}"`);
       
       // Evaluar la expresión de forma segura
       // Validar que solo contenga caracteres permitidos
@@ -364,7 +332,6 @@ const getDynamicValue = (
           }
           return applyOutputFormat(numericResult, outputFormat);
         } else {
-          console.log(`❌ Resultado inválido (división por 0 u operación no finita): ${result}`);
           // Fallback seguro: 0
           const outputFormat = { ...(content.outputFormat || {}) } as any;
           if (outputFormat.showCurrencySymbol === undefined && typeof outputFormat.prefix === 'boolean') {
@@ -373,7 +340,6 @@ const getDynamicValue = (
           return applyOutputFormat(0, outputFormat);
         }
       } else {
-        console.log(`❌ Expresión inválida después de reemplazos: "${expression}"`);
         const outputFormat = { ...(content.outputFormat || {}) } as any;
         if (outputFormat.showCurrencySymbol === undefined && typeof outputFormat.prefix === 'boolean') {
           outputFormat.showCurrencySymbol = outputFormat.prefix;
@@ -483,20 +449,12 @@ const getDynamicValue = (
       }
       
       if (change) {
-        console.log(`📝 ✅ CAMBIO ENCONTRADO para campo estático ${fieldType}: ${change.newValue} (ID único: ${uniqueFieldId})`);
         
         // 🎭 APLICAR FORMATO PRESERVADO SI EXISTE
         if (change.preservedFormat) {
-          console.log(`🎭 APLICANDO FORMATO PRESERVADO AL CAMPO ESTÁTICO:`, {
-            fieldType,
-            originalValue: change.newValue,
-            preservedFormat: change.preservedFormat,
-            valueType: typeof change.newValue
-          });
           
           // Aplicar el formato preservado al valor del cambio
-          const formattedValue = applyOutputFormat(Number(change.newValue), change.preservedFormat);
-          console.log(`🎭 CAMPO ESTÁTICO CON FORMATO APLICADO: ${change.newValue} → ${formattedValue}`);
+          const formattedValue = applyOutputFormat(change.newValue, change.preservedFormat);
           return formattedValue;
         } else {
           // Sin formato preservado, aplicar formato básico de miles para precios
@@ -508,17 +466,13 @@ const getDynamicValue = (
                 maximumFractionDigits: 0,
                 useGrouping: true
               });
-              console.log(`💰 APLICANDO FORMATO BÁSICO DE MILES A CAMPO ESTÁTICO: ${change.newValue} → ${formattedValue}`);
               return formattedValue;
             }
           }
-          console.log(`⚠️ NO HAY FORMATO PRESERVADO para campo estático ${fieldType}, valor: ${change.newValue}`);
         }
         
         // Si no hay formato preservado, devolver el valor directo
         return String(change.newValue);
-      } else {
-        console.log(`📝 ❌ NO se encontró cambio para campo estático "${fieldType}" (ID único: ${uniqueFieldId})`);
       }
     }
     
@@ -890,12 +844,6 @@ const isComplexTemplate = (content: any): boolean => {
   const remainingText = templateWithoutFields.trim();
   const isComplex = remainingText.length > 0;
   
-  console.log(`🔍 Análisis template:`, {
-    template,
-    fieldMatches,
-    remainingText,
-    isComplex
-  });
   
   return isComplex;
 };
@@ -947,7 +895,7 @@ const getFontFamilyWithFallbacks = (fontFamily?: string): string => {
 /**
  * 🆕 FUNCIÓN HELPER: Crear estilos base consistentes con CanvasEditorV3
  */
-const getBaseComponentStyles = (component: DraggableComponentV3): React.CSSProperties => {
+const getBaseComponentStyles = (component: DraggableComponentV3, isPdfCapture: boolean = false): React.CSSProperties => {
   const { style } = component;
   
   // 🎯 APLICAR SOLO ESTILOS DE CONTENIDO, NO DE POSICIONAMIENTO
@@ -966,20 +914,25 @@ const getBaseComponentStyles = (component: DraggableComponentV3): React.CSSPrope
     boxSizing: 'border-box' as const,
     overflow: 'hidden', // Mantener hidden por defecto, se maneja específicamente en cada caso
     wordWrap: 'break-word' as const,
-    // 🔧 Solo aplicar backgroundColor para componentes no-imagen
-    backgroundColor: component.type.startsWith('image-') ? 'transparent' : (style?.color?.backgroundColor || 'transparent'),
+    // 🔧 Aplicar backgroundColor: transparente en modo PDF, de lo contrario, usar el del estilo.
+    backgroundColor: isPdfCapture || component.type.startsWith('image-') ? 'transparent' : (style?.color?.backgroundColor || 'transparent'),
     // 🎯 AGREGAR PADDING CONSISTENTE CON BUILDER V3
     padding: typeof style?.spacing?.padding === 'object' 
       ? `${style.spacing.padding.top}px ${style.spacing.padding.right}px ${style.spacing.padding.bottom}px ${style.spacing.padding.left}px`
       : style?.spacing?.padding || 0,
   };
 
-  // 🎯 APLICAR BORDES SOLO SI ESTÁN DEFINIDOS
-  if (style?.border && style.border.width > 0) {
+  // 🎯 En modo PDF, forzar bordes transparentes para eliminar artefactos del editor.
+  //    De lo contrario, aplicar los bordes definidos en el estilo.
+  if (isPdfCapture) {
+    // Usar un borde transparente del mismo ancho para no afectar el layout.
+    const borderWidth = style?.border?.width || 0;
+    baseStyles.border = `${borderWidth}px solid transparent`;
+  } else if (style?.border && style.border.width > 0) {
     baseStyles.border = `${style.border.width}px ${style.border.style || 'solid'} ${style.border.color || '#000000'}`;
   }
 
-  // 🎯 APLICAR BORDER RADIUS SOLO SI ESTÁ DEFINIDO  
+  // APLICAR BORDER RADIUS SOLO SI ESTÁ DEFINIDO  
   if (style?.border?.radius?.topLeft) {
     const radius = style.border.radius;
     if (typeof radius === 'object') {
@@ -1012,7 +965,16 @@ const renderComponent = (
   isPdfCapture: boolean = false
 ) => {
   const { type, content, style } = component;
-  const baseStyles = getBaseComponentStyles(component);
+    const baseStyles = getBaseComponentStyles(component, isPdfCapture);
+
+  // 🎨 Estilo especial para modo de captura PDF: elimina todos los bordes y efectos visuales no deseados.
+  const pdfCaptureStyle: React.CSSProperties = isPdfCapture
+    ? {
+        border: 'none',
+        outline: 'none',
+        boxShadow: 'none',
+      }
+    : {};
   
   switch (type) {
     case 'field-dynamic-text':
@@ -1022,13 +984,6 @@ const renderComponent = (
       // 🔥 DEBUG: Log especial para campos de cuotas
       const componentDynamicTemplate = (content as any)?.dynamicTemplate || '';
       if (componentDynamicTemplate.includes('[cuota]') || componentDynamicTemplate.includes('[precio_cuota]')) {
-        console.log(`🔥 [CUOTAS DEBUG] Renderizando campo de cuotas:`, {
-          dynamicTemplate: componentDynamicTemplate,
-          financingCuotas,
-          textValue,
-          fieldType,
-          componentId: component.id
-        });
       }
       
               // 🆕 DETECTAR SI ES CAMPO ESTÁTICO O DINÁMICO
@@ -1037,22 +992,6 @@ const renderComponent = (
                               !isCalculatedField && 
                               (!(content as any)?.dynamicTemplate && !content?.textConfig?.contentType && content?.staticValue);
       
-      // Debug: Log del valor dinámico
-      /*
-      console.log(`🎨 Renderizando campo de texto:`, {
-        contentType: content?.textConfig?.contentType,
-        fieldType: content?.fieldType,
-        staticValue: content?.staticValue,
-        text: content?.text,
-        detectedFieldType: fieldType,
-        textValue,
-        isStaticField,
-        isCalculatedField,
-        hasProduct: !!product,
-        enableInlineEdit,
-        calculatedExpression: isCalculatedField ? (content as any)?.calculatedField?.expression : null
-      });
-      */
       
       const textValidAlign = getValidTextAlign(baseStyles.textAlign);
 
@@ -1122,10 +1061,6 @@ const renderComponent = (
       
       // Debug solo para modo PDF
       if (isPdfCapture && textContent.includes('10.')) {
-        console.log(`📄 [PDF DEBUG] Texto grande detectado:`, {
-          text: textContent.substring(0, 30),
-          fieldType
-        });
       }
       
       // 🎯 EDICIÓN INLINE: Habilitar para:
@@ -1166,20 +1101,11 @@ const renderComponent = (
         // 🆕 DETECTAR SI ES TEMPLATE COMPLEJO (solo para campos dinámicos)
         const isComplex = !isStaticField && isComplexTemplate(content);
         
-        console.log(`🔍 Análisis campo para edición:`, {
-          fieldType,
-          isComplex,
-          isStaticField,
-          textValue,
-          content
-        });
-        
         // Determinar el tipo de input según el campo
         const getInputType = (_fieldType: string, isComplex: boolean, isStatic: boolean): 'text' | 'number' => {
           // 🚫 SIEMPRE USAR 'text' PARA EVITAR FLECHAS DE INCREMENTO Y SCROLL DEL MOUSE
           // Para campos complejos o estáticos, siempre usar texto
           if (isComplex || isStatic) return 'text';
-          
           // 🔧 CAMBIO: Usar 'text' para todos los campos numéricos también
           // Esto evita las flechas de incremento/decremento y el scroll del mouse
           return 'text';
@@ -1232,7 +1158,8 @@ const renderComponent = (
           // 🔧 Mantener word-wrap del contenedor original
           wordWrap: 'break-word' as const,
           overflowWrap: 'break-word' as const,
-          whiteSpace: 'pre-wrap' as const
+          whiteSpace: 'pre-wrap' as const,
+          ...pdfCaptureStyle, // 🎨 Aplicar estilos de captura PDF
         };
 
         // 🎭 VERIFICAR SI HAY FORMATO PRESERVADO EN PRODUCTCHANGES
@@ -1244,21 +1171,11 @@ const renderComponent = (
           );
           preservedFormatFromChanges = changeWithFormat?.preservedFormat;
           
-          console.log(`🎭 BUSCANDO FORMATO PRESERVADO:`, {
-            uniqueFieldId,
-            foundChange: !!changeWithFormat,
-            preservedFormat: preservedFormatFromChanges,
-            totalChanges: changes.length
-          });
         }
         
         // 🎭 APLICAR FORMATO PRESERVADO AL COMPONENTE SI EXISTE
         let componentWithPreservedFormat = component;
         if (preservedFormatFromChanges) {
-          console.log(`🎭 APLICANDO FORMATO PRESERVADO AL COMPONENTE:`, { 
-            fieldType, 
-            preservedFormat: preservedFormatFromChanges 
-          });
           
           componentWithPreservedFormat = {
             ...component,
@@ -1279,17 +1196,10 @@ const renderComponent = (
           <InlineEditableText
             value={textValue}
             onSave={(newValue, preservedFormatContext) => {
-              console.log(`📝 Guardando edición inline: ${uniqueFieldId} = ${newValue}`, { 
-                isComplex, 
-                isStaticField, 
-                componentId: component.id,
-                hasPreservedFormat: !!preservedFormatContext 
-              });
               
               // 🎭 Si hay formato preservado, aplicarlo al componente
               if (preservedFormatContext && preservedFormatContext.hasSpecialFormat) {
                 const reconstructedFormat = reconstructOutputFormat(preservedFormatContext);
-                console.log(`🎭 Aplicando formato preservado:`, reconstructedFormat);
                 
                 // Actualizar tanto el valor como el formato
                 onEditField(uniqueFieldId, String(newValue), reconstructedFormat);
@@ -1333,7 +1243,8 @@ const renderComponent = (
             overflow: 'hidden', // Restaurar overflow hidden para el contenedor padre
             display: 'flex',
             alignItems: 'center',
-            justifyContent: textValidAlign === 'center' ? 'center' : textValidAlign === 'right' ? 'flex-end' : 'flex-start'
+            justifyContent: textValidAlign === 'center' ? 'center' : textValidAlign === 'right' ? 'flex-end' : 'flex-start',
+            ...pdfCaptureStyle, // 🎨 Aplicar estilos de captura PDF
           }}
           title={textValue}
         >
@@ -1372,7 +1283,10 @@ const renderComponent = (
       return (
         <div
           className="w-full h-full flex items-center justify-center"
-          style={{ backgroundColor: component.style?.color?.backgroundColor || 'transparent' }}
+          style={{ 
+            backgroundColor: component.style?.color?.backgroundColor || 'transparent',
+            ...pdfCaptureStyle, // 🎨 Aplicar estilos de captura PDF
+          }}
         >
           {component.content?.imageUrl || component.style?.color?.backgroundImage ? (
             <img
@@ -1405,7 +1319,10 @@ const renderComponent = (
       return (
         <div
           className="w-full h-full flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-green-400 transition-all duration-200"
-          style={{ backgroundColor: component.style?.color?.backgroundColor || 'transparent' }}
+          style={{ 
+            backgroundColor: component.style?.color?.backgroundColor || 'transparent',
+            ...pdfCaptureStyle, // 🎨 Aplicar estilos de captura PDF
+          }}
           onClick={(e) => {
             e.stopPropagation();
             if (onFinancingImageClick) {
@@ -1446,7 +1363,8 @@ const renderComponent = (
           alignItems: 'center',
           justifyContent: 'center',
           border: '1px solid #ccc',
-          ...baseStyles
+          ...baseStyles,
+          ...pdfCaptureStyle, // 🎨 Aplicar estilos de captura PDF
         }}>
           <div style={{
             width: qrSize * 0.8,
@@ -1507,7 +1425,6 @@ const renderComponent = (
 
       // 🎯 EDICIÓN INLINE PARA FECHAS: Si está habilitada, envolver con InlineEditableText
       if (enableInlineEdit && onEditField && !isPreview) {
-        console.log(`📅 Habilitando edición inline para fecha: ${dateValue}`);
         
         // 🎭 CREAR FORMATO CONTEXT para fechas
         const dateFormatContext = createFormatContext(component, dateValue, dateFieldType);
@@ -1516,7 +1433,6 @@ const renderComponent = (
           <InlineEditableText
             value={dateValue}
             onSave={(newValue, preservedFormatContext) => {
-              console.log(`📝 Guardando fecha editada: ${newValue}`);
               
               // 🎭 Si hay formato preservado para fechas, aplicarlo
               if (preservedFormatContext && preservedFormatContext.hasSpecialFormat) {
@@ -1558,7 +1474,7 @@ const renderComponent = (
           component={component}
           isEditMode={true} // ✅ SIEMPRE EDITABLE - No depende del modo inline
           scale={1}
-          onUpdateComponent={onUpdateComponent || ((id, updates) => console.log('No onUpdateComponent handler:', id, updates))}
+          onUpdateComponent={onUpdateComponent || (() => {})}
         />
       );
       
@@ -1580,7 +1496,8 @@ const renderComponent = (
         boxSizing: 'border-box', // Importante para que el borde no afecte el tamaño
         transition: 'all 0.2s ease', // Suave transición para cambios
         ...baseStyles,
-        whiteSpace: 'pre-wrap'
+        whiteSpace: 'pre-wrap',
+        ...pdfCaptureStyle, // 🎨 Aplicar estilos de captura PDF
       };
       
       if (shapeType === 'triangle') {
@@ -1626,7 +1543,6 @@ const renderComponent = (
 
       // 🎯 EDICIÓN INLINE PARA ICONOS: Si está habilitada, envolver con InlineEditableText
       if (enableInlineEdit && onEditField && !isPreview) {
-        console.log(`🎨 Habilitando edición inline para icono: ${iconName}`);
         
         // 🎭 CREAR FORMATO CONTEXT para iconos
         const iconFormatContext = createFormatContext(component, iconName, iconFieldType);
@@ -1635,7 +1551,6 @@ const renderComponent = (
           <InlineEditableText
             value={iconName}
             onSave={(newValue, preservedFormatContext) => {
-              console.log(`📝 Guardando icono editado: ${newValue}`);
               
               // 🎭 Si hay formato preservado para iconos, aplicarlo
               if (preservedFormatContext && preservedFormatContext.hasSpecialFormat) {
@@ -1685,14 +1600,15 @@ const renderComponent = (
           gap: content?.containerConfig?.gap || 8,
           padding: '8px',
           ...baseStyles,
-          whiteSpace: 'pre-wrap'
+          whiteSpace: 'pre-wrap',
+          ...pdfCaptureStyle, // 🎨 Aplicar estilos de captura PDF
         }}>
           <span style={{ 
             color: '#999', 
             fontSize: 12, 
-            textAlign: 'center' 
+            display: isPdfCapture ? 'none' : 'inline' // 🚫 Ocultar texto de ayuda en PDF
           }}>
-            Contenedor {type === 'container-grid' ? 'Grid' : 'Flexible'}
+            {component.type === 'container-flexible' ? 'Contenedor Flexible' : 'Contenedor Grid'}
           </span>
         </div>
       );

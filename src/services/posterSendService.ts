@@ -44,15 +44,11 @@ export class PosterSendService {
   static async sendToBranches(request: SendToBranchesRequest): Promise<PosterSend> {
     const { templateName, templateId, productsCount, groups, templates, productChanges, financingCuotas = 0, discountPercent = 0 } = request;
     
-    // Extraer productos de los templates
-    const products = templates.map(template => template.product).filter(Boolean);
+    const CHUNK_SIZE = 10; // Process 10 products at a time
+    const useChunking = templates.length > CHUNK_SIZE;
 
     try {
-      console.log('📤 Iniciando envío real a sucursales:', {
-        template: templateName,
-        groups: groups.length,
-        products: productsCount
-      });
+      console.log(`📤 Iniciando envío. Modo chunking: ${useChunking}`);
 
       // 1. Crear registro principal de envío
       const { data: sendData, error: sendError } = await supabase
@@ -67,124 +63,106 @@ export class PosterSendService {
         .select()
         .single();
 
-      if (sendError) {
-        console.error('❌ Error creando registro de envío:', sendError);
-        throw new Error(`Error creando envío: ${sendError.message}`);
-      }
-
+      if (sendError) throw new Error(`Error creando envío: ${sendError.message}`);
       console.log('✅ Registro de envío creado:', sendData.id);
 
-      // 2. Generar PDF usando el nuevo servicio de renderizado visible
-      console.log('🖼️ Generando PDF del cartel con nuevo servicio visible...');
-      
-      let pdfBlob: Blob;
-      let filename: string;
-      let size: number;
-      
-      try {
-        // Intentar con el nuevo servicio de renderizado visible
-        pdfBlob = await VisiblePdfService.generatePdfFromTemplates(
-          templates,
-          products,
-          productChanges,
-          financingCuotas,
-          discountPercent
-        );
-        filename = `cartel-${Date.now()}.pdf`;
-        size = pdfBlob.size;
-        console.log('✅ PDF generado con renderizado visible exitosamente');
-      } catch (error) {
-        console.warn('⚠️ Fallback: Error con renderizado visible, intentando con servicio directo:', error);
+      let finalPdfBlob: Blob;
+
+      if (useChunking) {
+        // --- LÓGICA DE CHUNKING ---
+        console.log(`📦 Procesando ${templates.length} templates en lotes de ${CHUNK_SIZE}`);
+        const chunkUrls: string[] = [];
+        const tempFolder = `temp/${sendData.id}`;
+
+        for (let i = 0; i < templates.length; i += CHUNK_SIZE) {
+          const chunk = templates.slice(i, i + CHUNK_SIZE);
+          const chunkProducts = chunk.map(t => t.product);
+          console.log(`🔄 Procesando lote ${i / CHUNK_SIZE + 1}...`);
+
+          const chunkPdfBlob = await VisiblePdfService.generatePdfFromTemplates(
+            chunk.map(c => c.template),
+            chunkProducts,
+            productChanges,
+            financingCuotas,
+            discountPercent
+          );
+
+          const chunkFileName = `${tempFolder}/chunk-${i / CHUNK_SIZE}.pdf`;
+          const { error: uploadError } = await supabase.storage
+            .from('posters')
+            .upload(chunkFileName, chunkPdfBlob, { contentType: 'application/pdf' });
+
+          if (uploadError) throw new Error(`Error subiendo lote: ${uploadError.message}`);
+          chunkUrls.push(chunkFileName);
+        }
+
+        console.log('✨ Todos los lotes subidos, invocando al unificador...');
+        const { error: mergeError } = await supabase.functions.invoke('pdf-merger', {
+          body: { 
+            pdfUrls: chunkUrls,
+            finalPath: `merged/${sendData.id}.pdf`
+          },
+        });
+
+        if (mergeError) throw new Error(`Error uniendo PDFs: ${mergeError.message}`);
+
+        console.log('✅ PDF final unido en el servidor. Descargándolo para envío...');
+        const { data: downloadData, error: downloadError } = await supabase.storage
+          .from('posters')
+          .download(`merged/${sendData.id}.pdf`);
         
-        // Fallback al servicio anterior
-        const pdfResult = await DirectPdfService.generatePdfFromTemplates(
-          templates,
-          productChanges,
-          financingCuotas,
-          discountPercent
-        );
-        pdfBlob = pdfResult.blob;
-        filename = pdfResult.filename;
-        size = pdfResult.size;
-        console.log('✅ PDF generado con servicio directo (fallback)');
+        if (downloadError) throw new Error(`Error descargando PDF final: ${downloadError.message}`);
+        finalPdfBlob = downloadData;
+
+      } else {
+        // --- LÓGICA ORIGINAL (SIN CHUNKING) ---
+        console.log('🖼️ Generando PDF único en el cliente...');
+        try {
+          finalPdfBlob = await VisiblePdfService.generatePdfFromTemplates(
+            templates.map(t => t.template.template), // Correctly access the nested template object
+            templates.map(t => t.product),
+            productChanges,
+            financingCuotas,
+            discountPercent
+          );
+        } catch (error) {
+          console.warn('⚠️ Fallback: Error con renderizado visible, intentando con servicio directo:', error);
+          const pdfResult = await DirectPdfService.generatePdfFromTemplates(
+            templates.map(t => ({ product: t.product, template: t.template.template })), // Correctly access the nested template object
+            productChanges,
+            financingCuotas,
+            discountPercent
+          );
+          finalPdfBlob = pdfResult.blob;
+        }
       }
 
-      console.log('✅ PDF generado:', filename, 'Tamaño:', size);
+      console.log('✅ PDF final listo para distribuir:', finalPdfBlob.size, 'bytes');
 
       // 3. Subir y crear registros para cada grupo
       const sendItems: PosterSendItem[] = [];
 
       for (const group of groups) {
-        try {
-          console.log(`📁 Subiendo PDF para grupo: ${group.name}`);
+        const filename = `${sendData.id}/${group.id}.pdf`;
+        const { error: uploadError } = await supabase.storage
+          .from('posters')
+          .upload(filename, finalPdfBlob, { contentType: 'application/pdf', upsert: false });
 
-          // Subir PDF a Storage 
-          const filename = `${sendData.id}/${group.id}.pdf`;
-          const uploadBlob = pdfBlob;
-          
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('posters')
-            .upload(filename, uploadBlob, {
-              contentType: 'application/pdf',
-              upsert: false
-            });
+        if (uploadError) throw new Error(`Error subiendo PDF para ${group.name}: ${uploadError.message}`);
 
-          if (uploadError) {
-            console.error(`❌ Error subiendo PDF para ${group.name}:`, uploadError);
-            throw new Error(`Error subiendo PDF para ${group.name}: ${uploadError.message}`);
-          }
+        const { data: itemData, error: itemError } = await supabase
+          .from('poster_send_items')
+          .insert({ send_id: sendData.id, group_id: group.id, group_name: group.name, pdf_url: `posters/${filename}`, pdf_filename: `cartel-${Date.now()}.pdf`, status: 'sent' })
+          .select().single();
 
-          console.log(`✅ PDF subido para ${group.name}:`, uploadData.path);
-
-          // Crear registro del item enviado
-          const { data: itemData, error: itemError } = await supabase
-            .from('poster_send_items')
-            .insert({
-              send_id: sendData.id,
-              group_id: group.id,
-              group_name: group.name,
-              pdf_url: `posters/${filename}`,
-              pdf_filename: `cartel-${Date.now()}.pdf`,
-              status: 'sent'
-            })
-            .select()
-            .single();
-
-          if (itemError) {
-            console.error(`❌ Error creando item para ${group.name}:`, itemError);
-            throw new Error(`Error creando registro para ${group.name}: ${itemError.message}`);
-          }
-
-          sendItems.push(itemData);
-          console.log(`✅ Item creado para ${group.name}:`, itemData.id);
-
-        } catch (error) {
-          console.error(`❌ Error procesando grupo ${group.name}:`, error);
-          // Marcar el envío como fallido
-          await supabase
-            .from('poster_sends')
-            .update({ status: 'failed' })
-            .eq('id', sendData.id);
-          throw error;
-        }
+        if (itemError) throw new Error(`Error creando registro para ${group.name}: ${itemError.message}`);
+        sendItems.push(itemData);
       }
 
       // 4. Marcar envío como completado
-      const { error: updateError } = await supabase
-        .from('poster_sends')
-        .update({ status: 'sent' })
-        .eq('id', sendData.id);
+      await supabase.from('poster_sends').update({ status: 'sent' }).eq('id', sendData.id);
 
-      if (updateError) {
-        console.warn('⚠️ Error actualizando status de envío:', updateError);
-      }
-
-      console.log('🎉 Envío completado exitosamente:', {
-        sendId: sendData.id,
-        itemsCreated: sendItems.length,
-        groups: groups.map(g => g.name)
-      });
-
+      console.log('🎉 Envío completado exitosamente');
       return sendData;
 
     } catch (error) {
@@ -272,46 +250,151 @@ export class PosterSendService {
     }
   }
 
+  // 🔒 Control de estado para prevenir descargas duplicadas
+  private static downloadingFiles = new Set<string>();
+  private static readonly DOWNLOAD_TIMEOUT = 30000; // 30 segundos
+  private static readonly MAX_RETRIES = 3;
+
   /**
-   * Descarga un PDF desde Supabase Storage
+   * Descarga un PDF desde Supabase Storage con control robusto de errores
    */
   static async downloadPDF(pdfUrl: string, filename: string): Promise<void> {
-    try {
-      console.log('📥 Descargando PDF:', pdfUrl);
-
-      const { data, error } = await supabase.storage
-        .from('posters')
-        .download(pdfUrl.replace('posters/', ''));
-
-      if (error) {
-        console.error('❌ Error descargando PDF:', error);
-        throw new Error(`Error descargando PDF: ${error.message}`);
-      }
-
-      if (!data) {
-        throw new Error('No se recibieron datos del PDF');
-      }
-
-      // Crear blob y descargar
-      const blob = new Blob([data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      console.log('✅ PDF descargado exitosamente:', filename);
-
-      // Marcar como descargado si es un item recibido
-      await this.markAsDownloaded(pdfUrl);
-
-    } catch (error) {
-      console.error('❌ Error en downloadPDF:', error);
-      throw error;
+    const downloadKey = `${pdfUrl}-${filename}`;
+    
+    // 🚫 Prevenir descargas duplicadas
+    if (this.downloadingFiles.has(downloadKey)) {
+      console.warn('⚠️ Descarga ya en progreso para:', filename);
+      throw new Error('Descarga ya en progreso. Por favor espere.');
     }
+
+    this.downloadingFiles.add(downloadKey);
+    
+    try {
+      console.log('📥 Iniciando descarga PDF:', pdfUrl);
+      console.log('📁 Filename:', filename);
+
+      // 🔄 Implementar reintentos con backoff exponencial
+      let lastError: Error | null = null;
+      
+      for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
+        try {
+          console.log(`🔄 Intento ${attempt}/${this.MAX_RETRIES}`);
+          
+          // ⏱️ Implementar timeout para la descarga
+          const downloadPromise = this.performDownload(pdfUrl, filename);
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('Timeout: La descarga tardó demasiado')), this.DOWNLOAD_TIMEOUT);
+          });
+          
+          await Promise.race([downloadPromise, timeoutPromise]);
+          
+          console.log('✅ PDF descargado exitosamente:', filename);
+          
+          // Marcar como descargado si es un item recibido
+          await this.markAsDownloaded(pdfUrl);
+          
+          return; // Éxito, salir del bucle de reintentos
+          
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error('Error desconocido');
+          console.warn(`⚠️ Intento ${attempt} falló:`, lastError.message);
+          
+          // Si no es el último intento, esperar antes de reintentar
+          if (attempt < this.MAX_RETRIES) {
+            const delay = Math.pow(2, attempt - 1) * 1000; // Backoff exponencial: 1s, 2s, 4s
+            console.log(`⏳ Esperando ${delay}ms antes del siguiente intento...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+      
+      // Si llegamos aquí, todos los intentos fallaron
+      throw new Error(`Error después de ${this.MAX_RETRIES} intentos: ${lastError?.message || 'Error desconocido'}`);
+      
+    } finally {
+      // 🧹 Siempre limpiar el estado de descarga
+      this.downloadingFiles.delete(downloadKey);
+    }
+  }
+
+  /**
+   * Realiza la descarga real del PDF
+   */
+  private static async performDownload(pdfUrl: string, filename: string): Promise<void> {
+    // Limpiar la URL del PDF para obtener solo el path
+    const cleanPath = pdfUrl.replace('posters/', '');
+    console.log('🔗 Clean path:', cleanPath);
+
+    const { data, error } = await supabase.storage
+      .from('posters')
+      .download(cleanPath);
+
+    if (error) {
+      console.error('❌ Error descargando PDF:', error);
+      throw new Error(`Error descargando PDF: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error('No se recibieron datos del PDF');
+    }
+
+    console.log('📦 Datos recibidos, tamaño:', data.size, 'bytes');
+
+    // Validar que el archivo no esté vacío
+    if (data.size === 0) {
+      throw new Error('El archivo PDF está vacío');
+    }
+
+    // Crear blob y descargar
+    const blob = new Blob([data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    
+    console.log('🔗 Blob URL creada:', url);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    console.log('🖱️ Iniciando descarga...');
+    
+    // 🎯 Mejorar la descarga con verificación
+    return new Promise<void>((resolve, reject) => {
+      const cleanup = () => {
+        try {
+          if (document.body.contains(link)) {
+            document.body.removeChild(link);
+          }
+          URL.revokeObjectURL(url);
+          console.log('🧹 Limpieza completada');
+        } catch (cleanupError) {
+          console.warn('⚠️ Error en limpieza:', cleanupError);
+        }
+      };
+      
+      // Configurar timeout para la descarga
+      const downloadTimeout = setTimeout(() => {
+        cleanup();
+        reject(new Error('Timeout: La descarga no se completó'));
+      }, 10000); // 10 segundos para la descarga del archivo
+      
+      try {
+        link.click();
+        
+        // Resolver después de un breve delay para permitir que la descarga inicie
+        setTimeout(() => {
+          clearTimeout(downloadTimeout);
+          cleanup();
+          resolve();
+        }, 500);
+        
+      } catch (clickError) {
+        clearTimeout(downloadTimeout);
+        cleanup();
+        reject(new Error(`Error iniciando descarga: ${clickError}`));
+      }
+    });
   }
 
   /**

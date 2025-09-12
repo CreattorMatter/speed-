@@ -1,0 +1,5 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.core", "deno.unstable", "dom", "dom.iterable"]
+  }
+}

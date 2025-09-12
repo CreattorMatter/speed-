@@ -81,7 +81,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   // 🆕 Helper para obtener descuento efectivo (manual o automático)
   const getEffectiveDescuento = (productId: string): number => {
     if (!productChanges || !productChanges[productId]) {
-      console.log(`🎯 No hay cambios para producto ${productId}, usando selectedDescuento: ${selectedDescuento}`);
       return selectedDescuento;
     }
     
@@ -97,11 +96,9 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     
     if (manualDescuentoChange) {
       const manualValue = Number(manualDescuentoChange.newValue) || 0;
-      console.log(`🎯 Usando descuento manual encontrado: ${manualValue}% (campo: ${manualDescuentoChange.field})`);
       return manualValue;
     }
     
-    console.log(`🎯 No hay cambio manual de descuento, usando selectedDescuento: ${selectedDescuento}`);
     return selectedDescuento;
   };
   const [showFinancingModal, setShowFinancingModal] = useState(false);
@@ -109,6 +106,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
 
   // 🆕 Estado para envío a sucursales
   const [showSucursalModal, setShowSucursalModal] = useState(false);
+  const [isSending, setIsSending] = useState(false); // 🆕 Estado de carga para envío
   
   // 🆕 Sincronizar selectedDescuento con cambios manuales cuando cambia el producto
   useEffect(() => {
@@ -133,13 +131,11 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
         const manualValue = Number(manualDescuentoChange.newValue) || 0;
         // Solo actualizar si el valor es diferente para evitar re-renders innecesarios
         if (selectedDescuento !== manualValue) {
-          console.log(`🔄 Sincronizando selectedDescuento con cambio manual: ${manualValue}%`);
           setSelectedDescuento(manualValue);
         }
       } else {
         // Si no hay cambio manual, resetear a 0 para cálculos automáticos solo si es necesario
         if (selectedDescuento !== 0) {
-          console.log(`🔄 No hay cambio manual, reseteando selectedDescuento a 0`);
           setSelectedDescuento(0);
         }
       }
@@ -293,7 +289,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       case 'texto_estatico':
         return 'Texto estático'; // Texto por defecto para campos estáticos
       default:
-        console.warn(`⚠️ Campo no mapeado: ${fieldType}`);
         // Para campos desconocidos, intentar usar un valor genérico
         return fieldType.includes('precio') || fieldType.includes('price') ? 0 : '';
     }
@@ -314,18 +309,12 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   };
 
   const handlePendingChange = (fieldType: string, newValue: string | number, formatContext?: any) => {
-    console.log(`⚡ GUARDADO AUTOMÁTICO: ${fieldType} = ${newValue}`, { 
-      hasFormatContext: !!formatContext 
-    });
-    
     // 🚀 CAMBIO: En lugar de guardar como pendiente, guardar inmediatamente
     handleFieldEdit(fieldType, newValue, formatContext);
   };
 
   // Función para manejar actualizaciones de componentes (imágenes dinámicas, etc.)
   const handleUpdateComponent = (componentId: string, updates: Partial<DraggableComponentV3>) => {
-    console.log('🖼️ Actualizando componente:', componentId, updates);
-    
     setComponentModifications(prev => ({
       ...prev,
       [componentId]: {
@@ -356,18 +345,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   const handleFieldEdit = (fieldType: string, newValue: string | number, preservedFormat?: any) => {
     if (!currentProduct) return;
     
-    console.log(`📝 🚀 INICIO handleFieldEdit:`, { 
-      fieldType, 
-      newValue, 
-      productId: currentProduct.id,
-      hasPreservedFormat: !!preservedFormat 
-    });
-    
-    // 🎭 LOG FORMATO PRESERVADO
-    if (preservedFormat) {
-      console.log(`🎭 Formato preservado recibido:`, preservedFormat);
-    }
-    
     // 🆕 EXTRAER TIPO BASE DEL CAMPO (remover ID del componente)
     let originalValue: string | number;
     let baseFieldType = fieldType;
@@ -378,34 +355,25 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       // Si la última parte parece un ID de componente (UUID o similar), removerla
       if (parts.length >= 2 && parts[parts.length - 1].match(/^[a-f0-9-]{8,}$/)) {
         baseFieldType = parts.slice(0, -1).join('_');
-        console.log(`🔍 Campo con ID único detectado: ${fieldType} → tipo base: ${baseFieldType}`);
       }
     }
     
     // 🆕 MANEJO ESPECIAL PARA CAMPOS DE CUOTAS
     if (baseFieldType === 'cuota' || baseFieldType.includes('cuota')) {
       const cuotasValue = parseInt(String(newValue), 10);
-      console.log(`💳 [CUOTAS INLINE] Cambio de cuotas detectado: ${cuotasValue} (antes: ${selectedCuotas})`);
       
       // Actualizar el estado local de cuotas inmediatamente
       setSelectedCuotas(cuotasValue);
-      console.log(`💳 [CUOTAS INLINE] Estado selectedCuotas actualizado a: ${cuotasValue}`);
       
       // 🔧 FORZAR ACTUALIZACIÓN DE PRECIO_CUOTA automáticamente
-      const precio = currentProduct.precio || 0;
-      const precioCuota = cuotasValue > 0 && precio > 0 ? Number((precio / cuotasValue).toFixed(2)) : 0;
-      console.log(`💳 [CUOTAS INLINE] Auto-calculando precio_cuota: ${precio} / ${cuotasValue} = ${precioCuota}`);
       
       // 🚫 CAMPOS DE FINANCIACIÓN NO SE REPORTAN: 
       // Los campos de cuotas y precio_cuota son calculados dinámicamente y no deben reportarse como modificaciones
-      
-      console.log(`💳 [CUOTAS INLINE] Forzando re-render para actualizar ambos campos: cuotas=${cuotasValue}, precio_cuota=${precioCuota}`);
       return;
     }
     
     // Para precio_cuota, no hacer nada especial (se actualiza automáticamente)
     if (baseFieldType === 'precio_cuota') {
-      console.log(`💰 [PRECIO_CUOTA] Campo calculado automáticamente, ignorando edición manual`);
       return;
     }
 
@@ -414,7 +382,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       const descuentoValue = parseInt(String(newValue).replace(/[^\d]/g, ''), 10) || 0;
       // Actualizar AMBOS: estado local Y continuar para guardar en Redux
       setSelectedDescuento(descuentoValue);
-      console.log(`🏷️ [DESCUENTO MANUAL] Actualizando estado local a ${descuentoValue}% Y guardando en Redux`);
       // NO hacer return aquí - continuar para que se guarde también en Redux
     }
 
@@ -423,14 +390,11 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       const promoValue = String(newValue);
       // Actualizar AMBOS: estado local Y continuar para que se guarde también en Redux
       setSelectedPromo(promoValue);
-      console.log(`🎯 [PROMO MANUAL] Actualizando estado local a ${promoValue} Y guardando en Redux`);
-      console.log(`🔄 [PROMO DEBUG] selectedPromo actualizado de ${selectedPromo} a ${promoValue}`);
       // NO hacer return aquí - continuar para que se guarde también en Redux
     }
     
     // 🆕 MANEJO ESPECIAL PARA PRECIO_DESCUENTO - Resetear descuento a 0 cuando se edita manualmente
     if (baseFieldType === 'precio_descuento') {
-      console.log(`💰 [PRECIO_DESCUENTO MANUAL] Guardando precio manual y reseteando descuento a 0`);
       // 🔑 RESETEAR descuento a 0 para indicar que el precio es manual (no calculado)
       setSelectedDescuento(0);
       
@@ -445,7 +409,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
         });
         
         if (descuentoChanges.length > 0) {
-          console.log(`🧹 Limpiando ${descuentoChanges.length} cambios previos de descuento para permitir reset a 0`);
           // Despachar acción para limpiar cambios de descuento
           descuentoChanges.forEach(change => {
             dispatch(trackProductChange({
@@ -470,15 +433,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                      baseFieldType === 'fecha' ? new Date().toLocaleDateString('es-AR') : '';
     }
     
-    console.log(`📝 💾 GUARDANDO EN REDUX:`, {
-      productId: currentProduct.id,
-      productName: currentProduct.descripcion,
-      field: fieldType, // Usar el fieldType completo con ID único
-      originalValue,
-      newValue,
-      baseFieldType
-    });
-    
     // Registrar el cambio en Redux usando el fieldType completo (con ID único)
     dispatch(trackProductChange({
       productId: currentProduct.id,
@@ -488,14 +442,10 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       newValue,
       preservedFormat // 🎭 Incluir formato preservado si está disponible
     }));
-    
-    console.log(`📝 ✅ CAMBIO REGISTRADO EN REDUX`);
   };
 
   const handleConfirmAllChanges = () => {
     if (!currentProduct) return;
-    
-    console.log('💾 Confirmando todos los cambios:', pendingChanges);
     
     // Aplicar cambios pendientes a Redux
     Object.entries(pendingChanges).forEach(([fieldType, changeData]) => {
@@ -507,10 +457,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
         ? changeData.formatContext 
         : undefined;
       
-      console.log(`💾 Procesando cambio pendiente: ${fieldType}`, { 
-        newValue, 
-        hasPreservedFormat: !!preservedFormat 
-      });
       // 🆕 EXTRAER TIPO BASE DEL CAMPO (remover ID del componente)
       let baseFieldType = fieldType;
       
@@ -525,7 +471,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       
       // 🆕 NO REPORTAR campos de financiación y descuentos como cambios (se editan siempre)
       if (baseFieldType === 'cuota' || baseFieldType === 'precio_cuota' || baseFieldType === 'descuento' || baseFieldType === 'precio_descuento') {
-        console.log(`🔥 [FINANCIACIÓN/DESCUENTO] Campo ${baseFieldType} NO se reporta como cambio (skip)`);
         return;
       }
       
@@ -552,7 +497,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   };
 
   const handleCancelAllChanges = () => {
-    console.log('❌ Cancelando todos los cambios');
     setPendingChanges({});
   };
 
@@ -604,7 +548,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
 
   // Funciones para sistema de impresión
   const handlePrintClick = () => {
-    console.log('🖨️ handlePrintClick iniciado');
     
     // Verificar si hay una plantilla seleccionada
     if (!selectedTemplate) {
@@ -636,10 +579,8 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     // Lógica de permisos para impresión
     if (canPrintDirect) {
       // Puede imprimir directamente sin auditoría
-      console.log('✅ Usuario con permiso de impresión directa');
     } else if (canPrintWithAudit) {
       // Debe pasar por auditoría obligatoria
-      console.log('⚠️ Usuario requiere auditoría para imprimir');
       if (!hasAnyChanges) {
         toast.error('Debe realizar cambios en los productos antes de imprimir (auditoría requerida)');
         return;
@@ -648,16 +589,11 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
 
     // 🆕 NUEVO: Validar fecha de vigencia desde configuración de plantilla
     const validateValidityPeriod = () => {
-      console.log('🔍 Iniciando validación de fecha de vigencia desde configuración de plantilla...');
-      
       // Verificar si hay configuración de vigencia en la plantilla
       const templateValidityPeriod = selectedTemplate.template.canvas?.validityPeriod;
       
-      console.log('📅 Configuración de vigencia de plantilla:', templateValidityPeriod);
-      
       // Si la validación de vigencia no está habilitada, permitir impresión
       if (!templateValidityPeriod?.enabled) {
-        console.log('✅ Validación de vigencia deshabilitada - impresión permitida');
         return true;
       }
       
@@ -665,13 +601,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       const today = new Date();
       const startDate = new Date(templateValidityPeriod.startDate);
       const endDate = new Date(templateValidityPeriod.endDate);
-      
-      console.log('📅 Verificando vigencia:', {
-        today: today.toISOString().split('T')[0],
-        startDate: templateValidityPeriod.startDate,
-        endDate: templateValidityPeriod.endDate,
-        isInValidPeriod: today >= startDate && today <= endDate
-      });
       
       if (today < startDate) {
         toast.error(`Esta plantilla no es válida aún. Válida desde: ${templateValidityPeriod.startDate}`);
@@ -683,21 +612,14 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
         return false;
       }
       
-      console.log('✅ Plantilla dentro del período de vigencia');
       return true;
     };
 
     // Ejecutar validación de fecha de vigencia
-    console.log('🖨️ Ejecutando validación antes de imprimir...');
-    
     const validationResult = validateValidityPeriod();
-    console.log('🔍 Resultado de validación:', validationResult);
-    
     if (!validationResult) {
-      console.log('❌ Validación falló, cancelando impresión');
       return;
     }
-    console.log('✅ Validación exitosa, continuando con impresión');
 
     // Determinar la orientación de la plantilla y actualizar el estado
     const isLandscape = selectedTemplate.template.canvas.width > selectedTemplate.template.canvas.height;
@@ -731,23 +653,8 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   };
 
   const handleDirectPrint = () => {
-    console.log('🖨️ Imprimiendo sin cambios...');
     setIsPrinting(true);
     
-    // Preparar datos para impresión
-    const printData = {
-      templates: selectedProducts.map(productId => {
-        const product = productos.find(p => p.id === productId);
-        return product && selectedTemplate ? {
-          product,
-          template: selectedTemplate.template
-        } : null;
-      }).filter(Boolean),
-      productChanges: {},
-      hasChanges: false
-    };
-
-    console.log('📄 Datos de impresión preparados:', printData);
     
     // Usar setTimeout para asegurar que el DOM se actualice
     setTimeout(() => {
@@ -757,32 +664,13 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   };
 
   const handleConfirmPrintWithChanges = async (justification: string) => {
-    console.log('🖨️ Imprimiendo con cambios y justificación:', justification);
-    
     try {
       setIsPrinting(true);
       setShowChangesModal(false);
 
-      // Preparar datos para impresión con cambios
-      const printData = {
-        templates: selectedProducts.map(productId => {
-          const product = productos.find(p => p.id === productId);
-          return product && selectedTemplate ? {
-            product,
-            template: selectedTemplate.template
-          } : null;
-        }).filter(Boolean),
-        productChanges,
-        hasChanges: true,
-        justification,
-        timestamp: new Date().toISOString()
-      };
-
-      console.log('📄 Datos de impresión con cambios preparados:', printData);
 
       // Enviar reporte por email si hay cambios
       if (hasAnyChanges) {
-        console.log('📧 Enviando reporte de cambios por email...');
         try {
           // Convertir EditedProduct del posterSlice al formato esperado por EmailService
           const editedProductsForEmail = Object.values(productChanges).map(editedProduct => {
@@ -804,28 +692,22 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
               points: '',
               origin: product?.origen || '',
               barcode: Number(product?.ean) || 0,
-              brand: product?.marcaTexto || '',
-              packUnit: ''
+              brand: product?.marcaTexto || ''
             };
           });
 
-          const emailSent = await sendChangeReport({
+          await sendChangeReport({
             plantillaFamily: selectedFamily?.displayName || 'N/A',
             plantillaType: selectedTemplate?.name || 'N/A',
             editedProducts: editedProductsForEmail,
             reason: justification,
-            userEmail: 'usuario@ejemplo.com', // TODO: Obtener del contexto de usuario
-            userName: 'Usuario Sistema', // TODO: Obtener del contexto de usuario
+            userEmail: 'usuario@ejemplo.com', 
+            userName: 'Usuario Sistema', 
             timestamp: new Date()
           });
 
-          if (emailSent) {
-            console.log('✅ Reporte de cambios enviado exitosamente por email');
-          } else {
-            console.warn('⚠️ No se pudo enviar el reporte por email, pero se procederá con la impresión');
-          }
-        } catch (emailError) {
-          console.error('❌ Error enviando reporte por email:', emailError);
+        } catch (error) {
+          console.error('❌ Error enviando reporte por email:', error);
           // No bloquear la impresión por error de email
         }
       }
@@ -845,7 +727,6 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
 
   // 🆕 Función para manejar envío a sucursales
   const handleSendToSucursales = () => {
-    console.log('📤 Iniciando envío a sucursales...');
     
     // Verificar si hay productos seleccionados
     if (selectedProducts.length === 0) {
@@ -881,33 +762,20 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
   };
 
   const handleConfirmSendToSucursales = async (selectedSucursales: Sucursal[]) => {
-    console.log('📤 Enviando a sucursales:', selectedSucursales);
     
     if (!selectedTemplate || !printContainerRef.current) {
       toast.error('Error: No se puede generar el PDF del cartel');
       return;
     }
 
-    try {
-      // Mostrar loading
-      toast.loading('Generando y enviando cartel...', { id: 'sending-poster' });
+    setIsSending(true);
+    const sendingToast = toast.loading('Generando y enviando cartel...');
 
-      // 🔧 CLAVE: Activar modo impresión como lo hace handleDirectPrint
-      console.log('🖨️ Preparando contenido de impresión para PDF...');
+    try {
       setIsPrinting(true);
       
-      // 🔧 CLAVE: Esperar el mismo tiempo que la impresión normal para que el DOM se actualice
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      console.log('🎯 Usando elemento de impresión para PDF:', {
-        element: printContainerRef.current,
-        dimensions: {
-          width: printContainerRef.current.offsetWidth,
-          height: printContainerRef.current.offsetHeight
-        }
-      });
-
-      // Preparar templates para el servicio directo
       const templates = selectedProducts.map(productId => {
         const product = productos.find((p: ProductoReal) => p.id === productId);
         if (!product) throw new Error(`Producto no encontrado: ${productId}`);
@@ -915,7 +783,7 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
       });
 
       // Enviar usando el servicio directo sin transformaciones CSS
-      const sendResult = await PosterSendService.sendToBranches({
+      await PosterSendService.sendToBranches({
         templateName: selectedTemplate.name,
         templateId: selectedTemplate.id,
         productsCount: selectedProducts.length,
@@ -927,26 +795,23 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
         discountPercent: selectedDescuento
       });
 
-      // Mostrar confirmación
+      toast.dismiss(sendingToast);
       toast.success(
-        `Cartel enviado exitosamente a ${selectedSucursales.length} sucursal${selectedSucursales.length !== 1 ? 'es' : ''}`,
-        { id: 'sending-poster' }
+        `¡Cartel enviado exitosamente a ${selectedSucursales.length} sucursal${selectedSucursales.length !== 1 ? 'es' : ''}!`, 
+        { duration: 4000 }
       );
-
-      console.log('✅ Cartel enviado con ID:', sendResult.id);
       
       // Cerrar modal
       setShowSucursalModal(false);
       
     } catch (error) {
-      console.error('❌ Error enviando cartel:', error);
+      toast.dismiss(sendingToast);
       toast.error(
-        `Error al enviar el cartel: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        { id: 'sending-poster' }
+        `Error al enviar el cartel: ${error instanceof Error ? error.message : 'Error desconocido'}`
       );
     } finally {
-      // 🔧 CLAVE: Desactivar modo impresión igual que handleDirectPrint
       setIsPrinting(false);
+      setIsSending(false);
     }
   };
 
@@ -1003,16 +868,11 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
     setSelectedPromo('0x0');
   }, [selectedProducts]);
 
-  // Debug: Log cuando cambia selectedPromo
-  useEffect(() => {
-    console.log(`🚀 [RENDER] selectedPromo cambió a: "${selectedPromo}"`);
-  }, [selectedPromo]);
 
   // Detectar campos editables automáticamente
   const editableFieldsStats = useMemo(() => {
     if (!selectedTemplate?.template?.defaultComponents) return null;
     const stats = getEditableFieldsStats(selectedTemplate.template.defaultComponents);
-    console.log('📊 Estadísticas de campos editables:', stats);
     return stats;
   }, [selectedTemplate]);
 
@@ -1173,16 +1033,21 @@ export const PreviewAreaV3: React.FC<PreviewAreaV3Props> = ({
                       return (
                         <button
                           onClick={handleSendToSucursales}
-                          disabled={disabled}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                            disabled
-                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                              : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-md'
-                          }`}
-                          title={title}
+                          disabled={!hasPermission('poster:send') || selectedProducts.length === 0 || isSending}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-700 transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none"
+                          title={!hasPermission('poster:send_branch') ? 'No tienes permisos para enviar a sucursales' : selectedProducts.length === 0 ? 'Debes seleccionar al menos un producto' : 'Enviar a sucursales seleccionadas'}
                         >
-                          <Send className="w-4 h-4" />
-                          Enviar a Sucursal
+                          {isSending ? (
+                            <>
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                              <span>Enviando...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-5 h-5" />
+                              <span>Enviar a Sucursal</span>
+                            </>
+                          )}
                         </button>
                       );
                     })()}

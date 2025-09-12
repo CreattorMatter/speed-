@@ -7,12 +7,8 @@ import { LayoutTemplate, BoxSelect, FileSpreadsheet, Download, Upload, ArrowUpDo
 import { useSelector, useDispatch } from 'react-redux';
 import {
   selectSelectedProductObjects,
-  selectSelectedFinancing,
-  selectFormatoSeleccionado,
-  toggleProductSelection,
   setSelectedProduct,
   setSelectedProducts,
-  removeProduct,
   removeAllProducts,
   initializeWithProducts,
   selectIsProductSelectorOpen,
@@ -26,7 +22,7 @@ import { useMemo } from 'react';
 
 // Servicios
 import { posterTemplateService, PosterFamilyData, PosterTemplateData } from '../../../../services/posterTemplateService';
-import { downloadSKUTemplate, importProductsFromExcel, exportSelectedProductsToExcel, validateExcelFile, ExcelImportResult } from '../../../../services/excelTemplateService';
+import { downloadSKUTemplate, importProductsFromExcel, exportSelectedProductsToExcel, validateExcelFile } from '../../../../services/excelTemplateService';
 
 // Componentes
 import { PreviewAreaV3 } from "./Editor/PreviewAreaV3";
@@ -37,10 +33,7 @@ import { ProductSelectionModal } from "./Editor/ProductSelectionModal";
 import { FamilySelect } from "./Editor/Selectors/FamilySelect";
 import { TemplateSelect } from "./Editor/Selectors/TemplateSelect";
 import { templateRequiresProducts } from '../../../../utils/templateValidator';
-
-// Datos
-import { COMPANIES } from "../../../../data/companies";
-import { productos as products, type Product } from "../../../../data/products";
+import { type Product } from "../../../../data/products";
 import { type ProductoReal } from "../../../../types/product";
 
 // Tipos específicos para las props del componente
@@ -71,12 +64,11 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
   
   // Estados de Redux
   const selectedProducts = useSelector(selectSelectedProductObjects);
-  const selectedFinancing = useSelector(selectSelectedFinancing);
-  const formatoSeleccionado = useSelector(selectFormatoSeleccionado);
   const isProductSelectorOpen = useSelector(selectIsProductSelectorOpen);
   
   // Estados locales para el nuevo sistema
-  const [families, setFamilies] = useState<PosterFamilyData[]>([]);
+  const [families, setFamilies] = useState<Omit<PosterFamilyData, 'templates'>[]>([]);
+  const [cachedTemplates, setCachedTemplates] = useState<Record<string, PosterTemplateData[]>>({});
   const [selectedFamily, setSelectedFamily] = useState<PosterFamilyData | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<PosterTemplateData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,7 +78,6 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
   // Estados para filtrado y búsqueda
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [showSearchFilters, setShowSearchFilters] = useState(false);
   const [sortOrder, setSortOrder] = useState<'name-asc' | 'name-desc'>('name-asc');
   
   // Estado para producto expandido
@@ -94,8 +85,6 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
 
   // 🆕 Estados para funcionalidad Excel
   const [isImportingExcel, setIsImportingExcel] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [importResult, setImportResult] = useState<ExcelImportResult | null>(null);
 
   // Filtrar y ordenar plantillas de la familia seleccionada
   const filteredTemplates = useMemo(() => {
@@ -135,42 +124,42 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
     return sortedTemplates;
   }, [selectedFamily, searchTerm, selectedCategory, sortOrder]);
 
-  // Obtener categorías disponibles de la familia seleccionada
-  const availableCategories = useMemo(() => {
-    if (!selectedFamily) return [];
-    
-    const categories = new Set<string>();
-    selectedFamily.templates.forEach(template => {
-      if (template.template.category) {
-        categories.add(template.template.category);
-      }
-    });
-    
-    return Array.from(categories).sort();
-  }, [selectedFamily]);
 
-  // Cargar familias al montar el componente (solo una vez)
+  // 🚀 PASO 1: Cargar solo las familias al montar el componente
   useEffect(() => {
-    const loadFamilies = async () => {
+    const loadInitialData = async () => {
       try {
         setIsLoading(true);
-        console.log('🔄 Cargando familias y plantillas...');
-        
-        const familiesWithTemplates = await posterTemplateService.getAllFamiliesWithTemplates();
-        console.log(`✅ ${familiesWithTemplates.length} familias cargadas`);
-        
-        setFamilies(familiesWithTemplates);
-        
+        console.log('🔄 Cargando lista de familias...');
+        const familyList = await posterTemplateService.getAllFamilies();
+        setFamilies(familyList);
+
+        // 🚀 PASO 2: Encontrar y cargar la familia por defecto ('Superprecio')
+        const defaultFamily = familyList.find(f => f.name.toLowerCase() === 'superprecio');
+        if (defaultFamily) {
+          console.log(`✨ Familia por defecto encontrada: ${defaultFamily.displayName}. Cargando sus plantillas...`);
+          const templates = await posterTemplateService.getTemplatesForFamily(defaultFamily.id, defaultFamily.name);
+          setCachedTemplates(prev => ({ ...prev, [defaultFamily.id]: templates }));
+          setSelectedFamily({ ...defaultFamily, templates });
+        } else if (familyList.length > 0) {
+          // Fallback si no se encuentra 'Superprecio'
+          const firstFamily = familyList[0];
+          console.log(`⚠️ Familia 'Superprecio' no encontrada. Usando fallback: ${firstFamily.displayName}`);
+          const templates = await posterTemplateService.getTemplatesForFamily(firstFamily.id, firstFamily.name);
+          setCachedTemplates(prev => ({ ...prev, [firstFamily.id]: templates }));
+          setSelectedFamily({ ...firstFamily, templates });
+        }
+
       } catch (error) {
-        console.error("❌ Error cargando familias:", error);
-        toast.error("Error al cargar las familias de plantillas");
+        console.error("❌ Error en la carga inicial:", error);
+        toast.error("Error al cargar los datos iniciales");
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadFamilies();
-  }, []); // Sin dependencias - solo se ejecuta al montar
+    loadInitialData();
+  }, []); // Se ejecuta solo una vez
 
   // Inicialización con productos iniciales (solo una vez)
   useEffect(() => {
@@ -184,36 +173,28 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
     }
   }, [dispatch, initialized, initialProducts.length, initialPromotion?.id]);
 
-  // Efecto separado para seleccionar familia y plantilla cuando se cargan las familias
-  useEffect(() => {
-    if (families.length > 0 && !selectedFamily) {
-      // Solo auto-seleccionar si hay productos iniciales reales (no el array vacío por defecto)
-      const hasInitialProducts = initialProducts && initialProducts.length > 0;
-      
-      if (hasInitialProducts) {
-        console.log('📋 Seleccionando familia y plantilla por defecto...');
-        const firstFamily = families[0];
-        if (firstFamily.templates.length > 0) {
-          setSelectedFamily(firstFamily);
-          setSelectedTemplate(firstFamily.templates[0]);
-        }
-      }
-    }
-  }, [families.length, selectedFamily]); // Solo depender de families.length y selectedFamily
 
   // Handlers para selección de familia y plantilla
-  const handleFamilySelect = async (family: PosterFamilyData) => {
+  const handleFamilySelect = async (family: Omit<PosterFamilyData, 'templates'>) => {
     try {
       setIsLoadingTemplates(true);
       console.log(`📋 Seleccionando familia: ${family.displayName}`);
-      
-      setSelectedFamily(family);
       setSelectedTemplate(null); // Limpiar plantilla seleccionada
+
+      // 🚀 PASO 3: Cargar plantillas bajo demanda con caché
+      if (cachedTemplates[family.id]) {
+        console.log('✅ Plantillas cargadas desde caché.');
+        setSelectedFamily({ ...family, templates: cachedTemplates[family.id] });
+      } else {
+        console.log('🔄 Plantillas no encontradas en caché. Obteniendo del servicio...');
+        const templates = await posterTemplateService.getTemplatesForFamily(family.id, family.name);
+        setCachedTemplates(prev => ({ ...prev, [family.id]: templates }));
+        setSelectedFamily({ ...family, templates });
+      }
       
       // Limpiar filtros al cambiar de familia
       setSearchTerm('');
       setSelectedCategory('all');
-      setShowSearchFilters(false);
       
     } catch (error) {
       console.error("❌ Error seleccionando familia:", error);
@@ -228,19 +209,6 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
     setSelectedTemplate(template);
   };
 
-  // Handlers para productos - MEJORADOS para manejar selección múltiple
-  const handleProductSelect = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (product) {
-      dispatch(toggleProductSelection(product.id));
-      
-      // Actualizar el producto único para compatibilidad
-      const isCurrentlySelected = selectedProducts.some(p => p.id === productId);
-      if (!isCurrentlySelected) {
-        dispatch(setSelectedProduct(product));
-      }
-    }
-  };
 
   // NUEVO: Handler para confirmar selección múltiple desde el modal
   const handleProductSelectionConfirm = (selectedProductsList: Product[]) => {
@@ -268,10 +236,6 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
   const handleUpdateProduct = (productId: string, updates: Partial<Product>) => {
     console.log('📝 Actualizando producto:', productId, updates);
     // La lógica de actualización se maneja en PreviewAreaV3 a través de Redux
-  };
-
-  const handleRemoveProduct = (productId: string) => {
-    dispatch(removeProduct(productId));
   };
 
   const handleRemoveAllProducts = () => {
@@ -312,25 +276,18 @@ export const PosterEditorV3: React.FC<PosterEditorV3Props> = ({
       try {
         setIsImportingExcel(true);
         const result = await importProductsFromExcel(file);
-        setImportResult(result);
         
-        if (result.success) {
-          if (result.matchedProducts.length > 0) {
-            // Los productos ya son ProductoReal, que es compatible con Product
-            const compatibleProducts: Product[] = result.matchedProducts;
-
-            // Actualizar productos seleccionados usando SKU como ID
-            dispatch(setSelectedProducts(compatibleProducts.map(p => String(p.sku || p.id))));
-            
-            if (compatibleProducts.length > 0) {
-              dispatch(setSelectedProduct(compatibleProducts[0]));
-            }
-
-            setShowImportModal(true);
-            toast.success(`${result.matchedProducts.length} productos importados exitosamente`);
-          } else {
-            toast('No se encontraron productos con los SKUs del archivo');
+        if (result.success && result.matchedProducts.length > 0) {
+          const compatibleProducts: Product[] = result.matchedProducts;
+          dispatch(setSelectedProducts(compatibleProducts.map(p => String(p.sku || p.id))));
+          
+          if (compatibleProducts.length > 0) {
+            dispatch(setSelectedProduct(compatibleProducts[0]));
           }
+
+          toast.success(`${result.matchedProducts.length} productos importados exitosamente`);
+        } else if (result.success) {
+          toast('No se encontraron productos con los SKUs del archivo');
         } else {
           toast.error(result.errorMessage || 'Error al procesar el archivo Excel');
         }

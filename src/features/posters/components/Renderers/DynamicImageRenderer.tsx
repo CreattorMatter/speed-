@@ -1,6 +1,46 @@
 import React, { useState, useRef } from 'react';
-import { DraggableComponentV3 } from '../../../builderV3/types';
+import { DraggableComponentV3 as OriginalComponentV3 } from '../../../builderV3/types';
+
+// Extend the type to include missing properties used in this component
+interface DraggableComponentV3 extends OriginalComponentV3 {
+  transform?: {
+    rotation?: number;
+  };
+  zIndex?: number;
+}
 import { supabase } from '../../../../lib/supabaseClient';
+
+// Helper to get the Supabase function URL for the proxy
+const getSupabaseFunctionUrl = (functionName: string) => {
+  if (!supabase) return '';
+  const { VITE_SUPABASE_URL } = import.meta.env;
+  return `${VITE_SUPABASE_URL}/functions/v1/${functionName}`;
+};
+
+// Helper to proxy external images
+const getProxiedImageUrl = (imageUrl: string): string => {
+  if (!imageUrl || imageUrl.startsWith('blob:')) {
+    return imageUrl;
+  }
+
+  try {
+    const url = new URL(imageUrl);
+    const { VITE_SUPABASE_URL } = import.meta.env;
+
+    // Don't proxy images that are already on our Supabase storage
+    if (VITE_SUPABASE_URL && url.hostname.endsWith(new URL(VITE_SUPABASE_URL).hostname)) {
+      return imageUrl;
+    }
+
+    // For all other external images, use the proxy
+    const proxyUrl = getSupabaseFunctionUrl('image-proxy');
+    return `${proxyUrl}?url=${encodeURIComponent(imageUrl)}`;
+
+  } catch (error) {
+    // If it's not a valid URL, return it as is
+    return imageUrl;
+  }
+};
 
 // ==========================================
 // INTERFACES
@@ -32,6 +72,9 @@ export const DynamicImageRenderer: React.FC<DynamicImageRendererProps> = ({
   // Extraer información del contenido
   const imageUrl = component.content?.imageUrl || '';
   const imageAlt = component.content?.imageAlt || 'Imagen dinámica';
+
+  // Get the proxied URL for rendering
+  const displayImageUrl = getProxiedImageUrl(imageUrl);
 
   // Verificar si Supabase está configurado
   const isSupabaseConfigured = !!supabase;
@@ -178,10 +221,11 @@ export const DynamicImageRenderer: React.FC<DynamicImageRendererProps> = ({
         title={isEditMode ? 'Clic para subir imagen' : 'Imagen dinámica'}
       >
         {/* Imagen dinámica */}
-        {imageUrl ? (
+        {displayImageUrl ? (
           <div className="relative w-full h-full">
             <img
-              src={imageUrl}
+              src={displayImageUrl}
+              crossOrigin="anonymous" // Important for canvas capture
               alt={imageAlt}
               className="w-full h-full object-contain"
               style={{
@@ -249,7 +293,7 @@ export const DynamicImageRenderer: React.FC<DynamicImageRendererProps> = ({
         )}
 
         {/* Indicador de modo edición */}
-        {isEditMode && imageUrl && !isUploading && (
+        {isEditMode && displayImageUrl && !isUploading && (
           <div className="absolute top-2 right-2 bg-purple-500 text-white text-xs px-2 py-1 rounded-full shadow-md">
             📁
           </div>

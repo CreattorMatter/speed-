@@ -31,6 +31,9 @@ export const Enviados: React.FC<EnviadosProps> = ({ onBack, onLogout, userEmail,
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSucursal, setFilterSucursal] = useState('');
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [downloadingItems, setDownloadingItems] = useState<Set<string>>(new Set());
 
   // Cargar datos reales de envíos
   useEffect(() => {
@@ -87,23 +90,57 @@ export const Enviados: React.FC<EnviadosProps> = ({ onBack, onLogout, userEmail,
     }
 
     setFilteredEnviados(filtered);
+    setCurrentPage(1); // Reset to first page on filter change
   }, [searchTerm, filterSucursal, enviados]);
 
   const handleDownloadPDF = async (item: EnviadoItem) => {
+    const downloadKey = `${item.pdfUrl}-${item.pdfFilename}`;
+    
+    // Prevenir descargas duplicadas
+    if (downloadingItems.has(downloadKey)) {
+      toast.error('Descarga ya en progreso para este archivo', { duration: 2000 });
+      return;
+    }
+
+    // Marcar como descargando
+    setDownloadingItems(prev => new Set(prev).add(downloadKey));
+    
     try {
-      toast.loading('Descargando PDF...', { id: 'downloading-pdf' });
+      toast.loading('Descargando PDF...', { id: `download-${item.id}` });
       await PosterSendService.downloadPDF(item.pdfUrl, item.pdfFilename);
-      toast.success('PDF descargado exitosamente', { id: 'downloading-pdf' });
+      toast.success('PDF descargado exitosamente', { 
+        id: `download-${item.id}`,
+        duration: 3000
+      });
     } catch (error) {
       console.error('❌ Error descargando PDF:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       toast.error(
-        `Error al descargar PDF: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        { id: 'downloading-pdf' }
+        `Error al descargar PDF: ${errorMessage}`,
+        { 
+          id: `download-${item.id}`,
+          duration: 5000
+        }
       );
+    } finally {
+      // Limpiar estado de descarga después de un delay
+      setTimeout(() => {
+        setDownloadingItems(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(downloadKey);
+          return newSet;
+        });
+      }, 1000);
     }
   };
 
   const sucursalesUnicas = [...new Set(enviados.map(item => item.sucursal))];
+
+  // Pagination Logic
+  const lastItemIndex = currentPage * itemsPerPage;
+  const firstItemIndex = lastItemIndex - itemsPerPage;
+  const currentItems = filteredEnviados.slice(firstItemIndex, lastItemIndex);
+  const totalPages = Math.ceil(filteredEnviados.length / itemsPerPage);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -208,7 +245,7 @@ export const Enviados: React.FC<EnviadosProps> = ({ onBack, onLogout, userEmail,
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredEnviados.map((item) => (
+                {currentItems.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -248,10 +285,20 @@ export const Enviados: React.FC<EnviadosProps> = ({ onBack, onLogout, userEmail,
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => handleDownloadPDF(item)}
-                        className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-fuchsia-500 to-pink-600 text-white rounded-lg hover:from-fuchsia-600 hover:to-pink-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                        disabled={downloadingItems.has(`${item.pdfUrl}-${item.pdfFilename}`)}
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-fuchsia-500 to-pink-600 text-white rounded-lg hover:from-fuchsia-600 hover:to-pink-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-fuchsia-500 disabled:hover:to-pink-600"
                       >
-                        <Download className="w-4 h-4" />
-                        Descargar PDF
+                        {downloadingItems.has(`${item.pdfUrl}-${item.pdfFilename}`) ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            Descargando...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4" />
+                            Descargar PDF
+                          </>
+                        )}
                       </button>
                     </td>
                   </tr>
@@ -259,6 +306,49 @@ export const Enviados: React.FC<EnviadosProps> = ({ onBack, onLogout, userEmail,
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Filas por página:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="py-1 px-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-fuchsia-500 bg-white dark:bg-gray-700 text-sm"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Página {currentPage} de {totalPages}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
             {filteredEnviados.length === 0 && (
               <div className="text-center py-12">

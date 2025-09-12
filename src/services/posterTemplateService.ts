@@ -29,11 +29,17 @@ export interface PosterFamilyData {
  */
 export const getExampleProduct = (): Product => ({
   id: 'example-product',
+  tienda: 'E000',
+  sku: 999001,
+  ean: 7799999999999,
+  descripcion: 'Producto de Ejemplo para Vista Previa',
+  precio: 99999,
+  precioAnt: 129999,
+  seccion: 'Ejemplos',
+  marcaTexto: 'Marca Ejemplo',
+  stockDisponible: 100,
   name: 'Producto de Ejemplo',
-  price: 99999,
-  sku: 'EJ001',
   category: 'Ejemplo',
-  description: 'Producto de ejemplo para vista previa',
   imageUrl: '/images/placeholder-product.jpg'
 });
 
@@ -42,6 +48,56 @@ export const getExampleProduct = (): Product => ({
  */
 export const posterTemplateService = {
   /**
+   * 🚀 NUEVO: Obtiene solo las familias, sin sus plantillas, para una carga inicial rápida.
+   */
+  async getAllFamilies(): Promise<Omit<PosterFamilyData, 'templates'>[]> {
+    try {
+      console.log('📋 Obteniendo solo familias...');
+      const families = await familiesV3Service.getAll();
+      console.log(`✅ ${families.length} familias encontradas`);
+      
+      return families.map(family => ({
+        id: family.id,
+        name: family.name,
+        displayName: family.displayName,
+        description: family.description,
+        icon: family.icon,
+        headerImage: family.headerImage,
+        defaultStyle: family.defaultStyle
+      }));
+      
+    } catch (error) {
+      console.error('❌ Error obteniendo familias:', error);
+      return [];
+    }
+  },
+
+  /**
+   * 🚀 NUEVO: Obtiene las plantillas para una familia específica bajo demanda.
+   */
+  async getTemplatesForFamily(familyId: string, familyName: string): Promise<PosterTemplateData[]> {
+    try {
+      console.log(`📝 Obteniendo plantillas para la familia: ${familyName}`);
+      const templates = await templatesV3Service.getByFamily(familyId);
+      console.log(`✅ ${templates.length} plantillas encontradas para ${familyName}`);
+
+      return templates.map(template => ({
+        id: template.id,
+        name: template.name,
+        familyId: familyId,
+        familyName: familyName,
+        description: template.description,
+        thumbnail: template.thumbnail,
+        template: template
+      }));
+
+    } catch (error) {
+      console.error(`❌ Error obteniendo plantillas para familia ${familyId}:`, error);
+      return [];
+    }
+  },
+  /**
+   * @deprecated Usar getAllFamilies y getTemplatesForFamily para una carga más eficiente.
    * Obtiene todas las familias disponibles con sus plantillas
    */
   async getAllFamiliesWithTemplates(): Promise<PosterFamilyData[]> {

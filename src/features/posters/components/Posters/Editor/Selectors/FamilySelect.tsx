@@ -4,9 +4,9 @@ import { Search, ChevronDown, Check } from 'lucide-react';
 import { PosterFamilyData } from '../../../../../../services/posterTemplateService';
 
 interface FamilySelectProps {
-  families: PosterFamilyData[];
+  families: Omit<PosterFamilyData, 'templates'>[];
   selectedFamily: PosterFamilyData | null;
-  onFamilySelect: (family: PosterFamilyData) => void;
+  onFamilySelect: (family: Omit<PosterFamilyData, 'templates'>) => void;
   isLoading: boolean;
 }
 
@@ -43,7 +43,7 @@ export const FamilySelect: React.FC<FamilySelectProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSelect = (family: PosterFamilyData) => {
+  const handleSelect = (family: Omit<PosterFamilyData, 'templates'>) => {
     onFamilySelect(family);
     setIsOpen(false);
     setSearchTerm('');
@@ -112,7 +112,6 @@ export const FamilySelect: React.FC<FamilySelectProps> = ({
                         <span className="text-2xl">{family.icon}</span>
                         <div>
                           <span className="font-medium text-gray-800">{family.displayName}</span>
-                          <span className="text-sm text-gray-500 ml-2">{family.templates.length} plantillas</span>
                         </div>
                       </div>
                       {selectedFamily?.id === family.id && (
