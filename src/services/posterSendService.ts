@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabaseClient';
 import { DirectPdfService } from './directPdfService';
 import { VisiblePdfService } from './visiblePdfService';
+import { NativePdfService } from './nativePdfService';
 import { getCurrentUserPermissions } from './rbacService';
 
 export interface PosterSend {
@@ -68,72 +69,49 @@ export class PosterSendService {
 
       let finalPdfBlob: Blob;
 
-      if (useChunking) {
-        // --- LÓGICA DE CHUNKING ---
-        console.log(`📦 Procesando ${templates.length} templates en lotes de ${CHUNK_SIZE}`);
-        const chunkUrls: string[] = [];
-        const tempFolder = `temp/${sendData.id}`;
-
-        for (let i = 0; i < templates.length; i += CHUNK_SIZE) {
-          const chunk = templates.slice(i, i + CHUNK_SIZE);
-          const chunkProducts = chunk.map(t => t.product);
-          console.log(`🔄 Procesando lote ${i / CHUNK_SIZE + 1}...`);
-
-          const chunkPdfBlob = await VisiblePdfService.generatePdfFromTemplates(
-            chunk.map(c => c.template),
-            chunkProducts,
-            productChanges,
-            financingCuotas,
-            discountPercent
-          );
-
-          const chunkFileName = `${tempFolder}/chunk-${i / CHUNK_SIZE}.pdf`;
-          const { error: uploadError } = await supabase.storage
-            .from('posters')
-            .upload(chunkFileName, chunkPdfBlob, { contentType: 'application/pdf' });
-
-          if (uploadError) throw new Error(`Error subiendo lote: ${uploadError.message}`);
-          chunkUrls.push(chunkFileName);
-        }
-
-        console.log('✨ Todos los lotes subidos, invocando al unificador...');
-        const { error: mergeError } = await supabase.functions.invoke('pdf-merger', {
-          body: { 
-            pdfUrls: chunkUrls,
-            finalPath: `merged/${sendData.id}.pdf`
-          },
-        });
-
-        if (mergeError) throw new Error(`Error uniendo PDFs: ${mergeError.message}`);
-
-        console.log('✅ PDF final unido en el servidor. Descargándolo para envío...');
-        const { data: downloadData, error: downloadError } = await supabase.storage
-          .from('posters')
-          .download(`merged/${sendData.id}.pdf`);
+      // 🚀 NUEVA ARQUITECTURA: PDF NATIVO DE ALTA CALIDAD
+      console.log('🎯 Generando PDF nativo de calidad profesional...');
+      
+      try {
+        // Intentar con el nuevo motor PDF nativo (sin pixelación)
+        const nativePdfResult = await NativePdfService.generatePdfFromTemplates(
+          templates.map(t => t.template.template),
+          templates.map(t => t.product),
+          productChanges,
+          financingCuotas,
+          discountPercent,
+          { quality: 'print', dpi: 300 } // Calidad de impresión profesional
+        );
         
-        if (downloadError) throw new Error(`Error descargando PDF final: ${downloadError.message}`);
-        finalPdfBlob = downloadData;
-
-      } else {
-        // --- LÓGICA ORIGINAL (SIN CHUNKING) ---
-        console.log('🖼️ Generando PDF único en el cliente...');
+        finalPdfBlob = nativePdfResult.blob;
+        console.log(`✅ PDF nativo generado: ${nativePdfResult.pages} páginas, ${Math.round(nativePdfResult.size / 1024)}KB, calidad: ${nativePdfResult.quality}`);
+        
+      } catch (nativeError) {
+        console.warn('⚠️ Fallback: Error con PDF nativo, intentando con motor visible:', nativeError);
+        
         try {
+          // Fallback 1: Motor visible (captura de pantalla mejorada)
           finalPdfBlob = await VisiblePdfService.generatePdfFromTemplates(
-            templates.map(t => t.template.template), // Correctly access the nested template object
+            templates.map(t => t.template.template),
             templates.map(t => t.product),
             productChanges,
             financingCuotas,
             discountPercent
           );
-        } catch (error) {
-          console.warn('⚠️ Fallback: Error con renderizado visible, intentando con servicio directo:', error);
+          console.log('✅ PDF generado con motor visible (fallback)');
+          
+        } catch (visibleError) {
+          console.warn('⚠️ Fallback final: Error con motor visible, usando motor directo:', visibleError);
+          
+          // Fallback 2: Motor directo (última opción)
           const pdfResult = await DirectPdfService.generatePdfFromTemplates(
-            templates.map(t => ({ product: t.product, template: t.template.template })), // Correctly access the nested template object
+            templates.map(t => ({ product: t.product, template: t.template.template })),
             productChanges,
             financingCuotas,
             discountPercent
           );
           finalPdfBlob = pdfResult.blob;
+          console.log('✅ PDF generado con motor directo (fallback final)');
         }
       }
 
