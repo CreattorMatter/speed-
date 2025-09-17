@@ -1,3 +1,4 @@
+/// <reference types="https://deno.land/x/deno/cli/types/dts/lib.deno.d.ts" />
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib@^1.17.1';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -22,9 +23,17 @@ serve(async (req) => {
       throw new Error('finalPath is required.');
     }
 
+    const dbBranch = Deno.env.get('SUPABASE_DB_BRANCH') ?? Deno.env.get('DB_BRANCH');
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            ...(dbBranch ? { 'X-Connection-Branch': dbBranch } : {})
+          }
+        }
+      }
     );
 
     const mergedPdf = await PDFDocument.create();

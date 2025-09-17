@@ -6,7 +6,7 @@ import Promotions from './features/promotions/components';
 import { PosterEditorV3 } from './features/posters/components/Posters/PosterEditorV3';
 import { PrintView } from './features/posters/components/Posters/PrintView';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { ProtectedRoute } from './components/shared/ProtectedRoute';
+import ProtectedRoute from './components/shared/ProtectedRoute';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ConfigurationPortal } from './features/settings/components/ConfigurationPortal';
 import { Administration } from './features/settings/components/Administration';
@@ -19,6 +19,7 @@ import { signInWithPassword, signOut as authSignOut, getCurrentProfile } from '.
 import { HeaderProvider } from './components/shared/HeaderProvider';
 import { Toaster } from 'react-hot-toast';
 import { PermissionsProvider } from './contexts/PermissionsContext';
+import { getCache, setCache, clearCache } from './lib/cache';
 
 import { CameraCapture } from './components/shared/CameraCapture';
 import { toast } from 'react-hot-toast';
@@ -71,67 +72,164 @@ function AppContent() {
   const [showCamera, setShowCamera] = useState(false);
   //const [showDigitalCarousel, setShowDigitalCarousel] = useState(false);
 
+  // Evitar bloqueos en recarga: utilitario con timeout para promesas
+  const withTimeout = async <T,>(p: Promise<T>, ms: number, label = 'app') => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const timeout = new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`timeout:${label}:${ms}`)), ms);
+      });
+      // @ts-ignore
+      return await Promise.race([p, timeout]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  };
+
+  const USER_CACHE_KEY = 'spid:user';
+  const USER_TTL_MS = 30 * 60 * 1000; // 30 minutos
+
+  const mapRoleToDashboardRole = (role?: string): 'admin' | 'limited' | 'sucursal' => {
+    const r = String(role || '').toLowerCase();
+    if (r === 'admin') return 'admin';
+    if (r === 'sucursal') return 'sucursal';
+    return 'limited';
+  };
+
   useEffect(() => {
     checkUser();
   }, []);
 
+  // Mantener el estado de autenticación sincronizado ante eventos de Supabase
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') {
+        await checkUser();
+      }
+      if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('user');
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    });
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
+
   const checkUser = async () => {
     try {
-      // 🔐 PASO 1: Verificar si hay sesión activa de Supabase
+      // 🔐 PASO 0: Intentar usuario desde localStorage PRIMERO (más rápido que getSession)
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          setIsAuthenticated(true);
+          setUserRole(mapRoleToDashboardRole((parsedUser.role as any)));
+          setLoading(false);
+          console.log('✅ Usuario cargado desde localStorage:', parsedUser.email);
+          return;
+        } catch (e) {
+          console.warn('Error parsing stored user:', e);
+          localStorage.removeItem('user');
+        }
+      }
+
+      // 🔐 PASO 1: Verificar si hay sesión activa de Supabase (local, no red)
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
         console.error('Error obteniendo sesión:', sessionError);
         localStorage.removeItem('user');
+        clearCache(USER_CACHE_KEY);
+        setLoading(false);
         return;
       }
 
-      // 🔐 PASO 2: Si hay sesión de Supabase, obtener perfil fresco
+      // 🔐 PASO 2: Si hay sesión de Supabase, obtener perfil fresco (con timeout para no colgar UI)
       if (session) {
-        console.log('✅ Sesión de Supabase encontrada, obteniendo perfil...');
-        try {
-          const freshProfile = await getCurrentProfile();
-          if (freshProfile) {
-            localStorage.setItem('user', JSON.stringify(freshProfile));
-            setUser(freshProfile);
-            setIsAuthenticated(true);
-            setUserRole((freshProfile.role as any) || 'viewer');
-            console.log('✅ Usuario autenticado desde sesión:', freshProfile.email);
-            return;
-          }
-        } catch (profileError) {
-          console.error('Error obteniendo perfil fresco:', profileError);
-        }
-      }
-
-      // 🔐 PASO 3: Fallback - verificar localStorage como último recurso
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        console.log('⚠️ No hay sesión de Supabase, usando localStorage como fallback');
-
-        // Verificar que el usuario sigue activo en la DB
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', parsedUser.email)
-          .eq('status', 'active')
-          .single();
-
-        if (userError || !userData) {
-          console.error('Usuario no encontrado o inactivo, limpiando localStorage');
-          localStorage.removeItem('user');
+        // 2a) Intentar usuario desde cache TTL primero para NO llamar a API
+        const { value: cachedUser } = getCache<User>(USER_CACHE_KEY);
+        if (cachedUser) {
+          localStorage.setItem('user', JSON.stringify(cachedUser)); // mantener compat
+          setUser(cachedUser);
+          setIsAuthenticated(true);
+          setUserRole(mapRoleToDashboardRole((cachedUser.role as any)));
+          console.log('✅ Usuario desde cache TTL:', cachedUser.email);
+          setLoading(false);
           return;
         }
 
-        // Usuario válido desde localStorage
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-        setUserRole((parsedUser.role as any) || 'viewer');
-        console.log('✅ Usuario autenticado desde localStorage:', parsedUser.email);
-      } else {
-        console.log('❌ No hay sesión ni usuario en localStorage');
+        console.log('✅ Sesión de Supabase encontrada, obteniendo perfil...');
+        try {
+          const freshProfile = await withTimeout(getCurrentProfile(), 5000, 'getCurrentProfile');
+          if (freshProfile) {
+            localStorage.setItem('user', JSON.stringify(freshProfile));
+            setCache(USER_CACHE_KEY, freshProfile, USER_TTL_MS);
+            setUser(freshProfile);
+            setIsAuthenticated(true);
+            setUserRole(mapRoleToDashboardRole((freshProfile.role as any)));
+            console.log('✅ Usuario autenticado desde sesión:', freshProfile.email);
+            return;
+          }
+          // Si no hubo perfil, preferir usuario de localStorage (si existe) y si no, usar perfil mínimo
+          const stored = localStorage.getItem('user');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            setUser(parsed);
+            setIsAuthenticated(true);
+            setUserRole(mapRoleToDashboardRole((parsed.role as any)));
+            setCache(USER_CACHE_KEY, parsed, USER_TTL_MS);
+          } else {
+            const fallbackUser: User = {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.name || session.user.email || 'Usuario',
+              role: 'viewer',
+              status: 'active',
+              created_at: new Date().toISOString(),
+            } as unknown as User;
+            localStorage.setItem('user', JSON.stringify(fallbackUser));
+            setCache(USER_CACHE_KEY, fallbackUser, USER_TTL_MS);
+            setUser(fallbackUser);
+            setIsAuthenticated(true);
+            setUserRole(mapRoleToDashboardRole('viewer'));
+          }
+          console.warn('⚠️ Usando perfil mínimo por timeout/ausencia de perfil');
+          return;
+        } catch (profileError) {
+          console.error('Error obteniendo perfil fresco:', profileError);
+          // Preferir usuario de localStorage si existe, o caer a perfil mínimo
+          const stored = localStorage.getItem('user');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            setUser(parsed);
+            setIsAuthenticated(true);
+            setUserRole(mapRoleToDashboardRole((parsed.role as any)));
+            setCache(USER_CACHE_KEY, parsed, USER_TTL_MS);
+          } else {
+            const fallbackUser: User = {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.name || session.user.email || 'Usuario',
+              role: 'viewer',
+              status: 'active',
+              created_at: new Date().toISOString(),
+            } as unknown as User;
+            localStorage.setItem('user', JSON.stringify(fallbackUser));
+            setCache(USER_CACHE_KEY, fallbackUser, USER_TTL_MS);
+            setUser(fallbackUser);
+            setIsAuthenticated(true);
+            setUserRole(mapRoleToDashboardRole('viewer'));
+          }
+          return;
+        }
       }
+
+      // 🔐 PASO 3: No hay sesión ni usuario guardado
+      console.log('❌ No hay sesión ni usuario en localStorage');
+      setLoading(false);
 
     } catch (error) {
       console.error('Error durante la verificación del usuario:', error);
@@ -149,6 +247,7 @@ function AppContent() {
       setUser(profile);
       setIsAuthenticated(true);
       setUserRole((profile.role as any) || 'viewer');
+      setCache(USER_CACHE_KEY, profile, USER_TTL_MS);
       // Si es primer login, redirigir a crear nueva contraseña
       if ((profile as any).first_login) {
         navigate('/welcome');
@@ -174,6 +273,9 @@ function AppContent() {
       
       // Redirigir al login
       navigate('/');
+      // Limpiar caches TTL
+      clearCache(USER_CACHE_KEY);
+      try { localStorage.removeItem('spid:permissions'); } catch {}
     } catch (error) {
       console.error('Error durante el logout:', error);
       toast.error('Error al cerrar sesión');
@@ -333,7 +435,6 @@ function AppContent() {
                              focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white
                              text-sm xs:text-base transition-all duration-200"
                     placeholder="tu@email.com"
-                    defaultValue="admin@admin.com"
                   />
                 </div>
               </div>
@@ -355,7 +456,6 @@ function AppContent() {
                              focus:ring-2 focus:ring-white/50 focus:border-transparent placeholder-white/30 text-white
                              text-sm xs:text-base transition-all duration-200"
                     placeholder="••••••••"
-                    defaultValue="admin"
                   />
                 </div>
               </div>

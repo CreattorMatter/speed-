@@ -2,3 +2,12 @@
   from = "/*"
   to = "/index.html"
   status = 200 
+
+# Context-specific environment variables for Supabase Branching
+# Production (main): default branch (omit to use main implicitly)
+[context.production.environment]
+  VITE_SUPABASE_DB_BRANCH = "main"
+
+# Branch deployment for "Develop": point to Develop DB branch
+[context."Develop".environment]
+  VITE_SUPABASE_DB_BRANCH = "Develop"

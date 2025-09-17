@@ -1,6 +1,8 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { hasAllPermissions } from '@/services/rbacService';
+import { supabase } from '@/lib/supabaseClient';
+import { getCurrentProfile } from '@/services/authService';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 type AllowedRole = 'admin' | 'editor' | 'viewer' | 'sucursal' | string;
 
@@ -12,7 +14,7 @@ interface ProtectedRouteProps {
 	redirectTo?: string;
 }
 
-function getCurrentUser(): { role?: string } | null {
+function readStoredUser(): { role?: string } | null {
 	try {
 		const raw = localStorage.getItem('user');
 		return raw ? JSON.parse(raw) : null;
@@ -27,35 +29,78 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 	requiredPermissions,
 	redirectTo = '/',
 }) => {
-	const user = getCurrentUser();
+  const [ready, setReady] = React.useState(false);
+  const [role, setRole] = React.useState<string | null>(null);
+  const { isLoading, hasAllPermissions } = usePermissions();
 
-	// If no restrictions provided, allow by default
-	if (!allowedRoles || allowedRoles.length === 0) {
-		return children;
-	}
+  React.useEffect(() => {
+    let active = true;
 
-	const userRole = (user?.role || '').toLowerCase();
-	const isRoleAllowed = allowedRoles.map(r => String(r).toLowerCase()).includes(userRole);
-	if (!isRoleAllowed) {
-		return <Navigate to={redirectTo} replace />;
-	}
+    const hydrate = async () => {
+      // 1) Try localStorage first
+      const stored = readStoredUser();
+      if (stored?.role) {
+        if (!active) return;
+        setRole(String(stored.role));
+        setReady(true);
+        return;
+      }
 
-	// Permission gate (sync wrapper around async check)
-	if (requiredPermissions && requiredPermissions.length > 0) {
-		// We can't block render async inside; render a thin guard
-		// Consumers should wrap with a loader if needed
-		// For now, we optimistically render and rely on server-side RLS as final guard
-		// Optionally, could implement a Suspense-like guard
-		hasAllPermissions(requiredPermissions).then((ok) => {
-			if (!ok) {
-				window.location.replace(redirectTo);
-			}
-		});
-	}
+      // 2) Fallback to Supabase session -> profile
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        try {
+          const profile = await getCurrentProfile();
+          if (profile) {
+            localStorage.setItem('user', JSON.stringify(profile));
+            if (!active) return;
+            setRole(String(profile.role || ''));
+            setReady(true);
+            return;
+          }
+        } catch {}
+      }
 
-	return children;
+      if (!active) return;
+      setReady(true);
+    };
+
+    hydrate();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // If no restrictions provided, allow by default
+  if (!allowedRoles || allowedRoles.length === 0) {
+    // Si hay permisos requeridos, evaluarlos aún si no hay roles configurados
+    if (requiredPermissions && requiredPermissions.length > 0) {
+      if (isLoading) return <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">Cargando…</div>; // evitar pantalla en blanco
+      if (!hasAllPermissions(requiredPermissions)) return <Navigate to={redirectTo} replace />;
+    }
+    return children;
+  }
+
+  // While resolving auth state, render nothing (or a minimal placeholder)
+  if (!ready) {
+    return <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">Cargando…</div>;
+  }
+
+  const userRole = (role || '').toLowerCase();
+  const isRoleAllowed = allowedRoles.map(r => String(r).toLowerCase()).includes(userRole);
+  if (!isRoleAllowed) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  // Gateo por permisos basado en contexto (síncrono)
+  if (requiredPermissions && requiredPermissions.length > 0) {
+    if (isLoading) return <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">Cargando…</div>;
+    if (!hasAllPermissions(requiredPermissions)) {
+      return <Navigate to={redirectTo} replace />;
+    }
+  }
+
+  return children;
 };
 
 export default ProtectedRoute;
-
-

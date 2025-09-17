@@ -1,3 +1,34 @@
+// Permisos por defecto para admin (si DB tarda o falla). Mantener sincronizado con la migración
+const ADMIN_DEFAULT_PERMISSIONS: Array<{ name: string; category: string; description: string }> = [
+  // Builder
+  { name: 'builder:access', category: 'builder', description: '' },
+  { name: 'builder:family:create', category: 'builder', description: '' },
+  { name: 'builder:family:edit', category: 'builder', description: '' },
+  { name: 'builder:family:delete', category: 'builder', description: '' },
+  { name: 'builder:template:create', category: 'builder', description: '' },
+  { name: 'builder:template:edit', category: 'builder', description: '' },
+  { name: 'builder:template:delete', category: 'builder', description: '' },
+  { name: 'builder:template:duplicate', category: 'builder', description: '' },
+  // Poster
+  { name: 'poster:view', category: 'poster', description: '' },
+  { name: 'poster:edit', category: 'poster', description: '' },
+  { name: 'poster:print_direct', category: 'poster', description: '' },
+  { name: 'poster:print_audit', category: 'poster', description: '' },
+  { name: 'poster:send', category: 'poster', description: '' },
+  // Dashboard
+  { name: 'dashboard:recibidos', category: 'dashboard', description: '' },
+  { name: 'dashboard:enviados', category: 'dashboard', description: '' },
+  { name: 'dashboard:analytics', category: 'dashboard', description: '' },
+  { name: 'dashboard:admin', category: 'dashboard', description: '' },
+  // Groups
+  { name: 'group:view_own', category: 'group', description: '' },
+  { name: 'group:view_all', category: 'group', description: '' },
+  // Admin
+  { name: 'admin:users', category: 'admin', description: '' },
+  { name: 'admin:roles', category: 'admin', description: '' },
+  { name: 'admin:groups', category: 'admin', description: '' },
+  { name: 'admin:system', category: 'admin', description: '' },
+];
 import { supabase, supabaseAdmin } from '@/lib/supabaseClient';
 import type { User, Group, Role, Permission, UserPermissions } from '@/types/index';
 
@@ -158,23 +189,84 @@ export async function upsertPermissions(perms: Array<{ name: string; description
 // Get current user's permissions
 export async function getCurrentUserPermissions(): Promise<UserPermissions> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) {
       return { permissions: [], groups: [], hasPermission: () => false };
     }
 
-    // Get user from database
-    const { data: dbUser } = await db
-      .from('users')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
+    // 0) Fast-path: si en localStorage el rol es admin, devolver superuser inmediatamente con permisos por defecto
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = window.localStorage.getItem('user');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (String(parsed?.role || '').toLowerCase() === 'admin') {
+            const hasPermission = (_permissionName: string): boolean => true;
+            return { permissions: ADMIN_DEFAULT_PERMISSIONS, groups: [], hasPermission };
+          }
+        }
+      } catch {}
+    }
 
-    if (!dbUser) {
+    // Resolve current profile row id and role in users table
+    let dbUserId: string | null = null;
+    let dbUserRole: string | null = null;
+
+    // 1) Try by email first (siempre existe y evita 400 por columnas faltantes)
+    if (user.email) {
+      try {
+        const { data: byEmail } = await db
+          .from('users')
+          .select('id, role')
+          .eq('email', user.email)
+          .maybeSingle();
+        dbUserId = byEmail?.id ?? null;
+        dbUserRole = (byEmail as any)?.role ?? null;
+      } catch (e: any) {
+        console.warn('RBAC: error consultando users por email:', String(e?.message || e));
+      }
+    }
+
+    // 2) Fallback by auth_user_id only if no email available
+    if (!dbUserId && !user.email) {
+      try {
+        const { data: byAuth } = await db
+          .from('users')
+          .select('id, role')
+          .eq('auth_user_id', user.id)
+          .maybeSingle();
+        dbUserId = byAuth?.id ?? null;
+        dbUserRole = (byAuth as any)?.role ?? null;
+      } catch (e: any) {
+        const msg = String(e?.message || e);
+        if (/column .*auth_user_id.* does not exist/i.test(msg)) {
+          console.warn('RBAC: users.auth_user_id no existe; no se puede resolver por id de auth');
+        } else {
+          console.warn('RBAC: error consultando users por auth_user_id:', msg);
+        }
+      }
+    }
+
+    if (!dbUserId) {
+      console.warn('RBAC: No se encontró fila en users para el usuario actual');
       return { permissions: [], groups: [], hasPermission: () => false };
     }
 
-    return getUserPermissions(dbUser.id);
+    // Si el rol del usuario es admin en users.role, devolver permisos ilimitados (superuser)
+    if ((dbUserRole || '').toLowerCase() === 'admin') {
+      try {
+        const { data: allPerms } = await db.from('permissions').select('name,category,description');
+        const permissions = (allPerms || []).map((p: any) => ({ name: p.name, category: p.category, description: p.description ?? '' }));
+        // Superuser: aunque la tabla permissions esté vacía, conceder todos los permisos
+        const hasPermission = (_permissionName: string): boolean => true;
+        return { permissions, groups: [], hasPermission };
+      } catch (e) {
+        console.warn('RBAC: error trayendo permisos completos para admin:', e);
+      }
+    }
+
+    return getUserPermissions(dbUserId);
   } catch (error) {
     console.error('Error getting current user permissions:', error);
     return { permissions: [], groups: [], hasPermission: () => false };
@@ -184,26 +276,98 @@ export async function getCurrentUserPermissions(): Promise<UserPermissions> {
 // Get user permissions by user ID
 export async function getUserPermissions(userId: string): Promise<UserPermissions> {
   try {
-    const [permissionsResult, groupsResult] = await Promise.all([
-      db.rpc('get_user_permissions', { user_uuid: userId }),
-      db.rpc('get_user_groups', { user_uuid: userId })
-    ]);
+    // 1) Intentar vía RPC si existe
+    try {
+      const [permissionsResult, groupsResult] = await Promise.all([
+        db.rpc('get_user_permissions', { user_uuid: userId }),
+        db.rpc('get_user_groups', { user_uuid: userId })
+      ]);
 
-    const permissions = (permissionsResult.data || []).map((p: any) => ({
-      name: p.permission_name,
-      category: p.category,
-      description: p.description
-    }));
+      if (!permissionsResult.error && permissionsResult.data) {
+        const permissions = (permissionsResult.data || []).map((p: any) => ({
+          name: p.permission_name,
+          category: p.category,
+          description: p.description
+        }));
 
-    const groups = (groupsResult.data || []).map((g: any) => ({
-      id: g.group_id,
-      name: g.group_name
-    }));
+        const groups = (!groupsResult?.error && groupsResult?.data ? groupsResult.data : []).map((g: any) => ({
+          id: g.group_id,
+          name: g.group_name
+        }));
 
-    const hasPermission = (permissionName: string): boolean => {
-      return permissions.some((p: any) => p.name === permissionName);
-    };
+        const hasPermission = (permissionName: string): boolean => permissions.some((p: any) => p.name === permissionName);
+        return { permissions, groups, hasPermission };
+      }
+    } catch (e) {
+      // Si la RPC no existe/RLS, caemos al fallback
+      console.warn('RBAC: RPC no disponible, usando fallback por tablas:', e);
+    }
 
+    // 2) Fallback sin RPC: user_roles -> role_permissions -> permissions y groups
+    // 2a) Rol del usuario
+    let roleId: string | null = null;
+    let roleName: string | null = null;
+    const { data: ur } = await db
+      .from('user_roles')
+      .select('role_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (ur?.role_id) roleId = ur.role_id as string;
+
+    // Si no hay user_roles, intentar derivar desde users.role
+    if (!roleId) {
+      const { data: userRow } = await db
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+      roleName = (userRow as any)?.role ?? null;
+      if (roleName) {
+        const { data: roleRow } = await db
+          .from('roles')
+          .select('id')
+          .eq('name', roleName)
+          .maybeSingle();
+        roleId = roleRow?.id ?? null;
+      }
+    }
+
+    // 2b) Permisos para el rol
+    let permissionIds: string[] = [];
+    if (roleId) {
+      const { data: rpRows } = await db
+        .from('role_permissions')
+        .select('permission_id')
+        .eq('role_id', roleId);
+      permissionIds = (rpRows || []).map((r: any) => r.permission_id).filter(Boolean);
+    }
+
+    // 2c) Cargar permisos
+    let permissions: Array<{ name: string; category: string; description: string }> = [];
+    if (permissionIds.length) {
+      const { data: permRows } = await db
+        .from('permissions')
+        .select('name,category,description')
+        .in('id', permissionIds);
+      permissions = (permRows || []).map((p: any) => ({ name: p.name, category: p.category, description: p.description ?? '' }));
+    }
+
+    // 2d) Grupos
+    const { data: guRows } = await db
+      .from('group_users')
+      .select('group_id')
+      .eq('user_id', userId);
+    const groupIds = (guRows || []).map((g: any) => g.group_id).filter(Boolean);
+    let groups: Array<{ id: string; name: string }> = [];
+    if (groupIds.length) {
+      const { data: gRows } = await db
+        .from('groups')
+        .select('id,name')
+        .in('id', groupIds);
+      groups = (gRows || []).map((g: any) => ({ id: g.id, name: g.name }));
+    }
+
+    const hasPermission = (permissionName: string): boolean => permissions.some((p: any) => p.name === permissionName);
     return { permissions, groups, hasPermission };
   } catch (error) {
     console.error('Error getting user permissions:', error);
@@ -262,17 +426,30 @@ export async function getUsers(): Promise<User[]> {
   const userList = (users || []) as any[];
   if (userList.length === 0) return [];
 
-  // Fetch roles for all users in one query
+  // Fetch roles for all users SIN embed (evita 400); mapear en memoria
   const userIds = userList.map(u => u.id);
-  const { data: rolesRows } = await db
+  const { data: urRows } = await db
     .from('user_roles')
-    .select('user_id, roles(name)')
+    .select('user_id, role_id')
     .in('user_id', userIds);
 
+  const roleIds = Array.from(new Set((urRows || []).map((r: any) => r.role_id).filter(Boolean)));
+  let roleIdToName: Record<string, string> = {};
+  if (roleIds.length) {
+    const { data: rolesRows2 } = await db
+      .from('roles')
+      .select('id,name')
+      .in('id', roleIds);
+    (rolesRows2 || []).forEach((r: any) => {
+      if (r?.id && r?.name) roleIdToName[r.id] = r.name as string;
+    });
+  }
+
   const userIdToRole: Record<string, string> = {};
-  (rolesRows || []).forEach((row: any) => {
-    if (row?.user_id && row?.roles?.name) {
-      userIdToRole[row.user_id] = row.roles.name as string;
+  (urRows || []).forEach((row: any) => {
+    if (row?.user_id && row?.role_id) {
+      const name = roleIdToName[row.role_id];
+      if (name) userIdToRole[row.user_id] = name;
     }
   });
 
