@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // =====================================
 // BUILDER V3 - CUSTOM FIELD REGISTRY (Campos Propios)
 // =====================================

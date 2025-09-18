@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // =====================================
 // SPEED BUILDER V3 - TYPE DEFINITIONS
 // =====================================
@@ -226,6 +227,15 @@ export interface DynamicContentV3 {
   customFormula?: {
     expression: string; // ej: "{{price}} * (1 - {{discount}} / 100)"
     dependencies: string[]; // campos de los que depende
+  };
+  
+  // Campo calculado (usado por la UI actual)
+  calculatedField?: {
+    expression: string;
+    previewResult?: string;
+    errorMessage?: string;
+    availableFields?: string[];
+    operators?: string[];
   };
   
   // Valor estático o por defecto

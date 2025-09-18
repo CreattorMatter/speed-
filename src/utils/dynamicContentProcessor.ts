@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // =====================================
 // PROCESADOR DE CONTENIDO DINÁMICO V2
 // COMPATIBLE CON ENTIDADES REALES DEL SISTEMA ERP
 // =====================================
 
 import { ProductoReal, Tienda, Seccion, Promocion } from '../types/product';
+import { DynamicContentV3 } from '../features/builderV3/types';
 import { getDynamicFieldValue, ALL_DYNAMIC_FIELDS } from './productFieldsMap';
 import { calculatePricePorCuota, formatPriceCuota } from './financingCalculator';
 // 🆕 Campos Propios (Custom Fields)
@@ -12,6 +14,14 @@ import { hasCustomField, getCustomFieldRaw } from '../features/builderV3/fields/
 // =====================
 // TIPOS Y INTERFACES
 // =====================
+
+type OutputFormatV3 = DynamicContentV3['outputFormat'];
+
+type ComponentLike = { content: DynamicContentV3; type?: string };
+
+function hasContent(obj: unknown): obj is ComponentLike {
+  return !!obj && typeof obj === 'object' && 'content' in (obj as Record<string, unknown>);
+}
 
 export interface MockDataV3 {
   // Producto seleccionado
@@ -139,7 +149,7 @@ const resolveCustomFieldNumeric = (slug: string, mockData: MockDataV3, depth: nu
 };
 
 // Resolver valor de presentación para plantillas dinámicas (texto/moneda)
-const resolveCustomFieldDisplay = (slug: string, mockData: MockDataV3, outputFormat?: any, depth: number = 0): string => {
+const resolveCustomFieldDisplay = (slug: string, mockData: MockDataV3, outputFormat?: OutputFormatV3, depth: number = 0): string => {
   if (depth > 10) return '';
   const raw = getCustomFieldRaw(slug);
   if (!raw) return `[${slug}]`;
@@ -147,7 +157,7 @@ const resolveCustomFieldDisplay = (slug: string, mockData: MockDataV3, outputFor
     case 'user': {
       const v = raw.value;
       if (raw.dataType === 'number' || raw.dataType === 'money') {
-        const n = parseNumeric(v as any);
+        const n = parseNumeric(v as string | number | boolean | undefined);
         return formatWithOutput(n, raw.format || outputFormat);
       }
       return String(v ?? '');
@@ -167,68 +177,59 @@ const resolveCustomFieldDisplay = (slug: string, mockData: MockDataV3, outputFor
 // FORMATEADORES
 // =====================
 
-const formatPrice = (price: number, outputFormat?: any): string => {
-  // 🔧 CORREGIDO: Respetar la configuración de outputFormat
-  const showCurrencySymbol = outputFormat?.showCurrencySymbol !== false; // Por defecto true para compatibilidad
-  const showDecimals = outputFormat?.showDecimals === true;
-  const superscriptDecimals = outputFormat?.superscriptDecimals === true;
-  const precision = outputFormat?.precision || '0';
-  
-  // 🆕 Determinar número de decimales basado en precision
+type ExtendedOutputFormat = OutputFormatV3 & {
+  showCurrencySymbol?: boolean;
+  showDecimals?: boolean;
+  superscriptDecimals?: boolean;
+  precision?: string | number;
+};
+
+const decodeFormat = (of?: ExtendedOutputFormat) => {
+  const showCurrencySymbol = of?.showCurrencySymbol ?? (of?.type === 'currency');
+  const superscript = of?.superscriptDecimals === true;
   let decimalPlaces = 0;
-  if (precision.includes('1')) decimalPlaces = 1;
-  if (precision.includes('2')) decimalPlaces = 2;
-  if (showDecimals) decimalPlaces = 2; // Compatibilidad con showDecimals
-  
-  // 🆕 Detectar superíndice basado en precision o flag
-  const useSuperscript = superscriptDecimals || precision.includes('-small');
-  
-  if (useSuperscript && decimalPlaces > 0) {
-    // 🆕 MODO SUPERÍNDICE: separar parte entera de decimales
+  if (typeof of?.precision === 'number') {
+    decimalPlaces = of.precision;
+  } else if (of?.showDecimals) {
+    decimalPlaces = 2;
+  }
+  return {
+    showCurrencySymbol,
+    superscript,
+    decimalPlaces,
+    prefix: of?.prefix,
+    suffix: of?.suffix
+  };
+};
+
+const formatPrice = (price: number, outputFormat?: unknown): string => {
+  const { showCurrencySymbol, superscript, decimalPlaces } = decodeFormat(outputFormat as ExtendedOutputFormat);
+  if (superscript && decimalPlaces > 0) {
     const integerPart = Math.floor(price);
     const decimalPart = ((price - integerPart) * Math.pow(10, decimalPlaces)).toFixed(0).padStart(decimalPlaces, '0');
-    
-    // Formatear parte entera con separadores de miles
-    const formattedInteger = new Intl.NumberFormat('es-AR', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-      useGrouping: true
-    }).format(integerPart);
-    
-    // Convertir decimales a superíndice
-    const superscriptMap: Record<string, string> = {
-      '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
-      '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
-    };
-    const superscriptDecimals = decimalPart.split('').map(d => superscriptMap[d] || d).join('');
-    
-    if (showCurrencySymbol) {
-      return `$ ${formattedInteger}${superscriptDecimals}`;
-    } else {
-      return `${formattedInteger}${superscriptDecimals}`;
-    }
-  } else {
-    // 🔄 MODO NORMAL: usar Intl.NumberFormat estándar
-    if (showCurrencySymbol) {
-      // Usar formato con símbolo de moneda
-      return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        minimumFractionDigits: decimalPlaces,
-        maximumFractionDigits: decimalPlaces
-      }).format(price);
-    } else {
-      // Usar formato sin símbolo de moneda
-      return new Intl.NumberFormat('es-AR', {
-        minimumFractionDigits: decimalPlaces,
-        maximumFractionDigits: decimalPlaces,
-        useGrouping: true
-      }).format(price);
-    }
+    const formattedInteger = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0, useGrouping: true }).format(integerPart);
+    const superscriptMap: Record<string, string> = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
+    const sup = decimalPart.split('').map(d => superscriptMap[d] || d).join('');
+    return showCurrencySymbol ? `$ ${formattedInteger}${sup}` : `${formattedInteger}${sup}`;
   }
+  if (showCurrencySymbol) {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: decimalPlaces, maximumFractionDigits: decimalPlaces }).format(price);
+  }
+  return new Intl.NumberFormat('es-AR', { minimumFractionDigits: decimalPlaces, maximumFractionDigits: decimalPlaces, useGrouping: true }).format(price);
 };
 
 const formatDate = (date: Date): string => {
+  return date.toLocaleDateString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+};
+
+// Helper para fechas en formato YYYY-MM-DD a local
+const formatISODateToLocale = (dateStr: string): string => {
+  const [year, month, day] = dateStr.split('-');
+  const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
   return date.toLocaleDateString('es-AR', {
     day: '2-digit',
     month: '2-digit',
@@ -244,9 +245,9 @@ const formatDate = (date: Date): string => {
  * Procesa una expresión matemática calculada reemplazando campos dinámicos con valores reales
  */
 export const processCalculatedField = (
-  expression: string, 
+  expression: string,
   mockData: MockDataV3 = defaultMockData,
-  outputFormat?: any
+  outputFormat?: OutputFormatV3
 ): string => {
   if (!expression) return '0';
   
@@ -349,25 +350,20 @@ export const processCalculatedField = (
 };
 
 // Helper: aplica formato respetando outputFormat o devuelve string simple
-const formatWithOutput = (value: number, outputFormat?: any): string => {
+const formatWithOutput = (value: number, outputFormat?: unknown): string => {
   try {
-    let formatted = '';
-    // precision
-    const precision = outputFormat?.precision === '2' ? 2
-      : (typeof outputFormat?.precision === 'string' && !isNaN(parseInt(outputFormat.precision))
-        ? parseInt(outputFormat.precision)
-        : 0);
-    formatted = Number(value).toFixed(precision);
+    const { showCurrencySymbol, decimalPlaces, prefix, suffix } = decodeFormat(outputFormat as ExtendedOutputFormat);
+    let formatted = Number(value).toFixed(decimalPlaces);
     // miles
     if (Math.abs(value) >= 1000) {
       const parts = formatted.split('.');
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-      formatted = parts.join(precision > 0 ? ',' : '');
+      formatted = parts.join(decimalPlaces > 0 ? ',' : '');
     }
     // prefijo
-    if (outputFormat?.prefix !== false) {
-      formatted = `$ ${formatted}`;
-    }
+    if (prefix) formatted = `${prefix}${formatted}`;
+    else if (showCurrencySymbol) formatted = `$ ${formatted}`;
+    if (suffix) formatted = `${formatted}${suffix}`;
     return formatted || '0';
   } catch {
     return '0';
@@ -419,9 +415,10 @@ export const processFinancingField = (fieldId: string, mockData: MockDataV3): st
     case 'cuota':
       return mockData.cuotas?.toString() ?? '0';
     
-    case 'precio_cuota':
+    case 'precio_cuota': {
       const precioCuota = mockData.precio_cuota ?? 0;
       return formatPriceCuota(precioCuota, true);
+    }
     
     default:
       return '';
@@ -436,9 +433,9 @@ export const processFinancingField = (fieldId: string, mockData: MockDataV3): st
  * Procesa un template dinámico reemplazando todos los campos dinámicos
  */
 export const processTemplate = (
-  template: string, 
+  template: string,
   mockData: MockDataV3 = defaultMockData,
-  outputFormat?: any
+  outputFormat?: OutputFormatV3
 ): string => {
   if (!template) return '';
   
@@ -507,7 +504,7 @@ export const processTemplate = (
 /**
  * Obtiene el valor de un campo SAP específico (usando ejemplos reales)
  */
-export const getSAPFieldValue = (fieldName: string, data: MockDataV3, outputFormat?: any): string => {
+export const getSAPFieldValue = (fieldName: string, data: MockDataV3, outputFormat?: OutputFormatV3): string => {
   if (data.producto) {
     // Usar datos reales del producto
     return getDynamicFieldValue(fieldName, data.producto);
@@ -571,24 +568,26 @@ export const getPromotionFieldValue = (fieldName: string, data: MockDataV3): str
 // =====================
 
 export const processDynamicContent = (
-  contentOrComponent: any, 
+  contentOrComponent: DynamicContentV3 | ComponentLike | string | undefined,
   mockData: MockDataV3 = defaultMockData,
-  outputFormat?: any
+  outputFormat?: OutputFormatV3
 ): string => {
   // 🔧 CORRECCIÓN: Detectar si se pasó el content directamente o el componente completo
-  let content: any;
+  let content: DynamicContentV3 | undefined;
   let componentType: string | undefined;
   
-  if (contentOrComponent?.content) {
+  if (hasContent(contentOrComponent)) {
     // Se pasó el componente completo
     content = contentOrComponent.content;
     componentType = contentOrComponent.type;
     console.log(`📦 Se pasó componente completo:`, { type: componentType, content });
-  } else {
+  } else if (typeof contentOrComponent === 'object' && contentOrComponent) {
     // Se pasó solo el content
-    content = contentOrComponent;
+    content = contentOrComponent as DynamicContentV3;
     componentType = undefined;
     console.log(`📄 Se pasó content directamente:`, { content });
+  } else {
+    content = undefined;
   }
   
   if (!content) {
@@ -655,51 +654,60 @@ export const processDynamicContent = (
   }
   
   // 4. Campo SAP directo (MEJORADO)
-  if (content?.fieldType === 'sap-product' && content?.sapField) {
-    console.log(`🔗 Procesando campo SAP: "${content.sapField}"`);
-    return getSAPFieldValue(content.sapField, mockData);
+  if (content?.fieldType === 'sap-product' && (content as any)) {
+    const sapFieldName = content.sapConnection?.fieldName || (content as any).sapField;
+    if (sapFieldName) {
+      console.log(`🔗 Procesando campo SAP: "${sapFieldName}"`);
+      return getSAPFieldValue(sapFieldName, mockData);
+    }
   }
   
   // 5. Campo promoción directo
-  if (content?.fieldType === 'promotion-data' && content?.promotionField) {
-    return getPromotionFieldValue(content.promotionField, mockData);
+  if (content?.fieldType === 'promotion-data' && (content as any)) {
+    const promoFieldName = content.promotionConnection?.fieldName || (content as any).promotionField;
+    if (promoFieldName) {
+      return getPromotionFieldValue(promoFieldName, mockData);
+    }
   }
   
-  // 6. QR Code
-  if (content?.fieldType === 'qr-code') {
-    return 'QR Code';
-  }
-  
-  // 7. Imagen
-  if (content?.fieldType === 'image') {
-    return 'Imagen';
-  }
+  // (El manejo de QR e Imagen no se procesa via content.fieldType aquí)
   
   // 8. NUEVO: Manejo de textConfig para componentes de texto dinámico
   if (content?.textConfig?.contentType) {
-    const contentType = content.textConfig.contentType;
+    const contentType = content.textConfig.contentType as unknown as string;
     const producto = mockData.producto;
     
     if (producto) {
       switch (contentType) {
         case 'product-name':
+        case 'nombre':
           return producto.descripcion || 'Heladera Whirlpool No Frost 375L';
-        case 'product-description': 
-          return `${producto.marcaTexto} ${producto.descripcion}` || 'Producto de calidad premium';
+        case 'product-description':
+        case 'descripcion': 
+          {
+            const desc = `${producto.marcaTexto ?? ''} ${producto.descripcion ?? ''}`.trim();
+            return desc || 'Producto de calidad premium';
+          }
         case 'product-sku':
+        case 'sku':
           return producto.sku?.toString() || '123001';
         case 'product-brand':
+        case 'marca':
           return producto.marcaTexto || 'WHIRLPOOL';
         case 'price-original':
+        case 'precioAnt':
           return formatPrice(producto.precioAnt || 849999, outputFormat);
         case 'price-discount':
         case 'price-final':
+        case 'precioBase':
           return formatPrice(producto.precio || 699999, outputFormat);
         case 'discount-percentage':
-          const precioAnt = producto.precioAnt || 849999;
-          const precio = producto.precio || 699999;
-          // 🔧 CÁLCULO EXACTO: Mantener 2 decimales en porcentajes
-          return `${Number((((precioAnt - precio) / precioAnt) * 100).toFixed(2))}%`;
+          {
+            const precioAnt = producto.precioAnt || 849999;
+            const precio = producto.precio || 699999;
+            // 🔧 CÁLCULO EXACTO: Mantener 2 decimales en porcentajes
+            return `${Number((((precioAnt - precio) / precioAnt) * 100).toFixed(2))}%`;
+          }
         case 'financing-text':
           return 'Financiación disponible';
         case 'promotion-title':
@@ -725,17 +733,7 @@ export const processDynamicContent = (
       case 'validity-period':
         // Campo fecha vigencia - SIEMPRE usa las fechas configuradas en la plantilla
         if (content?.dateConfig?.startDate && content?.dateConfig?.endDate) {
-          const formatDate = (dateStr: string) => {
-            // Crear fecha local para evitar problemas de zona horaria
-            const [year, month, day] = dateStr.split('-');
-            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-            return date.toLocaleDateString('es-AR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric'
-            });
-          };
-          return `${formatDate(content.dateConfig.startDate)} - ${formatDate(content.dateConfig.endDate)}`;
+          return `${formatISODateToLocale(content.dateConfig.startDate)} - ${formatISODateToLocale(content.dateConfig.endDate)}`;
         }
         // Fallback si no hay fechas configuradas
         return new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
