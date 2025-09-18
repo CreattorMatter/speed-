@@ -11,12 +11,12 @@ import {
   Droplet,
   ChevronDown,
   ChevronRight,
-  DollarSign,
-  Plus,
-  Minus
+  DollarSign
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../../../lib/supabaseClient';
 import { TabProps, PropertiesHandlers, ProductFieldOption } from './types';
+// 🆕 Campos Propios (Custom Fields)
+import { listCustomFields, upsertCustomField, utils as fieldUtils } from '../../fields/fieldRegistry';
 
 interface ContentTabProps extends TabProps {
   handlers: PropertiesHandlers;
@@ -30,6 +30,27 @@ export const ContentTab: React.FC<ContentTabProps> = ({
   productFieldOptions
 }) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['image', 'content']));
+  // 🆕 Estado de creación de Campo Propio
+  const [customFieldsVersion, setCustomFieldsVersion] = useState(0);
+  const [newCustom, setNewCustom] = useState<{
+    label: string;
+    slug: string;
+    source: 'user' | 'alias' | 'calculated';
+    dataType: 'number' | 'money' | 'text' | 'date' | 'boolean';
+    value?: string | number | boolean;
+    target?: string;
+    expression?: string;
+    format: { showCurrencySymbol?: boolean; showDecimals?: boolean; superscriptDecimals?: boolean; precision?: string | number };
+  }>({
+    label: '',
+    slug: '',
+    source: 'user',
+    dataType: 'number',
+    value: '',
+    target: '',
+    expression: '',
+    format: { showCurrencySymbol: true, showDecimals: false, superscriptDecimals: false, precision: '0' }
+  });
 
   const toggleSection = (section: string) => {
     const newExpanded = new Set(expandedSections);
@@ -306,6 +327,174 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                 </div>
               )}
 
+              {(selectedComponent.content as any)?.fieldType === 'custom-field' && (
+                <div className="space-y-4">
+                  {/* Selector de Campo Propio para vincular */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Vincular Campo Propio</label>
+                    <select
+                      value={(selectedComponent.content as any)?.customFieldSlug || ''}
+                      onChange={(e) => handlers.handleContentChange('customFieldSlug', e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      {listCustomFields().length === 0 && <option value="">No hay campos propios</option>}
+                      {listCustomFields().map(cf => (
+                        <option key={`bind-${cf.slug}`} value={cf.slug}>{cf.label} [{cf.slug}]</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">El valor actual se mostrará en el canvas automáticamente</p>
+                  </div>
+
+                  {/* Crear Campo Propio inline */}
+                  <div className="border border-purple-200 rounded-lg bg-purple-50">
+                    <div className="px-3 py-2 bg-purple-100 rounded-t-lg border-b border-purple-200">
+                      <h4 className="text-xs font-semibold text-purple-800">Crear Campo Propio</h4>
+                    </div>
+                    <div className="p-3 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] text-gray-700">Nombre</label>
+                          <input
+                            type="text"
+                            value={newCustom.label}
+                            onChange={(e) => {
+                              const label = e.target.value;
+                              const slug = fieldUtils.slugify(label);
+                              setNewCustom(prev => ({ ...prev, label, slug: prev.slug ? prev.slug : slug }));
+                            }}
+                            className="w-full px-2 py-1 text-xs border rounded"
+                            placeholder="Precio Dinamita"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-gray-700">Slug</label>
+                          <input
+                            type="text"
+                            value={newCustom.slug}
+                            onChange={(e) => setNewCustom(prev => ({ ...prev, slug: fieldUtils.slugify(e.target.value) }))}
+                            className="w-full px-2 py-1 text-xs border rounded font-mono"
+                            placeholder="precio_dinamita"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-gray-700">Tipo</label>
+                          <select
+                            value={newCustom.source}
+                            onChange={(e) => setNewCustom(prev => ({ ...prev, source: e.target.value as any }))}
+                            className="w-full px-2 py-1 text-xs border rounded"
+                          >
+                            <option value="user">Manual</option>
+                            <option value="alias">Alias</option>
+                            <option value="calculated">Calculado</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-gray-700">Dato</label>
+                          <select
+                            value={newCustom.dataType}
+                            onChange={(e) => setNewCustom(prev => ({ ...prev, dataType: e.target.value as any }))}
+                            className="w-full px-2 py-1 text-xs border rounded"
+                          >
+                            <option value="number">Número</option>
+                            <option value="money">Moneda</option>
+                            <option value="text">Texto</option>
+                            <option value="date">Fecha</option>
+                            <option value="boolean">Booleano</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {newCustom.source === 'user' && (
+                        <div>
+                          <label className="block text-[11px] text-gray-700">Valor</label>
+                          <input
+                            type="text"
+                            value={String(newCustom.value ?? '')}
+                            onChange={(e) => setNewCustom(prev => ({ ...prev, value: e.target.value }))}
+                            className="w-full px-2 py-1 text-xs border rounded"
+                            placeholder={newCustom.dataType === 'money' ? '$ 0' : '0'}
+                          />
+                        </div>
+                      )}
+
+                      {newCustom.source === 'alias' && (
+                        <div>
+                          <label className="block text-[11px] text-gray-700">Apunta a</label>
+                          <select
+                            value={newCustom.target || ''}
+                            onChange={(e) => setNewCustom(prev => ({ ...prev, target: e.target.value }))}
+                            className="w-full px-2 py-1 text-xs border rounded"
+                          >
+                            <option value="">Seleccionar campo</option>
+                            {/* SPEED y SAP */}
+                            {productFieldOptions.map(opt => (
+                              <option key={`opt-${opt.value}`} value={opt.value}>{opt.label} [{opt.value}]</option>
+                            ))}
+                            {/* CUSTOM existentes */}
+                            {listCustomFields().map(cf => (
+                              <option key={`cf-${cf.slug}`} value={cf.slug}>{cf.label} [{cf.slug}]</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {newCustom.source === 'calculated' && (
+                        <div>
+                          <label className="block text-[11px] text-gray-700">Expresión</label>
+                          <input
+                            type="text"
+                            value={newCustom.expression || ''}
+                            onChange={(e) => setNewCustom(prev => ({ ...prev, expression: e.target.value }))}
+                            className="w-full px-2 py-1 text-xs border rounded font-mono"
+                            placeholder="[precioBase] / [numero_de_cuotas]"
+                          />
+                          <p className="text-[11px] text-gray-500 mt-1">Usa [slug] de otros campos (SAP, SPEED o Propios)</p>
+                        </div>
+                      )}
+
+                      {(newCustom.dataType === 'money' || newCustom.dataType === 'number') && (
+                        <div className="grid grid-cols-3 gap-2">
+                          <label className="flex items-center space-x-1 text-[11px] col-span-1">
+                            <input type="checkbox" checked={newCustom.format.showCurrencySymbol !== false}
+                              onChange={(e) => setNewCustom(prev => ({ ...prev, format: { ...prev.format, showCurrencySymbol: e.target.checked } }))} />
+                            <span>$</span>
+                          </label>
+                          <label className="flex items-center space-x-1 text-[11px] col-span-1">
+                            <input type="checkbox" checked={newCustom.format.showDecimals === true}
+                              onChange={(e) => setNewCustom(prev => ({ ...prev, format: { ...prev.format, showDecimals: e.target.checked, precision: e.target.checked ? '2' : '0' } }))} />
+                            <span>Decimales</span>
+                          </label>
+                          <label className="flex items-center space-x-1 text-[11px] col-span-1">
+                            <input type="checkbox" checked={newCustom.format.superscriptDecimals === true}
+                              onChange={(e) => setNewCustom(prev => ({ ...prev, format: { ...prev.format, superscriptDecimals: e.target.checked } }))} />
+                            <span>Superíndice</span>
+                          </label>
+                        </div>
+                      )}
+
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => {
+                            const payload: any = { ...newCustom, slug: fieldUtils.slugify(newCustom.slug || newCustom.label) };
+                            upsertCustomField(payload);
+                            setCustomFieldsVersion(v => v + 1);
+                            // Si estamos vinculados a campo propio, actualizar selección para re-render del canvas
+                            if ((selectedComponent.content as any)?.fieldType === 'custom-field') {
+                              handlers.handleContentChange('customFieldSlug', payload.slug);
+                              // micro-bump del content
+                              handlers.handleContentChange('content', { ...(selectedComponent.content as any), customFieldSlug: payload.slug });
+                            }
+                          }}
+                          className="px-3 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700"
+                        >
+                          Guardar campo propio
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
 
 
               {/* Toggle para mostrar datos mock vs nombres de campo - VERSIÓN LIMPIA */}
@@ -408,6 +597,12 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                           endDate: today
                         };
                         break;
+                      case 'custom-field': {
+                        const first = listCustomFields()[0]?.slug || '';
+                        newContent.fieldType = 'custom-field';
+                        newContent.customFieldSlug = first;
+                        break;
+                      }
                     }
                     
                     // 🎯 LLAMAR A LA FUNCIÓN CORRECTA: handleContentChange
@@ -419,6 +614,7 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                   <option value="dynamic">Campo dinámico</option>
                   <option value="calculated">Campo calculado</option>
                   <option value="date">Fecha</option>
+                  <option value="custom-field">Campo propio</option>
                 </select>
               </div>
 
@@ -454,39 +650,126 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                     </p>
                   </div>
 
-                  {/* Lista de campos disponibles con buscador */}
+                  {/* Lista de campos disponibles organizados por categoría */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Campos disponibles</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-2">Campos disponibles</label>
+                    
+                    {/* Buscador global */}
                     <input
                       type="text"
                       placeholder="Buscar campo..."
-                      className="w-full mb-2 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full mb-3 px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       onChange={(e) => {
                         const q = e.target.value.toLowerCase().trim();
-                        const container = document.getElementById('field-options-container');
-                        if (!container) return;
-                        Array.from(container.querySelectorAll('button[data-label]')).forEach((el) => {
-                          const label = (el as HTMLElement).dataset.label || '';
-                          (el as HTMLElement).style.display = label.includes(q) ? '' : 'none';
+                        const speedContainer = document.getElementById('speed-fields-container');
+                        const sapContainer = document.getElementById('sap-fields-container');
+                        
+                        [speedContainer, sapContainer].forEach(container => {
+                          if (!container) return;
+                          Array.from(container.querySelectorAll('button[data-label]')).forEach((el) => {
+                            const label = (el as HTMLElement).dataset.label || '';
+                            (el as HTMLElement).style.display = label.includes(q) ? '' : 'none';
+                          });
                         });
                       }}
                     />
-                    <div id="field-options-container" className="max-h-32 overflow-y-auto border border-gray-200 rounded-md">
-                      {productFieldOptions.map((field, index) => (
-                        <button
-                          key={index}
-                          data-label={(field.label || '').toLowerCase()}
-                          onClick={() => {
-                            const currentTemplate = (selectedComponent.content as any)?.dynamicTemplate || '';
-                            const newTemplate = currentTemplate + `[${field.value}]`;
-                            handlers.handleContentChange('dynamicTemplate', newTemplate);
-                          }}
-                          className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 flex items-center space-x-2 border-b border-gray-100 last:border-b-0"
-                        >
-                          <field.icon className="w-3 h-3 text-gray-500" />
-                          <span>{field.label}</span>
-                        </button>
-                      ))}
+                    
+                    <div className="space-y-3">
+                      {/* SECCIÓN: Campos SPEED (Internos) */}
+                      <div className="border border-blue-200 rounded-lg bg-blue-50">
+                        <div className="px-3 py-2 bg-blue-100 rounded-t-lg border-b border-blue-200">
+                          <h4 className="text-xs font-semibold text-blue-800 flex items-center space-x-2">
+                            <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+                            <span>Campos SPEED (Internos)</span>
+                          </h4>
+                          <p className="text-xs text-blue-600 mt-1">Campos propios de la aplicación</p>
+                        </div>
+                        <div id="speed-fields-container" className="max-h-24 overflow-y-auto">
+                          {productFieldOptions
+                            .filter(field => field.category === 'speed')
+                            .map((field, index) => (
+                              <button
+                                key={`speed-${index}`}
+                                data-label={(field.label || '').toLowerCase()}
+                                onClick={() => {
+                                  const currentTemplate = (selectedComponent.content as any)?.dynamicTemplate || '';
+                                  const newTemplate = currentTemplate + `[${field.value}]`;
+                                  handlers.handleContentChange('dynamicTemplate', newTemplate);
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs hover:bg-blue-100 flex items-center space-x-2 border-b border-blue-100 last:border-b-0"
+                                title={field.description}
+                              >
+                                <field.icon className="w-3 h-3 text-blue-600" />
+                                <span className="text-blue-800">{field.label}</span>
+                              </button>
+                            ))
+                          }
+                        </div>
+                      </div>
+
+                      {/* 🆕 SECCIÓN: Campos Propios (Custom) */}
+                      <div className="border border-purple-200 rounded-lg bg-purple-50">
+                        <div className="px-3 py-2 bg-purple-100 rounded-t-lg border-b border-purple-200">
+                          <h4 className="text-xs font-semibold text-purple-800 flex items-center space-x-2">
+                            <span className="w-2 h-2 bg-purple-600 rounded-full"></span>
+                            <span>Campos Propios</span>
+                          </h4>
+                          <p className="text-xs text-purple-600 mt-1">Definidos en esta plantilla</p>
+                        </div>
+                        <div id="custom-fields-container" className="max-h-28 overflow-y-auto">
+                          {listCustomFields().length === 0 && (
+                            <div className="px-3 py-2 text-[11px] text-purple-700">No hay campos propios. Creá uno arriba.</div>
+                          )}
+                          {listCustomFields().map((cf, idx) => (
+                            <button
+                              key={`custom-${cf.slug}-${idx}-${customFieldsVersion}`}
+                              data-label={(cf.label || '').toLowerCase()}
+                              onClick={() => {
+                                const currentTemplate = (selectedComponent.content as any)?.dynamicTemplate || '';
+                                const newTemplate = currentTemplate + `[${cf.slug}]`;
+                                handlers.handleContentChange('dynamicTemplate', newTemplate);
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs hover:bg-purple-100 flex items-center space-x-2 border-b border-purple-100 last:border-b-0"
+                              title={`${cf.label} (${cf.dataType})`}
+                            >
+                              <DollarSign className={`w-3 h-3 ${cf.dataType === 'money' ? 'text-green-600' : 'text-purple-600'}`} />
+                              <span className="text-purple-800">{cf.label} [{cf.slug}]</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* SECCIÓN: Campos SAP (Externos) */}
+                      <div className="border border-green-200 rounded-lg bg-green-50">
+                        <div className="px-3 py-2 bg-green-100 rounded-t-lg border-b border-green-200">
+                          <h4 className="text-xs font-semibold text-green-800 flex items-center space-x-2">
+                            <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                            <span>Campos SAP (Externos)</span>
+                          </h4>
+                          <p className="text-xs text-green-600 mt-1">Datos del producto desde la API</p>
+                        </div>
+                        <div id="sap-fields-container" className="max-h-32 overflow-y-auto">
+                          {productFieldOptions
+                            .filter(field => field.category === 'sap')
+                            .map((field, index) => (
+                              <button
+                                key={`sap-${index}`}
+                                data-label={(field.label || '').toLowerCase()}
+                                onClick={() => {
+                                  const currentTemplate = (selectedComponent.content as any)?.dynamicTemplate || '';
+                                  const newTemplate = currentTemplate + `[${field.value}]`;
+                                  handlers.handleContentChange('dynamicTemplate', newTemplate);
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs hover:bg-green-100 flex items-center space-x-2 border-b border-green-100 last:border-b-0"
+                                title={field.description}
+                              >
+                                <field.icon className="w-3 h-3 text-green-600" />
+                                <span className="text-green-800">{field.label}</span>
+                              </button>
+                            ))
+                          }
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -599,26 +882,90 @@ export const ContentTab: React.FC<ContentTabProps> = ({
                     </p>
                   </div>
 
-                  {/* Selector de campos numéricos dinámico */}
+                  {/* Selector de campos numéricos organizados por categoría */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Campos numéricos disponibles</label>
-                    <div className="max-h-28 overflow-y-auto border border-gray-200 rounded-md divide-y">
-                      {productFieldOptions
-                        .filter(opt => /price|precio|discount|descuento|stock|cuota|promo/i.test(opt.value))
-                        .map((opt, idx) => (
-                          <button
-                            key={`${opt.value}-${idx}`}
-                            onClick={() => {
-                              const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
-                              const newExpression = currentExpression + `[${opt.value}]`;
-                              handlers.handleCalculatedFieldChange(newExpression);
-                            }}
-                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 flex items-center space-x-2"
-                          >
-                            <opt.icon className="w-3 h-3 text-gray-600" />
-                            <span><strong>[{opt.value}]</strong> - {opt.label}</span>
-                          </button>
-                        ))}
+                    <label className="block text-xs font-medium text-gray-700 mb-2">Campos numéricos disponibles</label>
+                    
+                    <div className="space-y-3">
+                      {/* Campos SPEED numéricos */}
+                      <div className="border border-blue-200 rounded-lg bg-blue-50">
+                        <div className="px-2 py-1 bg-blue-100 rounded-t-lg">
+                          <h5 className="text-xs font-medium text-blue-800">SPEED</h5>
+                        </div>
+                        <div className="max-h-20 overflow-y-auto">
+                          {productFieldOptions
+                            .filter(opt => opt.category === 'speed' && /price|precio|discount|descuento|stock|cuota|promo/i.test(opt.value))
+                            .map((opt, idx) => (
+                              <button
+                                key={`speed-calc-${opt.value}-${idx}`}
+                                onClick={() => {
+                                  const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
+                                  const newExpression = currentExpression + `[${opt.value}]`;
+                                  handlers.handleCalculatedFieldChange(newExpression);
+                                }}
+                                className="w-full text-left px-2 py-1 text-xs hover:bg-blue-100 flex items-center space-x-2 border-b border-blue-100 last:border-b-0"
+                                title={opt.description}
+                              >
+                                <opt.icon className="w-3 h-3 text-blue-600" />
+                                <span className="text-blue-800"><strong>[{opt.value}]</strong> - {opt.label}</span>
+                              </button>
+                            ))
+                          }
+                        </div>
+                      </div>
+
+                      {/* 🆕 Campos Propios numéricos */}
+                      <div className="border border-purple-200 rounded-lg bg-purple-50">
+                        <div className="px-2 py-1 bg-purple-100 rounded-t-lg">
+                          <h5 className="text-xs font-medium text-purple-800">Campos Propios</h5>
+                        </div>
+                        <div className="max-h-20 overflow-y-auto">
+                          {listCustomFields()
+                            .filter(cf => cf.dataType === 'number' || cf.dataType === 'money')
+                            .map((cf, idx) => (
+                              <button
+                                key={`custom-calc-${cf.slug}-${idx}-${customFieldsVersion}`}
+                                onClick={() => {
+                                  const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
+                                  const newExpression = currentExpression + `[${cf.slug}]`;
+                                  handlers.handleCalculatedFieldChange(newExpression);
+                                }}
+                                className="w-full text-left px-2 py-1 text-xs hover:bg-purple-100 flex items-center space-x-2 border-b border-purple-100 last:border-b-0"
+                                title={`${cf.label} (${cf.dataType})`}
+                              >
+                                <DollarSign className="w-3 h-3 text-purple-600" />
+                                <span className="text-purple-800"><strong>[{cf.slug}]</strong> - {cf.label}</span>
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* Campos SAP numéricos */}
+                      <div className="border border-green-200 rounded-lg bg-green-50">
+                        <div className="px-2 py-1 bg-green-100 rounded-t-lg">
+                          <h5 className="text-xs font-medium text-green-800">SAP</h5>
+                        </div>
+                        <div className="max-h-24 overflow-y-auto">
+                          {productFieldOptions
+                            .filter(opt => opt.category === 'sap' && /price|precio|discount|descuento|stock|cuota|promo/i.test(opt.value))
+                            .map((opt, idx) => (
+                              <button
+                                key={`sap-calc-${opt.value}-${idx}`}
+                                onClick={() => {
+                                  const currentExpression = (selectedComponent.content as any)?.calculatedField?.expression || '';
+                                  const newExpression = currentExpression + `[${opt.value}]`;
+                                  handlers.handleCalculatedFieldChange(newExpression);
+                                }}
+                                className="w-full text-left px-2 py-1 text-xs hover:bg-green-100 flex items-center space-x-2 border-b border-green-100 last:border-b-0"
+                                title={opt.description}
+                              >
+                                <opt.icon className="w-3 h-3 text-green-600" />
+                                <span className="text-green-800"><strong>[{opt.value}]</strong> - {opt.label}</span>
+                              </button>
+                            ))
+                          }
+                        </div>
+                      </div>
                     </div>
                   </div>
 

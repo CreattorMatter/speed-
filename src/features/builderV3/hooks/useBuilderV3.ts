@@ -18,6 +18,8 @@ import {
   CanvasStateV3,
   UseBuilderV3Return
 } from '../types';
+// 🆕 Campos Propios (Custom Fields)
+import { resetCustomFields, exportCustomFields } from '../fields/fieldRegistry';
 import { generateId } from '../../../utils/generateId';
 import { templatesV3Service, familiesV3Service } from '../../../services/builderV3Service';
 import { getComponentByType } from '../data/componentsLibrary';
@@ -640,6 +642,12 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
         }
         
         dispatch({ type: 'SET_TEMPLATE', payload: template });
+        // 🆕 Cargar Campos Propios desde la plantilla al registro en memoria
+        try {
+          resetCustomFields(template.customFields as any);
+        } catch (e) {
+          console.warn('No se pudieron cargar customFields del template:', e);
+        }
         return template;
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
@@ -713,6 +721,8 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
         const templateToSave: Partial<TemplateV3> = {
           ...state.currentTemplate,
           defaultComponents: state.components,
+          // 🆕 Persistir Campos Propios
+          customFields: exportCustomFields() as any,
           updatedAt: new Date()
         };
 
@@ -861,6 +871,8 @@ export const useBuilderV3 = (): UseBuilderV3Return => {
         const templateToSave: Partial<TemplateV3> = {
           ...state.currentTemplate,
           defaultComponents: sanitizedComponents, // USAR COMPONENTES LIMPIOS
+          // 🆕 Persistir Campos Propios
+          customFields: exportCustomFields() as any,
           updatedAt: new Date()
           // thumbnail se actualizará después
         };

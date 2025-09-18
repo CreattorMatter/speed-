@@ -203,7 +203,7 @@ export interface StyleV3 {
 
 export interface DynamicContentV3 {
   // Tipo de campo dinámico
-  fieldType: 'static' | 'dynamic' | 'calculated' | 'sap-product' | 'promotion-data' | 'custom-formula' | 'user-input' | 'financing-logo' | 'dynamic-upload';
+  fieldType: 'static' | 'dynamic' | 'calculated' | 'sap-product' | 'promotion-data' | 'custom-formula' | 'user-input' | 'financing-logo' | 'dynamic-upload' | 'custom-field';
   
   // Configuración de conexión con SAP
   sapConnection?: {
@@ -248,9 +248,42 @@ export interface DynamicContentV3 {
   
   // Configuración de texto dinámico
   textConfig?: {
-    contentType: 'product-name' | 'product-description' | 'product-sku' | 'product-brand' |
-                 'price-original' | 'price-discount' | 'price-final' | 'discount-percentage' |
-                 'financing-text' | 'promotion-title' | 'custom';
+    contentType: 
+      // CAMPOS INTERNOS DE CARTELERÍA
+      | 'promotion-title' // Título de la promoción (ej: "Hot Sale")
+      | 'numero_cuota'    // Número de cuotas (ej: 6, 12)
+      | 'monto_cuota'     // Monto de cada cuota (calculado)
+      | 'promo'           // Promoción NxN (ej: "3x2", "5x4")
+      | 'custom'          // Texto estático
+
+      // CAMPOS EXTERNOS (API SAP - 1:1 MAPPING)
+      | 'ID'
+      | 'Tienda'
+      | 'sku'
+      | 'nombre'
+      | 'origen'
+      | 'nacImp'
+      | 'ean'
+      | 'ppal'
+      | 'unidad'
+      | 'precioBase'
+      | 'precioSinImpuestosNacionales'
+      | 'unidadPPUM'
+      | 'PPUM'
+      | 'factorRendimiento'
+      | 'unStock'
+      | 'stockPorSucursal'
+      | 'atributo'
+      | 'atributo2'
+      | 'Seccion'
+      | 'Rubro'
+      | 'SubRubro'
+      | 'Grupo'
+      | 'precioAnt'
+      | 'marca'
+      | 'MARM_COEF'
+      | 'MARM_UMREZ'
+      | 'MARM_UMREN';
     fallbackText?: string;
     formatters?: Array<{
       type: 'currency' | 'percentage' | 'uppercase' | 'lowercase' | 'capitalize';
@@ -271,6 +304,9 @@ export interface DynamicContentV3 {
   
   // Campo para plantillas dinámicas (campos con [campo] syntax)
   dynamicTemplate?: string;
+
+  // 🆕 Campo Propio vinculado directamente
+  customFieldSlug?: string;
   
   // Configuración de formas geométricas
   shapeConfig?: {
@@ -416,6 +452,28 @@ export interface TemplateV3 {
   
   // Componentes por defecto
   defaultComponents: DraggableComponentV3[];
+
+  // 🆕 Campos Propios (persistencia en plantilla)
+  customFields?: Array<{
+    slug: string;
+    label: string;
+    source: 'user' | 'alias' | 'calculated';
+    dataType: 'number' | 'money' | 'text' | 'date' | 'boolean';
+    aliases?: string[];
+    format?: {
+      showCurrencySymbol?: boolean;
+      showDecimals?: boolean;
+      superscriptDecimals?: boolean;
+      precision?: string | number;
+      locale?: string;
+      prefix?: string;
+      suffix?: string;
+    };
+    // Opcionales según tipo de campo
+    value?: string | number | boolean; // user
+    target?: string; // alias → slug de destino
+    expression?: string; // calculated
+  }>;
   
   // Configuración de la familia
   familyConfig: {

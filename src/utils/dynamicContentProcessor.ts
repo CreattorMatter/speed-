@@ -6,6 +6,8 @@
 import { ProductoReal, Tienda, Seccion, Promocion } from '../types/product';
 import { getDynamicFieldValue, ALL_DYNAMIC_FIELDS } from './productFieldsMap';
 import { calculatePricePorCuota, formatPriceCuota } from './financingCalculator';
+// 🆕 Campos Propios (Custom Fields)
+import { hasCustomField, getCustomFieldRaw } from '../features/builderV3/fields/fieldRegistry';
 
 // =====================
 // TIPOS Y INTERFACES
@@ -79,6 +81,86 @@ export const defaultMockData: MockDataV3 = {
   // Campos de financiación con valores por defecto
   cuotas: 0,
   precio_cuota: 0
+};
+
+// =====================
+// CAMPOS PROPIOS (HELPERS)
+// =====================
+
+// Normalizar número desde distintas variantes ("$ 849.999,00" → 849999)
+const parseNumeric = (raw: string | number | boolean | undefined): number => {
+  if (raw === undefined || raw === null) return 0;
+  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : 0;
+  if (typeof raw === 'boolean') return raw ? 1 : 0;
+  let s = String(raw);
+  if (s.includes('$')) s = s.replace(/[$\s]/g, '');
+  s = s.replace(/\./g, '').replace(/,/g, '.');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+};
+
+// Resolver valor numérico de un campo propio por slug (soporta alias y calculado recursivo)
+const resolveCustomFieldNumeric = (slug: string, mockData: MockDataV3, depth: number = 0): number => {
+  if (depth > 10) return 0; // protección contra ciclos
+  const raw = getCustomFieldRaw(slug);
+  if (!raw) return 0;
+  if (raw.kind === 'user') {
+    return parseNumeric(raw.value);
+  }
+  if (raw.kind === 'alias' && raw.target) {
+    return resolveCustomFieldNumeric(raw.target, mockData, depth + 1);
+  }
+  if (raw.kind === 'calculated' && raw.expression) {
+    // Evaluar expresión: reemplazar tokens con valores numéricos (SAP/custom)
+    let expr = raw.expression;
+    const fieldRegex = /\[([^\]]+)\]/g;
+    let m;
+    while ((m = fieldRegex.exec(raw.expression)) !== null) {
+      const id = m[1];
+      let num = 0;
+      if (hasCustomField(id)) {
+        num = resolveCustomFieldNumeric(id, mockData, depth + 1);
+      } else if (mockData.producto && ALL_DYNAMIC_FIELDS[id]) {
+        const val = getDynamicFieldValue(id, mockData.producto);
+        num = parseNumeric(val);
+      }
+      expr = expr.replace(new RegExp(`\\[${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'g'), String(num));
+    }
+    try {
+      // Validar caracteres permitidos
+      if (!/^[0-9+\-*/().\s]+$/.test(expr)) return 0;
+      const result = Function(`"use strict"; return (${expr})`)();
+      return Number.isFinite(result) ? Number(result) : 0;
+    } catch {
+      return 0;
+    }
+  }
+  return 0;
+};
+
+// Resolver valor de presentación para plantillas dinámicas (texto/moneda)
+const resolveCustomFieldDisplay = (slug: string, mockData: MockDataV3, outputFormat?: any, depth: number = 0): string => {
+  if (depth > 10) return '';
+  const raw = getCustomFieldRaw(slug);
+  if (!raw) return `[${slug}]`;
+  switch (raw.kind) {
+    case 'user': {
+      const v = raw.value;
+      if (raw.dataType === 'number' || raw.dataType === 'money') {
+        const n = parseNumeric(v as any);
+        return formatWithOutput(n, raw.format || outputFormat);
+      }
+      return String(v ?? '');
+    }
+    case 'alias': {
+      if (!raw.target) return '';
+      return resolveCustomFieldDisplay(raw.target, mockData, outputFormat, depth + 1);
+    }
+    case 'calculated': {
+      const n = resolveCustomFieldNumeric(slug, mockData, depth + 1);
+      return formatWithOutput(n, raw.format || outputFormat);
+    }
+  }
 };
 
 // =====================
@@ -182,7 +264,14 @@ export const processCalculatedField = (
       while ((match = fieldRegex.exec(expression)) !== null) {
         const fieldId = match[1];
         console.log(`🔍 Procesando campo en expresión: [${fieldId}]`);
-        
+        // 🆕 Preferir Campos Propios si existen
+        if (hasCustomField(fieldId)) {
+          const num = resolveCustomFieldNumeric(fieldId, mockData);
+          processedExpression = processedExpression.replace(match[0], String(num));
+          console.log(`✅ (Custom) Reemplazado [${fieldId}] → ${num}`);
+          continue;
+        }
+
         let fieldValue = getDynamicFieldValue(fieldId, mockData.producto);
         
         // Extraer valor numérico desde formatos locales de precio (ej: "$ 849.999,00")
@@ -363,7 +452,13 @@ export const processTemplate = (
     
     while ((match = fieldRegex.exec(template)) !== null) {
       const fieldId = match[1];
-      
+      // 🆕 Campos Propios: resolución de presentación
+      if (hasCustomField(fieldId)) {
+        const fieldValue = resolveCustomFieldDisplay(fieldId, mockData, outputFormat);
+        processedTemplate = processedTemplate.replace(match[0], fieldValue);
+        continue;
+      }
+
       // 🆕 CAMPOS DE FINANCIACIÓN: Manejo especial
       if (fieldId === 'cuota' || fieldId === 'precio_cuota') {
         const fieldValue = processFinancingField(fieldId, mockData);
@@ -551,6 +646,12 @@ export const processDynamicContent = (
     const result = processTemplate(content.dynamicTemplate, mockData, content.outputFormat);
     console.log(`🎭 Resultado de plantilla: "${result}"`);
     return result;
+  }
+  
+  // 3.b Campo Propio directo (nuevo)
+  if (content?.fieldType === 'custom-field' && content?.customFieldSlug) {
+    console.log(`🟣 Procesando Campo Propio directo: [${content.customFieldSlug}]`);
+    return resolveCustomFieldDisplay(content.customFieldSlug, mockData, content.outputFormat);
   }
   
   // 4. Campo SAP directo (MEJORADO)

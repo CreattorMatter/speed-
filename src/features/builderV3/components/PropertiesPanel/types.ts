@@ -40,6 +40,7 @@ export interface ProductFieldOption {
   icon: React.ComponentType<{ className?: string }>;
   category: string;
   description?: string;
+  dataType?: 'number' | 'money' | 'text' | 'date' | 'boolean';
 }
 
 export interface CalculatedFieldResult {
